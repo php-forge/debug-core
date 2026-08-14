@@ -7,6 +7,8 @@ instead of requiring this package directly.
 
 ## Installation
 
+Adapter packages install Debug Core transitively. If you develop an adapter, run:
+
 ```shell
 composer require php-forge/debug-core
 ```

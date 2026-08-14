@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Storage;
 
 use PHPForge\Debug\Storage\{DebugSnapshot, RequestSummary, SnapshotStore, StorageException};
-use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\{Group, TestWith};
 use PHPUnit\Framework\TestCase;
 use Xepozz\InternalMocker\MockerState;
 
@@ -267,6 +267,26 @@ final class SnapshotStoreTest extends TestCase
                 'Invalid history size must be rejected before storage initialization.',
             );
         }
+    }
+
+    /**
+     * @param string $tag Numeric tag.
+     */
+    #[TestWith(['0'])]
+    #[TestWith(['7'])]
+    public function testThrowStorageExceptionForNumericTag(string $tag): void
+    {
+        $summary = $this->summary($tag, 1_700_000_000.0);
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot tag: {$tag}",
+        );
+
+        $this->store()->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
     }
 
     public function testThrowStorageExceptionForReservedManifestTag(): void
