@@ -190,10 +190,13 @@ final class SnapshotStore
 
             $removed = $this->collectGarbage($entries, $historySize);
 
-            $this->atomicWrite($snapshotFile, $snapshotJson);
+            if ($historySize > 0) {
+                $this->atomicWrite($snapshotFile, $snapshotJson);
+            }
+
             $this->atomicWrite($this->indexFile(), self::encode(new Manifest($entries)));
 
-            if ($resetStorage) {
+            if ($removed !== [] || $resetStorage) {
                 $this->removeStaleSnapshots($entries);
             }
 
@@ -294,7 +297,7 @@ final class SnapshotStore
      */
     private function collectGarbage(array &$entries, int $historySize): array
     {
-        if (count($entries) <= $historySize + 10) {
+        if (count($entries) <= $historySize) {
             return [];
         }
 
@@ -305,15 +308,12 @@ final class SnapshotStore
         foreach (array_keys($entries) as $tag) {
             $removed[] = $entries[$tag];
 
-            @unlink($this->snapshotFile($tag));
             unset($entries[$tag]);
 
             if (--$remaining <= 0) {
                 break;
             }
         }
-
-        $this->removeStaleSnapshots($entries);
 
         return $removed;
     }

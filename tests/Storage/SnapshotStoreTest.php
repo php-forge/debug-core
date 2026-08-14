@@ -24,7 +24,11 @@ final class SnapshotStoreTest extends TestCase
 
         $summary = $this->summary('current', 1_700_000_000.0);
 
-        $store->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
+
         $store->clear();
 
         self::assertNull(
@@ -39,6 +43,57 @@ final class SnapshotStoreTest extends TestCase
         self::assertFileExists(
             "{$this->path}/index.lock",
             'Clear must preserve the shared lock file.',
+        );
+    }
+
+    public function testHistorySizeIsStrictMaximum(): void
+    {
+        $store = $this->store();
+
+        for ($index = 0; $index < 3; $index++) {
+            $summary = $this->summary("tag-{$index}", 1_700_000_000.0 + $index);
+
+            $store->writeSnapshot(
+                new DebugSnapshot($summary, [], []),
+                2,
+            );
+        }
+
+        self::assertSame(
+            ['tag-2', 'tag-1'],
+            array_keys($store->loadManifest()),
+            'Manifest must contain only the configured number of entries.',
+        );
+        self::assertFileDoesNotExist(
+            "{$this->path}/tag-0.json",
+            'Oldest snapshot must be removed at the retention boundary.',
+        );
+    }
+
+    public function testHistorySizeZeroPersistsNoSnapshots(): void
+    {
+        $store = $this->store();
+
+        $summary = $this->summary('current', 1_700_000_000.0);
+
+        $removed = $store->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            0,
+        );
+
+        self::assertSame(
+            [$summary],
+            $removed,
+            'Discarded request summary must be reported for dependent cleanup.',
+        );
+        self::assertSame(
+            [],
+            $store->loadManifest(),
+            'Manifest must remain empty.',
+        );
+        self::assertFileDoesNotExist(
+            "{$this->path}/current.json",
+            'Discarded snapshot must not leave an orphan file.',
         );
     }
 
@@ -59,9 +114,18 @@ final class SnapshotStoreTest extends TestCase
 
         $summary = $this->summary('tag-1', 1_700_000_000.0);
 
-        $store->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
 
-        MockerState::addCondition('PHPForge\\Debug\\Storage', 'fopen', [], false, true);
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'fopen',
+            [],
+            false,
+            true,
+        );
 
         self::assertSame(
             [],
@@ -73,11 +137,21 @@ final class SnapshotStoreTest extends TestCase
     public function testLoadManifestReturnsNothingWhenTheSharedLockCannotBeAcquired(): void
     {
         $store = $this->store();
+
         $summary = $this->summary('tag-1', 1_700_000_000.0);
 
-        $store->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
 
-        MockerState::addCondition('PHPForge\\Debug\\Storage', 'flock', [], false, true);
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'flock',
+            [],
+            false,
+            true,
+        );
 
         self::assertSame(
             [],
@@ -110,14 +184,20 @@ final class SnapshotStoreTest extends TestCase
 
         $kept = $this->summary('kept', 1_700_000_000.0);
 
-        $store->writeSnapshot(new DebugSnapshot($kept, [], []), 2);
+        $store->writeSnapshot(
+            new DebugSnapshot($kept, [], []),
+            2,
+        );
 
         file_put_contents("{$this->path}/orphan.json", '{}');
 
         for ($index = 0; $index < 13; $index++) {
             $summary = $this->summary("tag-{$index}", 1_700_000_000.0 + $index);
 
-            $store->writeSnapshot(new DebugSnapshot($summary, [], []), 2);
+            $store->writeSnapshot(
+                new DebugSnapshot($summary, [], []),
+                2,
+            );
         }
 
         self::assertFileDoesNotExist(
@@ -129,11 +209,18 @@ final class SnapshotStoreTest extends TestCase
     public function testSnapshotAndManifestRoundTripThroughJson(): void
     {
         $store = $this->store();
+
         $older = $this->summary('older', 1_700_000_000.0);
         $newer = $this->summary('newer', 1_700_000_001.0);
 
-        $store->writeSnapshot(new DebugSnapshot($older, [], []), 10);
-        $store->writeSnapshot(new DebugSnapshot($newer, ['panel' => ['value' => 1]], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($older, [], []),
+            10,
+        );
+        $store->writeSnapshot(
+            new DebugSnapshot($newer, ['panel' => ['value' => 1]], []),
+            10,
+        );
 
         $snapshot = $store->readSnapshot('newer');
 
@@ -170,7 +257,10 @@ final class SnapshotStoreTest extends TestCase
         try {
             $summary = $this->summary('current', 1_700_000_000.0);
 
-            $store->writeSnapshot(new DebugSnapshot($summary, [], []), -1);
+            $store->writeSnapshot(
+                new DebugSnapshot($summary, [], []),
+                -1,
+            );
         } finally {
             self::assertDirectoryDoesNotExist(
                 $this->path,
@@ -188,7 +278,10 @@ final class SnapshotStoreTest extends TestCase
             'Invalid debug snapshot tag: index',
         );
 
-        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $this->store()->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
     }
 
     public function testThrowStorageExceptionForTagThatEscapesTheStorageDirectory(): void
@@ -200,17 +293,30 @@ final class SnapshotStoreTest extends TestCase
             'Invalid debug snapshot tag: ../outside',
         );
 
-        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $this->store()->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
     }
 
     public function testThrowStorageExceptionWhenClearCannotAcquireTheExclusiveLock(): void
     {
         $store = $this->store();
+
         $summary = $this->summary('current', 1_700_000_000.0);
 
-        $store->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
 
-        MockerState::addCondition('PHPForge\\Debug\\Storage', 'flock', [], false, true);
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'flock',
+            [],
+            false,
+            true,
+        );
 
         $this->expectException(StorageException::class);
         $this->expectExceptionMessage(
@@ -227,9 +333,67 @@ final class SnapshotStoreTest extends TestCase
         }
     }
 
+    public function testThrowStorageExceptionWhenTheManifestCannotBeWrittenAtHistoryLimit(): void
+    {
+        $store = $this->store();
+
+        $older = $this->summary('older', 1_700_000_000.0);
+        $newer = $this->summary('newer', 1_700_000_001.0);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($older, [], []),
+            2,
+        );
+        $store->writeSnapshot(
+            new DebugSnapshot($newer, [], []),
+            2,
+        );
+
+        $temporaryFileCalls = 0;
+
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'tempnam',
+            [$this->path, '.debug-'],
+            static function (string $directory, string $prefix) use (&$temporaryFileCalls): string|false {
+                return ++$temporaryFileCalls === 2 ? false : tempnam($directory, $prefix);
+            },
+        );
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            'Unable to write temporary debug data file',
+        );
+
+        try {
+            $summary = $this->summary('blocked', 1_700_000_002.0);
+
+            $store->writeSnapshot(
+                new DebugSnapshot($summary, [], []),
+                2,
+            );
+        } finally {
+            self::assertSame(
+                ['newer', 'older'],
+                array_keys($store->loadManifest()),
+                'Failed manifest commit must preserve the previous manifest.',
+            );
+            self::assertNotNull(
+                $store->readSnapshot('older'),
+                'Oldest retained snapshot must remain readable.',
+            );
+        }
+    }
+
     public function testThrowStorageExceptionWhenTheSnapshotCannotBeMovedIntoPlace(): void
     {
-        MockerState::addCondition('PHPForge\\Debug\\Storage', 'rename', [], false, true);
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'rename',
+            [],
+            false,
+            true,
+        );
 
         $this->expectException(StorageException::class);
         $this->expectExceptionMessage(
@@ -238,12 +402,21 @@ final class SnapshotStoreTest extends TestCase
 
         $summary = $this->summary('blocked', 1_700_000_000.0);
 
-        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $this->store()->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
     }
 
     public function testThrowStorageExceptionWhenTheTemporaryFileCannotBeCreated(): void
     {
-        MockerState::addCondition('PHPForge\\Debug\\Storage', 'tempnam', [], false, true);
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'tempnam',
+            [],
+            false,
+            true,
+        );
 
         $this->expectException(StorageException::class);
         $this->expectExceptionMessage(
@@ -252,12 +425,21 @@ final class SnapshotStoreTest extends TestCase
 
         $summary = $this->summary('blocked', 1_700_000_000.0);
 
-        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $this->store()->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
     }
 
     public function testThrowStorageExceptionWhenTheTemporaryFileCannotBeWritten(): void
     {
-        MockerState::addCondition('PHPForge\\Debug\\Storage', 'file_put_contents', [], false, true);
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'file_put_contents',
+            [],
+            false,
+            true,
+        );
 
         $this->expectException(StorageException::class);
         $this->expectExceptionMessage(
@@ -266,12 +448,21 @@ final class SnapshotStoreTest extends TestCase
 
         $summary = $this->summary('blocked', 1_700_000_000.0);
 
-        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        $this->store()->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
     }
 
     public function testThrowStorageExceptionWhenWriteCannotAcquireTheExclusiveLock(): void
     {
-        MockerState::addCondition('PHPForge\\Debug\\Storage', 'flock', [], false, true);
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'flock',
+            [],
+            false,
+            true,
+        );
 
         $this->expectException(StorageException::class);
         $this->expectExceptionMessage(
@@ -281,7 +472,10 @@ final class SnapshotStoreTest extends TestCase
         try {
             $summary = $this->summary('current', 1_700_000_000.0);
 
-            $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+            $this->store()->writeSnapshot(
+                new DebugSnapshot($summary, [], []),
+                10,
+            );
         } finally {
             self::assertFileDoesNotExist(
                 "{$this->path}/current.json",
@@ -296,7 +490,13 @@ final class SnapshotStoreTest extends TestCase
 
     public function testThrowStorageExceptionWhenWriteCannotOpenTheLockFile(): void
     {
-        MockerState::addCondition('PHPForge\\Debug\\Storage', 'fopen', [], false, true);
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'fopen',
+            [],
+            false,
+            true,
+        );
 
         $this->expectException(StorageException::class);
         $this->expectExceptionMessage(
@@ -306,7 +506,10 @@ final class SnapshotStoreTest extends TestCase
         try {
             $summary = $this->summary('current', 1_700_000_000.0);
 
-            $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+            $this->store()->writeSnapshot(
+                new DebugSnapshot($summary, [], []),
+                10,
+            );
         } finally {
             self::assertFileDoesNotExist(
                 "{$this->path}/current.json",
