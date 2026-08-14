@@ -11,7 +11,7 @@
     },
     "files": {
         ".editorconfig": {
-            "hash": "sha256:c536c9768f05fe8e6870a9bed8a0190c092d91f3842118579e0ed0ce722d525c",
+            "hash": "sha256:f0cafe474d79d769f397f2e8839c642ca3ef1a0ce38b6e9f82ed9e49bccf84f6",
             "provider": "php-forge/baseline",
             "source": "metadata/.editorconfig",
             "mode": "append"
