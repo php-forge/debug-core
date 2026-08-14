@@ -14,7 +14,6 @@ use function chmod;
 use function count;
 use function fclose;
 use function file_get_contents;
-use function flock;
 use function glob;
 use function is_dir;
 use function is_file;
@@ -38,7 +37,7 @@ final class SnapshotStore
     private const string LOCK_FILE = 'index.lock';
 
     /**
-     * Tracks whether the data directory has already been created and swept of pre-JSON `*.data` files.
+     * Tracks whether the data directory has already been created.
      */
     private bool $initialized = false;
 
@@ -56,7 +55,7 @@ final class SnapshotStore
     ) {}
 
     /**
-     * Removes stored manifests, snapshots, temporary files, and legacy data files.
+     * Removes stored manifests, snapshots, and temporary files.
      *
      * Usage example:
      *
@@ -67,26 +66,30 @@ final class SnapshotStore
      */
     public function clear(): void
     {
-        $patterns = [
-            "{$this->path}/*.data",
-            "{$this->path}/*.json",
-            "{$this->path}/.debug-*",
-            $this->lockFile(),
-        ];
+        $this->initialize();
 
-        foreach ($patterns as $pattern) {
-            $files = glob($pattern);
+        $lock = $this->acquireLock(LOCK_EX);
 
-            foreach ($files === false ? [] : $files as $file) {
-                if (is_file($file) && !@unlink($file)) {
-                    throw new StorageException(
-                        "Unable to remove debug data file: {$file}",
-                    );
+        try {
+            $patterns = [
+                "{$this->path}/*.json",
+                "{$this->path}/.debug-*",
+            ];
+
+            foreach ($patterns as $pattern) {
+                $files = glob($pattern);
+
+                foreach ($files === false ? [] : $files as $file) {
+                    if (is_file($file) && !@unlink($file)) {
+                        throw new StorageException(
+                            "Unable to remove debug data file: {$file}",
+                        );
+                    }
                 }
             }
+        } finally {
+            fclose($lock);
         }
-
-        $this->initialized = false;
     }
 
     /**
@@ -103,20 +106,19 @@ final class SnapshotStore
      */
     public function loadManifest(): array
     {
-        $lock = @fopen($this->lockFile(), 'c+');
-
-        if ($lock === false) {
+        try {
+            $lock = $this->acquireLock(LOCK_SH);
+        } catch (StorageException) {
             return [];
         }
 
-        @flock($lock, LOCK_SH);
+        try {
+            $manifest = $this->readManifestFile();
 
-        $manifest = $this->readManifestFile();
-
-        @flock($lock, LOCK_UN);
-        fclose($lock);
-
-        return $manifest === null ? [] : array_reverse($manifest->entries, true);
+            return $manifest === null ? [] : array_reverse($manifest->entries, true);
+        } finally {
+            fclose($lock);
+        }
     }
 
     /**
@@ -153,71 +155,96 @@ final class SnapshotStore
     }
 
     /**
-     * Adds a summary and returns entries evicted by history garbage collection.
+     * Writes a snapshot, updates the manifest, and runs garbage collection under one exclusive lock.
      *
      * Usage example:
      *
      * ```php
-     * $removed = $store->updateManifest($summary, 50);
+     * $removed = $store->writeSnapshot($snapshot, 50);
      * ```
      *
-     * @param RequestSummary $summary Request metadata to add or replace.
-     * @param int $historySize Maximum number of entries retained after garbage collection.
+     * @param DebugSnapshot $snapshot Snapshot to persist.
+     * @param int $historySize Maximum number of retained entries.
      *
      * @return list<RequestSummary> Entries evicted from the manifest.
      */
-    public function updateManifest(RequestSummary $summary, int $historySize): array
+    public function writeSnapshot(DebugSnapshot $snapshot, int $historySize): array
     {
+        self::assertValidHistorySize($historySize);
+
+        $tag = $snapshot->summary->tag;
+
+        $snapshotFile = $this->snapshotFile($tag);
+        $snapshotJson = self::encode($snapshot);
+
         $this->initialize();
 
-        $lock = @fopen($this->lockFile(), 'c+');
-
-        if ($lock === false) {
-            throw new StorageException(
-                "Unable to open debug data lock file: {$this->lockFile()}",
-            );
-        }
-
-        @flock($lock, LOCK_EX);
+        $lock = $this->acquireLock(LOCK_EX);
 
         try {
             $manifest = $this->readManifestFile();
+
             $resetStorage = $manifest === null && is_file($this->indexFile());
             $entries = $manifest instanceof Manifest ? $manifest->entries : [];
-            $entries[$summary->tag] = $summary;
+            $entries[$tag] = $snapshot->summary;
 
             $removed = $this->collectGarbage($entries, $historySize);
 
+            $this->atomicWrite($snapshotFile, $snapshotJson);
             $this->atomicWrite($this->indexFile(), self::encode(new Manifest($entries)));
 
             if ($resetStorage) {
                 $this->removeStaleSnapshots($entries);
             }
+
+            return $removed;
         } finally {
-            @flock($lock, LOCK_UN);
             fclose($lock);
         }
-
-        return $removed;
     }
 
     /**
-     * Writes a snapshot atomically under a validated tag.
+     * Opens and acquires a checked filesystem lock.
      *
-     * Usage example:
+     * @param int<0, 7> $operation Lock operation passed to {@see flock()}.
      *
-     * ```php
-     * $store->writeSnapshot('request-1', $snapshot);
-     * ```
-     *
-     * @param string $tag Snapshot tag.
-     * @param DebugSnapshot $snapshot Snapshot to persist.
+     * @return resource Acquired lock handle.
      */
-    public function writeSnapshot(string $tag, DebugSnapshot $snapshot): void
+    private function acquireLock(int $operation): mixed
     {
-        $this->initialize();
+        $lockFile = $this->lockFile();
 
-        $this->atomicWrite($this->snapshotFile($tag), self::encode($snapshot));
+        $lock = @fopen($lockFile, 'c+');
+
+        if ($lock === false) {
+            throw new StorageException(
+                "Unable to open debug data lock file: {$lockFile}",
+            );
+        }
+
+        if (!@flock($lock, $operation)) {
+            fclose($lock);
+
+            throw new StorageException(
+                "Unable to acquire debug data lock: {$lockFile}",
+            );
+        }
+
+        return $lock;
+    }
+
+    /**
+     * Validates a manifest history size.
+     *
+     * @param int $historySize Maximum number of retained entries.
+     */
+    private static function assertValidHistorySize(int $historySize): void
+    {
+        if ($historySize < 0) {
+            throw new StorageException(
+                "Invalid debug history size: {$historySize}",
+            );
+        }
     }
 
     /**
@@ -258,7 +285,7 @@ final class SnapshotStore
     }
 
     /**
-     * Removes expired manifest entries and their snapshots.
+     * Removes expired manifest entries.
      *
      * @param array<string, RequestSummary> $entries Manifest entries, updated in place.
      * @param int $historySize Maximum number of retained entries.
@@ -330,7 +357,7 @@ final class SnapshotStore
     }
 
     /**
-     * Creates the storage directory and removes legacy serialized files once per store instance.
+     * Creates the storage directory once per store instance.
      */
     private function initialize(): void
     {
@@ -342,12 +369,6 @@ final class SnapshotStore
             throw new StorageException(
                 "Unable to create debug data directory: {$this->path}",
             );
-        }
-
-        $legacy = glob($this->path . '/*.data');
-
-        foreach ($legacy === false ? [] : $legacy as $file) {
-            @unlink($file);
         }
 
         $this->initialized = true;
@@ -362,7 +383,7 @@ final class SnapshotStore
      */
     private static function isValidTag(string $tag): bool
     {
-        return $tag !== '' && preg_match('/\A[A-Za-z0-9._-]+\z/D', $tag) === 1;
+        return $tag !== 'index' && $tag !== '' && preg_match('/\A[A-Za-z0-9._-]+\z/D', $tag) === 1;
     }
 
     /**

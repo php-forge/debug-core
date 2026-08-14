@@ -24,11 +24,7 @@ final class SnapshotStoreTest extends TestCase
 
         $summary = $this->summary('current', 1_700_000_000.0);
 
-        $store->writeSnapshot(
-            'current',
-            new DebugSnapshot($summary, [], []),
-        );
-        $store->updateManifest($summary, 10);
+        $store->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
         $store->clear();
 
         self::assertNull(
@@ -39,6 +35,10 @@ final class SnapshotStoreTest extends TestCase
             [],
             $store->loadManifest(),
             'Cleared manifest must contain no entries.',
+        );
+        self::assertFileExists(
+            "{$this->path}/index.lock",
+            'Clear must preserve the shared lock file.',
         );
     }
 
@@ -57,7 +57,9 @@ final class SnapshotStoreTest extends TestCase
     {
         $store = $this->store();
 
-        $store->updateManifest($this->summary('tag-1', 1_700_000_000.0), 10);
+        $summary = $this->summary('tag-1', 1_700_000_000.0);
+
+        $store->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
 
         MockerState::addCondition('PHPForge\\Debug\\Storage', 'fopen', [], false, true);
 
@@ -65,6 +67,22 @@ final class SnapshotStoreTest extends TestCase
             [],
             $store->loadManifest(),
             'An unopenable lock file must yield an empty manifest instead of throwing.',
+        );
+    }
+
+    public function testLoadManifestReturnsNothingWhenTheSharedLockCannotBeAcquired(): void
+    {
+        $store = $this->store();
+        $summary = $this->summary('tag-1', 1_700_000_000.0);
+
+        $store->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+
+        MockerState::addCondition('PHPForge\\Debug\\Storage', 'flock', [], false, true);
+
+        self::assertSame(
+            [],
+            $store->loadManifest(),
+            'An unavailable shared lock must yield an empty manifest.',
         );
     }
 
@@ -90,15 +108,16 @@ final class SnapshotStoreTest extends TestCase
     {
         $store = $this->store();
 
-        $store->writeSnapshot(
-            'kept',
-            new DebugSnapshot($this->summary('kept', 1_700_000_000.0), [], []),
-        );
+        $kept = $this->summary('kept', 1_700_000_000.0);
+
+        $store->writeSnapshot(new DebugSnapshot($kept, [], []), 2);
 
         file_put_contents("{$this->path}/orphan.json", '{}');
 
         for ($index = 0; $index < 13; $index++) {
-            $store->updateManifest($this->summary("tag-{$index}", 1_700_000_000.0 + $index), 2);
+            $summary = $this->summary("tag-{$index}", 1_700_000_000.0 + $index);
+
+            $store->writeSnapshot(new DebugSnapshot($summary, [], []), 2);
         }
 
         self::assertFileDoesNotExist(
@@ -113,12 +132,8 @@ final class SnapshotStoreTest extends TestCase
         $older = $this->summary('older', 1_700_000_000.0);
         $newer = $this->summary('newer', 1_700_000_001.0);
 
-        $store->writeSnapshot(
-            'newer',
-            new DebugSnapshot($newer, ['panel' => ['value' => 1]], []),
-        );
-        $store->updateManifest($older, 10);
-        $store->updateManifest($newer, 10);
+        $store->writeSnapshot(new DebugSnapshot($older, [], []), 10);
+        $store->writeSnapshot(new DebugSnapshot($newer, ['panel' => ['value' => 1]], []), 10);
 
         $snapshot = $store->readSnapshot('newer');
 
@@ -143,6 +158,39 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    public function testThrowStorageExceptionForNegativeHistorySize(): void
+    {
+        $store = $this->store();
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            'Invalid debug history size: -1',
+        );
+
+        try {
+            $summary = $this->summary('current', 1_700_000_000.0);
+
+            $store->writeSnapshot(new DebugSnapshot($summary, [], []), -1);
+        } finally {
+            self::assertDirectoryDoesNotExist(
+                $this->path,
+                'Invalid history size must be rejected before storage initialization.',
+            );
+        }
+    }
+
+    public function testThrowStorageExceptionForReservedManifestTag(): void
+    {
+        $summary = $this->summary('index', 1_700_000_000.0);
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            'Invalid debug snapshot tag: index',
+        );
+
+        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+    }
+
     public function testThrowStorageExceptionForTagThatEscapesTheStorageDirectory(): void
     {
         $summary = $this->summary('../outside', 1_700_000_000.0);
@@ -152,10 +200,31 @@ final class SnapshotStoreTest extends TestCase
             'Invalid debug snapshot tag: ../outside',
         );
 
-        $this->store()->writeSnapshot(
-            '../outside',
-            new DebugSnapshot($summary, [], []),
+        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+    }
+
+    public function testThrowStorageExceptionWhenClearCannotAcquireTheExclusiveLock(): void
+    {
+        $store = $this->store();
+        $summary = $this->summary('current', 1_700_000_000.0);
+
+        $store->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+
+        MockerState::addCondition('PHPForge\\Debug\\Storage', 'flock', [], false, true);
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            'Unable to acquire debug data lock',
         );
+
+        try {
+            $store->clear();
+        } finally {
+            self::assertFileExists(
+                "{$this->path}/current.json",
+                'Failed lock acquisition must leave the snapshot intact.',
+            );
+        }
     }
 
     public function testThrowStorageExceptionWhenTheSnapshotCannotBeMovedIntoPlace(): void
@@ -167,10 +236,9 @@ final class SnapshotStoreTest extends TestCase
             'Unable to replace debug data file',
         );
 
-        $this->store()->writeSnapshot(
-            'blocked',
-            new DebugSnapshot($this->summary('blocked', 1_700_000_000.0), [], []),
-        );
+        $summary = $this->summary('blocked', 1_700_000_000.0);
+
+        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
     }
 
     public function testThrowStorageExceptionWhenTheTemporaryFileCannotBeCreated(): void
@@ -182,10 +250,9 @@ final class SnapshotStoreTest extends TestCase
             'Unable to write temporary debug data file',
         );
 
-        $this->store()->writeSnapshot(
-            'blocked',
-            new DebugSnapshot($this->summary('blocked', 1_700_000_000.0), [], []),
-        );
+        $summary = $this->summary('blocked', 1_700_000_000.0);
+
+        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
     }
 
     public function testThrowStorageExceptionWhenTheTemporaryFileCannotBeWritten(): void
@@ -197,32 +264,55 @@ final class SnapshotStoreTest extends TestCase
             'Unable to write temporary debug data file',
         );
 
-        $this->store()->writeSnapshot(
-            'blocked',
-            new DebugSnapshot($this->summary('blocked', 1_700_000_000.0), [], []),
-        );
+        $summary = $this->summary('blocked', 1_700_000_000.0);
+
+        $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
     }
 
-    public function testWritingJsonSnapshotRemovesLegacySerializedFiles(): void
+    public function testThrowStorageExceptionWhenWriteCannotAcquireTheExclusiveLock(): void
     {
-        mkdir($this->path, recursive: true);
-        file_put_contents("{$this->path}/legacy.data", 'serialized payload');
+        MockerState::addCondition('PHPForge\\Debug\\Storage', 'flock', [], false, true);
 
-        $summary = $this->summary('current', 1_700_000_000.0);
-
-        $this->store()->writeSnapshot(
-            'current',
-            new DebugSnapshot($summary, [], []),
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            'Unable to acquire debug data lock',
         );
 
-        self::assertFileDoesNotExist(
-            "{$this->path}/legacy.data",
-            'Legacy serialized file must be removed.',
+        try {
+            $summary = $this->summary('current', 1_700_000_000.0);
+
+            $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        } finally {
+            self::assertFileDoesNotExist(
+                "{$this->path}/current.json",
+                'Failed lock acquisition must not write the snapshot.',
+            );
+            self::assertFileDoesNotExist(
+                "{$this->path}/index.json",
+                'Failed lock acquisition must not write the manifest.',
+            );
+        }
+    }
+
+    public function testThrowStorageExceptionWhenWriteCannotOpenTheLockFile(): void
+    {
+        MockerState::addCondition('PHPForge\\Debug\\Storage', 'fopen', [], false, true);
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            'Unable to open debug data lock file',
         );
-        self::assertFileExists(
-            "{$this->path}/current.json",
-            'JSON snapshot file must be created.',
-        );
+
+        try {
+            $summary = $this->summary('current', 1_700_000_000.0);
+
+            $this->store()->writeSnapshot(new DebugSnapshot($summary, [], []), 10);
+        } finally {
+            self::assertFileDoesNotExist(
+                "{$this->path}/current.json",
+                'An unopenable lock file must prevent snapshot persistence.',
+            );
+        }
     }
 
     /**

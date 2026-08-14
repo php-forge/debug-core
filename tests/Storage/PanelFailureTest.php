@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Storage;
 
-use PHPForge\Debug\Storage\{ExceptionSnapshot, PanelFailure};
+use PHPForge\Debug\Storage\{ExceptionSnapshot, HydrationException, PanelFailure};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -32,9 +32,9 @@ final class PanelFailureTest extends TestCase
         );
     }
 
-    public function testThrowRuntimeExceptionForAnUnknownStage(): void
+    public function testThrowHydrationExceptionForAnUnknownStage(): void
     {
-        $this->expectException(RuntimeException::class);
+        $this->expectException(HydrationException::class);
         $this->expectExceptionMessage(
             "Invalid debug snapshot value at '\$.failures.log.stage'",
         );

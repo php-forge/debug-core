@@ -59,7 +59,7 @@ final class MockerExtension implements Extension
     {
         $mocks = [];
 
-        foreach (['file_put_contents', 'fopen', 'mkdir', 'rename', 'tempnam'] as $name) {
+        foreach (['file_put_contents', 'flock', 'fopen', 'mkdir', 'rename', 'tempnam'] as $name) {
             $mocks[] = [
                 'namespace' => 'PHPForge\Debug\Storage',
                 'name' => $name,
