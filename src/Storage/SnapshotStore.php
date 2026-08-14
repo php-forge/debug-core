@@ -383,7 +383,8 @@ final class SnapshotStore
      */
     private static function isValidTag(string $tag): bool
     {
-        return $tag !== 'index' && preg_match('/\A(?!-?(?:0|[1-9][0-9]*)\z)[A-Za-z0-9._-]+\z/D', $tag) === 1;
+        return $tag !== 'index'
+            && preg_match('/\A(?!-?(?:0|[1-9][0-9]*)\z)[A-Za-z0-9_-][A-Za-z0-9._-]*\z/D', $tag) === 1;
     }
 
     /**

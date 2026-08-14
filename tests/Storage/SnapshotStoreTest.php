@@ -245,6 +245,26 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    /**
+     * @param string $tag Leading-dot tag.
+     */
+    #[TestWith(['.'])]
+    #[TestWith(['.hidden'])]
+    public function testThrowStorageExceptionForLeadingDotTag(string $tag): void
+    {
+        $summary = $this->summary($tag, 1_700_000_000.0);
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot tag: {$tag}",
+        );
+
+        $this->store()->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
+    }
+
     public function testThrowStorageExceptionForNegativeHistorySize(): void
     {
         $store = $this->store();
