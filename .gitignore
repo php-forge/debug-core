@@ -28,7 +28,6 @@ nbproject
 
 # node_modules (if present)
 node_modules
-package-lock.json
 
 # phpstorm project (if present)
 .idea

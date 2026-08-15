@@ -8,3 +8,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.1.0 Under development
 
 - feat: add framework-agnostic debug snapshot contracts, strict JSON hydration, and filesystem persistence.
+- fix: bundle toolbar control icons and retry snapshot data while Yii3 finishes its post-response persistence.

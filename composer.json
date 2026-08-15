@@ -1,7 +1,7 @@
 {
     "name": "php-forge/debug-core",
     "type": "library",
-    "description": "Framework-agnostic contracts, snapshots, and storage primitives for PHP debug adapters.",
+    "description": "Framework-agnostic snapshots, storage, and frontend for PHP debug adapters.",
     "keywords": [
         "debug",
         "debugger",
