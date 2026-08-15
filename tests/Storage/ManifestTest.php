@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+namespace PHPForge\Debug\Tests\Storage;
+
+use PHPForge\Debug\Storage\{DebugSnapshot, HydrationException, Manifest, RequestSummary};
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Unit tests for {@see Manifest} covering the versioned index and the tag/key consistency guard.
+ */
+#[Group('storage')]
+final class ManifestTest extends TestCase
+{
+    public function testRoundTripsEntriesKeyedByTag(): void
+    {
+        $manifest = new Manifest(['tag-1' => $this->summary('tag-1')]);
+
+        $restored = Manifest::fromArray($manifest->jsonSerialize());
+
+        self::assertSame(
+            ['tag-1'],
+            array_keys($restored->entries),
+            'Entries must stay keyed by tag.',
+        );
+    }
+
+    public function testThrowHydrationExceptionWhenAnEntryTagDoesNotMatchItsKey(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '\$.entries.tag-1.tag'",
+        );
+
+        Manifest::fromArray(
+            [
+                'version' => DebugSnapshot::VERSION,
+                'entries' => ['tag-1' => $this->summary('other-tag')->jsonSerialize()],
+            ],
+        );
+    }
+
+    public function testThrowHydrationExceptionWhenTheStorageVersionDoesNotMatch(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '\$.version': expected storage version " . DebugSnapshot::VERSION . '.',
+        );
+
+        Manifest::fromArray(['version' => DebugSnapshot::VERSION - 1, 'entries' => []]);
+    }
+
+    /**
+     * Creates representative request metadata for a manifest entry.
+     *
+     * @param string $tag Request tag.
+     *
+     * @return RequestSummary Representative manifest entry.
+     */
+    private function summary(string $tag): RequestSummary
+    {
+        return new RequestSummary(
+            tag: $tag,
+            url: 'https://example.test/',
+            ajax: false,
+            method: 'GET',
+            ip: '127.0.0.1',
+            time: 1_700_000_000.0,
+            statusCode: 200,
+            sqlCount: 0,
+            excessiveCallersCount: 0,
+            mailCount: 0,
+            mailFiles: [],
+            processingTime: null,
+            peakMemory: null,
+        );
+    }
+}
