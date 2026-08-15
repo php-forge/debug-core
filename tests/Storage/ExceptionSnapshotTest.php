@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Storage;
 
 use LogicException;
-use PHPForge\Debug\Storage\{ExceptionSnapshot, HydrationException};
+use PHPForge\Debug\Storage\{DebugArray, ExceptionSnapshot, HydrationException};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -118,10 +118,44 @@ final class ExceptionSnapshotTest extends TestCase
 
         ExceptionSnapshot::fromArray($payload);
     }
-    public function testTraceRetainsClassMetadataAndPlainArguments(): void
+
+    public function testTraceProjectsArgumentsToPlainValues(): void
+    {
+        $snapshot = new ExceptionSnapshot(
+            class: RuntimeException::class,
+            message: 'failure',
+            code: 0,
+            file: __FILE__,
+            line: __LINE__,
+            trace: [
+                [
+                    'namespace' => __NAMESPACE__,
+                    'short_class' => 'ExceptionSnapshotTest',
+                    'class' => self::class,
+                    'type' => '->',
+                    'function' => 'fixture',
+                    'file' => __FILE__,
+                    'line' => __LINE__,
+                    'args' => DebugArray::capture(['trace argument']),
+                ],
+            ],
+            toString: 'failure',
+            previous: null,
+        );
+
+        $frame = $snapshot->getTrace()[0] ?? self::fail('Expected the deterministic fixture frame.');
+
+        self::assertSame(
+            ['trace argument'],
+            $frame['args'] ?? null,
+            'Frame arguments must be restored to plain values.',
+        );
+    }
+
+    public function testTraceRetainsClassMetadata(): void
     {
         try {
-            $this->throwFromTrace('trace argument');
+            $this->throwFromTrace();
         } catch (RuntimeException $throwable) {
             $frame = ExceptionSnapshot::fromThrowable($throwable)
                 ->getTrace()[0] ?? self::fail('Expected the throwing method in the captured trace.');
@@ -142,20 +176,13 @@ final class ExceptionSnapshotTest extends TestCase
             $frame['short_class'] ?? null,
             'Short class must exclude its namespace.',
         );
-        self::assertSame(
-            ['trace argument'],
-            $frame['args'] ?? null,
-            'Frame arguments must be restored to plain values.',
-        );
     }
 
     /**
-     * Throws from a class method so trace metadata and arguments can be verified.
-     *
-     * @param string $argument Trace argument.
+     * Throws from a class method so trace metadata can be verified.
      */
-    private function throwFromTrace(string $argument): never
+    private function throwFromTrace(): never
     {
-        throw new RuntimeException($argument);
+        throw new RuntimeException('trace fixture');
     }
 }
