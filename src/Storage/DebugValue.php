@@ -252,7 +252,6 @@ final readonly class DebugValue implements JsonSerializable
     private function displayLabel(): string
     {
         return match ($this->type) {
-            'special-float' => (string) $this->value,
             'binary' => sprintf(
                 '(binary: base64 %s)',
                 base64_encode(is_string($this->value) ? $this->value : ''),
@@ -430,7 +429,7 @@ final readonly class DebugValue implements JsonSerializable
                     'special-float',
                     match (true) {
                         is_nan($value) => 'NAN',
-                        $value > 0 => 'INF',
+                        $value === INF => 'INF',
                         default => '-INF',
                     },
                 );

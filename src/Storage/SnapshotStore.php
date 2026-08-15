@@ -37,11 +37,6 @@ final class SnapshotStore
     private const string LOCK_FILE = 'index.lock';
 
     /**
-     * Tracks whether the data directory has already been created.
-     */
-    private bool $initialized = false;
-
-    /**
      * Creates a filesystem store with directory and file permission modes.
      *
      * @param string $path Storage directory path.
@@ -69,27 +64,24 @@ final class SnapshotStore
         $this->initialize();
 
         $lock = $this->acquireLock(LOCK_EX);
+        $patterns = [
+            "{$this->path}/*.json",
+            "{$this->path}/.debug-*",
+        ];
 
-        try {
-            $patterns = [
-                "{$this->path}/*.json",
-                "{$this->path}/.debug-*",
-            ];
+        foreach ($patterns as $pattern) {
+            $files = glob($pattern);
 
-            foreach ($patterns as $pattern) {
-                $files = glob($pattern);
-
-                foreach ($files === false ? [] : $files as $file) {
-                    if (is_file($file) && !@unlink($file)) {
-                        throw new StorageException(
-                            "Unable to remove debug data file: {$file}",
-                        );
-                    }
+            foreach ($files === false ? [] : $files as $file) {
+                if (is_file($file) && !@unlink($file)) {
+                    throw new StorageException(
+                        "Unable to remove debug data file: {$file}",
+                    );
                 }
             }
-        } finally {
-            fclose($lock);
         }
+
+        fclose($lock);
     }
 
     /**
@@ -184,19 +176,23 @@ final class SnapshotStore
         try {
             $manifest = $this->readManifestFile();
 
-            $resetStorage = $manifest === null && is_file($this->indexFile());
+            $removeStaleSnapshots = $manifest === null;
             $entries = $manifest instanceof Manifest ? $manifest->entries : [];
             $entries[$tag] = $snapshot->summary;
 
             $removed = $this->collectGarbage($entries, $historySize);
 
-            if ($historySize > 0) {
+            if ($entries !== []) {
                 $this->atomicWrite($snapshotFile, $snapshotJson);
+            }
+
+            if ($removed !== []) {
+                $removeStaleSnapshots = true;
             }
 
             $this->atomicWrite($this->indexFile(), self::encode(new Manifest($entries)));
 
-            if ($removed !== [] || $resetStorage) {
+            if ($removeStaleSnapshots) {
                 $this->removeStaleSnapshots($entries);
             }
 
@@ -329,7 +325,7 @@ final class SnapshotStore
      */
     private static function decode(string $json): mixed
     {
-        return json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        return json_decode($json, true, flags: JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -357,21 +353,19 @@ final class SnapshotStore
     }
 
     /**
-     * Creates the storage directory once per store instance.
+     * Creates the storage directory when it does not exist.
      */
     private function initialize(): void
     {
-        if ($this->initialized) {
-            return;
+        if (!is_dir($this->path)) {
+            @mkdir($this->path, $this->dirMode, true);
         }
 
-        if (!is_dir($this->path) && !@mkdir($this->path, $this->dirMode, true) && !is_dir($this->path)) {
+        if (!is_dir($this->path)) {
             throw new StorageException(
                 "Unable to create debug data directory: {$this->path}",
             );
         }
-
-        $this->initialized = true;
     }
 
     /**
@@ -384,7 +378,7 @@ final class SnapshotStore
     private static function isValidTag(string $tag): bool
     {
         return $tag !== 'index'
-            && preg_match('/\A(?!-?(?:0|[1-9][0-9]*)\z)[A-Za-z0-9_-][A-Za-z0-9._-]*\z/D', $tag) === 1;
+            && preg_match('/\A(?!-?(?:0|[1-9][0-9]*)\z)[A-Za-z0-9_-][A-Za-z0-9._-]*\z/', $tag) === 1;
     }
 
     /**

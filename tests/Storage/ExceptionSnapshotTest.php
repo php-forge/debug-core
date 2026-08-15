@@ -118,4 +118,44 @@ final class ExceptionSnapshotTest extends TestCase
 
         ExceptionSnapshot::fromArray($payload);
     }
+    public function testTraceRetainsClassMetadataAndPlainArguments(): void
+    {
+        try {
+            $this->throwFromTrace('trace argument');
+        } catch (RuntimeException $throwable) {
+            $frame = ExceptionSnapshot::fromThrowable($throwable)
+                ->getTrace()[0] ?? self::fail('Expected the throwing method in the captured trace.');
+        }
+
+        self::assertSame(
+            __NAMESPACE__,
+            $frame['namespace'] ?? null,
+            'Frame namespace must exclude the class name.',
+        );
+        self::assertSame(
+            self::class,
+            $frame['class'] ?? null,
+            'Frame class must retain its fully qualified name.',
+        );
+        self::assertSame(
+            'ExceptionSnapshotTest',
+            $frame['short_class'] ?? null,
+            'Short class must exclude its namespace.',
+        );
+        self::assertSame(
+            ['trace argument'],
+            $frame['args'] ?? null,
+            'Frame arguments must be restored to plain values.',
+        );
+    }
+
+    /**
+     * Throws from a class method so trace metadata and arguments can be verified.
+     *
+     * @param string $argument Trace argument.
+     */
+    private function throwFromTrace(string $argument): never
+    {
+        throw new RuntimeException($argument);
+    }
 }

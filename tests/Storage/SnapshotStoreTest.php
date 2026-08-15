@@ -18,6 +18,20 @@ final class SnapshotStoreTest extends TestCase
 {
     private string $path = '';
 
+    public function testClearInitializesEmptyStorage(): void
+    {
+        $this->store()->clear();
+
+        self::assertDirectoryExists(
+            $this->path,
+            'Storage directory must be created before locking.',
+        );
+        self::assertFileExists(
+            "{$this->path}/index.lock",
+            'Empty storage must retain its lock file.',
+        );
+    }
+
     public function testClearRemovesSnapshotsAndManifest(): void
     {
         $store = $this->store();
@@ -43,6 +57,38 @@ final class SnapshotStoreTest extends TestCase
         self::assertFileExists(
             "{$this->path}/index.lock",
             'Clear must preserve the shared lock file.',
+        );
+    }
+
+    public function testGarbageCollectionReportsEveryRemovedSummary(): void
+    {
+        $store = $this->store();
+
+        for ($index = 0; $index < 3; $index++) {
+            $summary = $this->summary("tag-{$index}", 1_700_000_000.0 + $index);
+
+            $store->writeSnapshot(
+                new DebugSnapshot($summary, [], []),
+                10,
+            );
+        }
+
+        $current = $this->summary('current', 1_700_000_003.0);
+
+        $removed = $store->writeSnapshot(
+            new DebugSnapshot($current, [], []),
+            1,
+        );
+
+        self::assertSame(
+            ['tag-0', 'tag-1', 'tag-2'],
+            array_map(static fn(RequestSummary $summary): string => $summary->tag, $removed),
+            'Eviction report must include every discarded summary.',
+        );
+        self::assertSame(
+            ['current'],
+            array_keys($store->loadManifest()),
+            'Manifest must retain only the newest request.',
         );
     }
 
@@ -105,6 +151,35 @@ final class SnapshotStoreTest extends TestCase
         self::assertNull(
             $this->store()->readSnapshot('invalid'),
             'Malformed JSON must read as `null`.',
+        );
+    }
+
+    public function testInvalidManifestResetsStaleSnapshots(): void
+    {
+        mkdir($this->path, recursive: true);
+
+        file_put_contents("{$this->path}/index.json", '{invalid');
+        file_put_contents("{$this->path}/stale.json", '{}');
+
+        $summary = $this->summary('current', 1_700_000_000.0);
+
+        $this->store()->writeSnapshot(
+            new DebugSnapshot($summary, [], []),
+            10,
+        );
+
+        self::assertFileDoesNotExist(
+            "{$this->path}/stale.json",
+            'Reset manifest must discard snapshots it cannot reference.',
+        );
+        self::assertFileExists(
+            "{$this->path}/current.json",
+            'Replacement snapshot must remain stored.',
+        );
+        self::assertSame(
+            ['current'],
+            array_keys($this->store()->loadManifest()),
+            'Replacement manifest must contain the new request.',
         );
     }
 
@@ -203,6 +278,14 @@ final class SnapshotStoreTest extends TestCase
         self::assertFileDoesNotExist(
             "{$this->path}/orphan.json",
             'A snapshot with no manifest entry must be swept.',
+        );
+        self::assertFileExists(
+            "{$this->path}/tag-12.json",
+            'Newest retained snapshot must survive stale-file cleanup.',
+        );
+        self::assertFileExists(
+            "{$this->path}/tag-11.json",
+            'Second retained snapshot must survive stale-file cleanup.',
         );
     }
 
@@ -370,6 +453,22 @@ final class SnapshotStoreTest extends TestCase
                 "{$this->path}/current.json",
                 'Failed lock acquisition must leave the snapshot intact.',
             );
+        }
+    }
+
+    public function testThrowStorageExceptionWhenStoragePathCannotBeCreated(): void
+    {
+        file_put_contents($this->path, 'not a directory');
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            "Unable to create debug data directory: {$this->path}",
+        );
+
+        try {
+            $this->store()->clear();
+        } finally {
+            unlink($this->path);
         }
     }
 

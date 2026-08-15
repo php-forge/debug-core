@@ -120,7 +120,7 @@ trait ArrayPayloadSnapshot
      *
      * @return array<array-key, mixed> Payload restored to plain PHP values.
      */
-    protected function values(): array
+    private function values(): array
     {
         return $this->payload->values();
     }

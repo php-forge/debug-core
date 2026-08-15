@@ -165,6 +165,54 @@ final class DebugValueTest extends TestCase
         );
     }
 
+    public function testCapturePreservesTheArrayDepthBoundary(): void
+    {
+        $atLimit = 'leaf';
+        $beyondLimit = 'leaf';
+
+        for ($depth = 0; $depth < 10; $depth++) {
+            $atLimit = [$atLimit];
+            $beyondLimit = [$beyondLimit];
+        }
+
+        $beyondLimit = [$beyondLimit];
+
+        self::assertStringNotContainsString(
+            'DEEP NESTED VALUE',
+            $this->flatten(DebugValue::capture($atLimit)),
+            'Depth ten must remain capturable.',
+        );
+        self::assertStringContainsString(
+            'DEEP NESTED VALUE',
+            $this->flatten(DebugValue::capture($beyondLimit)),
+            'Depth eleven must be truncated.',
+        );
+    }
+
+    public function testCapturePreservesTheObjectDepthBoundary(): void
+    {
+        $atLimit = 'leaf';
+        $beyondLimit = 'leaf';
+
+        for ($depth = 0; $depth < 10; $depth++) {
+            $atLimit = (object) ['value' => $atLimit];
+            $beyondLimit = (object) ['value' => $beyondLimit];
+        }
+
+        $beyondLimit = (object) ['value' => $beyondLimit];
+
+        self::assertStringNotContainsString(
+            'DEEP NESTED VALUE',
+            $this->flatten(DebugValue::capture($atLimit)),
+            'Object depth ten must remain capturable.',
+        );
+        self::assertStringContainsString(
+            'DEEP NESTED VALUE',
+            $this->flatten(DebugValue::capture($beyondLimit)),
+            'Object depth eleven must be truncated.',
+        );
+    }
+
     public function testCaptureStopsTraversingObjectBeyondTheNodeLimit(): void
     {
         $object = new stdClass();
@@ -213,6 +261,34 @@ final class DebugValueTest extends TestCase
             $value->value,
             'A Stringable must be labelled with its string form.',
         );
+        self::assertSame(
+            'rendered',
+            $value->jsonSerialize()['value'] ?? null,
+            'Serialized object must retain its label.',
+        );
+    }
+
+    public function testCaptureTreatsRepeatedObjectReferencesAsIndependentBranches(): void
+    {
+        $shared = (object) ['name' => 'shared'];
+
+        $display = DebugValue::capture([$shared, $shared])
+            ->toDisplayValue();
+
+        self::assertIsArray(
+            $display,
+            'Top-level value must remain an array.',
+        );
+        self::assertSame(
+            ['__class' => stdClass::class, 'name' => 'shared'],
+            $display[0] ?? null,
+            'First branch must retain the shared object.',
+        );
+        self::assertSame(
+            ['__class' => stdClass::class, 'name' => 'shared'],
+            $display[1] ?? null,
+            'Second branch must not be mistaken for recursion.',
+        );
     }
 
     public function testCaptureTruncatesBeyondTheDepthLimit(): void
@@ -233,6 +309,7 @@ final class DebugValueTest extends TestCase
     public function testCaptureTruncatesBeyondTheNodeLimit(): void
     {
         $value = DebugValue::capture(range(1, 10_050));
+
         $entries = $value->jsonSerialize()['entries'] ?? null;
 
         self::assertIsArray(
@@ -248,6 +325,46 @@ final class DebugValueTest extends TestCase
             'SKIPPED over 10000 nodes',
             $this->flatten($value),
             'Values past the node budget must be truncated.',
+        );
+
+        $lastInBudget = $entries[9_998] ?? null;
+        $firstOutOfBudget = $entries[9_999] ?? null;
+
+        self::assertIsArray(
+            $lastInBudget,
+            'Last in-budget entry must retain its tagged structure.',
+        );
+        self::assertIsArray(
+            $firstOutOfBudget,
+            'First out-of-budget entry must retain its tagged structure.',
+        );
+        self::assertSame(
+            ['type' => 'int', 'value' => 9_999],
+            $lastInBudget['value'] ?? null,
+            'Last in-budget node must retain its value.',
+        );
+
+        $truncatedValue = $firstOutOfBudget['value'] ?? null;
+
+        self::assertIsArray(
+            $truncatedValue,
+            'Truncation marker must retain its tagged structure.',
+        );
+        self::assertSame(
+            'truncated',
+            $truncatedValue['type'] ?? null,
+            'First out-of-budget node must carry the truncation marker.',
+        );
+    }
+
+    public function testCaptureUsesTheCanonicalClosureLabel(): void
+    {
+        $value = DebugValue::capture(static fn(): bool => true);
+
+        self::assertSame(
+            '\\Closure',
+            $value->value,
+            'Closure label must retain its canonical prefix.',
         );
     }
 
@@ -400,6 +517,30 @@ final class DebugValueTest extends TestCase
         );
 
         DebugValue::fromArray(['type' => 'null', 'unexpected' => true]);
+    }
+
+    public function testToDisplayValuePreservesScalarAndDiagnosticTypes(): void
+    {
+        self::assertNull(
+            DebugValue::fromArray(['type' => 'null'])->toDisplayValue(),
+            'Null tag must project to `null`.',
+        );
+        self::assertSame(
+            1.5,
+            DebugValue::fromArray(['type' => 'float', 'value' => 1.5])->toDisplayValue(),
+            'Finite float must retain its value.',
+        );
+        self::assertSame(
+            '*LIMIT*',
+            DebugValue::fromArray(['type' => 'truncated', 'value' => '*LIMIT*', 'reason' => 'size'])->toDisplayValue(),
+            'Truncation label must remain visible.',
+        );
+        self::assertSame(
+            '*UNKNOWN*',
+            DebugValue::fromArray(['type' => 'unsupported', 'value' => '*UNKNOWN*', 'reason' => 'fixture'])
+                ->toDisplayValue(),
+            'Unsupported-value label must remain visible.',
+        );
     }
 
     /**
