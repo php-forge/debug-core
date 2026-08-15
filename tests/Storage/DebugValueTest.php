@@ -123,6 +123,66 @@ final class DebugValueTest extends TestCase
         );
     }
 
+    public function testCaptureNormalizesBinaryArrayAndObjectKeys(): void
+    {
+        $binaryKey = "\xFF";
+        $safeKey = '(binary: base64 /w==)';
+
+        $capturedArray = DebugValue::capture([$binaryKey => 'array value']);
+
+        $arrayEntries = $capturedArray->jsonSerialize()['entries'] ?? null;
+
+        self::assertIsArray(
+            $arrayEntries,
+            'Serialized array must contain tagged entries.',
+        );
+
+        $arrayEntry = $arrayEntries[0] ?? null;
+
+        self::assertIsArray(
+            $arrayEntry,
+            'First serialized array entry must retain its structure.',
+        );
+        self::assertSame(
+            $safeKey,
+            $arrayEntry['key'] ?? null,
+            'Binary array key must use a JSON-safe label.',
+        );
+        self::assertJson(
+            json_encode($capturedArray, JSON_THROW_ON_ERROR),
+            'Binary array key must not break JSON serialization.',
+        );
+
+        $object = new stdClass();
+
+        $object->{$binaryKey} = 'binary property';
+
+        $capturedObject = DebugValue::capture($object);
+
+        $objectEntries = $capturedObject->jsonSerialize()['entries'] ?? null;
+
+        self::assertIsArray(
+            $objectEntries,
+            'Serialized object must contain tagged entries.',
+        );
+
+        $objectEntry = $objectEntries[0] ?? null;
+
+        self::assertIsArray(
+            $objectEntry,
+            'First serialized object entry must retain its structure.',
+        );
+        self::assertSame(
+            $safeKey,
+            $objectEntry['key'] ?? null,
+            'Binary object key must use a JSON-safe label.',
+        );
+        self::assertJson(
+            json_encode($capturedObject, JSON_THROW_ON_ERROR),
+            'Binary object key must not break JSON serialization.',
+        );
+    }
+
     public function testCaptureNormalizesInvalidUtf8StringableLabel(): void
     {
         $value = DebugValue::capture(

@@ -289,6 +289,40 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    public function testRewrittenSnapshotBecomesNewestManifestEntry(): void
+    {
+        $store = $this->store();
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('first', 1_700_000_000.0), [], []),
+            2,
+        );
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('second', 1_700_000_001.0), [], []),
+            2,
+        );
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('first', 1_700_000_002.0), [], []),
+            2,
+        );
+
+        $removed = $store->writeSnapshot(
+            new DebugSnapshot($this->summary('third', 1_700_000_003.0), [], []),
+            2,
+        );
+
+        self::assertSame(
+            ['second'],
+            array_map(static fn(RequestSummary $summary): string => $summary->tag, $removed),
+            'Eviction must target the least recently written snapshot.',
+        );
+        self::assertSame(
+            ['third', 'first'],
+            array_keys($store->loadManifest()),
+            'Manifest order must reflect the latest write for each tag.',
+        );
+    }
+
     public function testSnapshotAndManifestRoundTripThroughJson(): void
     {
         $store = $this->store();

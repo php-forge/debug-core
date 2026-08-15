@@ -89,6 +89,29 @@ final class ExceptionSnapshotTest extends TestCase
         );
     }
 
+    public function testThrowableWhoseStringConversionFailsUsesClassAndMessage(): void
+    {
+        $throwable = new class ('conversion failure') extends RuntimeException {
+            /**
+             * Simulates a failing throwable string conversion.
+             *
+             * @return string Throwable text.
+             */
+            public function __toString(): string
+            {
+                throw new LogicException('cannot stringify');
+            }
+        };
+
+        $snapshot = ExceptionSnapshot::fromThrowable($throwable);
+
+        self::assertSame(
+            $throwable::class . ': conversion failure',
+            (string) $snapshot,
+            'A failed throwable string conversion must fall back to its class and message.',
+        );
+    }
+
     public function testThrowableWithInvalidUtf8MessageRemainsJsonSafe(): void
     {
         $snapshot = ExceptionSnapshot::fromThrowable(new RuntimeException("\xB1\x31"));

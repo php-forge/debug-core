@@ -185,6 +185,12 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
 
         $code = $throwable->getCode();
 
+        try {
+            $toString = (string) $throwable;
+        } catch (Throwable) {
+            $toString = $throwable::class . ': ' . $throwable->getMessage();
+        }
+
         return new self(
             class: Json::safeString($throwable::class),
             message: Json::safeString($throwable->getMessage()),
@@ -192,7 +198,7 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
             file: Json::safeString($throwable->getFile()),
             line: $throwable->getLine(),
             trace: $trace,
-            toString: Json::safeString((string) $throwable),
+            toString: Json::safeString($toString),
             previous: $throwable->getPrevious() !== null ? self::fromThrowable($throwable->getPrevious()) : null,
         );
     }

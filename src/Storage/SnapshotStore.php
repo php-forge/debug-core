@@ -178,6 +178,9 @@ final class SnapshotStore
 
             $removeStaleSnapshots = $manifest === null;
             $entries = $manifest instanceof Manifest ? $manifest->entries : [];
+
+            unset($entries[$tag]);
+
             $entries[$tag] = $snapshot->summary;
 
             $removed = $this->collectGarbage($entries, $historySize);

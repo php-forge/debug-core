@@ -43,7 +43,7 @@ final readonly class DebugValue implements JsonSerializable
      *
      * @param string $type Tagged value type.
      * @param bool|float|int|string|null $value Captured scalar value or display label.
-     * @param list<array{keyType: int|string, key: int|string, value: self}> $entries Captured child values.
+     * @param list<array{keyType: 'int'|'string', key: int|string, value: self}> $entries Captured child values.
      * @param string|null $className Captured object class or `null` for non-object values.
      * @param string|null $resourceType Captured resource type or `null` for non-resource values.
      * @param string|null $reason Truncation or unsupported-value reason, or `null` when not applicable.
@@ -453,7 +453,7 @@ final readonly class DebugValue implements JsonSerializable
             foreach ($value as $key => $entry) {
                 $entries[] = [
                     'keyType' => is_int($key) ? 'int' : 'string',
-                    'key' => $key,
+                    'key' => is_int($key) ? $key : Json::safeString($key),
                     'value' => self::normalize($entry, $depth + 1, $nodes, $objects),
                 ];
 
@@ -483,7 +483,7 @@ final readonly class DebugValue implements JsonSerializable
             foreach (get_object_vars($value) as $key => $entry) {
                 $entries[] = [
                     'keyType' => 'string',
-                    'key' => $key,
+                    'key' => Json::safeString((string) $key),
                     'value' => self::normalize($entry, $depth + 1, $nodes, $objects),
                 ];
 
