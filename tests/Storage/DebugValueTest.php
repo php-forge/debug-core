@@ -123,6 +123,75 @@ final class DebugValueTest extends TestCase
         );
     }
 
+    public function testCaptureNormalizesInvalidUtf8StringableLabel(): void
+    {
+        $value = DebugValue::capture(
+            new class implements Stringable {
+                /**
+                 * Returns a binary fixture label.
+                 *
+                 * @return string Binary fixture label.
+                 */
+                public function __toString(): string
+                {
+                    return "\xB1\x31";
+                }
+            },
+        );
+
+        self::assertSame(
+            '(binary: base64 sTE=)',
+            $value->value,
+            'A binary Stringable label must be represented as base64.',
+        );
+        self::assertJson(
+            json_encode($value, JSON_THROW_ON_ERROR),
+            'A binary Stringable label must remain JSON-safe.',
+        );
+    }
+
+    public function testCaptureNormalizesInvalidUtf8ThrowableMessage(): void
+    {
+        $value = DebugValue::capture(new RuntimeException("\xB1\x31"));
+
+        self::assertSame(
+            RuntimeException::class . ': (binary: base64 sTE=)',
+            $value->value,
+            'A binary throwable message must be represented as base64.',
+        );
+        self::assertJson(
+            json_encode($value, JSON_THROW_ON_ERROR),
+            'A binary throwable message must remain JSON-safe.',
+        );
+    }
+
+    public function testCaptureStopsTraversingObjectBeyondTheNodeLimit(): void
+    {
+        $object = new stdClass();
+
+        for ($index = 0; $index < 10_050; $index++) {
+            $object->{"property-{$index}"} = $index;
+        }
+
+        $value = DebugValue::capture($object);
+        $entries = $value->jsonSerialize()['entries'] ?? null;
+
+        self::assertIsArray(
+            $entries,
+            'A captured object must contain serialized entries.',
+        );
+        self::assertCount(
+            10_000,
+            $entries,
+            'Object traversal must stop after recording the node-limit marker.',
+        );
+        self::assertStringContainsString(
+            'SKIPPED over 10000 nodes',
+            $this->flatten($value),
+            'Object values past the node budget must be truncated.',
+        );
+    }
+
     public function testCaptureStringifiesAStringableObject(): void
     {
         $value = DebugValue::capture(
@@ -163,9 +232,21 @@ final class DebugValueTest extends TestCase
 
     public function testCaptureTruncatesBeyondTheNodeLimit(): void
     {
+        $value = DebugValue::capture(range(1, 10_050));
+        $entries = $value->jsonSerialize()['entries'] ?? null;
+
+        self::assertIsArray(
+            $entries,
+            'A captured array must contain serialized entries.',
+        );
+        self::assertCount(
+            10_000,
+            $entries,
+            'Traversal must stop after recording the node-limit marker.',
+        );
         self::assertStringContainsString(
             'SKIPPED over 10000 nodes',
-            $this->flatten(DebugValue::capture(range(1, 10_050))),
+            $this->flatten($value),
             'Values past the node budget must be truncated.',
         );
     }

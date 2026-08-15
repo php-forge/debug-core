@@ -89,6 +89,21 @@ final class ExceptionSnapshotTest extends TestCase
         );
     }
 
+    public function testThrowableWithInvalidUtf8MessageRemainsJsonSafe(): void
+    {
+        $snapshot = ExceptionSnapshot::fromThrowable(new RuntimeException("\xB1\x31"));
+
+        self::assertSame(
+            '(binary: base64 sTE=)',
+            $snapshot->getMessage(),
+            'A binary throwable message must be represented as base64.',
+        );
+        self::assertJson(
+            json_encode($snapshot, JSON_THROW_ON_ERROR),
+            'A binary throwable message must not break snapshot serialization.',
+        );
+    }
+
     public function testThrowHydrationExceptionForInvalidCodeType(): void
     {
         $payload = ExceptionSnapshot::fromThrowable(new RuntimeException('failure'))

@@ -172,12 +172,12 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
             $args = is_array($entry['args'] ?? null) ? $entry['args'] : [];
 
             $trace[] = [
-                'namespace' => self::namespacePart($class),
-                'short_class' => self::shortName($class),
-                'class' => $class,
-                'type' => is_string($entry['type'] ?? null) ? $entry['type'] : '',
-                'function' => $entry['function'],
-                'file' => is_string($entry['file'] ?? null) ? $entry['file'] : null,
+                'namespace' => Json::safeString(self::namespacePart($class)),
+                'short_class' => Json::safeString(self::shortName($class)),
+                'class' => Json::safeString($class),
+                'type' => Json::safeString(is_string($entry['type'] ?? null) ? $entry['type'] : ''),
+                'function' => Json::safeString($entry['function']),
+                'file' => is_string($entry['file'] ?? null) ? Json::safeString($entry['file']) : null,
                 'line' => is_int($entry['line'] ?? null) ? $entry['line'] : null,
                 'args' => DebugArray::capture($args),
             ];
@@ -186,13 +186,13 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
         $code = $throwable->getCode();
 
         return new self(
-            class: $throwable::class,
-            message: $throwable->getMessage(),
+            class: Json::safeString($throwable::class),
+            message: Json::safeString($throwable->getMessage()),
             code: $code,
-            file: $throwable->getFile(),
+            file: Json::safeString($throwable->getFile()),
             line: $throwable->getLine(),
             trace: $trace,
-            toString: (string) $throwable,
+            toString: Json::safeString((string) $throwable),
             previous: $throwable->getPrevious() !== null ? self::fromThrowable($throwable->getPrevious()) : null,
         );
     }

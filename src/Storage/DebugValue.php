@@ -457,6 +457,10 @@ final readonly class DebugValue implements JsonSerializable
                     'key' => $key,
                     'value' => self::normalize($entry, $depth + 1, $nodes, $objects),
                 ];
+
+                if ($nodes > self::MAX_NODES) {
+                    break;
+                }
             }
 
             return new self(
@@ -483,6 +487,10 @@ final readonly class DebugValue implements JsonSerializable
                     'key' => $key,
                     'value' => self::normalize($entry, $depth + 1, $nodes, $objects),
                 ];
+
+                if ($nodes > self::MAX_NODES) {
+                    break;
+                }
             }
 
             $objects->offsetUnset($value);
@@ -527,17 +535,17 @@ final readonly class DebugValue implements JsonSerializable
             $class = $value::class;
             $message = $value->getMessage();
 
-            return "{$class}: {$message}";
+            return Json::safeString($class) . ': ' . Json::safeString($message);
         }
 
         if ($value instanceof Stringable) {
             try {
-                return (string) $value;
+                return Json::safeString((string) $value);
             } catch (Throwable) {
                 // Fall through to the class name when userland string conversion fails.
             }
         }
 
-        return $value::class;
+        return Json::safeString($value::class);
     }
 }
