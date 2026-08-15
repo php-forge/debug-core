@@ -11,6 +11,7 @@ use function array_keys;
 use function array_values;
 use function is_array;
 use function is_bool;
+use function is_finite;
 use function is_float;
 use function is_int;
 use function is_string;
@@ -216,7 +217,7 @@ final readonly class Payload
             return null;
         }
 
-        if (!is_int($value) && !is_float($value)) {
+        if (!is_int($value) && (!is_float($value) || !is_finite($value))) {
             throw HydrationException::at(
                 $this->keyPath($key),
                 'a number or null',
@@ -274,7 +275,7 @@ final readonly class Payload
     {
         $value = $this->value($key);
 
-        if (!is_int($value) && !is_float($value)) {
+        if (!is_int($value) && (!is_float($value) || !is_finite($value))) {
             throw HydrationException::at(
                 $this->keyPath($key),
                 'a number',

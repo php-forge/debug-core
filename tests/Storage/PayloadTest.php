@@ -70,6 +70,26 @@ final class PayloadTest extends TestCase
         Payload::object(['flag' => 1])->bool('flag');
     }
 
+    public function testThrowHydrationExceptionForANonFiniteNullableNumber(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.duration': expected a number or null.",
+        );
+
+        Payload::object(['duration' => json_decode('-1e400', flags: JSON_THROW_ON_ERROR)])->nullableNumber('duration');
+    }
+
+    public function testThrowHydrationExceptionForANonFiniteNumber(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.time': expected a number.",
+        );
+
+        Payload::object(['time' => json_decode('1e400', flags: JSON_THROW_ON_ERROR)])->number('time');
+    }
+
     public function testThrowHydrationExceptionForANonIntegerValue(): void
     {
         $this->expectException(HydrationException::class);
