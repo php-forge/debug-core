@@ -15,11 +15,16 @@ composer require php-forge/debug-core
 
 ## Architecture
 
-The core package owns portable debug data, persistence, the full-page stylesheet and runtime, shared fonts and icons,
-the self-contained toolbar Web Component, and a framework-neutral page shell. It does not depend on Yii2, Yii3, an
-application container, or a framework request lifecycle. Adapters collect framework data, convert it into immutable
-snapshots, expose toolbar data endpoints, publish or embed the shared assets, and keep only their framework-specific
-panels and normalization logic.
+The core package owns portable debug data, persistence, the frontend source and compiled files, shared fonts and icons,
+the toolbar data contract, and framework-neutral PHP templates composed with the agnostic `ui-awesome/html` helpers.
+It does not register assets, render responses, inject toolbar markup, or depend on Yii2, Yii3, an application
+container, a view implementation, or a framework request lifecycle.
+
+Adapters collect framework data, convert it into immutable snapshots, expose toolbar data endpoints, define and
+publish assets through their framework, and render the shared templates with their framework view component. They also
+own toolbar response injection. Routes, controllers or actions, URL generation, panel metadata, and framework-specific
+panel views remain in each adapter. Yii adapters resolve the packaged frontend at
+`@vendor/php-forge/debug-core/resources/assets` and configure their own alias for `resources/views`.
 
 Current adapters:
 
