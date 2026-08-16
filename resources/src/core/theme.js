@@ -102,3 +102,42 @@ export function addThemeToDebugUrl(url, theme) {
 
   return parsed.href;
 }
+
+export function preserveThemeInLinks(theme) {
+  const links = document.querySelectorAll("a[href]");
+  const forms = document.querySelectorAll("form[action]");
+  let input;
+
+  for (let i = 0; i < links.length; i++) {
+    const href = links[i].getAttribute("href");
+
+    if (href && !href.startsWith("#") && !href.startsWith("javascript:")) {
+      links[i].setAttribute("href", addThemeToDebugUrl(href, theme));
+    }
+  }
+
+  for (let i = 0; i < forms.length; i++) {
+    forms[i].setAttribute(
+      "action",
+      addThemeToDebugUrl(
+        forms[i].getAttribute("action") || window.location.href,
+        theme,
+      ),
+    );
+
+    if ((forms[i].getAttribute("method") || "get").toLowerCase() !== "get") {
+      continue;
+    }
+
+    input = forms[i].querySelector(`input[name="${THEME_PARAM}"]`);
+
+    if (!input) {
+      input = document.createElement("input");
+      input.type = "hidden";
+      input.name = THEME_PARAM;
+      forms[i].appendChild(input);
+    }
+
+    input.value = theme;
+  }
+}

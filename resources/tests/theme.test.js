@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   addThemeToDebugUrl,
   normalizeTheme,
+  preserveThemeInLinks,
   readStoredTheme,
   writeTheme,
 } from "../src/core/theme.js";
@@ -49,6 +50,65 @@ test("addThemeToDebugUrl updates same-origin debug routes only", () => {
     addThemeToDebugUrl("https://external.test/debug/default/view", "dark"),
     "https://external.test/debug/default/view",
   );
+});
+
+test("preserveThemeInLinks restamps navigation with the latest theme", () => {
+  installBrowserGlobals();
+
+  function element(attributes) {
+    const values = new Map(Object.entries(attributes));
+
+    return {
+      getAttribute(name) {
+        return values.get(name) ?? null;
+      },
+      setAttribute(name, value) {
+        values.set(name, value);
+      },
+    };
+  }
+
+  const debugLink = element({ href: "/debug/view?tag=request-1" });
+  const externalLink = element({ href: "https://external.test/debug/view" });
+  const getForm = element({ action: "/debug/search", method: "get" });
+  const postForm = element({ action: "/debug/update", method: "post" });
+  let themeInput = null;
+
+  getForm.querySelector = () => themeInput;
+  getForm.appendChild = (input) => {
+    themeInput = input;
+  };
+  postForm.querySelector = () => null;
+  postForm.appendChild = () => {
+    assert.fail("POST forms must not receive a query parameter input.");
+  };
+
+  document.querySelectorAll = (selector) =>
+    selector === "a[href]" ? [debugLink, externalLink] : [getForm, postForm];
+  document.createElement = () => ({});
+
+  preserveThemeInLinks("dark");
+  preserveThemeInLinks("light");
+
+  assert.equal(
+    debugLink.getAttribute("href"),
+    "https://example.test/debug/view?tag=request-1&yii_debug_theme=light",
+  );
+  assert.equal(
+    externalLink.getAttribute("href"),
+    "https://external.test/debug/view",
+  );
+  assert.equal(
+    getForm.getAttribute("action"),
+    "https://example.test/debug/search?yii_debug_theme=light",
+  );
+  assert.equal(
+    postForm.getAttribute("action"),
+    "https://example.test/debug/update?yii_debug_theme=light",
+  );
+  assert.equal(themeInput.type, "hidden");
+  assert.equal(themeInput.name, "yii_debug_theme");
+  assert.equal(themeInput.value, "light");
 });
 
 test("writeTheme persists the normalized theme", () => {

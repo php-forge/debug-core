@@ -5,8 +5,8 @@ import "../panels/db.js";
 import "../panels/phpinfo-search.js";
 import "../panels/userswitch.js";
 import {
-  addThemeToDebugUrl,
   normalizeTheme,
+  preserveThemeInLinks,
   readStoredTheme,
   readThemeCookie,
   THEME_PARAM,
@@ -77,43 +77,6 @@ import {
     return theme;
   }
 
-  function preserveThemeInLinks(theme) {
-    var links = document.querySelectorAll("a[href]");
-    var forms = document.querySelectorAll("form[action]");
-    var i;
-    var input;
-
-    for (i = 0; i < links.length; i++) {
-      var href = links[i].getAttribute("href");
-      if (href && href.charAt(0) !== "#" && href.indexOf("javascript:") !== 0) {
-        links[i].setAttribute("href", addThemeToDebugUrl(href, theme));
-      }
-    }
-
-    for (i = 0; i < forms.length; i++) {
-      forms[i].setAttribute(
-        "action",
-        addThemeToDebugUrl(
-          forms[i].getAttribute("action") || window.location.href,
-          theme,
-        ),
-      );
-
-      if ((forms[i].getAttribute("method") || "get").toLowerCase() !== "get") {
-        continue;
-      }
-
-      input = forms[i].querySelector('input[name="' + THEME_PARAM + '"]');
-      if (!input) {
-        input = document.createElement("input");
-        input.type = "hidden";
-        input.name = THEME_PARAM;
-        forms[i].appendChild(input);
-      }
-      input.value = theme;
-    }
-  }
-
   function bindThemeToggle() {
     var button = document.querySelector("[data-yii-debug-theme-toggle]");
 
@@ -133,6 +96,7 @@ import {
       document.documentElement.setAttribute("data-yii-debug-theme", next);
       button.setAttribute("data-current-theme", next);
       writeTheme(next);
+      preserveThemeInLinks(next);
 
       if (icon) {
         icon.innerHTML =
