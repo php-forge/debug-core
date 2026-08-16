@@ -30,8 +30,35 @@ globalThis.document = {
     return toolbar;
   },
 };
-globalThis.XMLHttpRequest = function XMLHttpRequest() {};
+globalThis.XMLHttpRequest = function XMLHttpRequest() {
+  this.listeners = new Map();
+  this.headers = {};
+};
 globalThis.XMLHttpRequest.prototype.open = function open() {};
+globalThis.XMLHttpRequest.prototype.addEventListener =
+  function addEventListener(type, listener) {
+    var listeners = this.listeners.get(type) || new Set();
+
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  };
+globalThis.XMLHttpRequest.prototype.removeEventListener =
+  function removeEventListener(type, listener) {
+    var listeners = this.listeners.get(type);
+
+    if (listeners) {
+      listeners.delete(listener);
+    }
+  };
+globalThis.XMLHttpRequest.prototype.dispatch = function dispatch(type) {
+  var listeners = this.listeners.get(type) || [];
+
+  Array.from(listeners).forEach((listener) => listener());
+};
+globalThis.XMLHttpRequest.prototype.getResponseHeader =
+  function getResponseHeader(name) {
+    return this.headers[name] || null;
+  };
 
 const { requestStack } = await import("../src/toolbar/state.js");
 const { trackRequests } = await import("../src/toolbar/messaging.js");
@@ -70,4 +97,47 @@ test("fetch tracking supports URL-bearing request polyfills", async () => {
     assert.equal(item.loading, false);
     assert.equal(item.statusCode, 200);
   });
+});
+
+test("XHR tracking detaches completed listeners before instance reuse", () => {
+  var startIndex = requestStack.length;
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/first");
+  xhr.readyState = 4;
+  xhr.status = 201;
+  xhr.headers = {
+    "X-Debug-Duration": "10",
+    "X-Debug-Tag": "first-tag",
+    "X-Debug-Link": "/debug/first",
+  };
+  xhr.dispatch("readystatechange");
+
+  var first = requestStack[startIndex];
+
+  assert.equal(xhr.listeners.get("readystatechange").size, 0);
+  assert.equal(first.statusCode, 201);
+  assert.equal(first.profile, "first-tag");
+
+  xhr.open("POST", "/api/second");
+  xhr.readyState = 4;
+  xhr.status = 202;
+  xhr.headers = {
+    "X-Debug-Duration": "20",
+    "X-Debug-Tag": "second-tag",
+    "X-Debug-Link": "/debug/second",
+  };
+  xhr.dispatch("readystatechange");
+
+  var second = requestStack[startIndex + 1];
+
+  assert.equal(xhr.listeners.get("readystatechange").size, 0);
+  assert.equal(first.statusCode, 201);
+  assert.equal(first.duration, "10");
+  assert.equal(first.profile, "first-tag");
+  assert.equal(first.profilerUrl, "/debug/first");
+  assert.equal(second.statusCode, 202);
+  assert.equal(second.duration, "20");
+  assert.equal(second.profile, "second-tag");
+  assert.equal(second.profilerUrl, "/debug/second");
 });

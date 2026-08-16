@@ -91,23 +91,27 @@ function trackXhr() {
       if (requestStack.length > requestStackLimit) {
         requestStack.splice(0, requestStack.length - requestStackLimit);
       }
-      xhr.addEventListener(
-        "readystatechange",
-        function () {
-          if (xhr.readyState === 4) {
-            item.duration =
-              xhr.getResponseHeader("X-Debug-Duration") ||
-              new Date() - item.start;
-            item.loading = false;
-            item.statusCode = xhr.status;
-            item.error = xhr.status < 200 || xhr.status >= 400;
-            item.profile = xhr.getResponseHeader("X-Debug-Tag");
-            item.profilerUrl = xhr.getResponseHeader("X-Debug-Link");
-            notifyAjaxChange();
-          }
-        },
-        false,
-      );
+      var handleReadyStateChange = function () {
+        if (xhr.readyState !== 4) {
+          return;
+        }
+
+        xhr.removeEventListener(
+          "readystatechange",
+          handleReadyStateChange,
+          false,
+        );
+        item.duration =
+          xhr.getResponseHeader("X-Debug-Duration") || new Date() - item.start;
+        item.loading = false;
+        item.statusCode = xhr.status;
+        item.error = xhr.status < 200 || xhr.status >= 400;
+        item.profile = xhr.getResponseHeader("X-Debug-Tag");
+        item.profilerUrl = xhr.getResponseHeader("X-Debug-Link");
+        notifyAjaxChange();
+      };
+
+      xhr.addEventListener("readystatechange", handleReadyStateChange, false);
       notifyAjaxChange();
     }
 

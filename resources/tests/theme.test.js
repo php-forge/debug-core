@@ -72,6 +72,11 @@ test("preserveThemeInLinks restamps navigation with the latest theme", () => {
   const externalLink = element({ href: "https://external.test/debug/view" });
   const getForm = element({ action: "/debug/search", method: "get" });
   const postForm = element({ action: "/debug/update", method: "post" });
+  const siteGetForm = element({ action: "/site/search", method: "get" });
+  const externalGetForm = element({
+    action: "https://external.test/debug/search",
+    method: "get",
+  });
   let themeInput = null;
 
   getForm.querySelector = () => themeInput;
@@ -82,9 +87,17 @@ test("preserveThemeInLinks restamps navigation with the latest theme", () => {
   postForm.appendChild = () => {
     assert.fail("POST forms must not receive a query parameter input.");
   };
+  [siteGetForm, externalGetForm].forEach((form) => {
+    form.querySelector = () => null;
+    form.appendChild = () => {
+      assert.fail("Unrelated GET forms must not receive a debug theme input.");
+    };
+  });
 
   document.querySelectorAll = (selector) =>
-    selector === "a[href]" ? [debugLink, externalLink] : [getForm, postForm];
+    selector === "a[href]"
+      ? [debugLink, externalLink]
+      : [getForm, postForm, siteGetForm, externalGetForm];
   document.createElement = () => ({});
 
   preserveThemeInLinks("dark");
@@ -105,6 +118,11 @@ test("preserveThemeInLinks restamps navigation with the latest theme", () => {
   assert.equal(
     postForm.getAttribute("action"),
     "https://example.test/debug/update?yii_debug_theme=light",
+  );
+  assert.equal(siteGetForm.getAttribute("action"), "/site/search");
+  assert.equal(
+    externalGetForm.getAttribute("action"),
+    "https://external.test/debug/search",
   );
   assert.equal(themeInput.type, "hidden");
   assert.equal(themeInput.name, "yii_debug_theme");

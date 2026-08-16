@@ -69,22 +69,17 @@ export function writeTheme(theme) {
   }
 }
 
-export function addThemeToDebugUrl(url, theme) {
-  const normalized = normalizeTheme(theme);
+function parseDebugUrl(url) {
   let parsed;
-
-  if (!normalized) {
-    return url;
-  }
 
   try {
     parsed = new URL(url, window.location.href);
   } catch {
-    return url;
+    return null;
   }
 
   if (parsed.origin !== window.location.origin) {
-    return url;
+    return null;
   }
 
   const route = parsed.searchParams.get("r") || "";
@@ -95,6 +90,22 @@ export function addThemeToDebugUrl(url, theme) {
     !route.startsWith("debug/") &&
     !route.startsWith("debug%2F")
   ) {
+    return null;
+  }
+
+  return parsed;
+}
+
+export function addThemeToDebugUrl(url, theme) {
+  const normalized = normalizeTheme(theme);
+
+  if (!normalized) {
+    return url;
+  }
+
+  const parsed = parseDebugUrl(url);
+
+  if (!parsed) {
     return url;
   }
 
@@ -117,15 +128,15 @@ export function preserveThemeInLinks(theme) {
   }
 
   for (let i = 0; i < forms.length; i++) {
-    forms[i].setAttribute(
-      "action",
-      addThemeToDebugUrl(
-        forms[i].getAttribute("action") || window.location.href,
-        theme,
-      ),
-    );
+    const action = forms[i].getAttribute("action") || window.location.href;
+    const isDebugAction = parseDebugUrl(action) !== null;
 
-    if ((forms[i].getAttribute("method") || "get").toLowerCase() !== "get") {
+    forms[i].setAttribute("action", addThemeToDebugUrl(action, theme));
+
+    if (
+      !isDebugAction ||
+      (forms[i].getAttribute("method") || "get").toLowerCase() !== "get"
+    ) {
       continue;
     }
 
