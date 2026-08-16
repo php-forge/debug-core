@@ -675,8 +675,8 @@ YiiDebugToolbar.prototype.renderBrand = function () {
 };
 
 /*
- * Mirrors `Vocabulary::statusClass()` / `Vocabulary::verb()` in
- * `src/helpers/Vocabulary.php` — keep both sides in sync.
+ * Mirrors `Vocabulary::verb()` in `src/Helper/Vocabulary.php` — keep both sides
+ * in sync.
  */
 function ajaxStatusBadgeClass(request) {
   if (request.loading) {

@@ -19,6 +19,8 @@ final class EmptyState
     /**
      * Renders the empty-state card: headline followed by the explanatory body elements.
      *
+     * Body values are trusted markup assembled by debug adapters; callers must encode untrusted data before passing it.
+     *
      * Usage example:
      * ```php
      * use UIAwesome\Html\Flow\P;
@@ -30,7 +32,7 @@ final class EmptyState
      * ```
      *
      * @param string $headline Card headline describing the empty capture.
-     * @param string|Stringable ...$body Explanatory body elements rendered after the headline.
+     * @param string|Stringable ...$body Trusted explanatory body markup rendered after the headline.
      *
      * @return string Empty-state card markup.
      */

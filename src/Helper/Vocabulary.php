@@ -9,8 +9,8 @@ use function strtoupper;
 /**
  * Maps HTTP methods, status codes, and SQL statement types to the shared semantic hue vocabulary.
  *
- * The client-side mirrors in `resources/src/core/history-cursor.js` and `resources/src/toolbar/element.js` must stay
- * synchronized with these maps.
+ * The HTTP method mapping in `verb()` must stay synchronized with `resources/src/core/history-cursor.js` and
+ * `resources/src/toolbar/element.js`.
  */
 final class Vocabulary
 {
