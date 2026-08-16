@@ -25,10 +25,16 @@ import { builtinIconUrl } from "./icons.js";
 import {
   isToolbarLoadCurrent,
   resolveToolbarLoadGeneration,
+  resolveToolbarLoadRollback,
+  toolbarDataUrlForTag,
   toolbarRetryDelay,
 } from "./loading.js";
 import { renderPhpBrand } from "./brand.js";
-import { toolbarItemTag, toolbarPanelContainerTag } from "./panel.js";
+import {
+  renderAjaxProfileLink,
+  toolbarItemTag,
+  toolbarPanelContainerTag,
+} from "./panel.js";
 import { normalizeToolbarPosition, toolbarDrawerHeight } from "./position.js";
 
 /**
@@ -48,6 +54,9 @@ export function YiiDebugToolbar() {
   self.expanded = readStorageItem(storageKey) === "1";
   self.drawerOpen = false;
   self.resizing = false;
+  self.currentTag = null;
+  self.lastLoadedTag = null;
+  self.lastLoadedUrl = null;
   self.loadGeneration = 0;
   self.boundPointerMove = self.onPointerMove.bind(self);
   self.boundPointerUp = self.onPointerUp.bind(self);
@@ -399,12 +408,19 @@ YiiDebugToolbar.prototype.followTag = function (tag) {
 
   var previousUrl = url;
   var previousTag = this.currentTag;
+  var nextUrl = toolbarDataUrlForTag(
+    url,
+    previousTag || (this.data && this.data.tag),
+    tag,
+    window.location.href,
+  );
+
+  if (!nextUrl || sameUrl(url, nextUrl)) {
+    return;
+  }
 
   this.currentTag = tag;
-  this.setAttribute(
-    "data-url",
-    url.replace(/([?&]tag=)[^&]+/, "$1" + encodeURIComponent(tag)),
-  );
+  this.setAttribute("data-url", nextUrl);
   this.load(function (ok) {
     if (ok) {
       return;
@@ -415,8 +431,21 @@ YiiDebugToolbar.prototype.followTag = function (tag) {
      * 500, etc.). Roll back so the toolbar keeps showing the last good data
      * instead of leaving the user with a broken state.
      */
-    this.currentTag = previousTag;
-    this.setAttribute("data-url", previousUrl);
+    var rollback = resolveToolbarLoadRollback(
+      this.lastLoadedUrl,
+      this.lastLoadedTag,
+      previousUrl,
+      previousTag,
+    );
+
+    this.currentTag = rollback.tag;
+    this.setAttribute("data-url", rollback.url);
+
+    if (rollback.reload) {
+      this.load();
+    } else {
+      this.render();
+    }
   });
 };
 
@@ -511,6 +540,10 @@ YiiDebugToolbar.prototype.load = function (done, attempt, generation) {
       notify(false);
       return;
     }
+
+    self.currentTag = self.data && self.data.tag ? self.data.tag : null;
+    self.lastLoadedTag = self.currentTag;
+    self.lastLoadedUrl = url;
 
     self.render();
     self.dispatchAttachedEvent();
@@ -709,13 +742,11 @@ YiiDebugToolbar.prototype.renderAjaxPanel = function () {
   });
 
   recent.forEach(function (request) {
-    var profile = request.profilerUrl
-      ? '<button type="button" class="ajax-link" data-debug-url="' +
-        escapeHtml(request.profilerUrl) +
-        '">' +
-        escapeHtml(request.profile || "profile") +
-        "</button>"
-      : "n/a";
+    var profile = renderAjaxProfileLink(
+      request.profile,
+      request.profilerUrl,
+      escapeHtml,
+    );
 
     rows +=
       '<tr><td><span class="' +

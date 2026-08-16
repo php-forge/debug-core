@@ -6,9 +6,12 @@ import { builtinIconUrl } from "../src/toolbar/icons.js";
 import {
   isToolbarLoadCurrent,
   resolveToolbarLoadGeneration,
+  resolveToolbarLoadRollback,
+  toolbarDataUrlForTag,
   toolbarRetryDelay,
 } from "../src/toolbar/loading.js";
 import {
+  renderAjaxProfileLink,
   toolbarItemTag,
   toolbarPanelContainerTag,
 } from "../src/toolbar/panel.js";
@@ -44,6 +47,84 @@ test("toolbar load generations reject stale responses and retries", () => {
   );
 });
 
+test("toolbar load rollback prefers the last successful snapshot", () => {
+  assert.deepEqual(
+    resolveToolbarLoadRollback(
+      "/debug/toolbar?tag=loaded",
+      "loaded",
+      "/debug/toolbar?tag=pending-a",
+      "pending-a",
+    ),
+    {
+      url: "/debug/toolbar?tag=loaded",
+      tag: "loaded",
+      reload: false,
+    },
+  );
+  assert.deepEqual(
+    resolveToolbarLoadRollback(
+      null,
+      null,
+      "/debug/toolbar?tag=pending-a",
+      "pending-a",
+    ),
+    {
+      url: "/debug/toolbar?tag=pending-a",
+      tag: "pending-a",
+      reload: true,
+    },
+  );
+});
+
+test("toolbar data URLs follow tags across query and pretty-path routes", () => {
+  var baseUrl = "https://example.test/app";
+
+  assert.equal(
+    toolbarDataUrlForTag(
+      "/debug/toolbar?tag=request-1&panel=summary",
+      "request-1",
+      "request-2",
+      baseUrl,
+    ),
+    "https://example.test/debug/toolbar?tag=request-2&panel=summary",
+  );
+  assert.equal(
+    toolbarDataUrlForTag(
+      "/debug/toolbar/request-1?panel=summary",
+      "request-1",
+      "request-2",
+      baseUrl,
+    ),
+    "https://example.test/debug/toolbar/request-2?panel=summary",
+  );
+  assert.equal(
+    toolbarDataUrlForTag(
+      "/debug/toolbar?panel=summary",
+      null,
+      "request-2",
+      baseUrl,
+    ),
+    "https://example.test/debug/toolbar?panel=summary&tag=request-2",
+  );
+});
+
+test("toolbar data URL resolution rejects unusable inputs", () => {
+  assert.equal(toolbarDataUrlForTag("", "request-1", "request-2", ""), null);
+  assert.equal(
+    toolbarDataUrlForTag("/debug/toolbar", "request-1", "", ""),
+    null,
+  );
+  assert.equal(
+    toolbarDataUrlForTag(
+      "https://[invalid",
+      "request-1",
+      "request-2",
+      "https://example.test/",
+    ),
+    null,
+  );
+});
+
 test("toolbar item links remain focusable without nested interactive elements", () => {
   var itemOnlyPanel = { items: [{ url: "/debug/request" }], url: null };
   var panelAndItemLinks = {
@@ -56,6 +137,19 @@ test("toolbar item links remain focusable without nested interactive elements", 
   assert.equal(toolbarPanelContainerTag(panelAndItemLinks), "div");
   assert.equal(toolbarPanelContainerTag({ items: [], url: "/debug" }), "a");
   assert.equal(toolbarItemTag({ url: null }), "span");
+});
+
+test("AJAX profile URLs render as native links", () => {
+  var html = renderAjaxProfileLink(
+    "request-profile",
+    "/debug/view?tag=request-profile",
+    String,
+  );
+
+  assert.match(html, /^<a class="ajax-link"/);
+  assert.match(html, /href="\/debug\/view\?tag=request-profile"/);
+  assert.match(html, /data-debug-url="\/debug\/view\?tag=request-profile"/);
+  assert.equal(renderAjaxProfileLink(null, null, String), "n/a");
 });
 
 test("normalizeToolbarPosition honors top and the legacy upper alias", () => {

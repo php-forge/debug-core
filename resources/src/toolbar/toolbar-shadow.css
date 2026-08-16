@@ -540,6 +540,7 @@
   color: var(--yii-debug-panel-link);
   background: transparent;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .empty {
