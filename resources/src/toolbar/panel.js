@@ -22,6 +22,16 @@ export function renderAjaxProfileLink(profile, profileUrl, escape) {
   );
 }
 
+export function renderToolbarLinkAttributes(url, nativeUrl, escape) {
+  if (!url) {
+    return "";
+  }
+
+  return (
+    ' href="' + escape(nativeUrl) + '" data-debug-url="' + escape(url) + '"'
+  );
+}
+
 export function toolbarPanelContainerTag(panel) {
   return panel && panel.url && !hasToolbarItemLink(panel.items) ? "a" : "div";
 }

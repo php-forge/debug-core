@@ -32,6 +32,7 @@ import {
 import { renderPhpBrand, renderYiiBrand } from "./brand.js";
 import {
   renderAjaxProfileLink,
+  renderToolbarLinkAttributes,
   shouldOpenToolbarDrawer,
   toolbarItemTag,
   toolbarPanelContainerTag,
@@ -854,13 +855,11 @@ YiiDebugToolbar.prototype.renderPanel = function (panel) {
   items.forEach(function (item) {
     var status = item.status || "default";
     var itemElement = toolbarItemTag(item);
-    var itemUrl = item.url
-      ? ' href="' +
-        escapeHtml(item.url) +
-        '" data-debug-url="' +
-        escapeHtml(item.url) +
-        '"'
-      : "";
+    var itemUrl = renderToolbarLinkAttributes(
+      item.url,
+      item.url ? this.withTheme(item.url) : "",
+      escapeHtml,
+    );
     var itemTitle = item.title ? ' title="' + escapeHtml(item.title) + '"' : "";
     var metricClass =
       item.url && sameUrl(item.url, this.activeUrl) ? " metric-active" : "";
@@ -896,15 +895,17 @@ YiiDebugToolbar.prototype.renderPanel = function (panel) {
     (hasTitle
       ? '<span class="panel-title">' + escapeHtml(rawTitle) + "</span>"
       : "");
-  var panelUrl = panel.url ? escapeHtml(panel.url) : "";
+  var panelLinkAttributes = renderToolbarLinkAttributes(
+    panel.url,
+    panel.url ? this.withTheme(panel.url) : "",
+    escapeHtml,
+  );
 
   if (panel.url && panelElement !== "a") {
     panelLabel =
-      '<a class="panel-link" href="' +
-      panelUrl +
-      '" data-debug-url="' +
-      panelUrl +
-      '" aria-label="' +
+      '<a class="panel-link"' +
+      panelLinkAttributes +
+      ' aria-label="' +
       escapeHtml(attrTitle) +
       '">' +
       panelLabel +
@@ -913,7 +914,7 @@ YiiDebugToolbar.prototype.renderPanel = function (panel) {
 
   var panelAttributes =
     panelElement === "a"
-      ? ' href="' + panelUrl + '" data-debug-url="' + panelUrl + '"'
+      ? panelLinkAttributes
       : ' role="group" aria-label="' + escapeHtml(attrTitle) + '"';
 
   return (

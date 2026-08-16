@@ -12,6 +12,7 @@ import {
 } from "../src/toolbar/loading.js";
 import {
   renderAjaxProfileLink,
+  renderToolbarLinkAttributes,
   shouldOpenToolbarDrawer,
   toolbarItemTag,
   toolbarPanelContainerTag,
@@ -138,6 +139,18 @@ test("toolbar item links remain focusable without nested interactive elements", 
   assert.equal(toolbarPanelContainerTag(panelAndItemLinks), "div");
   assert.equal(toolbarPanelContainerTag({ items: [], url: "/debug" }), "a");
   assert.equal(toolbarItemTag({ url: null }), "span");
+});
+
+test("toolbar native links carry the active theme without changing drawer URLs", () => {
+  assert.equal(
+    renderToolbarLinkAttributes(
+      "/debug/request?tag=1",
+      "/debug/request?tag=1&yii_debug_theme=dark",
+      String,
+    ),
+    ' href="/debug/request?tag=1&yii_debug_theme=dark" data-debug-url="/debug/request?tag=1"',
+  );
+  assert.equal(renderToolbarLinkAttributes(null, null, String), "");
 });
 
 test("toolbar drawer preserves native modified-click navigation", () => {
