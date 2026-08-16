@@ -73,7 +73,7 @@ export function ajax(url, settings) {
       return;
     }
 
-    if (xhr.status === 200) {
+    if (xhr.status >= 200 && xhr.status < 300) {
       succeed();
     } else {
       fail();

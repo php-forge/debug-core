@@ -85,6 +85,36 @@ test("ajax preserves object settings and encodes POST requests", () => {
   assert.equal(successes, 1);
 });
 
+test("ajax treats every 2xx response as successful", () => {
+  var request;
+
+  globalThis.XMLHttpRequest = function XMLHttpRequest() {
+    request = this;
+  };
+  globalThis.XMLHttpRequest.prototype.open = function () {};
+  globalThis.XMLHttpRequest.prototype.setRequestHeader = function () {};
+  globalThis.XMLHttpRequest.prototype.send = function () {};
+
+  [199, 200, 201, 204, 299, 300].forEach(function (status) {
+    var result = "";
+
+    ajax("https://example.test/debug/action", {
+      success() {
+        result = "success";
+      },
+      error() {
+        result = "error";
+      },
+    });
+
+    request.readyState = 4;
+    request.status = status;
+    request.onreadystatechange();
+
+    assert.equal(result, status >= 200 && status < 300 ? "success" : "error");
+  });
+});
+
 test("ajax reports a timeout once and uses the default timeout", () => {
   var request;
   var errors = 0;
