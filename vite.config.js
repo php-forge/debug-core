@@ -13,7 +13,7 @@ export default defineConfig({
     cssCodeSplit: true,
     target: "es2022",
     minify: "oxc",
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         debug: resolve(here, "resources/src/core/debug.js"),
         toolbar: resolve(here, "resources/src/toolbar/index.js"),

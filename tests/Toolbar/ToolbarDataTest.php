@@ -8,6 +8,8 @@ use PHPForge\Debug\Toolbar\{ToolbarData, ToolbarItem, ToolbarPanel};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+use function current;
+
 /**
  * Unit tests for {@see ToolbarData} serializing portable toolbar panels and metrics.
  *

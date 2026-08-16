@@ -55,15 +55,15 @@ $hero = Div::tag()
 $summary = Header::tag()
     ->class('yii-debug-grid-summary')
     ->html(
-        Span::tag()->html(Strong::tag()->content($method), 'Method'),
+        Span::tag()->html(Strong::tag()->content($method), ' Method'),
         Span::tag()->class('yii-debug-grid-summary-sep')->content('·'),
-        Span::tag()->html(Strong::tag()->content((string) $statusCode), 'Status'),
+        Span::tag()->html(Strong::tag()->content((string) $statusCode), ' Status'),
         Span::tag()->class('yii-debug-grid-summary-sep')->content('·'),
-        Span::tag()->html(Strong::tag()->content($duration), 'Duration'),
+        Span::tag()->html(Strong::tag()->content($duration), ' Duration'),
         Span::tag()->class('yii-debug-grid-summary-sep')->content('·'),
-        Span::tag()->html(Strong::tag()->content($memory), 'Peak memory'),
+        Span::tag()->html(Strong::tag()->content($memory), ' Peak memory'),
         Span::tag()->class('yii-debug-grid-summary-sep')->content('·'),
-        Span::tag()->html(Strong::tag()->content($clientIp), 'Client IP'),
+        Span::tag()->html(Strong::tag()->content($clientIp), ' Client IP'),
     );
 $failureCallout = $failure === null
     ? ''
