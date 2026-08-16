@@ -28,6 +28,7 @@ import {
   toolbarRetryDelay,
 } from "./loading.js";
 import { renderPhpBrand } from "./brand.js";
+import { toolbarItemTag, toolbarPanelContainerTag } from "./panel.js";
 import { normalizeToolbarPosition, toolbarDrawerHeight } from "./position.js";
 
 /**
@@ -825,25 +826,37 @@ YiiDebugToolbar.prototype.iconHtml = function (iconName, cls) {
 YiiDebugToolbar.prototype.renderPanel = function (panel) {
   var metrics = "";
   var items = panel.items || [];
+  var panelElement = toolbarPanelContainerTag(panel);
   var rawTitle =
     typeof panel.title === "string" ? panel.title : panel.id || "Panel";
   var hasTitle = rawTitle !== "";
   var attrTitle = hasTitle ? rawTitle : panel.id || "Panel";
-  var url = panel.url ? ' data-debug-url="' + escapeHtml(panel.url) + '"' : "";
   var panelClass = this.isPanelActive(panel) ? " panel-active" : "";
   var self = this;
 
   items.forEach(function (item) {
     var status = item.status || "default";
+    var itemElement = toolbarItemTag(item);
     var itemUrl = item.url
-      ? ' data-debug-url="' + escapeHtml(item.url) + '"'
+      ? ' href="' +
+        escapeHtml(item.url) +
+        '" data-debug-url="' +
+        escapeHtml(item.url) +
+        '"'
       : "";
     var itemTitle = item.title ? ' title="' + escapeHtml(item.title) + '"' : "";
     var metricClass =
       item.url && sameUrl(item.url, this.activeUrl) ? " metric-active" : "";
 
     metrics +=
-      '<span class="metric' + metricClass + '"' + itemUrl + itemTitle + ">";
+      "<" +
+      itemElement +
+      ' class="metric' +
+      metricClass +
+      '"' +
+      itemUrl +
+      itemTitle +
+      ">";
     if (item.icon) {
       metrics += self.iconHtml(item.icon, "metric-icon");
     } else if (item.label) {
@@ -855,25 +868,52 @@ YiiDebugToolbar.prototype.renderPanel = function (panel) {
       escapeHtml(status) +
       '">' +
       escapeHtml(item.value) +
-      "</span></span>";
+      "</span></" +
+      itemElement +
+      ">";
   }, this);
 
   var iconHtml = panel.icon ? this.iconHtml(panel.icon, "panel-icon") : "";
+  var panelLabel =
+    iconHtml +
+    (hasTitle
+      ? '<span class="panel-title">' + escapeHtml(rawTitle) + "</span>"
+      : "");
+  var panelUrl = panel.url ? escapeHtml(panel.url) : "";
+
+  if (panel.url && panelElement !== "a") {
+    panelLabel =
+      '<a class="panel-link" href="' +
+      panelUrl +
+      '" data-debug-url="' +
+      panelUrl +
+      '" aria-label="' +
+      escapeHtml(attrTitle) +
+      '">' +
+      panelLabel +
+      "</a>";
+  }
+
+  var panelAttributes =
+    panelElement === "a"
+      ? ' href="' + panelUrl + '" data-debug-url="' + panelUrl + '"'
+      : ' role="group" aria-label="' + escapeHtml(attrTitle) + '"';
 
   return (
-    '<button type="button" class="panel' +
+    "<" +
+    panelElement +
+    ' class="panel' +
     panelClass +
     '" title="' +
     escapeHtml(attrTitle) +
     '"' +
-    url +
+    panelAttributes +
     ">" +
-    iconHtml +
-    (hasTitle
-      ? '<span class="panel-title">' + escapeHtml(rawTitle) + "</span>"
-      : "") +
+    panelLabel +
     metrics +
-    "</button>"
+    "</" +
+    panelElement +
+    ">"
   );
 };
 
@@ -963,18 +1003,6 @@ YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
 
     event.preventDefault();
     event.stopPropagation();
-    self.openPanel(url);
-  });
-
-  root.addEventListener("keydown", function (event) {
-    var target = closest(event.target, "[data-debug-url]");
-    var url = target ? target.getAttribute("data-debug-url") : null;
-
-    if (!url || (event.key !== "Enter" && event.key !== " ")) {
-      return;
-    }
-
-    event.preventDefault();
     self.openPanel(url);
   });
 };

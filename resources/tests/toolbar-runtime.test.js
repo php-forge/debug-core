@@ -9,6 +9,10 @@ import {
   toolbarRetryDelay,
 } from "../src/toolbar/loading.js";
 import {
+  toolbarItemTag,
+  toolbarPanelContainerTag,
+} from "../src/toolbar/panel.js";
+import {
   normalizeToolbarPosition,
   toolbarDrawerHeight,
 } from "../src/toolbar/position.js";
@@ -38,6 +42,20 @@ test("toolbar load generations reject stale responses and retries", () => {
     resolveToolbarLoadGeneration(activeGeneration, staleGeneration),
     staleGeneration,
   );
+});
+
+test("toolbar item links remain focusable without nested interactive elements", () => {
+  var itemOnlyPanel = { items: [{ url: "/debug/request" }], url: null };
+  var panelAndItemLinks = {
+    items: [{ url: "/debug/request/status" }],
+    url: "/debug/request",
+  };
+
+  assert.equal(toolbarPanelContainerTag(itemOnlyPanel), "div");
+  assert.equal(toolbarItemTag(itemOnlyPanel.items[0]), "a");
+  assert.equal(toolbarPanelContainerTag(panelAndItemLinks), "div");
+  assert.equal(toolbarPanelContainerTag({ items: [], url: "/debug" }), "a");
+  assert.equal(toolbarItemTag({ url: null }), "span");
 });
 
 test("normalizeToolbarPosition honors top and the legacy upper alias", () => {
