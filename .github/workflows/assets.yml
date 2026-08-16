@@ -55,4 +55,9 @@ jobs:
         run: npm run build
 
       - name: Detect dist drift.
-        run: git diff --exit-code resources/assets/dist/
+        run: |
+          status="$(git status --porcelain --untracked-files=all --ignored=matching -- resources/assets/dist/)"
+          test -z "$status" || {
+            printf '%s\n' "$status"
+            exit 1
+          }

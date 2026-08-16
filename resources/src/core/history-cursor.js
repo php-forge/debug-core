@@ -20,8 +20,8 @@
   }
 
   /*
-   * Mirrors `Vocabulary::statusClass()` / `Vocabulary::verb()` in
-   * `src/helpers/Vocabulary.php` — keep both sides in sync.
+   * Keep these suffixes aligned with statusClass(), verbClass(), and the
+   * corresponding `.yii-debug-status-*` / `.yii-debug-verb-*` CSS classes.
    */
   var STATUS_CLASSES = ["2xx", "3xx", "4xx", "5xx", "none"];
   var VERBS = ["get", "post", "put", "delete", "other"];

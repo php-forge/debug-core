@@ -1,44 +1,7 @@
+import { ajax, on } from "../core/dom.js";
+
 (function () {
   "use strict";
-
-  var on = function (element, event, handler) {
-      var i;
-      if (null === element) {
-        return;
-      }
-      if (element instanceof NodeList) {
-        for (i = 0; i < element.length; i++) {
-          element[i].addEventListener(event, handler, false);
-        }
-        return;
-      }
-      if (!(element instanceof Array)) {
-        element = [element];
-      }
-      for (i in element) {
-        if (typeof element[i].addEventListener !== "function") {
-          continue;
-        }
-        element[i].addEventListener(event, handler, false);
-      }
-    },
-    ajax = function (url, settings) {
-      var xhr = new XMLHttpRequest();
-      settings = settings || {};
-      xhr.open(settings.method || "GET", url, true);
-      xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-      xhr.setRequestHeader("Accept", "text/html");
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-          if (xhr.status === 200 && settings.success) {
-            settings.success(xhr);
-          } else if (xhr.status !== 200 && settings.error) {
-            settings.error(xhr);
-          }
-        }
-      };
-      xhr.send(settings.data || "");
-    };
 
   on(
     document.querySelectorAll(".yii-debug-db-explain-toggle"),

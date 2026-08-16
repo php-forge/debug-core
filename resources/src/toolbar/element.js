@@ -47,6 +47,7 @@ export function YiiDebugToolbar() {
   self.boundThemeRefresh = self.refreshTheme.bind(self);
   self.theme = null;
   self.themeObserver = null;
+  self.themeRefreshTimer = null;
   self.systemThemeQuery = null;
   /* Decided lazily in connectedCallback once the host DOM is available. */
   self.ownsTheme = false;
@@ -87,7 +88,7 @@ YiiDebugToolbar.prototype.connectedCallback = function () {
    * the host-control cache before refreshing the active theme.
    */
   window.addEventListener("load", this.boundHostThemeRefresh, false);
-  window.setTimeout(this.boundHostThemeRefresh, 1500);
+  this.themeRefreshTimer = window.setTimeout(this.boundHostThemeRefresh, 1500);
 };
 
 YiiDebugToolbar.prototype.disconnectedCallback = function () {
@@ -116,6 +117,11 @@ YiiDebugToolbar.prototype.disconnectedCallback = function () {
   window.removeEventListener("storage", this.boundThemeRefresh, false);
   window.removeEventListener("load", this.boundInitialLoad, false);
   window.removeEventListener("load", this.boundHostThemeRefresh, false);
+
+  if (this.themeRefreshTimer !== null) {
+    window.clearTimeout(this.themeRefreshTimer);
+    this.themeRefreshTimer = null;
+  }
 
   if (this.boundThemeMessage) {
     window.removeEventListener("message", this.boundThemeMessage, false);
@@ -325,7 +331,11 @@ YiiDebugToolbar.prototype.watchTheme = function () {
    */
   if (!this.boundThemeMessage) {
     this.boundThemeMessage = function (event) {
-      var data = event && event.data;
+      if (!event || event.origin !== window.location.origin) {
+        return;
+      }
+
+      var data = event.data;
 
       if (
         !data ||
