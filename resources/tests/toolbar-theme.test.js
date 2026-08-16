@@ -74,6 +74,24 @@ test("writeThemeCookie persists the shared toolbar preference", () => {
   assert.match(document.cookie, /^yii-debug-toolbar-theme=dark;/);
 });
 
+test("host theme control candidates exclude ordinary links", () => {
+  var selector;
+
+  document.querySelectorAll = function (value) {
+    selector = value;
+
+    return [];
+  };
+
+  resetHostThemeControlCache();
+
+  assert.equal(hostHasThemeControl(), false);
+  assert.equal(
+    selector,
+    'button, [role="switch"], [role="button"], [data-theme-toggle], [data-bs-theme-toggle]',
+  );
+});
+
 test("host theme control detection stays cached until reset", () => {
   var sweeps = 0;
   var nodes = [];

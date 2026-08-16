@@ -10,3 +10,16 @@ export function toolbarRetryDelay(status, attempt) {
 
   return retryDelays[attempt];
 }
+
+export function resolveToolbarLoadGeneration(
+  activeGeneration,
+  requestGeneration,
+) {
+  return typeof requestGeneration === "number"
+    ? requestGeneration
+    : activeGeneration + 1;
+}
+
+export function isToolbarLoadCurrent(activeGeneration, requestGeneration) {
+  return activeGeneration === requestGeneration;
+}

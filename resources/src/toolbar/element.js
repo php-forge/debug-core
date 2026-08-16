@@ -22,7 +22,11 @@ import {
   writeThemeCookie,
 } from "./theme.js";
 import { builtinIconUrl } from "./icons.js";
-import { toolbarRetryDelay } from "./loading.js";
+import {
+  isToolbarLoadCurrent,
+  resolveToolbarLoadGeneration,
+  toolbarRetryDelay,
+} from "./loading.js";
 import { renderPhpBrand } from "./brand.js";
 import { normalizeToolbarPosition, toolbarDrawerHeight } from "./position.js";
 
@@ -43,6 +47,7 @@ export function YiiDebugToolbar() {
   self.expanded = readStorageItem(storageKey) === "1";
   self.drawerOpen = false;
   self.resizing = false;
+  self.loadGeneration = 0;
   self.boundPointerMove = self.onPointerMove.bind(self);
   self.boundPointerUp = self.onPointerUp.bind(self);
   self.boundInitialLoad = self.load.bind(self);
@@ -414,10 +419,23 @@ YiiDebugToolbar.prototype.followTag = function (tag) {
   });
 };
 
-YiiDebugToolbar.prototype.load = function (done, attempt) {
+YiiDebugToolbar.prototype.load = function (done, attempt, generation) {
   var self = this;
   var url = this.getAttribute("data-url");
   var retryAttempt = typeof attempt === "number" ? attempt : 0;
+  var requestGeneration = resolveToolbarLoadGeneration(
+    this.loadGeneration,
+    generation,
+  );
+
+  if (typeof generation !== "number") {
+    this.loadGeneration = requestGeneration;
+  }
+
+  if (!isToolbarLoadCurrent(this.loadGeneration, requestGeneration)) {
+    return;
+  }
+
   var notify = function (ok) {
     if (typeof done === "function") {
       done.call(self, ok);
@@ -439,12 +457,16 @@ YiiDebugToolbar.prototype.load = function (done, attempt) {
       return;
     }
 
+    if (!isToolbarLoadCurrent(self.loadGeneration, requestGeneration)) {
+      return;
+    }
+
     if (xhr.status !== 200) {
       var retryDelay = toolbarRetryDelay(xhr.status, retryAttempt);
 
       if (retryDelay !== null) {
         window.setTimeout(function () {
-          self.load(done, retryAttempt + 1);
+          self.load(done, retryAttempt + 1, requestGeneration);
         }, retryDelay);
         return;
       }

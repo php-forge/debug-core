@@ -3,7 +3,11 @@ import test from "node:test";
 
 import { renderPhpBrand } from "../src/toolbar/brand.js";
 import { builtinIconUrl } from "../src/toolbar/icons.js";
-import { toolbarRetryDelay } from "../src/toolbar/loading.js";
+import {
+  isToolbarLoadCurrent,
+  resolveToolbarLoadGeneration,
+  toolbarRetryDelay,
+} from "../src/toolbar/loading.js";
 import {
   normalizeToolbarPosition,
   toolbarDrawerHeight,
@@ -20,6 +24,20 @@ test("toolbarRetryDelay retries missing snapshots with bounded backoff", () => {
   assert.equal(toolbarRetryDelay(404, 4), 900);
   assert.equal(toolbarRetryDelay(404, 5), null);
   assert.equal(toolbarRetryDelay(500, 0), null);
+});
+
+test("toolbar load generations reject stale responses and retries", () => {
+  var activeGeneration = resolveToolbarLoadGeneration(0);
+  var staleGeneration = activeGeneration;
+
+  activeGeneration = resolveToolbarLoadGeneration(activeGeneration);
+
+  assert.equal(isToolbarLoadCurrent(activeGeneration, staleGeneration), false);
+  assert.equal(isToolbarLoadCurrent(activeGeneration, activeGeneration), true);
+  assert.equal(
+    resolveToolbarLoadGeneration(activeGeneration, staleGeneration),
+    staleGeneration,
+  );
 });
 
 test("normalizeToolbarPosition honors top and the legacy upper alias", () => {
