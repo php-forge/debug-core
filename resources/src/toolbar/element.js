@@ -1,12 +1,14 @@
 import {
   closest,
   escapeHtml,
+  readStorageItem,
   requestStack,
   sameUrl,
   storageKey,
   themeAttributeFilter,
   themeStorageKey,
   toolbars,
+  writeStorageItem,
 } from "./state.js";
 import {
   addThemeToUrl,
@@ -21,6 +23,8 @@ import {
 } from "./theme.js";
 import { builtinIconUrl } from "./icons.js";
 import { toolbarRetryDelay } from "./loading.js";
+import { renderPhpBrand } from "./brand.js";
+import { normalizeToolbarPosition, toolbarDrawerHeight } from "./position.js";
 
 /**
  * Styles injected into the toolbar's open shadow DOM. Authored in
@@ -36,8 +40,7 @@ export function YiiDebugToolbar() {
   self.data = null;
   self.ajaxRequests = requestStack;
   self.activeUrl = "";
-  self.expanded =
-    window.localStorage && localStorage.getItem(storageKey) === "1";
+  self.expanded = readStorageItem(storageKey) === "1";
   self.drawerOpen = false;
   self.resizing = false;
   self.boundPointerMove = self.onPointerMove.bind(self);
@@ -160,9 +163,7 @@ YiiDebugToolbar.prototype.detectTheme = function () {
 
   return (
     normalizeTheme(this.getAttribute("data-yii-debug-theme")) ||
-    (window.localStorage
-      ? normalizeTheme(localStorage.getItem(themeStorageKey))
-      : null) ||
+    normalizeTheme(readStorageItem(themeStorageKey)) ||
     getStorageTheme() ||
     getComputedTheme() ||
     (window.matchMedia &&
@@ -186,11 +187,7 @@ YiiDebugToolbar.prototype.toggleTheme = function () {
   /* Pin the explicit choice so `detectTheme()` keeps honoring it. */
   this.setAttribute("data-yii-debug-theme", next);
 
-  if (window.localStorage) {
-    try {
-      localStorage.setItem(themeStorageKey, next);
-    } catch (_e) {}
-  }
+  writeStorageItem(themeStorageKey, next);
 
   /**
    * Cookie is the backend's source of truth — write it so the next panel
@@ -242,14 +239,8 @@ YiiDebugToolbar.prototype.propagateThemeToHost = function (theme) {
     html.style.colorScheme = theme;
   }
 
-  if (window.localStorage) {
-    for (i = 0; i < storageKeys.length; i++) {
-      try {
-        localStorage.setItem(storageKeys[i], theme);
-      } catch (_e) {
-        /* Storage write blocked (private mode, quota) — ignore silently. */
-      }
-    }
+  for (i = 0; i < storageKeys.length; i++) {
+    writeStorageItem(storageKeys[i], theme);
   }
 };
 
@@ -272,13 +263,7 @@ YiiDebugToolbar.prototype.refreshTheme = function () {
   this.theme = theme;
   this.setAttribute("data-theme", theme);
 
-  if (window.localStorage) {
-    try {
-      localStorage.setItem(themeStorageKey, theme);
-    } catch (_e) {
-      /* Theme rendering must continue when storage is unavailable. */
-    }
-  }
+  writeStorageItem(themeStorageKey, theme);
 
   /**
    * Cookie is what the backend reads on the next debug request, so the panel
@@ -363,11 +348,7 @@ YiiDebugToolbar.prototype.watchTheme = function () {
       /* Pin the explicit choice so `detectTheme()` keeps honoring it. */
       self.setAttribute("data-yii-debug-theme", nextTheme);
 
-      if (window.localStorage) {
-        try {
-          localStorage.setItem(themeStorageKey, nextTheme);
-        } catch (_e) {}
-      }
+      writeStorageItem(themeStorageKey, nextTheme);
 
       /**
        * The flip originated inside the panel iframe; carry it to the cookie
@@ -553,6 +534,12 @@ YiiDebugToolbar.prototype.renderError = function (message) {
     "</span></div></div>";
 };
 
+YiiDebugToolbar.prototype.getPosition = function () {
+  return normalizeToolbarPosition(
+    this.getAttribute("data-position") || (this.data && this.data.position),
+  );
+};
+
 YiiDebugToolbar.prototype.render = function () {
   this.ensureShadowSkeleton();
 
@@ -562,8 +549,8 @@ YiiDebugToolbar.prototype.render = function () {
     return;
   }
 
-  var position =
-    this.getAttribute("data-position") || this.data.position || "bottom";
+  var position = this.getPosition();
+  this.setAttribute("data-position", position);
   var classes = ["toolbar", "position-" + position];
 
   if (this.expanded) {
@@ -643,22 +630,12 @@ YiiDebugToolbar.prototype.renderBrand = function () {
 
   var phpLink = "";
   if (this.data.phpVersion) {
-    var phpUrl = this.data.phpInfoUrl
-      ? escapeHtml(this.withTheme(this.data.phpInfoUrl))
-      : "#";
-    var phpTitle =
-      "PHP " + this.data.phpVersion + " — open phpinfo in a new tab";
-    phpLink =
-      '<a class="brand-link brand-link-php" href="' +
-      phpUrl +
-      '" target="_blank" rel="noopener" title="' +
-      escapeHtml(phpTitle) +
-      '">' +
-      this.iconHtml("php-alt", "panel-icon panel-icon-php") +
-      '<span class="brand-version">' +
-      escapeHtml(this.data.phpVersion) +
-      "</span>" +
-      "</a>";
+    phpLink = renderPhpBrand(
+      this.data.phpVersion,
+      this.data.phpInfoUrl ? this.withTheme(this.data.phpInfoUrl) : null,
+      this.iconHtml("php-alt", "panel-icon panel-icon-php"),
+      escapeHtml,
+    );
   }
 
   var divider = phpLink
@@ -947,7 +924,7 @@ YiiDebugToolbar.prototype.renderDrawer = function (position) {
     escapeHtml(this.withTheme(this.activeUrl)) +
     '" title="Yii debug panel"></iframe></div>';
 
-  return position === "upper" ? drawer + handle : handle + drawer;
+  return position === "top" ? drawer + handle : handle + drawer;
 };
 
 YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
@@ -1022,13 +999,7 @@ YiiDebugToolbar.prototype.bindEvents = function () {
 
 YiiDebugToolbar.prototype.toggleExpanded = function () {
   this.expanded = !this.expanded;
-  if (window.localStorage) {
-    try {
-      localStorage.setItem(storageKey, this.expanded ? "1" : "0");
-    } catch (_e) {
-      /* Toolbar rendering must continue when storage is unavailable. */
-    }
-  }
+  writeStorageItem(storageKey, this.expanded ? "1" : "0");
   if (!this.expanded) {
     this.drawerOpen = false;
   }
@@ -1043,13 +1014,7 @@ YiiDebugToolbar.prototype.openPanel = function (url) {
   this.expanded = true;
   this.drawerOpen = true;
   this.activeUrl = url;
-  if (window.localStorage) {
-    try {
-      localStorage.setItem(storageKey, "1");
-    } catch (_e) {
-      /* Panel rendering must continue when storage is unavailable. */
-    }
-  }
+  writeStorageItem(storageKey, "1");
   this.render();
 };
 
@@ -1082,20 +1047,17 @@ YiiDebugToolbar.prototype.onPointerMove = function (event) {
     return;
   }
 
-  var position =
-    this.getAttribute("data-position") || this.data.position || "bottom";
+  var position = this.getPosition();
   var drawer = this.shadowRoot.querySelector(".drawer");
   var viewportHeight =
     window.innerHeight || document.documentElement.clientHeight;
   var drawerRect = drawer ? drawer.getBoundingClientRect() : null;
-  var height =
-    drawerRect === null
-      ? position === "upper"
-        ? event.clientY
-        : viewportHeight - event.clientY
-      : position === "upper"
-        ? event.clientY - drawerRect.top
-        : drawerRect.bottom - event.clientY;
+  var height = toolbarDrawerHeight(
+    position,
+    event.clientY,
+    viewportHeight,
+    drawerRect,
+  );
 
   this.style.setProperty(
     "--yii-debug-toolbar-drawer-height",

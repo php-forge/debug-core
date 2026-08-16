@@ -1,4 +1,9 @@
-import { absoluteUrl, themeParam, themeStorageKey } from "./state.js";
+import {
+  absoluteUrl,
+  readStorageItem,
+  themeParam,
+  themeStorageKey,
+} from "./state.js";
 
 var hostControlCache;
 
@@ -84,12 +89,8 @@ export function getStorageTheme() {
   var i;
   var theme;
 
-  if (!window.localStorage) {
-    return null;
-  }
-
   for (i = 0; i < keys.length; i++) {
-    theme = normalizeTheme(localStorage.getItem(keys[i]));
+    theme = normalizeTheme(readStorageItem(keys[i]));
     if (theme) {
       return theme;
     }

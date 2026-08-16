@@ -19,11 +19,37 @@ const {
   addThemeToUrl,
   delegateThemeToHost,
   getHostThemeControl,
+  getStorageTheme,
   hostHasThemeControl,
   normalizeTheme,
   resetHostThemeControlCache,
   writeThemeCookie,
 } = await import("../src/toolbar/theme.js");
+const { readStorageItem, writeStorageItem } =
+  await import("../src/toolbar/state.js");
+
+test("storage helpers tolerate denied localStorage access", () => {
+  var storage = window.localStorage;
+
+  try {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new Error("Storage access denied.");
+      },
+    });
+
+    assert.equal(readStorageItem("yii-debug-toolbar-expanded"), null);
+    assert.equal(writeStorageItem("yii-debug-toolbar-expanded", "1"), false);
+    assert.equal(getStorageTheme(), null);
+  } finally {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: storage,
+      writable: true,
+    });
+  }
+});
 
 test("normalizeTheme accepts explicit aliases", () => {
   assert.equal(normalizeTheme("night"), "dark");

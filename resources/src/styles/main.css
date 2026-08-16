@@ -5522,6 +5522,12 @@
     padding-inline: 2px;
   }
 
+  .yii-debug-phpinfo-search-feedback:has(
+      .yii-debug-phpinfo-search-status:empty
+    ):has(.yii-debug-phpinfo-search-empty[hidden]) {
+    display: none;
+  }
+
   .yii-debug-phpinfo-search-status,
   .yii-debug-phpinfo-search-empty {
     color: var(--yii-debug-panel-muted);
@@ -5538,6 +5544,15 @@
     & + & {
       margin-top: var(--yii-debug-space-4);
     }
+  }
+
+  /**
+   * phpinfo sections already establish compact gaps through their grid and
+   * section spacing. Remove the shared disclosure margin so it does not add
+   * an extra 24px below embedded disclosure panels.
+   */
+  .yii-debug-phpinfo-section .yii-debug-disclosure {
+    margin-bottom: 0;
   }
 
   /**

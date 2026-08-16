@@ -29,6 +29,7 @@
   color: var(--yii-debug-panel-text);
 }
 
+:host([data-position="top"]),
 :host([data-position="upper"]) {
   top: 16px;
   bottom: auto;
@@ -165,6 +166,12 @@
   color: var(--yii-debug-panel-text);
   text-decoration: none;
   outline: 0;
+}
+
+.brand-static,
+.brand-static:hover {
+  background: transparent;
+  cursor: default;
 }
 
 .brand-divider {
@@ -473,7 +480,7 @@
   box-sizing: border-box;
 }
 
-.position-upper .ajax-popover {
+.position-top .ajax-popover {
   top: calc(100% + 10px);
   bottom: auto;
 }
@@ -639,7 +646,7 @@
   z-index: 1;
 }
 
-.position-upper .resize-handle {
+.position-top .resize-handle {
   margin: -3px 18px 0;
 }
 

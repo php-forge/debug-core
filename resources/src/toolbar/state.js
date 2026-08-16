@@ -33,6 +33,32 @@ export var themeAttributeFilter = [
 export var originalXhrOpen = XMLHttpRequest.prototype.open;
 export var originalFetch = window.fetch;
 
+export function readStorageItem(key) {
+  try {
+    var storage = window.localStorage;
+
+    return storage ? storage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeStorageItem(key, value) {
+  try {
+    var storage = window.localStorage;
+
+    if (!storage) {
+      return false;
+    }
+
+    storage.setItem(key, value);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function escapeHtml(value) {
   return String(value === null || typeof value === "undefined" ? "" : value)
     .replace(/&/g, "&amp;")
