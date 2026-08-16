@@ -14,9 +14,14 @@ runtime/**
 
 # Dependencies.
 vendor/**
+node_modules/**
 
-# Dependency lockfile ignored by git.
+# Dependency lockfiles.
 composer.lock
+package-lock.json
+
+# Vite-built bundles committed for package consumers.
+resources/assets/dist/**
 
 # License texts ship verbatim.
 **/LICENSE*
