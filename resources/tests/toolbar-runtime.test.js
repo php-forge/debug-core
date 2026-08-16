@@ -206,17 +206,19 @@ test("toolbar drawer preserves native modified-click navigation", () => {
   assert.equal(shouldOpenToolbarDrawer(click, null), false);
 });
 
-test("AJAX profile URLs render as native links", () => {
+test("AJAX profile URLs separate themed native and drawer navigation", () => {
   var html = renderAjaxProfileLink(
     "request-profile",
     "/debug/view?tag=request-profile",
+    "/debug/view?tag=request-profile&yii_debug_theme=dark",
     String,
   );
 
-  assert.match(html, /^<a class="ajax-link"/);
-  assert.match(html, /href="\/debug\/view\?tag=request-profile"/);
-  assert.match(html, /data-debug-url="\/debug\/view\?tag=request-profile"/);
-  assert.equal(renderAjaxProfileLink(null, null, String), "n/a");
+  assert.equal(
+    html,
+    '<a class="ajax-link" href="/debug/view?tag=request-profile&yii_debug_theme=dark" data-debug-url="/debug/view?tag=request-profile">request-profile</a>',
+  );
+  assert.equal(renderAjaxProfileLink(null, null, null, String), "n/a");
 });
 
 test("normalizeToolbarPosition honors top and the legacy upper alias", () => {

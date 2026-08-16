@@ -715,9 +715,11 @@ YiiDebugToolbar.prototype.renderAjaxPanel = function () {
   });
 
   recent.forEach(function (request) {
+    var profileUrl = request.profilerUrl;
     var profile = renderAjaxProfileLink(
       request.profile,
-      request.profilerUrl,
+      profileUrl,
+      profileUrl ? this.withTheme(profileUrl) : null,
       escapeHtml,
     );
 
@@ -743,7 +745,7 @@ YiiDebugToolbar.prototype.renderAjaxPanel = function () {
       "<td>" +
       profile +
       "</td></tr>";
-  });
+  }, this);
 
   if (rows === "") {
     rows =

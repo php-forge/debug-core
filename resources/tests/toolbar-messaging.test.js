@@ -34,7 +34,14 @@ globalThis.XMLHttpRequest = function XMLHttpRequest() {
   this.listeners = new Map();
   this.headers = {};
 };
-globalThis.XMLHttpRequest.prototype.open = function open() {};
+globalThis.XMLHttpRequest.prototype.open = function open() {
+  if (this.readyState > 1 && this.readyState < 4) {
+    this.readyState = 4;
+    this.dispatch("readystatechange");
+  }
+
+  this.readyState = 1;
+};
 globalThis.XMLHttpRequest.prototype.addEventListener =
   function addEventListener(type, listener) {
     var listeners = this.listeners.get(type) || new Set();
@@ -140,4 +147,39 @@ test("XHR tracking detaches completed listeners before instance reuse", () => {
   assert.equal(second.duration, "20");
   assert.equal(second.profile, "second-tag");
   assert.equal(second.profilerUrl, "/debug/second");
+});
+
+test("XHR tracking detaches in-flight listeners before instance reuse", () => {
+  var startIndex = requestStack.length;
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/first-in-flight");
+
+  assert.equal(xhr.listeners.get("readystatechange").size, 1);
+
+  xhr.readyState = 3;
+  xhr.open("POST", "/api/replacement");
+
+  assert.equal(xhr.listeners.get("readystatechange").size, 1);
+
+  xhr.readyState = 4;
+  xhr.status = 202;
+  xhr.headers = {
+    "X-Debug-Duration": "20",
+    "X-Debug-Tag": "replacement-tag",
+    "X-Debug-Link": "/debug/replacement",
+  };
+  xhr.dispatch("readystatechange");
+
+  var first = requestStack[startIndex];
+  var replacement = requestStack[startIndex + 1];
+
+  assert.equal(xhr.listeners.get("readystatechange").size, 0);
+  assert.equal(first.statusCode, undefined);
+  assert.equal(first.profile, undefined);
+  assert.equal(first.profilerUrl, undefined);
+  assert.equal(replacement.statusCode, 202);
+  assert.equal(replacement.duration, "20");
+  assert.equal(replacement.profile, "replacement-tag");
+  assert.equal(replacement.profilerUrl, "/debug/replacement");
 });

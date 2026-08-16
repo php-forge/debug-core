@@ -4,19 +4,15 @@ function hasToolbarItemLink(items) {
   });
 }
 
-export function renderAjaxProfileLink(profile, profileUrl, escape) {
+export function renderAjaxProfileLink(profile, profileUrl, nativeUrl, escape) {
   if (!profileUrl) {
     return "n/a";
   }
 
-  var url = escape(profileUrl);
-
   return (
-    '<a class="ajax-link" href="' +
-    url +
-    '" data-debug-url="' +
-    url +
-    '">' +
+    '<a class="ajax-link"' +
+    renderToolbarLinkAttributes(profileUrl, nativeUrl, escape) +
+    ">" +
     escape(profile || "profile") +
     "</a>"
   );

@@ -21,6 +21,19 @@ import {
  * `-Link`) so the toolbar chips can follow the most recent profiled request.
  */
 
+var xhrReadyStateListeners = new WeakMap();
+
+function detachXhrReadyStateListener(xhr) {
+  var listener = xhrReadyStateListeners.get(xhr);
+
+  if (!listener) {
+    return;
+  }
+
+  xhr.removeEventListener("readystatechange", listener, false);
+  xhrReadyStateListeners.delete(xhr);
+}
+
 function shouldTrackRequest(requestUrl) {
   if (!requestUrl) {
     return false;
@@ -78,8 +91,12 @@ function notifyAjaxChange() {
 function trackXhr() {
   XMLHttpRequest.prototype.open = function (method, url) {
     var xhr = this;
+    var trackRequest = shouldTrackRequest(url);
 
-    if (shouldTrackRequest(url)) {
+    detachXhrReadyStateListener(xhr);
+    originalXhrOpen.apply(xhr, Array.prototype.slice.call(arguments));
+
+    if (trackRequest) {
       var item = {
         loading: true,
         error: false,
@@ -96,11 +113,7 @@ function trackXhr() {
           return;
         }
 
-        xhr.removeEventListener(
-          "readystatechange",
-          handleReadyStateChange,
-          false,
-        );
+        detachXhrReadyStateListener(xhr);
         item.duration =
           xhr.getResponseHeader("X-Debug-Duration") || new Date() - item.start;
         item.loading = false;
@@ -112,10 +125,9 @@ function trackXhr() {
       };
 
       xhr.addEventListener("readystatechange", handleReadyStateChange, false);
+      xhrReadyStateListeners.set(xhr, handleReadyStateChange);
       notifyAjaxChange();
     }
-
-    originalXhrOpen.apply(xhr, Array.prototype.slice.call(arguments));
   };
 }
 
