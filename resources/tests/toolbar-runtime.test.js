@@ -22,10 +22,40 @@ import {
   toolbarDrawerHeight,
 } from "../src/toolbar/position.js";
 
-test("builtinIconUrl provides self-contained toolbar control icons", () => {
-  assert.match(builtinIconUrl("sun"), /^data:image\/svg\+xml,/);
-  assert.match(builtinIconUrl("external-link"), /^data:image\/svg\+xml,/);
-  assert.equal(builtinIconUrl("request"), "");
+test("builtinIconUrl provides self-contained shared toolbar icons", () => {
+  var iconNames = [
+    "ajax",
+    "asset",
+    "chevron-left",
+    "chevron-right",
+    "clock",
+    "close",
+    "config",
+    "db",
+    "dots",
+    "dump",
+    "events",
+    "external-link",
+    "identity",
+    "inertia",
+    "logs",
+    "mail",
+    "moon",
+    "php-alt",
+    "profiling",
+    "queue",
+    "request",
+    "router",
+    "security",
+    "sun",
+    "timeline",
+    "user",
+  ];
+
+  iconNames.forEach(function (iconName) {
+    assert.match(builtinIconUrl(iconName), /^data:image\/svg\+xml,/);
+  });
+  assert.equal(builtinIconUrl("adapter-specific"), "");
 });
 
 test("toolbarRetryDelay retries missing snapshots with bounded backoff", () => {

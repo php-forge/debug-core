@@ -10,7 +10,6 @@ use UIAwesome\Html\Helper\Attributes;
  * @var string $position Initial toolbar position.
  * @var list<string> $skipUrls Same-origin URLs excluded from AJAX tracking.
  */
-
 $skipUrlsJson = $skipUrls === []
     ? null
     : json_encode($skipUrls, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
@@ -21,7 +20,6 @@ $attributes = Attributes::render(
         'data-skip-urls' => $skipUrlsJson,
         'data-position' => $position,
         'data-height' => $height,
-        'style' => 'display:none',
     ],
 );
 ?>

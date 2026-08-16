@@ -62,7 +62,6 @@ export function YiiDebugToolbar() {
   self.loadGeneration = 0;
   self.boundPointerMove = self.onPointerMove.bind(self);
   self.boundPointerUp = self.onPointerUp.bind(self);
-  self.boundInitialLoad = self.load.bind(self);
   self.boundHostThemeRefresh = self.refreshHostThemeControl.bind(self);
   self.boundThemeRefresh = self.refreshTheme.bind(self);
   self.theme = null;
@@ -88,18 +87,8 @@ YiiDebugToolbar.prototype.connectedCallback = function () {
   this.ownsTheme = !hostHasThemeControl();
   this.refreshTheme();
   this.watchTheme();
-  this.style.display = "block";
 
-  /**
-   * Yii3 persists collector data after emitting the response. Waiting for the
-   * page load event avoids requesting the snapshot while `AfterEmit` is still
-   * flushing it from another worker.
-   */
-  if (document.readyState === "complete") {
-    this.load();
-  } else {
-    window.addEventListener("load", this.boundInitialLoad, false);
-  }
+  this.load();
 
   /**
    * SPA hosts (Vue/Inertia/React) mount their theme switcher AFTER this
@@ -135,7 +124,6 @@ YiiDebugToolbar.prototype.disconnectedCallback = function () {
   }
 
   window.removeEventListener("storage", this.boundThemeRefresh, false);
-  window.removeEventListener("load", this.boundInitialLoad, false);
   window.removeEventListener("load", this.boundHostThemeRefresh, false);
 
   if (this.themeRefreshTimer !== null) {
@@ -599,13 +587,11 @@ YiiDebugToolbar.prototype.getPosition = function () {
 };
 
 YiiDebugToolbar.prototype.render = function () {
-  this.ensureShadowSkeleton();
-
   if (!this.data) {
-    this.contentRoot.innerHTML =
-      '<div class="toolbar loading"><button type="button" class="brand">Yii Debugger</button></div>';
     return;
   }
+
+  this.ensureShadowSkeleton();
 
   var position = this.getPosition();
   this.setAttribute("data-position", position);
