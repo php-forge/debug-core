@@ -1,5 +1,7 @@
 import { absoluteUrl, themeParam, themeStorageKey } from "./state.js";
 
+var hostControlCache;
+
 /**
  * Theme detection and propagation helpers.
  *
@@ -112,9 +114,8 @@ export function getComputedTheme() {
 
 /**
  * Best-effort heuristic that decides whether the host application already
- * exposes its own theme switcher. If it does we stay passive and follow
- * whatever the host sets; if it does not we surface our own toggle inside
- * the toolbar so the dev can flip the panel UI without leaving the page.
+ * exposes its own theme switcher. If it does, toolbar changes are delegated
+ * to that control; otherwise the toolbar manages the common host signals.
  *
  * We only count a *visible* button-like element with a theme-related label
  * as a positive signal. localStorage keys like `theme` are intentionally
@@ -122,7 +123,19 @@ export function getComputedTheme() {
  * give false positives that hide our toggle on apps that don't actually
  * ship one.
  */
-export function hostHasThemeControl() {
+export function resetHostThemeControlCache() {
+  hostControlCache = undefined;
+}
+
+export function getHostThemeControl() {
+  if (typeof hostControlCache !== "undefined") {
+    if (hostControlCache && hostControlCache.isConnected === false) {
+      hostControlCache = undefined;
+    } else {
+      return hostControlCache;
+    }
+  }
+
   var labelPattern = /\b(theme|mode|dark|light|night|day)\b/i;
   var nodes = document.querySelectorAll(
     'button, a, [role="switch"], [role="button"], [data-theme-toggle], [data-bs-theme-toggle]',
@@ -157,11 +170,38 @@ export function hostHasThemeControl() {
      * ship for non-active states.
      */
     if (node.offsetParent !== null || node.getClientRects().length > 0) {
-      return true;
+      hostControlCache = node;
+
+      return hostControlCache;
     }
   }
 
-  return false;
+  hostControlCache = null;
+
+  return hostControlCache;
+}
+
+export function hostHasThemeControl() {
+  return getHostThemeControl() !== null;
+}
+
+/**
+ * Let the host's own switcher apply a requested theme whenever one exists.
+ * Calling the native control keeps framework-owned reactive state, icons,
+ * DOM signals, and persistence synchronized instead of mutating only the DOM.
+ */
+export function delegateThemeToHost(theme, currentTheme) {
+  var control = getHostThemeControl();
+
+  if (!control || typeof control.click !== "function") {
+    return false;
+  }
+
+  if (theme !== currentTheme) {
+    control.click();
+  }
+
+  return true;
 }
 
 /**

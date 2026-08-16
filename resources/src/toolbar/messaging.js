@@ -133,6 +133,9 @@ function trackFetch() {
     } else if (window.Request && input instanceof Request) {
       method = input.method;
       url = input.url;
+    } else if (input) {
+      method = (init && init.method) || input.method || "GET";
+      url = input.url || String(input);
     }
 
     var promise = originalFetch(input, init);

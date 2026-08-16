@@ -10,11 +10,13 @@ import {
 } from "./state.js";
 import {
   addThemeToUrl,
+  delegateThemeToHost,
   getComputedTheme,
   getElementTheme,
   getStorageTheme,
   hostHasThemeControl,
   normalizeTheme,
+  resetHostThemeControlCache,
   writeThemeCookie,
 } from "./theme.js";
 import { builtinIconUrl } from "./icons.js";
@@ -41,6 +43,7 @@ export function YiiDebugToolbar() {
   self.boundPointerMove = self.onPointerMove.bind(self);
   self.boundPointerUp = self.onPointerUp.bind(self);
   self.boundInitialLoad = self.load.bind(self);
+  self.boundHostThemeRefresh = self.refreshHostThemeControl.bind(self);
   self.boundThemeRefresh = self.refreshTheme.bind(self);
   self.theme = null;
   self.themeObserver = null;
@@ -60,6 +63,7 @@ YiiDebugToolbar.prototype.connectedCallback = function () {
     toolbars.push(this);
   }
 
+  resetHostThemeControlCache();
   this.ownsTheme = !hostHasThemeControl();
   this.refreshTheme();
   this.watchTheme();
@@ -79,11 +83,11 @@ YiiDebugToolbar.prototype.connectedCallback = function () {
   /**
    * SPA hosts (Vue/Inertia/React) mount their theme switcher AFTER this
    * callback runs, so the initial `hostHasThemeControl()` sweep can miss it.
-   * Re-evaluate once the page settles — `refreshTheme()` recomputes
-   * `ownsTheme` on every pass.
+   * Re-evaluate once the page settles. These discrete checkpoints invalidate
+   * the host-control cache before refreshing the active theme.
    */
-  window.addEventListener("load", this.boundThemeRefresh, false);
-  window.setTimeout(this.boundThemeRefresh, 1500);
+  window.addEventListener("load", this.boundHostThemeRefresh, false);
+  window.setTimeout(this.boundHostThemeRefresh, 1500);
 };
 
 YiiDebugToolbar.prototype.disconnectedCallback = function () {
@@ -111,7 +115,7 @@ YiiDebugToolbar.prototype.disconnectedCallback = function () {
 
   window.removeEventListener("storage", this.boundThemeRefresh, false);
   window.removeEventListener("load", this.boundInitialLoad, false);
-  window.removeEventListener("load", this.boundThemeRefresh, false);
+  window.removeEventListener("load", this.boundHostThemeRefresh, false);
 
   if (this.boundThemeMessage) {
     window.removeEventListener("message", this.boundThemeMessage, false);
@@ -165,6 +169,12 @@ YiiDebugToolbar.prototype.detectTheme = function () {
 YiiDebugToolbar.prototype.toggleTheme = function () {
   var next = this.theme === "dark" ? "light" : "dark";
 
+  if (delegateThemeToHost(next, this.detectTheme())) {
+    this.refreshTheme();
+
+    return;
+  }
+
   this.theme = next;
   this.setAttribute("data-theme", next);
   /* Pin the explicit choice so `detectTheme()` keeps honoring it. */
@@ -185,8 +195,8 @@ YiiDebugToolbar.prototype.toggleTheme = function () {
   /**
    * Fan the change out to the surrounding page — covers Tailwind's `dark`
    * class on <html>, `data-theme`/`data-bs-theme` (Pico/Bootstrap), and the
-   * common storage keys host apps read on boot. Even when the host has its
-   * own switcher, this keeps the two in sync after the dev clicks ours.
+   * common storage keys host apps read on boot when no native switcher can
+   * own the application state.
    */
   this.propagateThemeToHost(next);
   this.render();
@@ -237,8 +247,13 @@ YiiDebugToolbar.prototype.propagateThemeToHost = function (theme) {
   }
 };
 
+YiiDebugToolbar.prototype.refreshHostThemeControl = function () {
+  resetHostThemeControlCache();
+  this.refreshTheme();
+};
+
 YiiDebugToolbar.prototype.refreshTheme = function () {
-  /* SPA hosts mount their switcher late — re-evaluate on every pass. */
+  /* Reuse the host-control result between explicit lifecycle checkpoints. */
   this.ownsTheme = !hostHasThemeControl();
 
   var theme = this.detectTheme();
@@ -252,7 +267,11 @@ YiiDebugToolbar.prototype.refreshTheme = function () {
   this.setAttribute("data-theme", theme);
 
   if (window.localStorage) {
-    localStorage.setItem(themeStorageKey, theme);
+    try {
+      localStorage.setItem(themeStorageKey, theme);
+    } catch (_e) {
+      /* Theme rendering must continue when storage is unavailable. */
+    }
   }
 
   /**
@@ -320,6 +339,12 @@ YiiDebugToolbar.prototype.watchTheme = function () {
       var nextTheme = normalizeTheme(data.theme);
 
       if (!nextTheme || nextTheme === self.theme) {
+        return;
+      }
+
+      if (delegateThemeToHost(nextTheme, self.detectTheme())) {
+        self.refreshTheme();
+
         return;
       }
 
@@ -735,7 +760,7 @@ YiiDebugToolbar.prototype.renderPanels = function (excludeIds) {
   var exclude = excludeIds || [];
 
   items.forEach(function (panel) {
-    if (panel && exclude.indexOf(panel.id) !== -1) {
+    if (!panel || exclude.indexOf(panel.id) !== -1) {
       return;
     }
     html += this.renderPanel(panel);
@@ -988,7 +1013,11 @@ YiiDebugToolbar.prototype.bindEvents = function () {
 YiiDebugToolbar.prototype.toggleExpanded = function () {
   this.expanded = !this.expanded;
   if (window.localStorage) {
-    localStorage.setItem(storageKey, this.expanded ? "1" : "0");
+    try {
+      localStorage.setItem(storageKey, this.expanded ? "1" : "0");
+    } catch (_e) {
+      /* Toolbar rendering must continue when storage is unavailable. */
+    }
   }
   if (!this.expanded) {
     this.drawerOpen = false;
@@ -1005,7 +1034,11 @@ YiiDebugToolbar.prototype.openPanel = function (url) {
   this.drawerOpen = true;
   this.activeUrl = url;
   if (window.localStorage) {
-    localStorage.setItem(storageKey, "1");
+    try {
+      localStorage.setItem(storageKey, "1");
+    } catch (_e) {
+      /* Panel rendering must continue when storage is unavailable. */
+    }
   }
   this.render();
 };
