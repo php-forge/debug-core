@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { renderPhpBrand } from "../src/toolbar/brand.js";
+import { renderPhpBrand, renderYiiBrand } from "../src/toolbar/brand.js";
 import { builtinIconUrl } from "../src/toolbar/icons.js";
 import {
   isToolbarLoadCurrent,
@@ -12,6 +12,7 @@ import {
 } from "../src/toolbar/loading.js";
 import {
   renderAjaxProfileLink,
+  shouldOpenToolbarDrawer,
   toolbarItemTag,
   toolbarPanelContainerTag,
 } from "../src/toolbar/panel.js";
@@ -139,6 +140,29 @@ test("toolbar item links remain focusable without nested interactive elements", 
   assert.equal(toolbarItemTag({ url: null }), "span");
 });
 
+test("toolbar drawer preserves native modified-click navigation", () => {
+  var click = { button: 0, ctrlKey: false, metaKey: false, shiftKey: false };
+
+  assert.equal(shouldOpenToolbarDrawer(click, "/debug/request"), true);
+  assert.equal(
+    shouldOpenToolbarDrawer({ ...click, button: 1 }, "/debug"),
+    false,
+  );
+  assert.equal(
+    shouldOpenToolbarDrawer({ ...click, ctrlKey: true }, "/debug"),
+    false,
+  );
+  assert.equal(
+    shouldOpenToolbarDrawer({ ...click, metaKey: true }, "/debug"),
+    false,
+  );
+  assert.equal(
+    shouldOpenToolbarDrawer({ ...click, shiftKey: true }, "/debug"),
+    false,
+  );
+  assert.equal(shouldOpenToolbarDrawer(click, null), false);
+});
+
 test("AJAX profile URLs render as native links", () => {
   var html = renderAjaxProfileLink(
     "request-profile",
@@ -167,6 +191,20 @@ test("toolbarDrawerHeight follows the configured resize direction", () => {
 
   assert.equal(toolbarDrawerHeight("top", 180, 800, drawerRect), 80);
   assert.equal(toolbarDrawerHeight("bottom", 180, 800, drawerRect), 520);
+});
+
+test("renderYiiBrand links available configuration", () => {
+  assert.equal(
+    renderYiiBrand("3.0", "/debug/config", "<logo></logo>", String),
+    '<a class="brand-link brand-link-yii" href="/debug/config" data-debug-url="/debug/config" title="Yii 3.0 — open configuration"><logo></logo><span class="brand-version">3.0</span></a>',
+  );
+});
+
+test("renderYiiBrand renders unavailable configuration as static content", () => {
+  assert.equal(
+    renderYiiBrand(null, null, "<logo></logo>", String),
+    '<span class="brand-link brand-link-yii brand-static" title="Open configuration"><logo></logo></span>',
+  );
 });
 
 test("renderPhpBrand renders unavailable PHP info as static content", () => {

@@ -29,3 +29,13 @@ export function toolbarPanelContainerTag(panel) {
 export function toolbarItemTag(item) {
   return item && item.url ? "a" : "span";
 }
+
+export function shouldOpenToolbarDrawer(event, url) {
+  return Boolean(
+    url &&
+    event.button !== 1 &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.shiftKey,
+  );
+}

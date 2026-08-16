@@ -1,3 +1,38 @@
+export function renderYiiBrand(version, configUrl, logoHtml, escapeHtml) {
+  var content =
+    logoHtml +
+    (version
+      ? '<span class="brand-version">' + escapeHtml(version) + "</span>"
+      : "");
+  var title = version
+    ? "Yii " + version + " — open configuration"
+    : "Open configuration";
+
+  if (!configUrl) {
+    return (
+      '<span class="brand-link brand-link-yii brand-static" title="' +
+      escapeHtml(title) +
+      '">' +
+      content +
+      "</span>"
+    );
+  }
+
+  var url = escapeHtml(configUrl);
+
+  return (
+    '<a class="brand-link brand-link-yii" href="' +
+    url +
+    '" data-debug-url="' +
+    url +
+    '" title="' +
+    escapeHtml(title) +
+    '">' +
+    content +
+    "</a>"
+  );
+}
+
 export function renderPhpBrand(version, phpInfoUrl, iconHtml, escapeHtml) {
   if (!version) {
     return "";

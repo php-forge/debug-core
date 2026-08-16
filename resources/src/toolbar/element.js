@@ -29,9 +29,10 @@ import {
   toolbarDataUrlForTag,
   toolbarRetryDelay,
 } from "./loading.js";
-import { renderPhpBrand } from "./brand.js";
+import { renderPhpBrand, renderYiiBrand } from "./brand.js";
 import {
   renderAjaxProfileLink,
+  shouldOpenToolbarDrawer,
   toolbarItemTag,
   toolbarPanelContainerTag,
 } from "./panel.js";
@@ -662,27 +663,12 @@ YiiDebugToolbar.prototype.renderCollapsedOpener = function () {
 
 YiiDebugToolbar.prototype.renderBrand = function () {
   var configUrl = this.data.configUrl || this.data.indexUrl;
-  var yiiAttr = configUrl
-    ? ' data-debug-url="' + escapeHtml(this.withTheme(configUrl)) + '"'
-    : "";
-  var yiiVersion = this.data.yiiVersion
-    ? '<span class="brand-version">' +
-      escapeHtml(this.data.yiiVersion) +
-      "</span>"
-    : "";
-  var yiiTitle = this.data.yiiVersion
-    ? "Yii " + this.data.yiiVersion + " — open configuration"
-    : "Open configuration";
-
-  var yiiLink =
-    '<button type="button" class="brand-link brand-link-yii"' +
-    yiiAttr +
-    ' title="' +
-    escapeHtml(yiiTitle) +
-    '">' +
-    this.renderLogo() +
-    yiiVersion +
-    "</button>";
+  var yiiLink = renderYiiBrand(
+    this.data.yiiVersion,
+    configUrl ? this.withTheme(configUrl) : null,
+    this.renderLogo(),
+    escapeHtml,
+  );
 
   var phpLink = "";
   if (this.data.phpVersion) {
@@ -1028,7 +1014,7 @@ YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
     var target = closest(event.target, "[data-debug-url]");
     var url = target ? target.getAttribute("data-debug-url") : null;
 
-    if (!url || event.button === 1 || event.ctrlKey || event.metaKey) {
+    if (!shouldOpenToolbarDrawer(event, url)) {
       return;
     }
 
