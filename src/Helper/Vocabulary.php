@@ -8,12 +8,34 @@ use function strtoupper;
 
 /**
  * Maps HTTP methods, status codes, and SQL statement types to the shared semantic hue vocabulary.
- *
- * The HTTP method mapping in `verb()` must stay synchronized with `resources/src/core/history-cursor.js` and
- * `resources/src/toolbar/element.js`.
  */
 final class Vocabulary
 {
+    /**
+     * Returns the level suffix (`error`, `warning`, `info`, `trace`, `profile`, or `other`) for a
+     * {@see LogLevel} wire value. Profile begin/end markers share the `profile` hue.
+     *
+     * Usage example:
+     *
+     * ```php
+     * $level = \PHPForge\Debug\Helper\Vocabulary::logLevel(\PHPForge\Debug\Helper\LogLevel::WARNING);
+     * ```
+     *
+     * @param int $level Log-level wire value.
+     *
+     * @return string Semantic log-level suffix.
+     */
+    public static function logLevel(int $level): string
+    {
+        return match ($level) {
+            LogLevel::ERROR => 'error',
+            LogLevel::WARNING => 'warning',
+            LogLevel::INFO => 'info',
+            LogLevel::TRACE => 'trace',
+            LogLevel::PROFILE, LogLevel::PROFILE_BEGIN, LogLevel::PROFILE_END => 'profile',
+            default => 'other',
+        };
+    }
     /**
      * Returns the verb suffix for an SQL statement type.
      *
