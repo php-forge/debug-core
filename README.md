@@ -16,11 +16,11 @@ composer require php-forge/debug-core
 
 ## Architecture
 
-The core package owns portable debug data, persistence, normalization and presentation primitives under
-`PHPForge\Debug\Helper`, the frontend source and compiled files, shared fonts and icons, the toolbar data contract, and
-framework-neutral PHP templates composed with the agnostic UI Awesome HTML helpers. It does not register assets,
-render responses, inject toolbar markup, or depend on Yii2, Yii3, an application container, a view implementation, or
-a framework request lifecycle.
+The core package owns portable collector contracts and coordination, debug data, persistence, normalization and
+presentation primitives under `PHPForge\Debug\Helper`, the frontend source and compiled files, shared fonts and icons,
+the toolbar data contract, and framework-neutral PHP templates composed with the agnostic UI Awesome HTML helpers. It
+does not register assets, render responses, inject toolbar markup, or depend on Yii2, Yii3, an application container, a
+view implementation, or a framework request lifecycle.
 
 Adapters collect framework data, convert it into immutable snapshots, expose toolbar data endpoints, define and
 publish assets through their framework, and render the shared templates with their framework view component. They also

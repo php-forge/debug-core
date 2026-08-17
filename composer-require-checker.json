@@ -1,5 +1,8 @@
 {
-    "symbol-whitelist": [],
+    "symbol-whitelist": [
+        "posix_getpwuid",
+        "posix_getuid"
+    ],
     "php-core-extensions": [
         "Core",
         "date",

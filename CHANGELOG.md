@@ -10,3 +10,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: add framework-agnostic debug snapshot contracts, strict JSON hydration, and filesystem persistence.
 - fix: bundle toolbar control icons and retry snapshot data while Yii3 finishes its post-response persistence.
 - feat: add shared framework-neutral normalization and presentation helpers for debug adapters.
+- feat: add validated collector contracts, lifecycle coordination, and isolated typed snapshot capture for adapters.
