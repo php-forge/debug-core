@@ -52,15 +52,15 @@ final readonly class AssetBundleRow implements PanelRow
         $payload = Payload::object($data, $path)
             ->shape(
                 [
-                'name',
-                'sourcePath',
-                'basePath',
-                'baseUrl',
-                'css',
-                'js',
-                'depends',
-            ],
-        );
+                    'name',
+                    'sourcePath',
+                    'basePath',
+                    'baseUrl',
+                    'css',
+                    'js',
+                    'depends',
+                ],
+            );
 
         return new self(
             name: $payload->string('name'),
