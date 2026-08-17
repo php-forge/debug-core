@@ -32,7 +32,18 @@ import { ajax, on } from "../core/dom.js";
 
       error.textContent = message;
     },
+    switching = false,
     sendSetIdentity = function (form) {
+      /* Collapse concurrent submits (double-click, or set + reset in the same
+         tick) into a single request: each identity switch regenerates the
+         session id server-side, so two in-flight POSTs race and can leave the
+         session tracking the wrong main user. */
+      if (switching) {
+        return;
+      }
+
+      switching = true;
+
       ajax({
         url: form.action,
         method: "post",
@@ -41,6 +52,7 @@ import { ajax, on } from "../core/dom.js";
           window.top.location.reload();
         },
         error: function (xhr) {
+          switching = false;
           renderError(form, xhr);
         },
       });
