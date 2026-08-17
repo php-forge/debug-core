@@ -12,7 +12,7 @@ use ReflectionClass;
 use Xepozz\InternalMocker\{Mocker, MockerState};
 
 /**
- * Replaces filesystem functions inside the storage namespace for failure-path tests.
+ * Replaces native functions inside the phpinfo and storage namespaces for failure-path tests.
  */
 final class MockerExtension implements Extension
 {
@@ -53,11 +53,18 @@ final class MockerExtension implements Extension
     }
 
     /**
-     * Loads filesystem function stubs for the storage namespace.
+     * Loads native function stubs for the phpinfo and storage namespaces.
      */
     public static function load(): void
     {
         $mocks = [];
+
+        foreach (['function_exists', 'ob_get_clean', 'ob_start', 'phpinfo'] as $name) {
+            $mocks[] = [
+                'namespace' => 'PHPForge\Debug\PhpInfo',
+                'name' => $name,
+            ];
+        }
 
         foreach (['file_put_contents', 'flock', 'fopen', 'mkdir', 'rename', 'tempnam'] as $name) {
             $mocks[] = [

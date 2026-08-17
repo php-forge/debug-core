@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Helper;
 
-use PHPForge\Debug\Helper\Vocabulary;
+use PHPForge\Debug\Helper\{LogLevel, Vocabulary};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -17,6 +17,28 @@ use PHPUnit\Framework\TestCase;
 #[Group('vocabulary')]
 final class VocabularyTest extends TestCase
 {
+    public function testLogLevelMapsWireValuesToVocabularySuffixes(): void
+    {
+        $mappings = [
+            LogLevel::ERROR => 'error',
+            LogLevel::WARNING => 'warning',
+            LogLevel::INFO => 'info',
+            LogLevel::TRACE => 'trace',
+            LogLevel::PROFILE => 'profile',
+            LogLevel::PROFILE_BEGIN => 'profile',
+            LogLevel::PROFILE_END => 'profile',
+            0 => 'other',
+            0x999 => 'other',
+        ];
+
+        foreach ($mappings as $level => $expected) {
+            self::assertSame(
+                $expected,
+                Vocabulary::logLevel($level),
+                "Level '{$level}' must map to '{$expected}'.",
+            );
+        }
+    }
     public function testSqlVerbMapsStatementFamiliesToRestVerbs(): void
     {
         $mappings = [
