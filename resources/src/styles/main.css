@@ -837,7 +837,7 @@
 
   /**
    * Inline section header used by tabular blocks; pairs the title with an
-   * optional filter input on the right.
+   * optional action (filter input, reset button) on the right.
    */
   .yii-debug-section-header {
     display: flex;
@@ -846,6 +846,7 @@
     gap: var(--yii-debug-space-3);
     margin: var(--yii-debug-space-4) 0 var(--yii-debug-space-2);
 
+    h2,
     h3 {
       margin: 0;
     }
