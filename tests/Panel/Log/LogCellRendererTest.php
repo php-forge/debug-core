@@ -241,6 +241,15 @@ final class LogCellRendererTest extends TestCase
         );
     }
 
+    public function testRenderTimeCellFormatsMillisecondsAtTheUpperBoundary(): void
+    {
+        self::assertSame(
+            date('H:i:s', 1_700_000_000) . '.123',
+            LogCellRenderer::renderTimeCell(self::makeRow(time: 1_700_000_000_123.0)),
+            'Millisecond conversion must use exactly one thousand units per second.',
+        );
+    }
+
     public function testRenderTimeCellFormatsMillisecondTimestampAsHmsWithMillis(): void
     {
         $expected = date('H:i:s', 1_700_000_000) . '.789';
@@ -253,6 +262,15 @@ final class LogCellRendererTest extends TestCase
             $expected,
             $html,
             "Timestamp must format as 'H:i:s.mmm'.",
+        );
+    }
+
+    public function testRenderTimeCellTruncatesFractionalMillisecondsWithoutImplicitConversion(): void
+    {
+        self::assertSame(
+            date('H:i:s', 1_787_057_930) . '.402',
+            LogCellRenderer::renderTimeCell(self::makeRow(time: 1_787_057_930_402.636)),
+            'Fractional milliseconds must be truncated explicitly before integer arithmetic.',
         );
     }
 
@@ -306,24 +324,9 @@ final class LogCellRendererTest extends TestCase
         );
 
         self::assertStringContainsString(
-            '2h',
+            '2h' . "\u{00A0}" . '5m' . "\u{00A0}" . '7s' . "\u{00A0}" . '250ms',
             $html,
-            'Diff must include the hours component.',
-        );
-        self::assertStringContainsString(
-            '5m',
-            $html,
-            'Diff must include the minutes component.',
-        );
-        self::assertStringContainsString(
-            '7s',
-            $html,
-            'Diff must include the seconds component.',
-        );
-        self::assertStringContainsString(
-            '250ms',
-            $html,
-            'Diff must include the milliseconds component.',
+            'Diff components must be integral and rendered in exact descending unit order.',
         );
     }
 
@@ -353,6 +356,26 @@ final class LogCellRendererTest extends TestCase
             $html,
             "Equal timestamps must render '0ms'.",
         );
+        self::assertStringNotContainsString("0h\u{00A0}", $html, 'Zero hours must be omitted.');
+        self::assertStringNotContainsString("0m\u{00A0}", $html, 'Zero minutes must be omitted.');
+        self::assertStringNotContainsString("0s\u{00A0}", $html, 'Zero seconds must be omitted.');
+    }
+
+    public function testRenderTimeSincePreviousCellUsesSixtyMinutesPerHour(): void
+    {
+        $base = 1_700_000_000_000.0;
+
+        $belowHour = LogCellRenderer::renderTimeSincePreviousCell(
+            self::makeRow(time: $base + (59 * 60 + 30) * 1000, timeOfPrevious: $base),
+        );
+        $aboveHour = LogCellRenderer::renderTimeSincePreviousCell(
+            self::makeRow(time: $base + (60 * 60 + 30) * 1000, timeOfPrevious: $base),
+        );
+
+        self::assertStringNotContainsString('1h', $belowHour, 'Fifty-nine minutes must stay below one hour.');
+        self::assertStringContainsString('59m', $belowHour, 'The remaining minutes must be preserved below one hour.');
+        self::assertStringContainsString('1h', $aboveHour, 'Sixty minutes must roll over to one hour.');
+        self::assertStringNotContainsString('60m', $aboveHour, 'Rolled-over hours must leave zero minutes omitted.');
     }
 
     /**

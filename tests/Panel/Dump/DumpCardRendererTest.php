@@ -18,6 +18,18 @@ use PHPUnit\Framework\TestCase;
 #[Group('dump')]
 final class DumpCardRendererTest extends TestCase
 {
+    public function testRenderMessageCellDecodesHtml5QuoteEntitiesBeforeTypeDetection(): void
+    {
+        self::assertStringContainsString(
+            'data-type="string"',
+            DumpCardRenderer::renderMessageCell(
+                self::makeRow(message: '&lt;?php &apos;hello&apos;'),
+                self::traceLine(),
+                0,
+            ),
+            'HTML5 apostrophe entities must decode to a quoted string payload.',
+        );
+    }
     public function testRenderMessageCellEmitsIndexBadgeBasedOnIndex(): void
     {
         $html = DumpCardRenderer::renderMessageCell(
@@ -55,6 +67,66 @@ final class DumpCardRendererTest extends TestCase
             'User.php',
             $html,
             'Trace list must render frame metadata.',
+        );
+    }
+
+    public function testRenderMessageCellFormatsMillisecondsAtTheUpperBoundary(): void
+    {
+        $html = DumpCardRenderer::renderMessageCell(
+            self::makeRow(time: 1_700_000_000.1239),
+            self::traceLine(),
+            0,
+        );
+
+        self::assertStringContainsString(
+            date('H:i:s', 1_700_000_000) . '.123',
+            $html,
+            'Millisecond conversion must use exactly one thousand units per second.',
+        );
+    }
+
+    public function testRenderMessageCellKeepsTimeAndTraceMetadataTogether(): void
+    {
+        $html = DumpCardRenderer::renderMessageCell(
+            self::makeRow(time: 1_700_000_000.5, trace: [['file' => '/app/User.php', 'line' => 42]]),
+            self::traceLine(),
+            0,
+        );
+
+        self::assertStringContainsString('yii-debug-dump-time', $html, 'Time metadata must be retained.');
+        self::assertStringContainsString('yii-debug-dump-trace', $html, 'Trace metadata must be retained.');
+    }
+
+    public function testRenderMessageCellNormalizesUppercaseScalarIdentifiers(): void
+    {
+        self::assertStringContainsString(
+            'data-type="bool"',
+            DumpCardRenderer::renderMessageCell(
+                self::makeRow(message: '&lt;?php TRUE'),
+                self::traceLine(),
+                0,
+            ),
+            'Boolean identifier matching must remain case-insensitive.',
+        );
+    }
+
+    public function testRenderMessageCellOmitsNonPositiveTraceLineSuffix(): void
+    {
+        $html = DumpCardRenderer::renderMessageCell(
+            self::makeRow(trace: [['file' => '/app/User.php', 'line' => 0]]),
+            self::traceLine(),
+            0,
+        );
+
+        self::assertStringContainsString(
+            'class="yii-debug-dump-trace" title="/app/User.php">User.php</span>',
+            $html,
+            'Line zero must not be exposed as a source location suffix.',
+        );
+        self::assertStringNotContainsString(
+            'User.php:0',
+            $html,
+            'Line zero must remain absent from the label and tooltip.',
         );
     }
 
@@ -172,6 +244,19 @@ final class DumpCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderMessageCellRequiresIdentifierAtThePayloadStart(): void
+    {
+        self::assertStringNotContainsString(
+            'yii-debug-dump-type',
+            DumpCardRenderer::renderMessageCell(
+                self::makeRow(message: '&lt;?php +Widget'),
+                self::traceLine(),
+                0,
+            ),
+            'An identifier after an unsupported leading symbol must not be classified as an object.',
+        );
+    }
+
     public function testRenderMessageCellSniffsArrayTypeFromOpeningBracket(): void
     {
         $html = DumpCardRenderer::renderMessageCell(
@@ -279,6 +364,19 @@ final class DumpCardRendererTest extends TestCase
                 0,
             ),
             "Double-quoted payload must be tagged as 'string'.",
+        );
+    }
+
+    public function testRenderMessageCellTrimsWhitespaceBeforeTypeDetection(): void
+    {
+        self::assertStringContainsString(
+            'data-type="number"',
+            DumpCardRenderer::renderMessageCell(
+                self::makeRow(message: '   42'),
+                self::traceLine(),
+                0,
+            ),
+            'Leading whitespace without a PHP prefix must not hide a numeric payload.',
         );
     }
 

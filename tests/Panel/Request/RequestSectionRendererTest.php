@@ -116,9 +116,24 @@ final class RequestSectionRendererTest extends TestCase
             'Filterable section must expose a search input.',
         );
         self::assertStringContainsString(
-            'data-yii-debug-filter-target',
+            'data-yii-debug-filter="true"',
+            $html,
+            'Filterable section input must carry the enabled filtering marker.',
+        );
+        self::assertStringContainsString(
+            'data-yii-debug-filter-target="true"',
             $html,
             'Filterable table must be the JS filter target.',
+        );
+        self::assertStringContainsString(
+            '<h2>' . "\n" . 'Server' . "\n" . '</h2>',
+            $html,
+            'Section header must render its caption.',
+        );
+        self::assertStringContainsString(
+            "style='table-layout: fixed;'",
+            $html,
+            'Section table must keep its fixed layout.',
         );
     }
 
@@ -142,7 +157,7 @@ final class RequestSectionRendererTest extends TestCase
 
     public function testRenderSectionPicksHtmlSpecialCharsEscapingForRowValues(): void
     {
-        $section = new RequestSection(caption: 'Headers', entries: ['X-Custom' => '<script>alert(1)</script>']);
+        $section = new RequestSection(caption: 'Headers', entries: ['X-Custom' => "'quoted' <script>alert(1)</script>"]);
 
         $html = RequestSectionRenderer::renderSection($section);
 
@@ -155,6 +170,11 @@ final class RequestSectionRendererTest extends TestCase
             '&lt;script&gt;',
             $html,
             'Tag characters must be escaped.',
+        );
+        self::assertStringContainsString(
+            '&#039;',
+            $html,
+            'Single quotes must be escaped by ENT_QUOTES.',
         );
     }
 

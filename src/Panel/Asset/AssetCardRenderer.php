@@ -51,21 +51,13 @@ final class AssetCardRenderer
     /**
      * Resolves the anchor id for a dependency name.
      *
-     * Prefers the id of an already-registered bundle so cross-references jump to a real card; otherwise falls back to a
-     * fresh {@see \\PHPForge\\Debug\\Helper\\Text::camel2id()} pass, so the link still points to the id the bundle
-     * would get if it were registered later.
+     * Uses the same canonical {@see \\PHPForge\\Debug\\Helper\\Text::camel2id()} conversion as bundle registration.
      *
      * @param string $depName Fully qualified class name of the dependency.
-     * @param AssetSummary $summary Already-normalized summary.
+     * @param AssetSummary $summary Already-normalized summary, retained for backward compatibility.
      */
     public static function resolveAnchor(string $depName, AssetSummary $summary): string
     {
-        foreach ($summary->bundles as $candidate) {
-            if ($candidate->name === $depName) {
-                return $candidate->id;
-            }
-        }
-
         return Text::camel2id($depName);
     }
 

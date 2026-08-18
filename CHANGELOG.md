@@ -12,3 +12,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: add shared framework-neutral normalization and presentation helpers for debug adapters.
 - feat: add validated collector contracts, lifecycle coordination, and isolated typed snapshot capture for adapters.
 - fix: guard the user-switch panel against concurrent submits so a double-click (or set + reset in the same tick) sends a single identity-switch request instead of racing two session regenerations.
+- test: strengthen mutation coverage and clear PHPStan's result cache before static mutation analysis.

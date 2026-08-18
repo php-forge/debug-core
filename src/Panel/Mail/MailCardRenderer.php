@@ -17,12 +17,11 @@ use UIAwesome\Html\Sectioning\Article;
 use function array_map;
 use function date;
 use function explode;
-use function floor;
+use function intdiv;
 use function mb_strlen;
 use function mb_strtoupper;
 use function mb_substr;
 use function preg_replace;
-use function time;
 
 /**
  * Renders the typed mail message card consumed by the Mail panel detail view's `_item` template.
@@ -104,19 +103,19 @@ final class MailCardRenderer
         }
 
         if ($diff < 3600) {
-            $minutes = (int) floor($diff / 60);
+            $minutes = intdiv($diff, 60);
 
             return ["{$minutes} min ago", $absolute];
         }
 
         if ($diff < 86400) {
-            $hours = (int) floor($diff / 3600);
+            $hours = intdiv($diff, 3600);
 
             return ["{$hours} h ago", $absolute];
         }
 
         if ($diff < 2592000) {
-            $days = (int) floor($diff / 86400);
+            $days = intdiv($diff, 86400);
 
             return ["{$days} d ago", $absolute];
         }

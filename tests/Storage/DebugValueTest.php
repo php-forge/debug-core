@@ -224,6 +224,25 @@ final class DebugValueTest extends TestCase
             'A binary throwable message must remain JSON-safe.',
         );
     }
+    public function testCapturePreservesNullAsItsOwnTaggedValue(): void
+    {
+        $value = DebugValue::capture(null);
+
+        self::assertSame(
+            'null',
+            $value->type,
+            'Null must retain its dedicated type tag.',
+        );
+        self::assertSame(
+            ['type' => 'null'],
+            $value->jsonSerialize(),
+            'Serialized null must not fall through to another scalar or unsupported type.',
+        );
+        self::assertNull(
+            $value->toDisplayValue(),
+            'The display value for the null tag must remain null.',
+        );
+    }
 
     public function testCapturePreservesTheArrayDepthBoundary(): void
     {

@@ -66,6 +66,19 @@ final class QueueCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderItemDriverPillUsesTheDriverClassOrFallbackTooltip(): void
+    {
+        $known = QueueCardRenderer::renderItem(
+            self::makeRecord(driverName: 'Redis', driverClass: 'yii\\queue\\redis\\Queue'),
+        )->render();
+        $unknown = QueueCardRenderer::renderItem(
+            self::makeRecord(driverName: 'Custom', driverClass: ''),
+        )->render();
+
+        self::assertStringContainsString('title="yii\\queue\\redis\\Queue">Redis<', $known, 'Known driver class must be the tooltip.');
+        self::assertStringContainsString('title="Unknown driver">Custom<', $unknown, 'Missing driver class must use the fallback tooltip.');
+    }
+
     public function testRenderItemEmitsCardWithClassAndStatusPill(): void
     {
         $record = self::makeRecord(jobClass: 'app\\jobs\\HelloJob', eventType: 'push');
@@ -218,9 +231,9 @@ final class QueueCardRendererTest extends TestCase
             'Object short class name must be visible.',
         );
         self::assertStringContainsString(
-            'app\\models',
+            'class="yii-debug-queue-tree-class" title="app\\models\\Inner">app\\models\\Inner</span>',
             $html,
-            'Object namespace must be rendered.'
+            'Object summary must retain the complete namespace and class name.'
         );
         self::assertStringContainsString(
             '>42<',
@@ -474,6 +487,8 @@ final class QueueCardRendererTest extends TestCase
             $html,
             "Truncated marker must render the literal 'truncated' label.",
         );
+        self::assertStringContainsString('>items<', $html, 'Truncated summary must retain its field key.');
+        self::assertStringContainsString('>array<', $html, 'Truncated associative array must retain its type.');
     }
 
     public function testRenderItemRendersTypeLabelsForEachScalarKind(): void
@@ -504,6 +519,16 @@ final class QueueCardRendererTest extends TestCase
             '>float<',
             $html,
             'Float type label must be present.',
+        );
+        self::assertMatchesRegularExpression(
+            '/>count<.*?>int<.*?>10</s',
+            $html,
+            'Integer values must remain paired with the int type label.',
+        );
+        self::assertMatchesRegularExpression(
+            '/>ratio<.*?>float<.*?>1\.5</s',
+            $html,
+            'Float values must remain paired with the float type label.',
         );
         self::assertStringContainsString(
             '>bool<',
@@ -565,6 +590,27 @@ final class QueueCardRendererTest extends TestCase
             $html,
             'Full value must round-trip in the title attribute.',
         );
+    }
+
+    public function testRenderItemTruncatesStringsAtUnicodeCharacterBoundaries(): void
+    {
+        $exactValue = str_repeat('é', 80);
+        $longValue = 'É' . str_repeat('é', 80);
+
+        $exact = QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $exactValue]))->render();
+        $long = QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $longValue]))->render();
+
+        self::assertStringContainsString('>"' . $exactValue . '"<', $exact, 'Exactly 80 characters must not truncate.');
+        self::assertStringNotContainsString('…', $exact, 'The exact string limit must not add an ellipsis.');
+        self::assertStringContainsString('>"É' . str_repeat('é', 79) . '…"<', $long, 'Long Unicode strings must preserve the first 80 characters.');
+    }
+
+    public function testRenderItemUsesOneUnicodeCharacterForTheAvatarInitial(): void
+    {
+        $html = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\éclairJob'))->render();
+
+        self::assertStringContainsString('aria-hidden="true">É</span>', $html, 'Avatar initial must be one complete Unicode character.');
+        self::assertStringNotContainsString('>Éc<', $html, 'Avatar initial must not include the second character.');
     }
 
     /**

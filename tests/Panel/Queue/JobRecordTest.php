@@ -17,6 +17,17 @@ use PHPUnit\Framework\TestCase;
 #[Group('queue')]
 final class JobRecordTest extends TestCase
 {
+    public function testFromArrayRequiresAndSerializesTheEventType(): void
+    {
+        $payload = JobRecord::fromCapture(['eventType' => 'exec'])->jsonSerialize();
+        $record = JobRecord::fromArray($payload, '$.queue');
+        $serialized = $record->jsonSerialize();
+
+        self::assertSame('exec', $record->eventType, 'Hydration must read the required event type.');
+        self::assertArrayHasKey('eventType', $serialized, 'Serialization must retain the event type key.');
+        self::assertSame('exec', $serialized['eventType'] ?? null, 'Serialized event type must retain its value.');
+    }
+
     public function testFromCaptureAcceptsEachKnownEventType(): void
     {
         self::assertSame(

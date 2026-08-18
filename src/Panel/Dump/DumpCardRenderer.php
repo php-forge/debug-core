@@ -14,9 +14,9 @@ use UIAwesome\Html\Root\Header;
 use function array_map;
 use function basename;
 use function date;
-use function floor;
 use function html_entity_decode;
 use function in_array;
+use function intval;
 use function is_int;
 use function ltrim;
 use function preg_match;
@@ -77,7 +77,7 @@ final class DumpCardRenderer
             return '';
         }
 
-        $millis = (int) (($time - floor($time)) * 1000);
+        $millis = intval($time * 1000) % 1000;
 
         return date('H:i:s', (int) $time) . '.' . sprintf('%03d', $millis);
     }
@@ -199,8 +199,8 @@ final class DumpCardRenderer
             return ['string', 'string'];
         }
 
-        if (preg_match('/^([A-Za-z_][A-Za-z0-9_\\\\]*)/', $payload, $m) === 1) {
-            $name = $m[1];
+        if (preg_match('/^[A-Za-z_][A-Za-z0-9_\\\\]*/', $payload, $m) === 1) {
+            $name = $m[0];
 
             $lower = strtolower($name);
 

@@ -113,6 +113,20 @@ final class JobPayloadInspectorTest extends TestCase
         );
     }
 
+    public function testExtractContinuesAfterAnUnreadableProperty(): void
+    {
+        $job = new class {
+            public int $uninitialized; // @phpstan-ignore property.uninitialized
+            public string $readable = 'after';
+        };
+
+        self::assertSame(
+            ['uninitialized' => '(unreadable)', 'readable' => 'after'],
+            JobPayloadInspector::extract($job),
+            'An unreadable property must not prevent later public properties from being captured.',
+        );
+    }
+
     public function testExtractExpandsNestedObjectWithClassMarker(): void
     {
         $inner = new class {
@@ -261,5 +275,87 @@ final class JobPayloadInspectorTest extends TestCase
         );
 
         fclose($handle);
+    }
+
+    public function testExtractUsesTheExactDepthBoundaryForArraysAndObjects(): void
+    {
+        $visibleArray = ['one' => ['two' => ['three' => ['four' => 'leaf']]]];
+        $truncatedArray = ['one' => ['two' => ['three' => ['four' => ['five' => ['six' => 'leaf']]]]]];
+
+        $visibleObject = new class {
+            public mixed $child = null;
+        };
+        $cursor = $visibleObject;
+
+        for ($level = 0; $level < 4; $level++) {
+            $next = new class {
+                public mixed $child = null;
+            };
+            $cursor->child = $next;
+            $cursor = $next;
+        }
+
+        $cursor->child = 'leaf';
+
+        $truncatedObject = new class {
+            public mixed $child = null;
+        };
+        $cursor = $truncatedObject;
+
+        for ($level = 0; $level < 5; $level++) {
+            $next = new class {
+                public mixed $child = null;
+            };
+            $cursor->child = $next;
+            $cursor = $next;
+        }
+
+        $job = new class ($visibleArray, $truncatedArray, $visibleObject, $truncatedObject) {
+            /**
+             * @param array<string, mixed> $visibleArray
+             * @param array<string, mixed> $truncatedArray
+             */
+            public function __construct(
+                public array $visibleArray,
+                public array $truncatedArray,
+                public object $visibleObject,
+                public object $truncatedObject,
+            ) {}
+        };
+
+        $fields = JobPayloadInspector::extract($job);
+
+        self::assertSame($visibleArray, $fields['visibleArray'] ?? null, 'Four nested arrays must remain visible.');
+        self::assertSame(
+            ['__truncated' => true],
+            self::valueAtPath($fields, ['truncatedArray', 'one', 'two', 'three', 'four', 'five']),
+            'The sixth array depth must collapse at the exact boundary with a true marker.',
+        );
+        self::assertSame(
+            'leaf',
+            self::valueAtPath($fields, ['visibleObject', 'child', 'child', 'child', 'child', 'child']),
+            'Five nested object properties must remain visible before truncation.',
+        );
+        $truncated = self::valueAtPath(
+            $fields,
+            ['truncatedObject', 'child', 'child', 'child', 'child', 'child'],
+        );
+        self::assertIsArray($truncated, 'The sixth nested object must produce a structured marker.');
+        self::assertTrue($truncated['__truncated'] ?? false, 'The object depth marker must be true.');
+        self::assertArrayHasKey('__class', $truncated, 'A truncated object must retain its class name.');
+    }
+
+    /**
+     * @param list<string> $path
+     */
+    private static function valueAtPath(mixed $value, array $path): mixed
+    {
+        foreach ($path as $key) {
+            self::assertIsArray($value, "Path segment '{$key}' must be traversable.");
+
+            $value = $value[$key] ?? null;
+        }
+
+        return $value;
     }
 }

@@ -15,8 +15,8 @@ use function array_map;
 use function date;
 use function implode;
 use function in_array;
-use function mb_strtoupper;
 use function sprintf;
+use function strtoupper;
 
 /**
  * Renders the typed cells of the queries grid for the DB debug panel.
@@ -41,7 +41,7 @@ final class DbQueryRenderer
     public static function canBeExplained(string $type): bool
     {
         return in_array(
-            mb_strtoupper($type, 'utf8'),
+            strtoupper($type),
             ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'],
             true,
         );

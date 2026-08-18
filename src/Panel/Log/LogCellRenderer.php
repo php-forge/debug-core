@@ -16,6 +16,7 @@ use UIAwesome\Html\Phrasing\Span;
 use function array_map;
 use function date;
 use function implode;
+use function intdiv;
 use function sprintf;
 use function str_starts_with;
 
@@ -119,11 +120,11 @@ final class LogCellRenderer
      */
     public static function renderTimeCell(LogRow $row): string
     {
-        $seconds = $row->time / 1000;
+        $timestamp = (int) $row->time;
+        $seconds = intdiv($timestamp, 1000);
+        $millis = $timestamp % 1000;
 
-        $millis = (int) (($seconds - (int) $seconds) * 1000);
-
-        return date('H:i:s.', (int) $seconds) . sprintf('%03d', $millis);
+        return date('H:i:s.', $seconds) . sprintf('%03d', $millis);
     }
 
     /**
@@ -133,15 +134,13 @@ final class LogCellRenderer
      */
     public static function renderTimeSincePreviousCell(LogRow $row): string
     {
-        $diffMsTotal = $row->time - $row->timeOfPrevious;
-
-        $diffSecondsTotal = $diffMsTotal / 1000;
-        $diffMinutesTotal = $diffSecondsTotal / 60;
-        $diffHoursTotal = $diffMinutesTotal / 60;
-        $diffMs = (int) $diffMsTotal % 1000;
-        $diffSeconds = (int) $diffSecondsTotal % 60;
-        $diffMinutes = (int) $diffMinutesTotal % 60;
-        $diffHours = (int) $diffHoursTotal;
+        $diffMsTotal = (int) ($row->time - $row->timeOfPrevious);
+        $diffSecondsTotal = intdiv($diffMsTotal, 1000);
+        $diffMinutesTotal = intdiv($diffSecondsTotal, 60);
+        $diffHours = intdiv($diffMinutesTotal, 60);
+        $diffMs = $diffMsTotal % 1000;
+        $diffSeconds = $diffSecondsTotal % 60;
+        $diffMinutes = $diffMinutesTotal % 60;
 
         $parts = [];
 
