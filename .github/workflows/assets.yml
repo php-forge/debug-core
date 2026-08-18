@@ -51,6 +51,9 @@ jobs:
       - name: Test JavaScript.
         run: npm run test:js
 
+      - name: Test JavaScript mutations.
+        run: npm run test:mutation
+
       - name: Build assets.
         run: npm run build
 
