@@ -1,6 +1,6 @@
 function hasToolbarItemLink(items) {
-  return (items || []).some(function (item) {
-    return Boolean(item && item.url);
+  return items.some(function (item) {
+    return Boolean(item.url);
   });
 }
 
@@ -13,7 +13,7 @@ export function renderAjaxProfileLink(profile, profileUrl, nativeUrl, escape) {
     '<a class="ajax-link"' +
     renderToolbarLinkAttributes(profileUrl, nativeUrl, escape) +
     ">" +
-    escape(profile || "profile") +
+    escape(profile) +
     "</a>"
   );
 }
@@ -29,11 +29,11 @@ export function renderToolbarLinkAttributes(url, nativeUrl, escape) {
 }
 
 export function toolbarPanelContainerTag(panel) {
-  return panel && panel.url && !hasToolbarItemLink(panel.items) ? "a" : "div";
+  return panel.url && !hasToolbarItemLink(panel.items) ? "a" : "div";
 }
 
 export function toolbarItemTag(item) {
-  return item && item.url ? "a" : "span";
+  return item.url ? "a" : "span";
 }
 
 export function shouldOpenToolbarDrawer(event, url) {

@@ -17,9 +17,9 @@ const config = {
     concurrency: 4,
     reporters: ["clear-text", "progress", "html"],
     thresholds: {
-        high: 90,
-        low: 75,
-        break: 70,
+        high: 100,
+        low: 100,
+        break: 100,
     },
 };
 
