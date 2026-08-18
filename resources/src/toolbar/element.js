@@ -398,12 +398,7 @@ YiiDebugToolbar.prototype.followTag = function (tag) {
 
   var previousUrl = url;
   var previousTag = this.currentTag;
-  var nextUrl = toolbarDataUrlForTag(
-    url,
-    previousTag || (this.data && this.data.tag),
-    tag,
-    window.location.href,
-  );
+  var nextUrl = toolbarDataUrlForTag(url, tag, window.location.href);
 
   if (!nextUrl || sameUrl(url, nextUrl)) {
     return;

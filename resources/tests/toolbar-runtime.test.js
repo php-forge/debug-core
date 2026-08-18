@@ -60,8 +60,14 @@ test("builtinIconUrl provides self-contained shared toolbar icons", () => {
 
 test("toolbarRetryDelay retries missing snapshots with bounded backoff", () => {
   assert.equal(toolbarRetryDelay(404, 0), 75);
+  assert.equal(toolbarRetryDelay(404, 1), 150);
+  assert.equal(toolbarRetryDelay(404, 2), 300);
+  assert.equal(toolbarRetryDelay(404, 3), 600);
   assert.equal(toolbarRetryDelay(404, 4), 900);
   assert.equal(toolbarRetryDelay(404, 5), null);
+  assert.equal(toolbarRetryDelay(404, -1), null);
+  assert.equal(toolbarRetryDelay(404, Number.NaN), null);
+  assert.equal(toolbarRetryDelay(404, 0.5), null);
   assert.equal(toolbarRetryDelay(500, 0), null);
 });
 
@@ -69,8 +75,11 @@ test("toolbar load generations reject stale responses and retries", () => {
   var activeGeneration = resolveToolbarLoadGeneration(0);
   var staleGeneration = activeGeneration;
 
+  assert.equal(activeGeneration, 1);
+
   activeGeneration = resolveToolbarLoadGeneration(activeGeneration);
 
+  assert.equal(activeGeneration, 2);
   assert.equal(isToolbarLoadCurrent(activeGeneration, staleGeneration), false);
   assert.equal(isToolbarLoadCurrent(activeGeneration, activeGeneration), true);
   assert.equal(
@@ -108,67 +117,59 @@ test("toolbar load rollback prefers the last successful snapshot", () => {
   );
 });
 
-test("toolbar data URLs follow tags across query and pretty-path routes", () => {
+test("toolbar data URLs follow tags through query parameters", () => {
   var baseUrl = "https://example.test/app";
 
   assert.equal(
     toolbarDataUrlForTag(
       "/debug/toolbar?tag=request-1&panel=summary",
-      "request-1",
       "request-2",
       baseUrl,
     ),
     "https://example.test/debug/toolbar?tag=request-2&panel=summary",
   );
   assert.equal(
-    toolbarDataUrlForTag(
-      "/debug/toolbar/request-1?panel=summary",
-      "request-1",
-      "request-2",
-      baseUrl,
-    ),
-    "https://example.test/debug/toolbar/request-2?panel=summary",
-  );
-  assert.equal(
-    toolbarDataUrlForTag(
-      "/debug/toolbar?panel=summary",
-      null,
-      "request-2",
-      baseUrl,
-    ),
+    toolbarDataUrlForTag("/debug/toolbar?panel=summary", "request-2", baseUrl),
     "https://example.test/debug/toolbar?panel=summary&tag=request-2",
   );
 });
 
 test("toolbar data URL resolution rejects unusable inputs", () => {
-  assert.equal(toolbarDataUrlForTag("", "request-1", "request-2", ""), null);
+  var baseUrl = "https://example.test/";
+
+  assert.equal(toolbarDataUrlForTag("", "request-2", baseUrl), null);
+  assert.equal(toolbarDataUrlForTag("/debug/toolbar", "", baseUrl), null);
   assert.equal(
-    toolbarDataUrlForTag("/debug/toolbar", "request-1", "", ""),
-    null,
-  );
-  assert.equal(
-    toolbarDataUrlForTag(
-      "https://[invalid",
-      "request-1",
-      "request-2",
-      "https://example.test/",
-    ),
+    toolbarDataUrlForTag("https://[invalid", "request-2", baseUrl),
     null,
   );
 });
 
 test("toolbar item links remain focusable without nested interactive elements", () => {
-  var itemOnlyPanel = { items: [{ url: "/debug/request" }], url: null };
+  var linkedItem = { url: "/debug/request/status" };
+  var unlinkedItem = { value: "200" };
+  var itemOnlyPanel = { items: [linkedItem] };
   var panelAndItemLinks = {
-    items: [{ url: "/debug/request/status" }],
+    items: [linkedItem],
     url: "/debug/request",
   };
 
   assert.equal(toolbarPanelContainerTag(itemOnlyPanel), "div");
-  assert.equal(toolbarItemTag(itemOnlyPanel.items[0]), "a");
+  assert.equal(toolbarItemTag(linkedItem), "a");
+  assert.equal(toolbarItemTag(unlinkedItem), "span");
   assert.equal(toolbarPanelContainerTag(panelAndItemLinks), "div");
-  assert.equal(toolbarPanelContainerTag({ items: [], url: "/debug" }), "a");
-  assert.equal(toolbarItemTag({ url: null }), "span");
+  assert.equal(
+    toolbarPanelContainerTag({
+      items: [unlinkedItem, linkedItem],
+      url: "/debug/request",
+    }),
+    "div",
+  );
+  assert.equal(
+    toolbarPanelContainerTag({ items: [unlinkedItem], url: "/debug" }),
+    "a",
+  );
+  assert.equal(toolbarPanelContainerTag({ items: [unlinkedItem] }), "div");
 });
 
 test("toolbar native links carry the active theme without changing drawer URLs", () => {
@@ -253,27 +254,20 @@ test("renderYiiBrand renders unavailable configuration as static content", () =>
 });
 
 test("renderPhpBrand renders unavailable PHP info as static content", () => {
-  var html = renderPhpBrand(
-    "8.5.9",
-    null,
-    '<span class="icon"></span>',
-    String,
+  assert.equal(
+    renderPhpBrand("8.5.9", null, '<span class="icon"></span>', String),
+    '<span class="brand-link brand-link-php brand-static" title="PHP 8.5.9 — phpinfo unavailable"><span class="icon"></span><span class="brand-version">8.5.9</span></span>',
   );
-
-  assert.match(html, /^<span class="brand-link brand-link-php brand-static"/);
-  assert.match(html, /PHP 8\.5\.9 — phpinfo unavailable/);
-  assert.doesNotMatch(html, /href=|target=/);
 });
 
 test("renderPhpBrand links available PHP info", () => {
-  var html = renderPhpBrand(
-    "8.5.9",
-    "/debug/php-info",
-    '<span class="icon"></span>',
-    String,
+  assert.equal(
+    renderPhpBrand(
+      "8.5.9",
+      "/debug/php-info",
+      '<span class="icon"></span>',
+      String,
+    ),
+    '<a class="brand-link brand-link-php" href="/debug/php-info" target="_blank" rel="noopener" title="PHP 8.5.9 — open phpinfo in a new tab"><span class="icon"></span><span class="brand-version">8.5.9</span></a>',
   );
-
-  assert.match(html, /^<a class="brand-link brand-link-php"/);
-  assert.match(html, /href="\/debug\/php-info"/);
-  assert.match(html, /target="_blank"/);
 });

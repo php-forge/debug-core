@@ -34,10 +34,6 @@ export function renderYiiBrand(version, configUrl, logoHtml, escapeHtml) {
 }
 
 export function renderPhpBrand(version, phpInfoUrl, iconHtml, escapeHtml) {
-  if (!version) {
-    return "";
-  }
-
   var content =
     iconHtml + '<span class="brand-version">' + escapeHtml(version) + "</span>";
 

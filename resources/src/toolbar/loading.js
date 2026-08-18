@@ -4,7 +4,12 @@ const retryDelays = Object.freeze([75, 150, 300, 600, 900]);
  * Returns the delay for a toolbar snapshot that Yii3 has not persisted yet.
  */
 export function toolbarRetryDelay(status, attempt) {
-  if (status !== 404 || attempt < 0 || attempt >= retryDelays.length) {
+  if (
+    status !== 404 ||
+    !Number.isInteger(attempt) ||
+    attempt < 0 ||
+    attempt >= retryDelays.length
+  ) {
     return null;
   }
 
@@ -39,7 +44,7 @@ export function resolveToolbarLoadRollback(
   };
 }
 
-export function toolbarDataUrlForTag(url, currentTag, nextTag, baseUrl) {
+export function toolbarDataUrlForTag(url, nextTag, baseUrl) {
   if (!url || !nextTag) {
     return null;
   }
@@ -52,22 +57,7 @@ export function toolbarDataUrlForTag(url, currentTag, nextTag, baseUrl) {
     return null;
   }
 
-  if (parsed.searchParams.has("tag")) {
-    parsed.searchParams.set("tag", nextTag);
-
-    return parsed.href;
-  }
-
-  var segments = parsed.pathname.split("/");
-  var currentSegment = currentTag ? encodeURIComponent(currentTag) : "";
-  var currentIndex = currentSegment ? segments.lastIndexOf(currentSegment) : -1;
-
-  if (currentIndex !== -1) {
-    segments[currentIndex] = encodeURIComponent(nextTag);
-    parsed.pathname = segments.join("/");
-  } else {
-    parsed.searchParams.set("tag", nextTag);
-  }
+  parsed.searchParams.set("tag", nextTag);
 
   return parsed.href;
 }

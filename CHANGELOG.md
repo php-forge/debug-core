@@ -14,3 +14,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix: guard the user-switch panel against concurrent submits so a double-click (or set + reset in the same tick) sends a single identity-switch request instead of racing two session regenerations.
 - test: strengthen mutation coverage and clear PHPStan's result cache before static mutation analysis.
 - feat(router): implement Router panel with Current Route and Rules sections.
+- fix(toolbar): follow debug tags through adapter query URLs and enforce complete JavaScript mutation coverage.
