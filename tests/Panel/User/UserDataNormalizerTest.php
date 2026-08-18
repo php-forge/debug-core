@@ -7,6 +7,7 @@ namespace PHPForge\Debug\Tests\Panel\User;
 use PHPForge\Debug\Panel\User\{UserAttribute, UserDataNormalizer};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use Xepozz\InternalMocker\MockerState;
 
 use function array_map;
 
@@ -19,6 +20,8 @@ use function array_map;
 #[Group('user')]
 final class UserDataNormalizerTest extends TestCase
 {
+    private const int NOW = 1_800_000_000;
+
     public function testFromIdentityBucketsAttributesIntoOtherSectionWhenNotSensitiveNotTimestamp(): void
     {
         $view = UserDataNormalizer::fromIdentity(
@@ -122,6 +125,62 @@ final class UserDataNormalizerTest extends TestCase
         );
     }
 
+    public function testFromIdentityBuildsDefaultLabelsFromDotsAndUnderscores(): void
+    {
+        $view = UserDataNormalizer::fromIdentity(
+            ['username' => "'admin'", 'preferred.locale_key' => "'en'"],
+            null,
+        );
+
+        $other = $view->sections[1] ?? null;
+
+        self::assertNotNull($other, 'Other attributes section must be present.');
+        self::assertSame(
+            ['Preferred Locale Key'],
+            array_map(static fn(UserAttribute $attribute): string => $attribute->label, $other->attributes),
+            'Default labels must replace dots and underscores before title-casing.',
+        );
+    }
+
+    public function testFromIdentityClassifiesCaseInsensitiveAndNumericTimestampCandidates(): void
+    {
+        self::freezeTime();
+
+        $view = UserDataNormalizer::fromIdentity(
+            [
+                'username' => "'admin'",
+                'PASSWORD' => "'secret'",
+                'CREATED_ON' => "'not-an-epoch'",
+                'numeric_timestamp' => "'1700000000'",
+                'nine_digits' => "'123456789'",
+                'eleven_digits' => "'12345678901'",
+                'ten_characters' => "'123456789x'",
+            ],
+            null,
+        );
+
+        $sectionKeys = [];
+
+        foreach ($view->sections as $section) {
+            $sectionKeys[$section->label] = array_map(
+                static fn(UserAttribute $attribute): string => $attribute->key,
+                $section->attributes,
+            );
+        }
+
+        self::assertSame(['PASSWORD'], $sectionKeys['Security'] ?? null, 'Sensitive matching must ignore key case.');
+        self::assertSame(
+            ['CREATED_ON', 'numeric_timestamp'],
+            $sectionKeys['Timestamps'] ?? null,
+            'Timestamp matching must ignore key case and accept quoted ten-digit epochs.',
+        );
+        self::assertSame(
+            ['nine_digits', 'eleven_digits', 'ten_characters'],
+            $sectionKeys['Other attributes'] ?? null,
+            'Numeric fallback must reject the wrong length and non-digit values.',
+        );
+    }
+
     public function testFromIdentityFallsBackMonogramToEmailWhenUsernameMissing(): void
     {
         $view = UserDataNormalizer::fromIdentity(
@@ -143,14 +202,19 @@ final class UserDataNormalizerTest extends TestCase
 
     public function testFromIdentityHumanizesTimestampsAcrossEveryRelativeBucket(): void
     {
-        $now = time();
+        self::freezeTime();
 
         $view = UserDataNormalizer::fromIdentity(
             [
-                'just_now_at' => "'" . ($now - 5) . "'",
-                'minute_ago_at' => "'" . ($now - 600) . "'",
-                'hour_ago_at' => "'" . ($now - 7200) . "'",
-                'day_ago_at' => "'" . ($now - 172800) . "'",
+                'second_59_at' => "'" . (self::NOW - 59) . "'",
+                'second_60_at' => "'" . (self::NOW - 60) . "'",
+                'second_61_at' => "'" . (self::NOW - 61) . "'",
+                'second_3599_at' => "'" . (self::NOW - 3599) . "'",
+                'second_3600_at' => "'" . (self::NOW - 3600) . "'",
+                'second_86399_at' => "'" . (self::NOW - 86399) . "'",
+                'second_86400_at' => "'" . (self::NOW - 86400) . "'",
+                'second_2591999_at' => "'" . (self::NOW - 2591999) . "'",
+                'second_2592000_at' => "'" . (self::NOW - 2592000) . "'",
                 'old_at' => "'0'",
             ],
             null,
@@ -168,25 +232,18 @@ final class UserDataNormalizerTest extends TestCase
             }
         }
 
+        self::assertSame('just now', $relatives['second_59_at'] ?? null, '59 seconds must remain just now.');
+        self::assertSame('1 min ago', $relatives['second_60_at'] ?? null, '60 seconds must become one minute.');
+        self::assertSame('1 min ago', $relatives['second_61_at'] ?? null, '61 seconds must round down to one minute.');
+        self::assertSame('59 min ago', $relatives['second_3599_at'] ?? null, '3599 seconds must round down.');
+        self::assertSame('1 h ago', $relatives['second_3600_at'] ?? null, '3600 seconds must become one hour.');
+        self::assertSame('23 h ago', $relatives['second_86399_at'] ?? null, '86399 seconds must round down.');
+        self::assertSame('1 d ago', $relatives['second_86400_at'] ?? null, '86400 seconds must become one day.');
+        self::assertSame('29 d ago', $relatives['second_2591999_at'] ?? null, 'The last sub-month second must round down.');
         self::assertSame(
-            'just now',
-            $relatives['just_now_at'] ?? null,
-            "Timestamps within the last minute must render as 'just now'.",
-        );
-        self::assertStringEndsWith(
-            ' min ago',
-            $relatives['minute_ago_at'] ?? '',
-            "Timestamps under an hour must render as '<n> min ago'.",
-        );
-        self::assertStringEndsWith(
-            ' h ago',
-            $relatives['hour_ago_at'] ?? '',
-            "Timestamps under a day must render as '<n> h ago'.",
-        );
-        self::assertStringEndsWith(
-            ' d ago',
-            $relatives['day_ago_at'] ?? '',
-            "Timestamps under a month must render as '<n> d ago'.",
+            date('M j, Y · H:i', self::NOW - 2592000),
+            $relatives['second_2592000_at'] ?? null,
+            'Exactly thirty days must use the absolute timestamp.',
         );
         self::assertSame(
             '—',
@@ -295,6 +352,34 @@ final class UserDataNormalizerTest extends TestCase
         );
     }
 
+    public function testFromIdentityPrefersUsernameAndBuildsUnicodeMonogram(): void
+    {
+        $view = UserDataNormalizer::fromIdentity(
+            ['username' => "'éclair'", 'name' => "'Fallback name'"],
+            null,
+        );
+
+        self::assertSame(
+            'éclair',
+            $view->hero->username,
+            'Username must take precedence when both username and name are present.',
+        );
+        self::assertSame(
+            'É',
+            $view->hero->monogram,
+            'Monogram extraction and uppercasing must preserve Unicode characters.',
+        );
+    }
+
+    public function testFromIdentityPreservesPartiallyQuotedAndUnquotedValues(): void
+    {
+        foreach (["'leading" => "'leading", "trailing'" => "trailing'", 'plain' => 'plain'] as $value => $expected) {
+            $view = UserDataNormalizer::fromIdentity(['username' => $value], null);
+
+            self::assertSame($expected, $view->hero->username, 'Only matching quote wrappers may be stripped.');
+        }
+    }
+
     public function testFromIdentityResolvesAttributeLabelsFromTheLabelMap(): void
     {
         $view = UserDataNormalizer::fromIdentity(
@@ -334,32 +419,36 @@ final class UserDataNormalizerTest extends TestCase
         $view = UserDataNormalizer::fromIdentity(
             [
                 'username' => "'admin'",
-                'password_reset_token' => 'null',
+                'password_reset_token' => '',
+                'secret' => 'null',
+                'auth_key' => "'abc'",
             ],
             null,
         );
 
-        $securityAttr = null;
+        $securityAttributes = [];
 
         foreach ($view->sections as $section) {
             if ($section->label === 'Security' && $section->attributes !== []) {
-                $securityAttr = $section->attributes[0];
+                $securityAttributes = $section->attributes;
             }
         }
 
-        self::assertNotNull(
-            $securityAttr,
-            'Security section must surface even when value is empty.',
-        );
         self::assertSame(
-            UserAttribute::KIND_EMPTY,
-            $securityAttr->kind,
-            '`null` value must collapse to the empty kind.',
-        );
-        self::assertSame(
-            '',
-            $securityAttr->displayValue,
-            'Empty kind must carry an empty display value.',
+            [
+                ['password_reset_token', UserAttribute::KIND_EMPTY, ''],
+                ['secret', UserAttribute::KIND_EMPTY, ''],
+                ['auth_key', UserAttribute::KIND_SECURITY, 'abc'],
+            ],
+            array_map(
+                static fn(UserAttribute $attribute): array => [
+                    $attribute->key,
+                    $attribute->kind,
+                    $attribute->displayValue,
+                ],
+                $securityAttributes,
+            ),
+            'Empty values must collapse without stopping later security attributes from rendering.',
         );
     }
 
@@ -374,6 +463,17 @@ final class UserDataNormalizerTest extends TestCase
             'admin',
             $view->hero->username,
             'VarDumper single-quote wrapping must be stripped.',
+        );
+    }
+
+    private static function freezeTime(): void
+    {
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Panel\\User',
+            'time',
+            [],
+            self::NOW,
+            true,
         );
     }
 }

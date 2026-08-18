@@ -7,6 +7,7 @@ namespace PHPForge\Debug\Tests\PhpInfo;
 use PHPForge\Debug\PhpInfo\{
     PhpInfoCompactModule,
     PhpInfoDataNormalizer,
+    PhpInfoModuleGroup,
     PhpInfoRenderer,
     PhpInfoSection,
     PhpInfoTile,
@@ -26,6 +27,25 @@ use PHPUnit\Framework\TestCase;
 #[Group('phpinfo')]
 final class PhpInfoRendererTest extends TestCase
 {
+    public function testModuleGroupBucketPreservesEveryGroupAndPublicResolution(): void
+    {
+        self::assertSame('Database', PhpInfoModuleGroup::resolve('PDO'), 'Public resolution must remain callable.');
+        self::assertSame(
+            [
+                'Core & Runtime',
+                'Database',
+                'Text & Localization',
+                'Network & Security',
+                'XML, Data & Media',
+                'System & Compression',
+                'Environment',
+                'Other',
+            ],
+            array_keys(PhpInfoModuleGroup::bucket([], static fn(string $title): string => $title)),
+            'Bucketing must preserve every group in display order even when it is empty.',
+        );
+    }
+
     public function testRenderEmitsTocLinkPerEntry(): void
     {
         $view = $this->emptyView(
@@ -88,6 +108,16 @@ final class PhpInfoRendererTest extends TestCase
             $html,
             'Every module group must expose the JavaScript synchronization hook.',
         );
+        self::assertStringContainsString(
+            'aria-label="2 modules"',
+            $html,
+            'A group with two entries must use the pluralized accessible count.',
+        );
+        self::assertStringContainsString(
+            'aria-label="1 module"',
+            $html,
+            'A group with one entry must use the singular accessible count.',
+        );
     }
 
     public function testRenderMarksLongOverviewValuesAsWide(): void
@@ -146,6 +176,21 @@ final class PhpInfoRendererTest extends TestCase
             '<span>1</span><span>modules</span>',
             $html,
             'The TOC counter must exclude the Overview entry.',
+        );
+        self::assertStringContainsString(
+            '<a class="yii-debug-phpinfo-toc-link is-active" href="#phpinfo-overview" data-toc-target="phpinfo-overview" aria-current="page">Overview</a>',
+            $html,
+            'Only Overview must carry active styling and aria-current.',
+        );
+        self::assertStringContainsString(
+            '<a class="yii-debug-phpinfo-toc-link" href="#phpinfo-core" data-toc-target="phpinfo-core">Core</a>',
+            $html,
+            'Ordinary module links must remain inactive.',
+        );
+        self::assertStringNotContainsString(
+            'in Overview',
+            $html,
+            'The TOC must omit the Overview note when no modules were summarized.',
         );
     }
 
@@ -210,6 +255,11 @@ final class PhpInfoRendererTest extends TestCase
             'data-yii-debug-phpinfo-clear="true"',
             $html,
             'Search must expose an explicit clear action.',
+        );
+        self::assertMatchesRegularExpression(
+            '~<button class="yii-debug-phpinfo-search-clear"[^>]*\shidden(?:\s|>)~',
+            $html,
+            'The clear action must remain hidden until the search has content.',
         );
         self::assertStringContainsString(
             'data-yii-debug-phpinfo-status="true"',
@@ -449,6 +499,11 @@ final class PhpInfoRendererTest extends TestCase
             'Summarized modules must live in an identifiable disclosure.',
         );
         self::assertStringContainsString(
+            'data-yii-debug-phpinfo-extension-group-count="true"',
+            $html,
+            'Extension group counts must expose the enabled synchronization marker.',
+        );
+        self::assertStringContainsString(
             'class="yii-debug-ext-pill is-on"',
             $html,
             'Summaries must reuse the Config panel pill, enabled variant.',
@@ -514,6 +569,12 @@ final class PhpInfoRendererTest extends TestCase
                             rawValue: 'disabled',
                             kind: PhpInfoTile::KIND_PILL_MUTED,
                         ),
+                        new PhpInfoTile(
+                            label: 'Version',
+                            displayValue: '1.2.3',
+                            rawValue: '1.2.3',
+                            kind: PhpInfoTile::KIND_TEXT,
+                        ),
                     ],
                 ),
             ],
@@ -534,9 +595,41 @@ final class PhpInfoRendererTest extends TestCase
             'A module reporting only a muted fact must render as `is-off`.',
         );
         self::assertStringContainsString(
+            '<span class="yii-debug-ext-pill-state">1.2.3</span>',
+            $html,
+            'A disabled module must still surface a version reported after its muted status.',
+        );
+        self::assertStringContainsString(
             'title="PDO Driver for SQLite 3.x: enabled · SQLite Library: 3.53.3"',
             $html,
             'Every fact must survive in the tooltip.',
+        );
+    }
+
+    public function testRenderUsesUnicodeAwareStrictWideTileBoundary(): void
+    {
+        $section = new PhpInfoSection(
+            eyebrow: 'Build',
+            tiles: [
+                new PhpInfoTile('Boundary', str_repeat('a', 48), str_repeat('a', 48), PhpInfoTile::KIND_TEXT),
+                new PhpInfoTile('Unicode', str_repeat('é', 30), str_repeat('é', 30), PhpInfoTile::KIND_TEXT),
+                new PhpInfoTile('Short', 'short', 'short', PhpInfoTile::KIND_TEXT),
+                new PhpInfoTile('Path', '/x', '/x', PhpInfoTile::KIND_PATH),
+            ],
+        );
+        $html = PhpInfoRenderer::render(new PhpInfoView([$section], [], [], '', ''));
+
+        foreach (['Boundary', 'Unicode', 'Short'] as $label) {
+            self::assertMatchesRegularExpression(
+                '~<div class="yii-debug-phpinfo-overview-hero-metric">\s*<dt>\s*' . $label . '\s*</dt>~',
+                $html,
+                "{$label} must remain a compact metric.",
+            );
+        }
+        self::assertMatchesRegularExpression(
+            '~<div class="yii-debug-phpinfo-overview-hero-metric is-wide">\s*<dt>\s*Path\s*</dt>~',
+            $html,
+            'Path tiles must remain wide regardless of their short value.',
         );
     }
 

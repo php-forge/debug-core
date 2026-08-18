@@ -20,8 +20,6 @@ use function is_array;
 use function is_string;
 use function mb_strlen;
 use function php_uname;
-use function posix_getpwuid;
-use function posix_getuid;
 use function preg_match;
 use function preg_match_all;
 use function preg_quote;
@@ -32,7 +30,6 @@ use function sprintf;
 use function str_contains;
 use function str_starts_with;
 use function strip_tags;
-use function stripos;
 use function strlen;
 use function strpos;
 use function strtolower;
@@ -64,7 +61,8 @@ final class PhpInfoDataNormalizer
     /**
      * Matches the key cell of a phpinfo row (`class="e"`), whether it is still a `<td>` or already a row header.
      */
-    private const string KEY_CELL_PATTERN = '%<(?:th|td)\b[^>]*class="[^"]*\be\b[^"]*"[^>]*>(.*?)</(?:th|td)>%si';
+    private const string KEY_CELL_PATTERN
+        = '%<(?:th|td)\b[^>]*class="[^"]*\be\b[^"]*"[^>]*>(?<body>.*?)</(?:th|td)>%si';
     /**
      * Matches phpinfo's header row (`<tr class="h">`) anchored at the start of a table body.
      */
@@ -86,7 +84,7 @@ final class PhpInfoDataNormalizer
     /**
      * Matches a `<th>` or `<td>` and captures its content.
      */
-    private const string TABLE_CELL_PATTERN = '%<(?:th|td)\b[^>]*>(.*?)</(?:th|td)>%si';
+    private const string TABLE_CELL_PATTERN = '%<(?:th|td)\b[^>]*>(?<body>.*?)</(?:th|td)>%si';
     /**
      * Free-form key/value table ('Variable | Value', statistics, contributor lists).
      */
@@ -106,11 +104,11 @@ final class PhpInfoDataNormalizer
     /**
      * Matches a `<table>` and captures its body.
      */
-    private const string TABLE_PATTERN = '%<table\b[^>]*>(.*?)</table>%si';
+    private const string TABLE_PATTERN = '%<table\b[^>]*>(?<body>.*?)</table>%si';
     /**
      * Matches a `<tr>` and captures its attributes and its content.
      */
-    private const string TABLE_ROW_PATTERN = '%<tr\b([^>]*)>(.*?)</tr>%si';
+    private const string TABLE_ROW_PATTERN = '%<tr\b(?<attributes>[^>]*)>(?<body>.*?)</tr>%si';
 
     /**
      * Captures the {@see phpinfo()} report of the current process and narrows it into the typed {@see PhpInfoView}.
@@ -189,7 +187,7 @@ final class PhpInfoDataNormalizer
      */
     private static function addRowClass(string $attributes, string $class): string
     {
-        $withoutClass = (string) preg_replace(self::CLASS_ATTRIBUTE_PATTERN, '', trim($attributes));
+        $withoutClass = preg_replace(self::CLASS_ATTRIBUTE_PATTERN, '', trim($attributes));
 
         return trim("{$withoutClass} class=\"{$class}\"");
     }
@@ -383,16 +381,19 @@ final class PhpInfoDataNormalizer
 
         if (str_contains($value, ',')) {
             $tokens = self::splitTrimmed($value, ',');
-            $isTokenList = count($tokens) > 1;
 
-            foreach ($tokens as $t) {
-                if ($t === '' || preg_match('/\s/', $t) === 1 || mb_strlen($t) > 32) {
-                    $isTokenList = false;
-                    break;
+            if (count($tokens) > 1) {
+                foreach ($tokens as $t) {
+                    if (preg_match('/\s/', $t) === 1 || mb_strlen($t) > 32) {
+                        return new PhpInfoTile(
+                            label: $label,
+                            displayValue: $value,
+                            rawValue: $value,
+                            kind: PhpInfoTile::KIND_TEXT,
+                        );
+                    }
                 }
-            }
 
-            if ($isTokenList) {
                 $tokenDtos = array_map(
                     static fn(string $t): PhpInfoToken => new PhpInfoToken(label: $t),
                     $tokens,
@@ -490,11 +491,11 @@ final class PhpInfoDataNormalizer
         $count = 0;
 
         foreach ($rows as $row) {
-            if ($skipHeaderRows && preg_match('/\bclass="[^"]*\bh\b[^"]*"/i', $row[1]) === 1) {
+            if ($skipHeaderRows && preg_match('/\bclass="[^"]*\bh\b[^"]*"/i', $row['attributes']) === 1) {
                 continue;
             }
 
-            preg_match_all('%<(?:th|td)\b[^>]*>%i', $row[2], $cells);
+            preg_match_all('%<(?:th|td)\b[^>]*>%i', $row['body'], $cells);
 
             if (count($cells[0]) >= 2) {
                 $count++;
@@ -550,23 +551,23 @@ final class PhpInfoDataNormalizer
 
         preg_match_all(self::TABLE_PATTERN, $moduleBody, $tables, PREG_SET_ORDER);
 
-        if (count($tables) !== 1 || self::classifyModuleTable($tables[0][1]) !== self::TABLE_KIND_FACTS) {
+        if (count($tables) !== 1 || self::classifyModuleTable($tables[0]['body']) !== self::TABLE_KIND_FACTS) {
             return null;
         }
 
-        preg_match_all('%<tr\b[^>]*>(.*?)</tr>%si', $tables[0][1], $rows, PREG_SET_ORDER);
+        preg_match_all(self::TABLE_ROW_PATTERN, $tables[0]['body'], $rows, PREG_SET_ORDER);
 
         $tiles = [];
 
         foreach ($rows as $row) {
-            preg_match_all(self::TABLE_CELL_PATTERN, $row[1], $cells, PREG_SET_ORDER);
+            preg_match_all(self::TABLE_CELL_PATTERN, $row['body'], $cells, PREG_SET_ORDER);
 
             if (count($cells) < 2) {
                 continue;
             }
 
-            $label = self::decodeCell($cells[0][1]);
-            $value = self::decodeCell($cells[1][1]);
+            $label = self::decodeCell($cells[0]['body']);
+            $value = self::decodeCell($cells[1]['body']);
 
             if ($label === '' || $value === '') {
                 return null;
@@ -595,13 +596,19 @@ final class PhpInfoDataNormalizer
      */
     private static function extractFirstHeaderCells(string $tableBody): array
     {
-        if (preg_match('%<tr\b[^>]*class="[^"]*\bh\b[^"]*"[^>]*>(.*?)</tr>%si', $tableBody, $row) !== 1) {
+        if (
+            preg_match(
+                '%<tr\b[^>]*class="[^"]*\bh\b[^"]*"[^>]*>(?<body>.*?)</tr>%si',
+                $tableBody,
+                $row,
+            ) !== 1
+        ) {
             return [];
         }
 
-        preg_match_all(self::TABLE_CELL_PATTERN, $row[1], $cells, PREG_SET_ORDER);
+        preg_match_all(self::TABLE_CELL_PATTERN, $row['body'], $cells, PREG_SET_ORDER);
 
-        return array_map(static fn(array $cell): string => self::decodeCell($cell[1]), $cells);
+        return array_map(static fn(array $cell): string => self::decodeCell($cell['body']), $cells);
     }
 
     /**
@@ -615,7 +622,7 @@ final class PhpInfoDataNormalizer
             return null;
         }
 
-        return self::decodeCell($keyCell[1]);
+        return self::decodeCell($keyCell['body']);
     }
 
     /**
@@ -668,7 +675,7 @@ final class PhpInfoDataNormalizer
         preg_match_all(self::TABLE_PATTERN, $moduleBody, $tables, PREG_SET_ORDER);
 
         foreach ($tables as $table) {
-            $tableBody = $table[1];
+            $tableBody = $table['body'];
 
             if (self::extractTableTitle($tableBody) !== '') {
                 $tableBody = self::stripHeaderRow($tableBody);
@@ -726,22 +733,22 @@ final class PhpInfoDataNormalizer
         $normalized = preg_replace_callback(
             self::TABLE_ROW_PATTERN,
             static function (array $row): string {
-                preg_match_all(self::TABLE_CELL_PATTERN, $row[2], $cells, PREG_SET_ORDER);
+                preg_match_all(self::TABLE_CELL_PATTERN, $row['body'], $cells, PREG_SET_ORDER);
 
                 if (count($cells) === 1) {
-                    $content = trim($cells[0][1]);
-                    $attributes = self::addRowClass($row[1], 'yii-debug-phpinfo-fact-subheading');
+                    $content = trim($cells[0]['body']);
+                    $attributes = self::addRowClass($row['attributes'], 'yii-debug-phpinfo-fact-subheading');
 
                     return sprintf('<tr %s><th colspan="2">%s</th></tr>', $attributes, $content);
                 }
 
-                $value = isset($cells[1]) ? self::decodeCell($cells[1][1]) : '';
+                $value = isset($cells[1]) ? self::decodeCell($cells[1]['body']) : '';
                 $class = mb_strlen($value) > 72
                     ? 'yii-debug-phpinfo-fact yii-debug-phpinfo-fact-wide'
                     : 'yii-debug-phpinfo-fact';
-                $attributes = self::addRowClass($row[1], $class);
+                $attributes = self::addRowClass($row['attributes'], $class);
 
-                return '<tr ' . $attributes . '>' . self::renderFactStatusPills($row[2]) . '</tr>';
+                return '<tr ' . $attributes . '>' . self::renderFactStatusPills($row['body']) . '</tr>';
             },
             $tableBody,
         );
@@ -756,13 +763,13 @@ final class PhpInfoDataNormalizer
      * @param string $tableBody Inner HTML of the table.
      * @param string $labelOverride Label replacing the inferred one; empty string to keep the inferred label.
      * @param bool $collapsible Whether the chrome is a `<details>` disclosure instead of a plain `<div>`.
-     * @param bool $open Whether the disclosure starts expanded; ignored when `$collapsible` is `false`.
+     * @param bool|null $open Whether the disclosure starts expanded; `null` for non-collapsible tables.
      */
     private static function normalizeModuleTable(
         string $tableBody,
-        string $labelOverride = '',
-        bool $collapsible = false,
-        bool $open = false,
+        string $labelOverride,
+        bool $collapsible,
+        bool|null $open,
     ): string {
         $tableTitle = self::extractTableTitle($tableBody);
 
@@ -787,11 +794,12 @@ final class PhpInfoDataNormalizer
         $encodedLabel = Encode::content($label);
         $headTag = $collapsible ? 'summary' : 'header';
         $containerTag = $collapsible ? 'details' : 'div';
+        $isOpen = $open === true;
         $attributes = $collapsible
             ? sprintf(
                 ' data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="%s"%s',
-                $open ? 'true' : 'false',
-                $open ? ' open' : '',
+                $isOpen ? 'true' : 'false',
+                $isOpen ? ' open' : '',
             )
             : '';
 
@@ -840,13 +848,13 @@ final class PhpInfoDataNormalizer
         ];
 
         foreach ($rows as $row) {
-            if (preg_match('/\bclass="[^"]*\bh\b[^"]*"/i', $row[1]) === 1) {
+            if (preg_match('/\bclass="[^"]*\bh\b[^"]*"/i', $row['attributes']) === 1) {
                 $header = $row[0];
 
                 continue;
             }
 
-            $key = self::extractKeyCell($row[2]);
+            $key = self::extractKeyCell($row['body']);
             $groups[$key === null ? 'Other' : self::resolveVariableGroup($key)][] = $row[0];
         }
 
@@ -888,10 +896,6 @@ final class PhpInfoDataNormalizer
             $key = trim(html_entity_decode(strip_tags($row[1]), ENT_QUOTES, 'UTF-8'));
             $value = trim(html_entity_decode(strip_tags($row[2]), ENT_QUOTES, 'UTF-8'));
 
-            if ($key === '' || stripos($key, 'PHP Logo') !== false) {
-                continue;
-            }
-
             $rows[$key] = $value;
         }
 
@@ -919,7 +923,7 @@ final class PhpInfoDataNormalizer
         $redacted = preg_replace_callback(
             self::TABLE_ROW_PATTERN,
             static function (array $row): string {
-                $key = self::extractKeyCell($row[2]);
+                $key = self::extractKeyCell($row['body']);
 
                 if ($key === null || self::isSensitiveVariableKey($key) === false) {
                     return $row[0];
@@ -928,10 +932,10 @@ final class PhpInfoDataNormalizer
                 $content = preg_replace(
                     '%<td\b([^>]*)class="[^"]*\bv\b[^"]*"([^>]*)>.*?</td>%si',
                     '<td $1class="v"$2><span class="yii-debug-phpinfo-redacted" aria-label="Sensitive value hidden">redacted</span></td>',
-                    $row[2],
+                    $row['body'],
                 );
 
-                return '<tr' . $row[1] . '>' . ($content ?? $row[2]) . '</tr>';
+                return '<tr' . $row['attributes'] . '>' . ($content ?? $row['body']) . '</tr>';
             },
             $tableBody,
         );
@@ -947,13 +951,13 @@ final class PhpInfoDataNormalizer
     private static function renderFactStatusPills(string $rowContent): string
     {
         $rendered = preg_replace_callback(
-            '%<td\b([^>]*)>(.*?)</td>%si',
+            '%<td\b(?<attributes>[^>]*)>(?<body>.*?)</td>%si',
             static function (array $cell): string {
-                if (preg_match('/\bclass="[^"]*\bv\b[^"]*"/i', $cell[1]) !== 1) {
+                if (preg_match('/\bclass="[^"]*\bv\b[^"]*"/i', $cell['attributes']) !== 1) {
                     return $cell[0];
                 }
 
-                $kind = self::resolveStatusVariant(self::decodeCell($cell[2]));
+                $kind = self::resolveStatusVariant(self::decodeCell($cell['body']));
 
                 if ($kind === null) {
                     return $cell[0];
@@ -963,9 +967,9 @@ final class PhpInfoDataNormalizer
 
                 return sprintf(
                     '<td%s><span class="yii-debug-phpinfo-status-pill" data-variant="%s">%s</span></td>',
-                    $cell[1],
+                    $cell['attributes'],
                     $variant,
-                    trim($cell[2]),
+                    trim($cell['body']),
                 );
             },
             $rowContent,
@@ -1139,7 +1143,7 @@ final class PhpInfoDataNormalizer
      */
     private static function stripHeaderRow(string $tableBody): string
     {
-        return preg_replace(self::LEADING_HEADER_ROW_PATTERN, '', $tableBody, 1) ?? $tableBody;
+        return preg_replace(self::LEADING_HEADER_ROW_PATTERN, '', $tableBody) ?? $tableBody;
     }
 
     /**
@@ -1224,9 +1228,12 @@ final class PhpInfoDataNormalizer
         $wrapped = preg_replace_callback(
             self::TABLE_PATTERN,
             static function (array $table) use ($redactSensitiveVariables): string {
-                $tableBody = $redactSensitiveVariables ? self::redactSensitiveRows($table[1]) : $table[1];
+                $tableBody = $redactSensitiveVariables
+                    ? self::redactSensitiveRows($table['body'])
+                    : $table['body'];
 
-                return self::normalizeVariableTables($tableBody) ?? self::normalizeModuleTable($tableBody);
+                return self::normalizeVariableTables($tableBody)
+                    ?? self::normalizeModuleTable($tableBody, '', false, null);
             },
             $modulesSrc,
         );

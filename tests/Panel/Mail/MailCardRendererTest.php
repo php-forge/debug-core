@@ -7,6 +7,7 @@ namespace PHPForge\Debug\Tests\Panel\Mail;
 use PHPForge\Debug\Panel\Mail\{MailCardRenderer, MailMessage};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use Xepozz\InternalMocker\MockerState;
 
 /**
  * Unit tests for {@see MailCardRenderer} covering the typed mail card composition: avatar / headline / meta line,
@@ -16,6 +17,8 @@ use PHPUnit\Framework\TestCase;
 #[Group('mail')]
 final class MailCardRendererTest extends TestCase
 {
+    private const int NOW = 1_700_000_000;
+
     public function testRenderItemAvatarFallsBackToFixedHueWhenSenderIsEmpty(): void
     {
         $html = MailCardRenderer::renderItem(
@@ -32,6 +35,30 @@ final class MailCardRendererTest extends TestCase
             '>?<',
             $html,
             "Empty sender must render '?' as the initial.",
+        );
+    }
+
+    public function testRenderItemBodyPreviewUsesUnicodeCharacterBoundaries(): void
+    {
+        $exact = MailCardRenderer::renderItem(
+            self::makeMessage(body: str_repeat('é', 140)),
+            self::makeUrlBuilder(),
+        );
+        $long = MailCardRenderer::renderItem(
+            self::makeMessage(body: 'É' . str_repeat('é', 140)),
+            self::makeUrlBuilder(),
+        );
+
+        self::assertStringContainsString(
+            'class="yii-debug-mail-preview">' . str_repeat('é', 140) . '</span>',
+            $exact,
+            'Exactly 140 Unicode characters must remain complete and omit the ellipsis.',
+        );
+        self::assertStringNotContainsString('…', $exact, 'The exact preview limit must not be treated as overflow.');
+        self::assertStringContainsString(
+            'class="yii-debug-mail-preview">É' . str_repeat('é', 139) . '…</span>',
+            $long,
+            'Long Unicode previews must start at the first character and truncate on a character boundary.',
         );
     }
 
@@ -56,13 +83,15 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemFormatsRelativeTimeForDaysAgoDelta(): void
     {
+        self::freezeTime();
+
         $html = MailCardRenderer::renderItem(
-            self::makeMessage(time: time() - (3 * 86400)),
+            self::makeMessage(time: self::NOW - (3 * 86400)),
             self::makeUrlBuilder(),
         );
 
         self::assertStringContainsString(
-            'd ago',
+            '3 d ago',
             $html,
             "Days delta must read 'X d ago'.",
         );
@@ -70,13 +99,15 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemFormatsRelativeTimeForHoursAgoDelta(): void
     {
+        self::freezeTime();
+
         $html = MailCardRenderer::renderItem(
-            self::makeMessage(time: time() - 7200),
+            self::makeMessage(time: self::NOW - 7200),
             self::makeUrlBuilder(),
         );
 
         self::assertStringContainsString(
-            'h ago',
+            '2 h ago',
             $html,
             "Hours delta must read 'X h ago'.",
         );
@@ -84,8 +115,10 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemFormatsRelativeTimeForJustNowDelta(): void
     {
+        self::freezeTime();
+
         $html = MailCardRenderer::renderItem(
-            self::makeMessage(time: time()),
+            self::makeMessage(time: self::NOW),
             self::makeUrlBuilder(),
         );
 
@@ -98,13 +131,15 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemFormatsRelativeTimeForMinutesAgoDelta(): void
     {
+        self::freezeTime();
+
         $html = MailCardRenderer::renderItem(
-            self::makeMessage(time: time() - 600),
+            self::makeMessage(time: self::NOW - 600),
             self::makeUrlBuilder(),
         );
 
         self::assertStringContainsString(
-            'min ago',
+            '10 min ago',
             $html,
             "Minutes delta must read 'X min ago'.",
         );
@@ -227,6 +262,31 @@ final class MailCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderItemRendersEachRecipientGroupWhenItIsTheOnlyPopulatedList(): void
+    {
+        $cases = [
+            'to' => [['only-to@example.com'], [], [], [], 'data-role="to"'],
+            'cc' => [[], ['only-cc@example.com'], [], [], 'data-role="cc"'],
+            'bcc' => [[], [], ['only-bcc@example.com'], [], 'data-role="bcc"'],
+            'reply' => [[], [], [], ['only-reply@example.com'], 'data-role="reply"'],
+        ];
+
+        foreach ($cases as $name => [$to, $cc, $bcc, $replyTo, $role]) {
+            $html = MailCardRenderer::renderItem(
+                self::makeMessage(to: $to, cc: $cc, bcc: $bcc, replyTo: $replyTo),
+                self::makeUrlBuilder(),
+            );
+
+            self::assertStringContainsString('yii-debug-mail-recipients', $html, "{$name} alone must render recipients.");
+            self::assertStringContainsString($role, $html, "{$name} alone must render its role label.");
+            self::assertSame(
+                1,
+                substr_count($html, 'class="yii-debug-mail-recipient-pill"'),
+                "{$name} must render one pill.",
+            );
+        }
+    }
+
     public function testRenderItemRendersEmptyBodyPlaceholderWhenBodyIsEmpty(): void
     {
         $html = MailCardRenderer::renderItem(
@@ -289,7 +349,7 @@ final class MailCardRendererTest extends TestCase
         $html = MailCardRenderer::renderItem(
             self::makeMessage(
                 to: ['a@example.com', 'b@example.com'],
-                cc: ['cc@example.com'],
+                cc: ['carbon@example.com'],
                 bcc: ['bcc@example.com'],
                 replyTo: ['reply@example.com'],
             ),
@@ -327,9 +387,14 @@ final class MailCardRendererTest extends TestCase
             'TO pill must include the address.',
         );
         self::assertStringContainsString(
-            'cc@example.com',
+            'title="carbon@example.com">carbon@example.com</span>',
             $html,
             'CC pill must include the address.',
+        );
+        self::assertSame(
+            5,
+            substr_count($html, 'class="yii-debug-mail-recipient-pill"'),
+            'Every declared recipient must be wrapped in its own pill.',
         );
     }
 
@@ -350,6 +415,11 @@ final class MailCardRendererTest extends TestCase
             $html,
             "Status label must read 'Failed'.",
         );
+        self::assertStringContainsString(
+            'title="Mailer reported failure"',
+            $html,
+            'Failed status must retain its failure tooltip.',
+        );
     }
 
     public function testRenderItemRendersStatusOkWhenIsSuccessfulIsTrue(): void
@@ -369,6 +439,11 @@ final class MailCardRendererTest extends TestCase
             $html,
             "Status label must read 'Sent'.",
         );
+        self::assertStringContainsString(
+            'title="Mailer reported success"',
+            $html,
+            'Successful status must retain its success tooltip.',
+        );
     }
 
     public function testRenderItemRendersTechDetailsWhenHeadersOrCharsetSet(): void
@@ -382,6 +457,11 @@ final class MailCardRendererTest extends TestCase
             'class="yii-debug-mail-tech"',
             $html,
             'Tech details wrapper must be present.',
+        );
+        self::assertStringContainsString(
+            'class="yii-debug-mail-tech-icon"',
+            $html,
+            'Technical details must retain the code icon.',
         );
         self::assertStringContainsString(
             'Raw headers',
@@ -398,6 +478,23 @@ final class MailCardRendererTest extends TestCase
             $html,
             'Charset must be visible in the summary.',
         );
+    }
+
+    public function testRenderItemRendersTechDetailsWhenOnlyOneTechnicalFieldIsSet(): void
+    {
+        $headersOnly = MailCardRenderer::renderItem(
+            self::makeMessage(headers: 'X-Only: header', charset: ''),
+            self::makeUrlBuilder(),
+        );
+        $charsetOnly = MailCardRenderer::renderItem(
+            self::makeMessage(headers: '', charset: 'UTF-16'),
+            self::makeUrlBuilder(),
+        );
+
+        self::assertStringContainsString('yii-debug-mail-tech', $headersOnly, 'Headers alone must render details.');
+        self::assertStringContainsString('X-Only: header', $headersOnly, 'Header-only details must retain the value.');
+        self::assertStringContainsString('yii-debug-mail-tech', $charsetOnly, 'Charset alone must render details.');
+        self::assertStringContainsString('UTF-16', $charsetOnly, 'Charset-only details must retain the value.');
     }
 
     public function testRenderItemRendersTimeWhenSet(): void
@@ -417,6 +514,21 @@ final class MailCardRendererTest extends TestCase
             $html,
             'Time tooltip must contain the formatted absolute date.'
         );
+    }
+
+    public function testRenderItemRendersUnicodeAndEmptyLocalPartInitials(): void
+    {
+        $unicode = MailCardRenderer::renderItem(
+            self::makeMessage(from: 'élise@example.com'),
+            self::makeUrlBuilder(),
+        );
+        $emptyLocal = MailCardRenderer::renderItem(
+            self::makeMessage(from: '@example.com'),
+            self::makeUrlBuilder(),
+        );
+
+        self::assertStringContainsString('>É<', $unicode, 'Unicode initials must be sliced and uppercased safely.');
+        self::assertStringContainsString('>@<', $emptyLocal, 'An empty local part must fall back to the full address.');
     }
 
     public function testRenderItemRendersUppercasedFirstLetterOfLocalPartAsInitial(): void
@@ -452,6 +564,42 @@ final class MailCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderItemUsesExactRelativeTimeBoundariesAndUnits(): void
+    {
+        self::freezeTime();
+
+        $cases = [
+            ['1 min ago', 60, 'the minute boundary'],
+            ['1 h ago', 3600, 'the hour boundary'],
+            ['1 d ago', 86400, 'the day boundary'],
+            ['1 min ago', 118, 'a non-divisible minute delta'],
+            ['1 h ago', 7198, 'a non-divisible hour delta'],
+            ['1 d ago', 172798, 'a non-divisible day delta'],
+        ];
+
+        foreach ($cases as [$expected, $diff, $description]) {
+            $html = MailCardRenderer::renderItem(
+                self::makeMessage(time: self::NOW - $diff),
+                self::makeUrlBuilder(),
+            );
+
+            self::assertStringContainsString(
+                ">{$expected}<",
+                $html,
+                "Relative time must use the canonical unit for {$description}.",
+            );
+        }
+
+        $absolute = date('M j, Y · H:i:s', self::NOW - 2_592_000);
+        $html = MailCardRenderer::renderItem(
+            self::makeMessage(time: self::NOW - 2_592_000),
+            self::makeUrlBuilder(),
+        );
+
+        self::assertStringContainsString(">{$absolute}<", $html, 'Thirty days must switch to the absolute label.');
+        self::assertStringNotContainsString('30 d ago', $html, 'The thirty-day boundary must not stay relative.');
+    }
+
     public function testRenderItemWrapsContentInArticleWithMailCardClass(): void
     {
         $html = MailCardRenderer::renderItem(
@@ -481,6 +629,17 @@ final class MailCardRendererTest extends TestCase
         }
 
         self::fail('No avatar hue found in rendered HTML.');
+    }
+
+    private static function freezeTime(): void
+    {
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Panel\\Mail',
+            'time',
+            [],
+            self::NOW,
+            true,
+        );
     }
 
     /**

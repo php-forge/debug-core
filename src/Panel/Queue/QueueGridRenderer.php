@@ -11,6 +11,7 @@ use UIAwesome\Html\Phrasing\{Span, Strong};
 
 use function abs;
 use function date;
+use function intval;
 use function number_format;
 use function sprintf;
 
@@ -143,8 +144,8 @@ final class QueueGridRenderer
      */
     public static function renderTimeCell(JobRecord $record): string
     {
-        $seconds = (int) $record->time;
-        $milliseconds = abs((int) (($record->time - $seconds) * 1000));
+        $seconds = intval($record->time);
+        $milliseconds = abs(intval($record->time * 1000) % 1000);
 
         return date('H:i:s.', $seconds) . sprintf('%03d', $milliseconds);
     }

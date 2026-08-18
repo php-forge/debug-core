@@ -24,7 +24,9 @@
         "ext-intl": "*",
         "ext-mbstring": "*",
         "ui-awesome/html": "^0.6",
+        "ui-awesome/html-core-component": "^0.4",
         "ui-awesome/html-helper": "^0.7",
+        "ui-awesome/html-interop": "^0.4",
         "ui-awesome/html-svg": "^0.6"
     },
     "require-dev": {
@@ -73,6 +75,7 @@
         "mutation": "php -d memory_limit=-1 vendor/bin/infection --threads=4 --ignore-msi-with-no-mutations --min-msi=100 --min-covered-msi=100",
         "mutation-static": [
             "Composer\\Config::disableProcessTimeout",
+            "./vendor/bin/phpstan clear-result-cache",
             "php -d memory_limit=-1 vendor/bin/infection --threads=4 --ignore-msi-with-no-mutations --min-msi=100 --min-covered-msi=100 --static-analysis-tool=phpstan --static-analysis-tool-options='--memory-limit=-1'"
         ],
         "rector": "./vendor/bin/rector process",

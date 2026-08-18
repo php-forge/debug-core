@@ -10,6 +10,7 @@ use function count;
 use function get_debug_type;
 use function gettype;
 use function is_array;
+use function is_scalar;
 use function range;
 use function str_repeat;
 use function var_export;
@@ -79,7 +80,7 @@ final class Dump
 
         foreach (array_keys($value) as $key) {
             $output .= "\n{$spaces}    ";
-            $output .= self::dumpInternal($key, $depth, 0);
+            $output .= self::dumpInternal($key, $depth, $level);
             $output .= ' => ';
             $output .= self::dumpInternal($value[$key], $depth, $level + 1);
         }
@@ -126,7 +127,7 @@ final class Dump
                 $output .= "\n{$spaces}    ";
 
                 if ($outputKeys) {
-                    $output .= self::exportInternal($key, 0);
+                    $output .= self::exportInternal($key, $level);
 
                     $output .= ' => ';
                 }

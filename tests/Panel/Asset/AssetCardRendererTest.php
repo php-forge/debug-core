@@ -42,6 +42,33 @@ final class AssetCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderCardEmitsCssFilesListAndChipForCssOnlyBundle(): void
+    {
+        $summary = (new AssetBundleNormalizer())
+            ->normalize(
+                self::rows(['app\\AppAsset' => ['css' => ['app.css']]]),
+            );
+
+        $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
+        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+
+        self::assertStringContainsString(
+            '<strong>1</strong> css<',
+            $html,
+            "CSS-only bundle must render the 'css' chip.",
+        );
+        self::assertStringContainsString(
+            'class="yii-debug-asset-file-type yii-debug-asset-file-type-css"',
+            $html,
+            'CSS file rows must be rendered through the typed file renderer.',
+        );
+        self::assertStringContainsString(
+            'title="app.css">app.css<',
+            $html,
+            'CSS file rows must retain the file label and tooltip.',
+        );
+    }
+
     public function testRenderCardEmitsJsFilesListAndChipForJsOnlyBundle(): void
     {
         $summary = (new AssetBundleNormalizer())
@@ -115,7 +142,7 @@ final class AssetCardRendererTest extends TestCase
             'Header must render the bundle short name.',
         );
         self::assertStringContainsString(
-            'vendor\\package\\',
+            'class="yii-debug-asset-card-fqcn">vendor\\package\\<',
             $html,
             'Header must render the namespace prefix.',
         );
@@ -233,6 +260,11 @@ final class AssetCardRendererTest extends TestCase
             'yii-debug-asset-section',
             $html,
             'No body means no sections.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-asset-chip-',
+            $html,
+            'Zero CSS, JS, and dependency counts must omit their header chips.',
         );
     }
 

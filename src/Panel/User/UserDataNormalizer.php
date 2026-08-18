@@ -8,8 +8,8 @@ use PHPForge\Debug\Helper\Icon;
 
 use function ctype_digit;
 use function date;
-use function floor;
 use function in_array;
+use function intdiv;
 use function is_array;
 use function mb_strtoupper;
 use function mb_substr;
@@ -19,7 +19,6 @@ use function str_replace;
 use function str_starts_with;
 use function strlen;
 use function substr;
-use function time;
 use function trim;
 use function ucwords;
 
@@ -94,7 +93,7 @@ final class UserDataNormalizer
         foreach ($bucket as $key => $value) {
             $display = self::stripQuotes($value);
 
-            $isEmpty = $display === '' || $value === 'null';
+            $isEmpty = $display === '';
 
             if ($isEmpty) {
                 $rows[] = new UserAttribute(
@@ -280,15 +279,15 @@ final class UserDataNormalizer
         if ($diff < 60) {
             $relative = 'just now';
         } elseif ($diff < 3600) {
-            $minutes = floor($diff / 60);
+            $minutes = intdiv($diff, 60);
 
             $relative = "{$minutes} min ago";
         } elseif ($diff < 86400) {
-            $hours = floor($diff / 3600);
+            $hours = intdiv($diff, 3600);
 
             $relative = "{$hours} h ago";
         } elseif ($diff < 2592000) {
-            $days = floor($diff / 86400);
+            $days = intdiv($diff, 86400);
 
             $relative = "{$days} d ago";
         } else {
@@ -355,11 +354,11 @@ final class UserDataNormalizer
      */
     private static function stripQuotes(string $value): string
     {
-        if ($value === 'null' || $value === '') {
+        if ($value === 'null') {
             return '';
         }
 
-        if (str_starts_with($value, "'") && str_ends_with($value, "'") && strlen($value) > 1) {
+        if (str_starts_with($value, "'") && str_ends_with($value, "'")) {
             return substr($value, 1, -1);
         }
 

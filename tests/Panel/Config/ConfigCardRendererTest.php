@@ -38,14 +38,19 @@ final class ConfigCardRendererTest extends TestCase
             'Current language row must be labeled.'
         );
         self::assertStringContainsString(
-            'en-US',
+            'en-US (English, United States)',
             $html,
-            'Current language value must be rendered.'
+            'Current language must include its language and region display names.'
         );
         self::assertStringContainsString(
             'Source language',
             $html,
             'Source language row must be labeled.'
+        );
+        self::assertStringContainsString(
+            'en (English)',
+            $html,
+            'Source language must include its display language.',
         );
     }
 
@@ -59,6 +64,11 @@ final class ConfigCardRendererTest extends TestCase
             '—',
             $html,
             'Empty charset must render the em-dash placeholder.',
+        );
+        self::assertSame(
+            3,
+            substr_count($html, '—'),
+            'Empty charset, current language, and source language must each render a placeholder.',
         );
     }
 
@@ -144,14 +154,18 @@ final class ConfigCardRendererTest extends TestCase
             'Memcached label must be present.',
         );
         self::assertStringContainsString(
-            'is-on',
+            'class="yii-debug-ext-pill is-on"><span class="yii-debug-ext-pill-dot" aria-hidden="true"></span>'
+                . '<span class="yii-debug-ext-pill-label">Xdebug</span>'
+                . '<span class="yii-debug-ext-pill-state">on</span>',
             $html,
-            "On state must use the 'is-on' modifier.",
+            "Enabled Xdebug must pair the 'is-on' modifier with the 'on' label.",
         );
         self::assertStringContainsString(
-            'is-off',
+            'class="yii-debug-ext-pill is-off"><span class="yii-debug-ext-pill-dot" aria-hidden="true"></span>'
+                . '<span class="yii-debug-ext-pill-label">APCu</span>'
+                . '<span class="yii-debug-ext-pill-state">off</span>',
             $html,
-            "Off state must use the 'is-off' modifier.",
+            "Disabled APCu must pair the 'is-off' modifier with the 'off' label.",
         );
     }
 
@@ -219,6 +233,11 @@ final class ConfigCardRendererTest extends TestCase
             'on',
             $html,
             "Debug chip must read 'on' when debug is 'true'.",
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip">debug',
+            $html,
+            'Stringable readout metadata must be rendered as HTML instead of escaped text.',
         );
         self::assertStringNotContainsString(
             'yii-debug-readout-chip-muted">debug',

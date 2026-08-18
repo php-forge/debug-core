@@ -74,22 +74,21 @@ final class RequestDataNormalizerTest extends TestCase
 
     public function testFromPanelDataDropsSessionTabWhenSessionOrFlashesMissing(): void
     {
-        $view = RequestDataNormalizer::fromPanelData(
-            ['SERVER' => []],
-            null,
-        );
+        foreach ([[], ['SESSION' => []], ['flashes' => []]] as $data) {
+            $view = RequestDataNormalizer::fromPanelData($data, null);
 
-        $labels = [];
+            $labels = [];
 
-        foreach ($view->tabs as $tab) {
-            $labels[] = $tab->label;
+            foreach ($view->tabs as $tab) {
+                $labels[] = $tab->label;
+            }
+
+            self::assertNotContains(
+                'Session',
+                $labels,
+                'Without both SESSION and flashes the Session tab must not surface.',
+            );
         }
-
-        self::assertNotContains(
-            'Session',
-            $labels,
-            'Without SESSION + flashes the Session tab must not surface.',
-        );
     }
 
     public function testFromPanelDataExposesEveryTabWhenSessionAndServerArePresent(): void
@@ -137,6 +136,11 @@ final class RequestDataNormalizerTest extends TestCase
             [],
             $view->hero->flags,
             'Non-array data must yield zero flags.',
+        );
+        self::assertSame(
+            '',
+            $view->hero->time,
+            'Missing capture time must not render the Unix epoch.',
         );
         self::assertCount(
             2,
@@ -208,6 +212,51 @@ final class RequestDataNormalizerTest extends TestCase
             201,
             $view->hero->statusCode,
             'Panel data must override the controller summary status.',
+        );
+    }
+
+    public function testFromPanelDataPreservesHeaderServerAndSessionSectionMetadata(): void
+    {
+        $view = RequestDataNormalizer::fromPanelData(
+            [
+                'requestHeaders' => ['Accept' => 'text/html'],
+                'responseHeaders' => ['Content-Type' => 'text/html'],
+                'SESSION' => ['user' => 1],
+                'flashes' => ['notice' => 'Saved'],
+                'SERVER' => ['HTTP_HOST' => 'localhost'],
+            ],
+            null,
+        );
+
+        self::assertSame(
+            [
+                [
+                    'Headers',
+                    [
+                        ['Request Headers', ['Accept' => 'text/html'], true],
+                        ['Response Headers', ['Content-Type' => 'text/html'], true],
+                    ],
+                ],
+                [
+                    'Session',
+                    [
+                        ['Session', ['user' => 1], true],
+                        ['Flashes', ['notice' => 'Saved'], false],
+                    ],
+                ],
+                ['Server', [['Server', ['HTTP_HOST' => 'localhost'], true]]],
+            ],
+            array_map(
+                static fn($tab): array => [
+                    $tab->label,
+                    array_map(
+                        static fn($section): array => [$section->caption, $section->entries, $section->filterable],
+                        $tab->sections,
+                    ),
+                ],
+                array_slice($view->tabs, 1),
+            ),
+            'Header, Session, and Server tabs must retain every section and its filtering metadata.',
         );
     }
 
@@ -286,6 +335,25 @@ final class RequestDataNormalizerTest extends TestCase
             ['HTTPS'],
             $view->hero->flags,
             "Only literal 'true' must enable a flag; truthy non-bools count as inactive.",
+        );
+    }
+
+    public function testFromPanelDataUsesExactMillisecondConversionAndOmitsZeroTimestamp(): void
+    {
+        $view = RequestDataNormalizer::fromPanelData(
+            [],
+            self::summary(['time' => 0.0, 'processingTime' => 1.0]),
+        );
+
+        self::assertSame(
+            '',
+            $view->hero->time,
+            'A zero capture timestamp must not render the Unix epoch.',
+        );
+        self::assertSame(
+            '1000.0 ms',
+            $view->hero->durationMs,
+            'One second must convert to exactly one thousand milliseconds.',
         );
     }
 

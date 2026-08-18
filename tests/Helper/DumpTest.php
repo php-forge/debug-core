@@ -81,6 +81,30 @@ final class DumpTest extends TestCase
             'Objects must degrade to their type placeholder.',
         );
     }
+    public function testAsStringUsesTenAsTheDefaultDepth(): void
+    {
+        $value = 'leaf';
+
+        for ($level = 0; $level < 11; $level++) {
+            $value = [$value];
+        }
+
+        self::assertSame(
+            Dump::asString($value, 10),
+            Dump::asString($value),
+            'The documented default must render exactly ten nested array levels.',
+        );
+        self::assertNotSame(
+            Dump::asString($value, 9),
+            Dump::asString($value),
+            'The default must not collapse at the ninth level.',
+        );
+        self::assertNotSame(
+            Dump::asString($value, 11),
+            Dump::asString($value),
+            'The default must not expose the eleventh nested array level.',
+        );
+    }
 
     public function testExportOmitsSequentialIntegerKeysAndKeepsExplicitOnes(): void
     {

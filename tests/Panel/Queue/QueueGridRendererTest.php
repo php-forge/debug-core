@@ -64,6 +64,11 @@ final class QueueGridRendererTest extends TestCase
             $html,
             'Driver label must appear in the cell.',
         );
+        self::assertStringContainsString(
+            'title="yii\\queue\\sync\\Queue"',
+            $html,
+            'Known driver class must be retained in the tooltip.',
+        );
     }
 
     public function testRenderDriverCellAddsSyncModifierWhenInProcess(): void
@@ -84,12 +89,26 @@ final class QueueGridRendererTest extends TestCase
         );
     }
 
+    public function testRenderDriverCellUsesFallbackTooltipWhenDriverClassIsMissing(): void
+    {
+        self::assertStringContainsString(
+            'title="Unknown driver"',
+            QueueGridRenderer::renderDriverCell(self::makeRecord(driverName: 'Custom', driverClass: '')),
+            'Missing driver class must use the explicit fallback tooltip.',
+        );
+    }
+
     public function testRenderDurationCellFormatsMilliseconds(): void
     {
         self::assertSame(
             '12.3 ms',
             QueueGridRenderer::renderDurationCell(self::makeRecord(duration: 0.0123)),
             "Seconds must be formatted as 'XX.X ms'.",
+        );
+        self::assertSame(
+            '1,000.0 ms',
+            QueueGridRenderer::renderDurationCell(self::makeRecord(duration: 1.0)),
+            'One second must convert using exactly one thousand milliseconds.',
         );
     }
 
@@ -142,7 +161,12 @@ final class QueueGridRendererTest extends TestCase
             'Short class name must render in bold inside the link.',
         );
         self::assertStringContainsString(
-            'app\\jobs',
+            'title="app\\jobs\\HelloJob"',
+            $html,
+            'Job link tooltip must retain the full class name.',
+        );
+        self::assertStringContainsString(
+            'class="yii-debug-queue-grid-job-namespace">app\\jobs\\</span>',
             $html,
             'Namespace prefix must appear under the link.',
         );
@@ -195,10 +219,19 @@ final class QueueGridRendererTest extends TestCase
             self::makeRecord(time: 1_704_112_496.789),
         );
 
-        self::assertMatchesRegularExpression(
-            '/^\d{2}:\d{2}:\d{2}\.\d{3}$/',
+        self::assertSame(
+            date('H:i:s', 1_704_112_496) . '.789',
             $html,
-            "Time cell must follow 'HH:MM:SS.mmm'.",
+            "Time cell must preserve the exact 'HH:MM:SS.mmm' value.",
+        );
+    }
+
+    public function testRenderTimeCellTruncatesSubMillisecondPrecision(): void
+    {
+        self::assertSame(
+            date('H:i:s', 1_704_112_496) . '.123',
+            QueueGridRenderer::renderTimeCell(self::makeRecord(time: 1_704_112_496.1239)),
+            'Sub-millisecond precision must truncate after three digits.',
         );
     }
 

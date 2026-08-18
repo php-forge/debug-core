@@ -59,7 +59,9 @@ final class MockerExtension implements Extension
     {
         $mocks = [];
 
-        foreach (['function_exists', 'ob_get_clean', 'ob_start', 'phpinfo'] as $name) {
+        foreach (
+            ['function_exists', 'ob_get_clean', 'ob_start', 'phpinfo', 'posix_getpwuid', 'posix_getuid'] as $name
+        ) {
             $mocks[] = [
                 'namespace' => 'PHPForge\Debug\PhpInfo',
                 'name' => $name,
@@ -70,6 +72,13 @@ final class MockerExtension implements Extension
             $mocks[] = [
                 'namespace' => 'PHPForge\Debug\Storage',
                 'name' => $name,
+            ];
+        }
+
+        foreach (['PHPForge\\Debug\\Panel\\Mail', 'PHPForge\\Debug\\Panel\\User'] as $namespace) {
+            $mocks[] = [
+                'namespace' => $namespace,
+                'name' => 'time',
             ];
         }
 
