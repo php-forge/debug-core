@@ -65,6 +65,9 @@ test("toolbarRetryDelay retries missing snapshots with bounded backoff", () => {
   assert.equal(toolbarRetryDelay(404, 3), 600);
   assert.equal(toolbarRetryDelay(404, 4), 900);
   assert.equal(toolbarRetryDelay(404, 5), null);
+  assert.equal(toolbarRetryDelay(404, -1), null);
+  assert.equal(toolbarRetryDelay(404, Number.NaN), null);
+  assert.equal(toolbarRetryDelay(404, 0.5), null);
   assert.equal(toolbarRetryDelay(500, 0), null);
 });
 

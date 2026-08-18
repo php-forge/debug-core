@@ -40,6 +40,7 @@ node_modules
 .phpunit.result.cache
 
 # mutation testing
+.striker-tmp
 reports/mutation
 
 # vagrant (if present)
