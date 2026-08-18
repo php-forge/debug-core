@@ -1115,7 +1115,7 @@ final class PhpInfoDataNormalizer
             return [$body, ''];
         }
 
-        return [substr($body, 0, $firstH2Pos), $body];
+        return [substr($body, 0, $firstH2Pos), substr($body, $firstH2Pos)];
     }
 
     /**

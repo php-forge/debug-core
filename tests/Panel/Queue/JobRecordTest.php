@@ -352,4 +352,18 @@ final class JobRecordTest extends TestCase
             '$.panels.queue.entries[0]',
         );
     }
+
+    public function testThrowHydrationExceptionWhenEventTypeIsMissing(): void
+    {
+        $payload = JobRecord::fromCapture(['eventType' => 'exec'])->jsonSerialize();
+
+        unset($payload['eventType']);
+
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.queue.eventType': expected a required field.",
+        );
+
+        JobRecord::fromArray($payload, '$.queue');
+    }
 }

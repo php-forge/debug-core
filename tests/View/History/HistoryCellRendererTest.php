@@ -40,6 +40,7 @@ final class HistoryCellRendererTest extends TestCase
                 'method' => 'GET',
                 'url' => '/path',
                 'status' => '200',
+                'time' => date('H:i:s', 1_700_000_000),
                 'ajax' => '1',
             ],
             [
@@ -47,6 +48,7 @@ final class HistoryCellRendererTest extends TestCase
                 'method' => $options['data-yii-debug-method'] ?? null,
                 'url' => $options['data-yii-debug-url'] ?? null,
                 'status' => $options['data-yii-debug-status'] ?? null,
+                'time' => $options['data-yii-debug-time'] ?? null,
                 'ajax' => $options['data-yii-debug-ajax'] ?? null,
             ],
             'Row data-yii-debug-* attributes must mirror the typed row.',

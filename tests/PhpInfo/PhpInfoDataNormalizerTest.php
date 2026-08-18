@@ -27,6 +27,30 @@ use Xepozz\InternalMocker\MockerState;
 #[Group('phpinfo')]
 final class PhpInfoDataNormalizerTest extends TestCase
 {
+    /**
+     * @var list<string> Home-directory environment variables modified by the tests.
+     */
+    private const array HOME_ENVIRONMENT_VARIABLES = ['HOME', 'USERPROFILE'];
+
+    /**
+     * @var array{HOME: string|false, USERPROFILE: string|false} Original process environment values.
+     */
+    private array $processHomeEnvironment = [
+        'HOME' => false,
+        'USERPROFILE' => false,
+    ];
+
+    /**
+     * @var array{
+     *     HOME: array{defined: bool, value: mixed},
+     *     USERPROFILE: array{defined: bool, value: mixed}
+     * } Original `$_SERVER` state.
+     */
+    private array $serverHomeEnvironment = [
+        'HOME' => ['defined' => false, 'value' => null],
+        'USERPROFILE' => ['defined' => false, 'value' => null],
+    ];
+
     public function testCaptureBuildsViewFromBufferedPhpInfoOutput(): void
     {
         MockerState::addCondition(
@@ -668,6 +692,44 @@ final class PhpInfoDataNormalizerTest extends TestCase
             'overview build',
             $this->findTileByLabel($view, 'Build Date')?->displayValue,
             'Overview parsing must stop before module rows and trim both key and value.',
+        );
+    }
+
+    public function testFromOutputKeepsOverviewHeadingOutOfModuleParsing(): void
+    {
+        $body = <<<'HTML'
+        <h1>Overview</h1>
+        <table>
+        <tr><td>Build Date</td><td>overview build</td></tr>
+        <tr><td>Compiler</td><td>overview compiler</td></tr>
+        <tr><td>Architecture</td><td>x86_64</td></tr>
+        <tr><td>Server API</td><td>cli</td></tr>
+        </table>
+        <h2>example</h2>
+        <table>
+        <tr><td class="e">First</td><td class="v">one</td></tr>
+        <tr><td class="e">Second</td><td class="v">two</td></tr>
+        <tr><td class="e">Third</td><td class="v">three</td></tr>
+        <tr><td class="e">Fourth</td><td class="v">four</td></tr>
+        </table>
+        HTML;
+
+        $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
+
+        self::assertSame(
+            ['Overview', 'example'],
+            array_map(static fn(PhpInfoTocEntry $entry): string => $entry->title, $view->tocEntries),
+            'The overview heading must not create a duplicate module navigation entry.',
+        );
+        self::assertStringNotContainsString(
+            'id="phpinfo-overview"',
+            $view->modulesHtml,
+            'The overview prefix must not be rendered again as a detailed module.',
+        );
+        self::assertSame(
+            'overview build',
+            $this->findTileByLabel($view, 'Build Date')?->displayValue,
+            'Overview rows must remain available to the overview section.',
         );
     }
 
@@ -1569,6 +1631,44 @@ final class PhpInfoDataNormalizerTest extends TestCase
             MockerState::getTraces('PHPForge\Debug\PhpInfo', 'posix_getuid'),
             'POSIX lookup must not run when neither function exists.',
         );
+    }
+
+    /**
+     * Captures the home-directory environment state before each test.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        foreach (self::HOME_ENVIRONMENT_VARIABLES as $variable) {
+            $this->processHomeEnvironment[$variable] = getenv($variable);
+            $this->serverHomeEnvironment[$variable] = [
+                'defined' => array_key_exists($variable, $_SERVER),
+                'value' => $_SERVER[$variable] ?? null,
+            ];
+        }
+    }
+
+    /**
+     * Restores the home-directory environment state after each test.
+     */
+    protected function tearDown(): void
+    {
+        foreach (self::HOME_ENVIRONMENT_VARIABLES as $variable) {
+            $serverState = $this->serverHomeEnvironment[$variable];
+
+            if ($serverState['defined']) {
+                $_SERVER[$variable] = $serverState['value'];
+            } else {
+                unset($_SERVER[$variable]);
+            }
+
+            $processValue = $this->processHomeEnvironment[$variable];
+
+            putenv($processValue === false ? $variable : "{$variable}={$processValue}");
+        }
+
+        parent::tearDown();
     }
 
     private function findTileByLabel(PhpInfoView $view, string $label): PhpInfoTile|null
