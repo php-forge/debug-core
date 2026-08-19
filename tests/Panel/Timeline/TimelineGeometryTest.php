@@ -33,6 +33,21 @@ final class TimelineGeometryTest extends TestCase
             TimelineGeometry::rulers(100.0, 0),
             'A disabled ruler must not emit ticks.',
         );
+        self::assertSame(
+            [0 => 0.0, 5 => 27.77777777777778, 10 => 55.55555555555556, 15 => 83.33333333333334],
+            TimelineGeometry::rulers(18.0),
+            'A normalized duration up to five must use five-unit ticks.',
+        );
+        self::assertSame(
+            [0 => 0.0, 10 => 32.25806451612903, 20 => 64.51612903225806],
+            TimelineGeometry::rulers(31.0),
+            'A normalized duration above five must use ten-unit ticks.',
+        );
+        self::assertSame(
+            [0 => 0.0],
+            TimelineGeometry::rulers(1.0),
+            'A duration shorter than one complete step must keep only the origin.',
+        );
     }
 
     public function testSpansUseTheSharedRequestGeometry(): void

@@ -56,6 +56,24 @@ final class DebugSnapshotTest extends TestCase
             'The serialized exception payload must be retained.',
         );
     }
+    public function testSnapshotHydratesPanelsAndFailures(): void
+    {
+        $captured = new DebugSnapshot(
+            $this->summary(),
+            ['request' => ['statusCode' => 200]],
+            ['log' => PanelFailure::fromThrowable(PanelFailure::CAPTURE, new RuntimeException('boom'))],
+        );
+
+        $payload = $captured->jsonSerialize();
+
+        $snapshot = DebugSnapshot::fromArray($payload);
+
+        self::assertSame(
+            $payload,
+            $snapshot->jsonSerialize(),
+            'Snapshot envelope must round-trip exactly.',
+        );
+    }
 
     public function testThrowHydrationExceptionWhenTheStorageVersionDoesNotMatch(): void
     {

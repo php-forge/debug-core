@@ -7,6 +7,7 @@ namespace PHPForge\Debug\Tests\Storage;
 use PHPForge\Debug\Storage\Json;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Unit tests for {@see Json} covering UTF-8 preservation and binary representation.
@@ -14,6 +15,21 @@ use PHPUnit\Framework\TestCase;
 #[Group('storage')]
 final class JsonTest extends TestCase
 {
+    public function testPrivateConstructorContainsNoInitializationBehavior(): void
+    {
+        $reflection = new ReflectionClass(Json::class);
+
+        $instance = $reflection->newInstanceWithoutConstructor();
+
+        $reflection->getConstructor()?->invoke($instance);
+
+        self::assertSame(
+            Json::class,
+            $instance::class,
+            'Invoking the private constructor must preserve helper type.',
+        );
+    }
+
     public function testSafeStringPreservesUtf8(): void
     {
         self::assertSame(

@@ -217,6 +217,29 @@ final class RequestSectionRendererTest extends TestCase
         );
     }
 
+    public function testRenderTabsRendersNestedSections(): void
+    {
+        $tabs = [
+            new RequestTab(
+                label: 'Parameters',
+                sections: [new RequestSection(caption: 'Query parameters', entries: ['page' => 1])],
+            ),
+        ];
+
+        $html = RequestSectionRenderer::renderTabs($tabs);
+
+        self::assertSame(
+            1,
+            substr_count($html, 'Query parameters'),
+            'A nested section must render exactly once.',
+        );
+        self::assertSame(
+            1,
+            substr_count($html, 'page'),
+            'A nested section row must render exactly once.',
+        );
+    }
+
     public function testRenderTabsWiresPanelIdsAndAriaControls(): void
     {
         $tabs = [

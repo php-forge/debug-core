@@ -60,6 +60,32 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    public function testClearThrowsWhenAStoredFileCannotBeRemoved(): void
+    {
+        $store = $this->store();
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1_700_000_000.0), [], []),
+            10,
+        );
+
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Storage',
+            'unlink',
+            [],
+            false,
+            true,
+        );
+
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage(
+            "Unable to remove debug data file: {$this->path}/current.json",
+        );
+
+        $store->clear();
+    }
+
+
     public function testGarbageCollectionReportsEveryRemovedSummary(): void
     {
         $store = $this->store();
@@ -689,6 +715,47 @@ final class SnapshotStoreTest extends TestCase
                 'An unopenable lock file must prevent snapshot persistence.',
             );
         }
+    }
+
+    public function testWriteAppliesConfiguredFileMode(): void
+    {
+        $store = new SnapshotStore($this->path, 0o777, 0o600);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1_700_000_000.0), [], []),
+            10,
+        );
+
+        $modes = [];
+
+        foreach (MockerState::getTraces('PHPForge\Debug\Storage', 'chmod') as $trace) {
+            self::assertIsArray(
+                $trace,
+                'Each chmod trace must expose its arguments.',
+            );
+
+            $arguments = $trace['arguments'] ?? null;
+
+            self::assertIsArray(
+                $arguments,
+                'Each chmod trace must expose an argument list.',
+            );
+
+            $mode = $arguments[1] ?? null;
+
+            self::assertIsInt(
+                $mode,
+                'Each chmod call must receive an integer mode.',
+            );
+
+            $modes[] = $mode;
+        }
+
+        self::assertSame(
+            [0o600, 0o600],
+            $modes,
+            'Configured file mode must be applied to the snapshot and manifest temporary files.',
+        );
     }
 
     /**

@@ -10,7 +10,6 @@ use Throwable;
 use function array_diff;
 use function array_keys;
 use function array_reverse;
-use function chmod;
 use function count;
 use function fclose;
 use function file_get_contents;
@@ -22,7 +21,6 @@ use function json_encode;
 use function mkdir;
 use function pathinfo;
 use function preg_match;
-use function unlink;
 
 /**
  * Provides JSON filesystem storage, manifest locking, atomic writes, and snapshot garbage collection.
@@ -64,24 +62,27 @@ final class SnapshotStore
         $this->initialize();
 
         $lock = $this->acquireLock(LOCK_EX);
-        $patterns = [
-            "{$this->path}/*.json",
-            "{$this->path}/.debug-*",
-        ];
 
-        foreach ($patterns as $pattern) {
-            $files = glob($pattern);
+        try {
+            $patterns = [
+                "{$this->path}/*.json",
+                "{$this->path}/.debug-*",
+            ];
 
-            foreach ($files === false ? [] : $files as $file) {
-                if (is_file($file) && !@unlink($file)) {
-                    throw new StorageException(
-                        "Unable to remove debug data file: {$file}",
-                    );
+            foreach ($patterns as $pattern) {
+                $files = glob($pattern);
+
+                foreach ($files === false ? [] : $files as $file) {
+                    if (is_file($file) && !@unlink($file)) {
+                        throw new StorageException(
+                            "Unable to remove debug data file: {$file}",
+                        );
+                    }
                 }
             }
+        } finally {
+            fclose($lock);
         }
-
-        fclose($lock);
     }
 
     /**

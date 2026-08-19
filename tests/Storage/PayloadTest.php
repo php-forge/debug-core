@@ -32,6 +32,14 @@ final class PayloadTest extends TestCase
         );
     }
 
+    public function testNullableStringReturnsNull(): void
+    {
+        self::assertNull(
+            Payload::object(['action' => null])->nullableString('action'),
+            'A nullable string must preserve null.',
+        );
+    }
+
     public function testObjectAcceptsAnEmptyArrayAsAnEmptyObject(): void
     {
         self::assertSame(
