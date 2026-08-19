@@ -71,6 +71,20 @@ final class QueueDriverDetectorTest extends TestCase
         );
     }
 
+    public function testDetectDoesNotClassifySameSuffixOutsideYii3Namespace(): void
+    {
+        self::assertSame(
+            ['Queue', true],
+            QueueDriverDetector::detect('App\\Queue\\SyncQueueProducer'),
+            'Same-suffix producers outside Yiisoft Queue must retain generic driver detection.',
+        );
+        self::assertSame(
+            ['Other', true],
+            QueueDriverDetector::detect('Vendor\\Other\\AsyncQueueProducer'),
+            'Unrelated async-producer class names must not be classified as Yii3 producers.',
+        );
+    }
+
     public function testDetectFallsBackToLowercasedFqcnForSingleSegmentClass(): void
     {
         self::setDetectorCache(
@@ -81,6 +95,20 @@ final class QueueDriverDetectorTest extends TestCase
             ['Customqueue', true],
             QueueDriverDetector::detect('CustomQueue'),
             'Single-segment FQCN must title-case the lowercased class itself as the driver label.',
+        );
+    }
+
+    public function testDetectRecognizesYii3ProducerClasses(): void
+    {
+        self::assertSame(
+            ['Sync', false],
+            QueueDriverDetector::detect('Yiisoft\\Queue\\SyncQueueProducer'),
+            'Yii3 synchronous producers must use the shared Sync label and in-process flag.',
+        );
+        self::assertSame(
+            ['Async', true],
+            QueueDriverDetector::detect('Yiisoft\\Queue\\AsyncQueueProducer'),
+            'Yii3 asynchronous producers must surface their async execution model.',
         );
     }
 
