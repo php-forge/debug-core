@@ -18,3 +18,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat(panel): add `UserRbacRow` typed view-model so adapters render RBAC role and permission rows from a single normalized shape.
 - feat: add shared UI parity contracts, Asset composition, and cross-adapter acceptance documentation.
 - feat(ui): share database EXPLAIN markup across debugger adapters.
+- feat(ui): add shared profiler normalization and Timeline rendering contracts.

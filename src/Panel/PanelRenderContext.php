@@ -17,6 +17,7 @@ final readonly class PanelRenderContext
      * @param array<array-key, mixed> $queryParams Parsed query parameters of the current debugger request.
      * @param string $theme Resolved debugger theme.
      * @param DebugUrlGeneratorInterface $urls Adapter-owned URL generator.
+     * @param array<string, array<string, mixed>> $panels Serialized panel payloads from the current snapshot.
      */
     public function __construct(
         public string $tag,
@@ -24,6 +25,7 @@ final readonly class PanelRenderContext
         public array $queryParams,
         public string $theme,
         private DebugUrlGeneratorInterface $urls,
+        private array $panels = [],
     ) {}
 
     /**
@@ -45,6 +47,16 @@ final readonly class PanelRenderContext
     public function historyUrl(array|null $queryParams = null): string
     {
         return $this->urls->history($queryParams ?? $this->queryParams);
+    }
+
+    /**
+     * Returns another panel payload from the current snapshot when cross-panel composition is required.
+     *
+     * @return array<string, mixed>|null Serialized panel payload, or `null` when it was not captured.
+     */
+    public function panelPayload(string $panel): array|null
+    {
+        return $this->panels[$panel] ?? null;
     }
 
     /**

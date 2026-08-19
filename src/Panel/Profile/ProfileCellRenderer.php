@@ -23,7 +23,10 @@ final class ProfileCellRenderer
     /**
      * Category prefix of the profiled blocks whose info is a raw SQL statement.
      */
-    private const string SQL_CATEGORY_PREFIX = 'yii\db\Command::';
+    private const array SQL_CATEGORY_PREFIXES = [
+        'yii\db\Command::',
+        'Yiisoft\Db\Command::',
+    ];
 
     /**
      * Renders the category as the shared {@see Fqcn::renderLabel()} two-tone label: muted namespace prefix plus a
@@ -66,7 +69,7 @@ final class ProfileCellRenderer
             ->content('→')
             ->render();
 
-        $body = str_starts_with($row->category, self::SQL_CATEGORY_PREFIX)
+        $body = self::isSqlCategory($row->category)
             ? Div::tag()->class('yii-debug-db-sql')
                 ->html(SqlHighlighter::highlight($row->info))
                 ->render()
@@ -91,5 +94,16 @@ final class ProfileCellRenderer
             ->title(date('Y-m-d H:i:s.', (int) $seconds) . $suffix)
             ->content(date('H:i:s.', (int) $seconds) . $suffix)
             ->render();
+    }
+
+    private static function isSqlCategory(string $category): bool
+    {
+        foreach (self::SQL_CATEGORY_PREFIXES as $prefix) {
+            if (str_starts_with($category, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
