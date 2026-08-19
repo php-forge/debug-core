@@ -164,8 +164,8 @@ final class TimelineRenderer
                     ->html(
                         Strong::tag()
                             ->content(number_format($duration)),
-                            ' ms total',
-                        ),
+                        ' ms total',
+                    ),
                 Span::tag()
                     ->class('yii-debug-grid-summary-sep')
                     ->content('·'),
@@ -173,16 +173,19 @@ final class TimelineRenderer
                     ->html(
                         Strong::tag()
                             ->content(
-                                Format::bytesToMb($memory)),
-                                ' peak memory',
+                                Format::bytesToMb($memory)
                             ),
+                        ' peak memory',
+                    ),
                 Span::tag()
                     ->class('yii-debug-grid-summary-sep')
                     ->content('·'),
                 Span::tag()
-                    ->html(Strong::tag()
+                    ->html(
+                        Strong::tag()
                     ->content(
-                        (string) $spanCount),
+                        (string) $spanCount
+                    ),
                         ' spans',
                     ),
             )
