@@ -28,6 +28,11 @@ final class PageSizeTest extends TestCase
             'Raw values must pass through untouched.',
         );
         self::assertSame(
+            'all',
+            PageSize::current('ALL'),
+            "The 'all' keyword must canonicalize to lowercase.",
+        );
+        self::assertSame(
             '25',
             PageSize::current(null, 25),
             'A custom default must surface as a string.',
@@ -112,6 +117,17 @@ final class PageSizeTest extends TestCase
             'yii-debug-grid-pagesize-label',
             $html,
             'Label span must carry its class.',
+        );
+    }
+
+    public function testSelectorHtmlSelectsCanonicalizedAllKeyword(): void
+    {
+        $html = PageSize::selectorHtml(PageSize::current('ALL'));
+
+        self::assertStringContainsString(
+            '<option value="all" selected>',
+            $html,
+            "The canonicalized 'all' keyword must select the matching option.",
         );
     }
 }

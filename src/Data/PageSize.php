@@ -32,14 +32,18 @@ final class PageSize
     public const array OPTIONS = ['10', '25', '50', '100', 'all'];
 
     /**
-     * Returns the raw `per-page` value for the selector's selected state, falling back to the default.
+     * Returns the `per-page` selector state, canonicalizing `all` and falling back to the default.
      *
      * @param string|null $raw Raw `per-page` query-parameter value, or `null` when absent.
      * @param int $default Page size used when no value is supplied.
      */
     public static function current(string|null $raw, int $default = self::DEFAULT): string
     {
-        return $raw ?? (string) $default;
+        if ($raw === null) {
+            return (string) $default;
+        }
+
+        return strcasecmp($raw, 'all') === 0 ? 'all' : $raw;
     }
 
     /**
