@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Panel\Profile;
 
+use PHPForge\Debug\Helper\LogLevel;
+use PHPForge\Debug\Panel\MemorySample;
 use PHPForge\Debug\Panel\Profile\ProfilingSnapshot;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -104,7 +106,80 @@ final class ProfilingSnapshotTest extends TestCase
             ],
         );
 
-        self::assertSame([], $snapshot->entries(), 'Incomplete messages must not produce profile rows.');
-        self::assertSame([], $snapshot->samples(), 'Incomplete messages without memory must not produce samples.');
+        self::assertSame(
+            [],
+            $snapshot->entries(),
+            'Incomplete messages must not produce profile rows.',
+        );
+        self::assertSame(
+            [],
+            $snapshot->samples(),
+            'Incomplete messages without memory must not produce samples.',
+        );
+    }
+    public function testCapturePairsLoggerMessagesAndHydratesTheResult(): void
+    {
+        $captured = ProfilingSnapshot::capture(
+            4_096,
+            0.1,
+            [
+                ['missing', LogLevel::PROFILE_END, 'application', 0.9, [], 50],
+                ['outer', LogLevel::PROFILE_BEGIN, 'application', 1.0, [['file' => '/app/index.php']], 100],
+                ['noise', LogLevel::INFO, 'application', 1.01, [], 110],
+                ['inner', LogLevel::PROFILE_BEGIN, 'database', 1.02, [], 120],
+                ['inner', LogLevel::PROFILE_END, 'database', 1.05, [], 140],
+                ['outer', LogLevel::PROFILE_END, 'application', 1.1, [], 200],
+                'invalid',
+            ],
+        );
+
+        $payload = $captured->jsonSerialize();
+
+        $snapshot = ProfilingSnapshot::fromArray($payload, '$.panels.profiling');
+
+        self::assertSame(
+            $payload,
+            $snapshot->jsonSerialize(),
+            'Profiling payload must round-trip exactly.',
+        );
+        self::assertSame(
+            [
+                [
+                    'timestamp' => 1_000.0,
+                    'duration' => 100.00000000000009,
+                    'category' => 'application',
+                    'info' => 'outer',
+                    'level' => 0,
+                    'seq' => 0,
+                    'memory' => 200,
+                    'memoryDiff' => 100,
+                    'trace' => [['file' => '/app/index.php']],
+                ],
+                [
+                    'timestamp' => 1_020.0,
+                    'duration' => 30.00000000000003,
+                    'category' => 'database',
+                    'info' => 'inner',
+                    'level' => 1,
+                    'seq' => 1,
+                    'memory' => 140,
+                    'memoryDiff' => 20,
+                    'trace' => [],
+                ],
+            ],
+            array_map(static fn($row): array => $row->jsonSerialize(), $snapshot->entries()),
+            'Profile begin/end pairs must retain ordering, nesting, timing, memory, and traces.',
+        );
+        self::assertSame(
+            array_map(
+                static fn(MemorySample $sample): array => ['time' => $sample->time, 'memory' => $sample->memory],
+                $captured->samples(),
+            ),
+            array_map(
+                static fn(MemorySample $sample): array => ['time' => $sample->time, 'memory' => $sample->memory],
+                $snapshot->samples(),
+            ),
+            'Memory samples must survive hydration.',
+        );
     }
 }

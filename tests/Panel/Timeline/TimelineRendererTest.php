@@ -16,6 +16,29 @@ use PHPUnit\Framework\TestCase;
 #[Group('timeline')]
 final class TimelineRendererTest extends TestCase
 {
+    public function testRenderChartFormatsSecondsAndOmitsSingleCategoryLegend(): void
+    {
+        $rows = TimelineGeometry::spans(
+            [
+                new ProfileRow(1_000.0, 1_500.0, 'Yii3\\Application::handle', 'GET /slow', 0, 0, 0, 0, []),
+            ],
+            1_000.0,
+            2_000.0,
+        );
+
+        $html = TimelineRenderer::renderChart($rows, [1_500 => 75.0]);
+
+        self::assertSame(
+            1,
+            substr_count($html, '>1.5 s</span>'),
+            'Second-based ruler label must render once.',
+        );
+        self::assertSame(
+            0,
+            substr_count($html, 'yii-debug-tl-legend-item'),
+            'A single category must not render a redundant legend.',
+        );
+    }
     public function testRenderChartProducesExactSharedMarkup(): void
     {
         $rows = TimelineGeometry::spans(

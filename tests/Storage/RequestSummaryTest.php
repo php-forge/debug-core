@@ -88,6 +88,22 @@ final class RequestSummaryTest extends TestCase
         );
     }
 
+    public function testWithProfilingReturnsAnEnrichedCopy(): void
+    {
+        $summary = RequestSummary::fromArray($this->payload());
+        $profiled = $summary->withProfiling(0.125, 2_097_152);
+
+        self::assertSame(
+            [
+                ...$summary->jsonSerialize(),
+                'processingTime' => 0.125,
+                'peakMemory' => 2_097_152,
+            ],
+            $profiled->jsonSerialize(),
+            'Profiling metrics must replace only the optional timing fields.',
+        );
+    }
+
     /**
      * Returns representative decoded request metadata.
      *

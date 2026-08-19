@@ -31,4 +31,12 @@ final class TextTest extends TestCase
             'Unicode uppercase letters must be lowercased with multibyte semantics.',
         );
     }
+    public function testCamel2idPreservesEmptyInput(): void
+    {
+        self::assertSame(
+            '',
+            Text::camel2id(''),
+            'Empty input must remain empty.',
+        );
+    }
 }

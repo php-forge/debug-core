@@ -60,6 +60,34 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    public function testClearThrowsWhenAStoredFileCannotBeRemoved(): void
+    {
+        $store = $this->store();
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1_700_000_000.0), [], []),
+            10,
+        );
+
+        chmod($this->path, 0o555);
+
+        try {
+            $store->clear();
+            self::fail(
+                'Read-only storage must reject snapshot removal.',
+            );
+        } catch (StorageException $exception) {
+            self::assertSame(
+                "Unable to remove debug data file: {$this->path}/current.json",
+                $exception->getMessage(),
+                'Removal failure must identify the file that could not be deleted.',
+            );
+        } finally {
+            chmod($this->path, 0o777);
+        }
+    }
+
+
     public function testGarbageCollectionReportsEveryRemovedSummary(): void
     {
         $store = $this->store();
@@ -689,6 +717,22 @@ final class SnapshotStoreTest extends TestCase
                 'An unopenable lock file must prevent snapshot persistence.',
             );
         }
+    }
+
+    public function testWriteAppliesConfiguredFileMode(): void
+    {
+        $store = new SnapshotStore($this->path, 0o777, 0o600);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1_700_000_000.0), [], []),
+            10,
+        );
+
+        self::assertSame(
+            0o600,
+            fileperms("{$this->path}/current.json") & 0o777,
+            'Configured file mode must be applied to persisted snapshots.',
+        );
     }
 
     /**
