@@ -71,6 +71,20 @@ final class QueueDriverDetectorTest extends TestCase
         );
     }
 
+    public function testDetectDoesNotClassifySameSuffixOutsideYii3Namespace(): void
+    {
+        self::assertSame(
+            ['Queue', true],
+            QueueDriverDetector::detect('App\\Queue\\SyncQueueProducer'),
+            'Same-suffix producers outside Yiisoft Queue must retain generic driver detection.',
+        );
+        self::assertSame(
+            ['Other', true],
+            QueueDriverDetector::detect('Vendor\\Other\\AsyncQueueProducer'),
+            'Unrelated async-producer class names must not be classified as Yii3 producers.',
+        );
+    }
+
     public function testDetectFallsBackToLowercasedFqcnForSingleSegmentClass(): void
     {
         self::setDetectorCache(
