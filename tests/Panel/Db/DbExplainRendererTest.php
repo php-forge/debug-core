@@ -83,6 +83,14 @@ final class DbExplainRendererTest extends TestCase
             </td><td>
             SEARCH users
             </td>
+            </tr><tr>
+            <td>
+            2
+            </td><td>
+            [
+                'operator' =&gt; '&lt;scan&gt;',
+            ]
+            </td>
             </tr>
             </tbody>
             </table>
@@ -94,9 +102,10 @@ final class DbExplainRendererTest extends TestCase
                 [
                     ['id' => 1, 'detail' => 'SCAN users'],
                     ['id' => null, 'detail' => 'SEARCH users'],
+                    ['id' => 2, 'detail' => ['operator' => '<scan>']],
                 ],
             ),
-            'A populated plan must render its SQL and complete table markup exactly.',
+            'A populated plan must render scalar, null, and escaped non-scalar cells exactly.',
         );
     }
 }
