@@ -128,7 +128,11 @@ final readonly class TimelineSpanRow
      */
     private static function variantOf(string $category): string
     {
-        if (str_contains($category, 'db\\') || str_contains($category, 'Command')) {
+        if (
+            str_contains($category, 'db\\')
+            || str_contains($category, 'Db\\')
+            || str_contains($category, 'Command')
+        ) {
             return 'db';
         }
 

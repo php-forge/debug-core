@@ -187,6 +187,11 @@ final class TimelineSpanRowTest extends TestCase
             self::spanFor('SomeCommand::execute')->variant,
             'Command spans must map to `db`.',
         );
+        self::assertSame(
+            'db',
+            self::spanFor('Yiisoft\\Db\\Connection::open')->variant,
+            'Yii3 database namespaces must map to `db`.',
+        );
     }
 
     public function testFromMapsMailAndQueueCategoriesToTheirOwnVariants(): void

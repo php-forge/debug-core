@@ -161,6 +161,21 @@ final class ProfileCellRendererTest extends TestCase
         );
     }
 
+    public function testRenderInfoCellHighlightsSqlForYii3DbCommandBlocks(): void
+    {
+        self::assertSame(
+            <<<'HTML'
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div>
+            HTML,
+            ProfileCellRenderer::renderInfoCell(
+                self::makeRow(category: 'Yiisoft\\Db\\Command::query', info: 'SELECT 1'),
+            ),
+            'Yii3 DB command categories must use the exact shared SQL presentation.',
+        );
+    }
+
     public function testRenderInfoCellKeepsPlainInfoUnhighlighted(): void
     {
         $html = ProfileCellRenderer::renderInfoCell(self::makeRow(category: 'application', info: 'SELECT me'));

@@ -72,6 +72,30 @@ final class PanelRenderContextTest extends TestCase
         );
     }
 
+    public function testReturnsCrossPanelPayloadWhenCaptured(): void
+    {
+        $context = new PanelRenderContext(
+            'request-1',
+            'timeline',
+            [],
+            'light',
+            self::urlGenerator(),
+            [
+                'profiling' => ['time' => 0.125, 'entries' => []],
+            ],
+        );
+
+        self::assertSame(
+            ['time' => 0.125, 'entries' => []],
+            $context->panelPayload('profiling'),
+            'Captured sibling payloads must remain available to context-aware panels.',
+        );
+        self::assertNull(
+            $context->panelPayload('missing'),
+            'Missing sibling payloads must resolve to null.',
+        );
+    }
+
     private static function urlGenerator(): DebugUrlGeneratorInterface
     {
         return new class implements DebugUrlGeneratorInterface {
