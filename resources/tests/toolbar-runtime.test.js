@@ -4,6 +4,13 @@ import test from "node:test";
 import { renderPhpBrand, renderYiiBrand } from "../src/toolbar/brand.js";
 import { builtinIconUrl } from "../src/toolbar/icons.js";
 import {
+  focusToolbarElement,
+  focusToolbarTrigger,
+  isToolbarDrawerCloseMessage,
+  requestParentToolbarDrawerClose,
+  shouldCloseToolbarDrawer,
+} from "../src/toolbar/focus.js";
+import {
   isToolbarLoadCurrent,
   resolveToolbarLoadGeneration,
   resolveToolbarLoadRollback,
@@ -20,7 +27,21 @@ import {
 import {
   normalizeToolbarPosition,
   toolbarDrawerHeight,
+  toolbarDrawerHeightForKey,
 } from "../src/toolbar/position.js";
+
+function focusable(attributes = {}) {
+  return {
+    attributes,
+    focused: false,
+    focus() {
+      this.focused = true;
+    },
+    getAttribute(name) {
+      return this.attributes[name] ?? null;
+    },
+  };
+}
 
 test("builtinIconUrl provides self-contained shared toolbar icons", () => {
   var iconNames = [
@@ -207,6 +228,160 @@ test("toolbar drawer preserves native modified-click navigation", () => {
   assert.equal(shouldOpenToolbarDrawer(click, null), false);
 });
 
+test("drawer focus enters the close control and returns to its trigger", () => {
+  var close = focusable();
+  var first = focusable({ "data-debug-url": "/debug/request" });
+  var second = focusable({ "data-debug-url": "/debug/log" });
+  var root = {
+    querySelector(selector) {
+      return selector === ".close-drawer" ? close : null;
+    },
+    querySelectorAll(selector) {
+      return selector === "[data-debug-url]" ? [first, second] : [];
+    },
+  };
+
+  assert.equal(focusToolbarElement(root, ".close-drawer"), true);
+  assert.equal(close.focused, true);
+  assert.equal(focusToolbarTrigger(root, "/debug/log"), true);
+  assert.equal(second.focused, true);
+  assert.equal(first.focused, false);
+  assert.equal(focusToolbarElement(null, ".close-drawer"), false);
+  assert.equal(focusToolbarElement(root, ".missing"), false);
+  assert.equal(
+    focusToolbarElement({ querySelector: () => ({}) }, ".close-drawer"),
+    false,
+  );
+  assert.equal(focusToolbarTrigger(null, "/debug/log"), false);
+  assert.equal(focusToolbarTrigger(root, ""), false);
+  assert.equal(focusToolbarTrigger(root, "/debug/missing"), false);
+});
+
+test("Escape closes only an active toolbar drawer", () => {
+  assert.equal(
+    shouldCloseToolbarDrawer({ key: "Escape", defaultPrevented: false }, true),
+    true,
+  );
+  assert.equal(
+    shouldCloseToolbarDrawer({ key: "Enter", defaultPrevented: false }, true),
+    false,
+  );
+  assert.equal(
+    shouldCloseToolbarDrawer({ key: "Escape", defaultPrevented: true }, true),
+    false,
+  );
+  assert.equal(
+    shouldCloseToolbarDrawer({ key: "Escape", defaultPrevented: false }, false),
+    false,
+  );
+});
+
+test("drawer close messages are bound to the active same-origin iframe", () => {
+  var frameWindow = {};
+  var message = {
+    data: { source: "yii-debug-toolbar", type: "close-drawer" },
+    origin: "https://example.test",
+    source: frameWindow,
+  };
+
+  assert.equal(
+    isToolbarDrawerCloseMessage(message, "https://example.test", frameWindow),
+    true,
+  );
+  assert.equal(
+    isToolbarDrawerCloseMessage(
+      { ...message, origin: "https://attacker.test" },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
+  assert.equal(
+    isToolbarDrawerCloseMessage(message, "https://example.test", {}),
+    false,
+  );
+  assert.equal(
+    isToolbarDrawerCloseMessage(
+      { ...message, data: { ...message.data, type: "theme" } },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
+  assert.equal(
+    isToolbarDrawerCloseMessage(
+      { ...message, data: { source: "another-app", type: "close-drawer" } },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
+  var callableData = function () {};
+  callableData.source = "yii-debug-toolbar";
+  callableData.type = "close-drawer";
+
+  assert.equal(
+    isToolbarDrawerCloseMessage(
+      { ...message, data: callableData },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
+});
+
+test("embedded debug pages request drawer closure after an unhandled Escape", () => {
+  var messages = [];
+  var parent = {
+    postMessage(message, origin) {
+      messages.push({ message, origin });
+    },
+  };
+  var browserWindow = {
+    location: { origin: "https://example.test" },
+    parent,
+  };
+  var escape = { key: "Escape", defaultPrevented: false };
+
+  assert.equal(
+    requestParentToolbarDrawerClose(escape, browserWindow, false),
+    true,
+  );
+  assert.deepEqual(messages, [
+    {
+      message: { source: "yii-debug-toolbar", type: "close-drawer" },
+      origin: "https://example.test",
+    },
+  ]);
+  assert.equal(
+    requestParentToolbarDrawerClose(
+      { ...escape, defaultPrevented: true },
+      browserWindow,
+      false,
+    ),
+    false,
+  );
+  assert.equal(
+    requestParentToolbarDrawerClose(escape, browserWindow, true),
+    false,
+  );
+  var topWindow = { location: browserWindow.location };
+  topWindow.parent = topWindow;
+
+  assert.equal(
+    requestParentToolbarDrawerClose(escape, topWindow, false),
+    false,
+  );
+  assert.equal(
+    requestParentToolbarDrawerClose(
+      { key: "Enter", defaultPrevented: false },
+      browserWindow,
+      false,
+    ),
+    false,
+  );
+});
+
 test("AJAX profile URLs separate themed native and drawer navigation", () => {
   var html = renderAjaxProfileLink(
     "request-profile",
@@ -237,6 +412,18 @@ test("toolbarDrawerHeight follows the configured resize direction", () => {
 
   assert.equal(toolbarDrawerHeight("top", 180, 800, drawerRect), 80);
   assert.equal(toolbarDrawerHeight("bottom", 180, 800, drawerRect), 520);
+});
+
+test("toolbar drawer keyboard resizing follows its anchored edge", () => {
+  assert.equal(toolbarDrawerHeightForKey("bottom", "ArrowUp", 300, 800), 324);
+  assert.equal(toolbarDrawerHeightForKey("bottom", "ArrowDown", 300, 800), 276);
+  assert.equal(toolbarDrawerHeightForKey("top", "ArrowUp", 300, 800), 276);
+  assert.equal(toolbarDrawerHeightForKey("top", "ArrowDown", 300, 800), 324);
+  assert.equal(toolbarDrawerHeightForKey("bottom", "Home", 300, 800), 120);
+  assert.equal(toolbarDrawerHeightForKey("bottom", "End", 300, 800), 752);
+  assert.equal(toolbarDrawerHeightForKey("bottom", "ArrowDown", 125, 800), 120);
+  assert.equal(toolbarDrawerHeightForKey("bottom", "ArrowUp", 750, 800), 752);
+  assert.equal(toolbarDrawerHeightForKey("bottom", "PageUp", 300, 800), null);
 });
 
 test("renderYiiBrand links available configuration", () => {

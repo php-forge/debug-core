@@ -22,3 +22,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat(tests): add unit tests for panel snapshots and enhance existing test coverage.
 - feat(ui): share User guest and RBAC section rendering and support selecting filtered tabs.
 - feat(ui): add sensitive queue-payload redaction and recognize Yii3 queue producers for Dump, Mail, and Queue parity.
+- fix(ui): add keyboard-resizable drawers with Escape handling and focus restoration.

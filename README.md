@@ -55,6 +55,9 @@ npm run test:js
 npm run build
 ```
 
+The toolbar drawer moves focus to its close control, restores the activating chip on close, closes with `Escape`, and
+supports `ArrowUp`, `ArrowDown`, `Home`, and `End` on its resize separator.
+
 ## License
 
 The package is released under the BSD-3-Clause license. See `LICENSE`.

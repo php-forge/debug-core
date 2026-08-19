@@ -4,6 +4,7 @@
 const config = {
     mutate: [
         "resources/src/toolbar/brand.js",
+        "resources/src/toolbar/focus.js",
         "resources/src/toolbar/icons.js",
         "resources/src/toolbar/loading.js",
         "resources/src/toolbar/panel.js",

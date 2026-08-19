@@ -23,6 +23,12 @@ import {
 } from "./theme.js";
 import { builtinIconUrl } from "./icons.js";
 import {
+  focusToolbarElement,
+  focusToolbarTrigger,
+  isToolbarDrawerCloseMessage,
+  shouldCloseToolbarDrawer,
+} from "./focus.js";
+import {
   isToolbarLoadCurrent,
   resolveToolbarLoadGeneration,
   resolveToolbarLoadRollback,
@@ -37,7 +43,11 @@ import {
   toolbarItemTag,
   toolbarPanelContainerTag,
 } from "./panel.js";
-import { normalizeToolbarPosition, toolbarDrawerHeight } from "./position.js";
+import {
+  normalizeToolbarPosition,
+  toolbarDrawerHeight,
+  toolbarDrawerHeightForKey,
+} from "./position.js";
 
 /**
  * Styles injected into the toolbar's open shadow DOM. Authored in
@@ -55,6 +65,7 @@ export function YiiDebugToolbar() {
   self.activeUrl = "";
   self.expanded = readStorageItem(storageKey) === "1";
   self.drawerOpen = false;
+  self.restoreFocusUrl = null;
   self.resizing = false;
   self.currentTag = null;
   self.lastLoadedTag = null;
@@ -135,6 +146,10 @@ YiiDebugToolbar.prototype.disconnectedCallback = function () {
     window.removeEventListener("message", this.boundThemeMessage, false);
     this.boundThemeMessage = null;
   }
+
+  this.resizing = false;
+  document.removeEventListener("pointermove", this.boundPointerMove, false);
+  document.removeEventListener("pointerup", this.boundPointerUp, false);
 };
 
 YiiDebugToolbar.prototype.setAjaxRequests = function (requests) {
@@ -183,6 +198,7 @@ YiiDebugToolbar.prototype.toggleTheme = function () {
 
   if (delegateThemeToHost(next, this.detectTheme())) {
     this.refreshTheme();
+    focusToolbarElement(this.shadowRoot, ".toggle-theme");
 
     return;
   }
@@ -208,6 +224,7 @@ YiiDebugToolbar.prototype.toggleTheme = function () {
    */
   this.propagateThemeToHost(next);
   this.render();
+  focusToolbarElement(this.shadowRoot, ".toggle-theme");
 };
 
 /**
@@ -326,6 +343,19 @@ YiiDebugToolbar.prototype.watchTheme = function () {
       }
 
       var data = event.data;
+      var drawerFrame = self.shadowRoot.querySelector(".drawer iframe");
+
+      if (
+        isToolbarDrawerCloseMessage(
+          event,
+          window.location.origin,
+          drawerFrame ? drawerFrame.contentWindow : null,
+        )
+      ) {
+        self.closeDrawer();
+
+        return;
+      }
 
       if (
         !data ||
@@ -981,9 +1011,9 @@ YiiDebugToolbar.prototype.renderDrawer = function (position) {
   }
 
   var handle =
-    '<div class="resize-handle" title="Resize debug panel" aria-label="Resize debug panel"></div>';
+    '<div class="resize-handle" role="separator" aria-label="Resize debug panel" aria-orientation="horizontal" tabindex="0"></div>';
   var drawer =
-    '<div class="drawer"><iframe src="' +
+    '<div class="drawer" role="region" aria-label="Yii debug panel"><iframe src="' +
     escapeHtml(this.withTheme(this.activeUrl)) +
     '" title="Yii debug panel"></iframe></div>';
 
@@ -1005,6 +1035,16 @@ YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
     event.preventDefault();
     event.stopPropagation();
     self.openPanel(url);
+  });
+
+  root.addEventListener("keydown", function (event) {
+    if (!shouldCloseToolbarDrawer(event, self.drawerOpen)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    self.closeDrawer();
   });
 };
 
@@ -1035,6 +1075,9 @@ YiiDebugToolbar.prototype.bindEvents = function () {
   }
 
   if (resizeHandle) {
+    resizeHandle.addEventListener("keydown", function (event) {
+      self.onResizeKeyDown(event);
+    });
     resizeHandle.addEventListener(
       "pointerdown",
       function (event) {
@@ -1055,6 +1098,7 @@ YiiDebugToolbar.prototype.toggleExpanded = function () {
     this.drawerOpen = false;
   }
   this.render();
+  focusToolbarElement(this.shadowRoot, ".toggle-toolbar");
 };
 
 YiiDebugToolbar.prototype.openPanel = function (url) {
@@ -1065,13 +1109,22 @@ YiiDebugToolbar.prototype.openPanel = function (url) {
   this.expanded = true;
   this.drawerOpen = true;
   this.activeUrl = url;
+  this.restoreFocusUrl = url;
   writeStorageItem(storageKey, "1");
   this.render();
+  focusToolbarElement(this.shadowRoot, ".close-drawer");
 };
 
 YiiDebugToolbar.prototype.closeDrawer = function () {
+  var restoreFocusUrl = this.restoreFocusUrl;
+
   this.drawerOpen = false;
+  this.restoreFocusUrl = null;
   this.render();
+
+  if (!focusToolbarTrigger(this.shadowRoot, restoreFocusUrl)) {
+    focusToolbarElement(this.shadowRoot, ".toggle-toolbar");
+  }
 };
 
 YiiDebugToolbar.prototype.applyDrawerHeight = function () {
@@ -1091,6 +1144,8 @@ YiiDebugToolbar.prototype.applyDrawerHeight = function () {
       Math.max(20, Math.min(90, height)) + "vh",
     );
   }
+
+  this.updateResizeHandleAccessibility();
 };
 
 YiiDebugToolbar.prototype.onPointerMove = function (event) {
@@ -1114,6 +1169,54 @@ YiiDebugToolbar.prototype.onPointerMove = function (event) {
     "--yii-debug-toolbar-drawer-height",
     Math.max(120, Math.min(viewportHeight - 48, height)) + "px",
   );
+  this.updateResizeHandleAccessibility();
+};
+
+YiiDebugToolbar.prototype.onResizeKeyDown = function (event) {
+  var drawer = this.shadowRoot.querySelector(".drawer");
+
+  if (!drawer) {
+    return;
+  }
+
+  var viewportHeight =
+    window.innerHeight || document.documentElement.clientHeight;
+  var height = toolbarDrawerHeightForKey(
+    this.getPosition(),
+    event.key,
+    drawer.getBoundingClientRect().height,
+    viewportHeight,
+  );
+
+  if (height === null) {
+    return;
+  }
+
+  event.preventDefault();
+  this.style.setProperty("--yii-debug-toolbar-drawer-height", height + "px");
+  this.updateResizeHandleAccessibility();
+};
+
+YiiDebugToolbar.prototype.updateResizeHandleAccessibility = function () {
+  var drawer = this.shadowRoot.querySelector(".drawer");
+  var handle = this.shadowRoot.querySelector(".resize-handle");
+
+  if (!drawer || !handle) {
+    return;
+  }
+
+  var viewportHeight =
+    window.innerHeight || document.documentElement.clientHeight;
+  var minimum = 120;
+  var maximum = Math.max(minimum, viewportHeight - 48);
+  var current = Math.max(
+    minimum,
+    Math.min(maximum, Math.round(drawer.getBoundingClientRect().height)),
+  );
+
+  handle.setAttribute("aria-valuemin", String(minimum));
+  handle.setAttribute("aria-valuemax", String(maximum));
+  handle.setAttribute("aria-valuenow", String(current));
 };
 
 YiiDebugToolbar.prototype.onPointerUp = function () {
