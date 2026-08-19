@@ -52,4 +52,35 @@ final class TabsTest extends TestCase
             'Inactive panel must remain hidden until its tab is selected.',
         );
     }
+
+    public function testRenderSelectsTheRequestedInitialTab(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <ul class="yii-debug-tabs" role="tablist" aria-label="Example tabs">
+            <li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link" id="example-tab-0" href="#example-panel-0" role="tab" tabindex="-1" aria-controls="example-panel-0" aria-selected="false" data-yii-debug-toggle="tab">First</a>
+            </li><li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link is-active" id="example-tab-1" href="#example-panel-1" role="tab" tabindex="0" aria-controls="example-panel-1" aria-selected="true" data-yii-debug-toggle="tab">Second</a>
+            </li>
+            </ul><div class="yii-debug-tab-content">
+            <div class="yii-debug-tab-panel" id="example-panel-0" role="tabpanel" aria-labelledby="example-tab-0" hidden>
+            <p>One</p>
+            </div><div class="yii-debug-tab-panel is-active" id="example-panel-1" role="tabpanel" aria-labelledby="example-tab-1">
+            <p>Two</p>
+            </div>
+            </div>
+            HTML,
+            Tabs::render(
+                'example',
+                'Example tabs',
+                [
+                    ['label' => 'First', 'content' => '<p>One</p>'],
+                    ['label' => 'Second', 'content' => '<p>Two</p>'],
+                ],
+                1,
+            ),
+            'The requested tab and panel must be the only initially active pair.',
+        );
+    }
 }

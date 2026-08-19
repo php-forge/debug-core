@@ -17,14 +17,16 @@ final class Tabs
      * @param non-empty-string $id
      * @param non-empty-string $ariaLabel
      * @param list<array{label: string, content: string}> $tabs
+     * @param int $activeIndex Zero-based index of the tab selected on initial render.
      */
-    public static function render(string $id, string $ariaLabel, array $tabs): string
+    public static function render(string $id, string $ariaLabel, array $tabs, int $activeIndex = 0): string
     {
         $items = [];
         $panels = [];
 
         foreach ($tabs as $index => $tab) {
-            $active = $index === 0;
+            $active = $index === $activeIndex;
+
             $tabId = "{$id}-tab-{$index}";
             $panelId = "{$id}-panel-{$index}";
 
