@@ -62,24 +62,27 @@ final class SnapshotStore
         $this->initialize();
 
         $lock = $this->acquireLock(LOCK_EX);
-        $patterns = [
-            "{$this->path}/*.json",
-            "{$this->path}/.debug-*",
-        ];
 
-        foreach ($patterns as $pattern) {
-            $files = glob($pattern);
+        try {
+            $patterns = [
+                "{$this->path}/*.json",
+                "{$this->path}/.debug-*",
+            ];
 
-            foreach ($files === false ? [] : $files as $file) {
-                if (is_file($file) && !@unlink($file)) {
-                    throw new StorageException(
-                        "Unable to remove debug data file: {$file}",
-                    );
+            foreach ($patterns as $pattern) {
+                $files = glob($pattern);
+
+                foreach ($files === false ? [] : $files as $file) {
+                    if (is_file($file) && !@unlink($file)) {
+                        throw new StorageException(
+                            "Unable to remove debug data file: {$file}",
+                        );
+                    }
                 }
             }
+        } finally {
+            fclose($lock);
         }
-
-        fclose($lock);
     }
 
     /**
