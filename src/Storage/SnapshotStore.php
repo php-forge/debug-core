@@ -10,7 +10,6 @@ use Throwable;
 use function array_diff;
 use function array_keys;
 use function array_reverse;
-use function chmod;
 use function count;
 use function fclose;
 use function file_get_contents;
@@ -22,7 +21,6 @@ use function json_encode;
 use function mkdir;
 use function pathinfo;
 use function preg_match;
-use function unlink;
 
 /**
  * Provides JSON filesystem storage, manifest locking, atomic writes, and snapshot garbage collection.
