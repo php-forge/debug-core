@@ -12,6 +12,7 @@ import {
   THEME_PARAM,
   writeTheme,
 } from "./theme.js";
+import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
 
 (function () {
   "use strict";
@@ -295,7 +296,15 @@ import {
     }
 
     if (event.key === "Escape") {
+      var dropdownWasOpen = Boolean(
+        document.querySelector(".yii-debug-dropdown.is-open"),
+      );
+
       hideDropdowns(null);
+
+      window.setTimeout(function () {
+        requestParentToolbarDrawerClose(event, window, dropdownWasOpen);
+      }, 0);
     }
   });
 

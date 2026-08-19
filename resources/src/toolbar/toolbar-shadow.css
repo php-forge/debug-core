@@ -648,8 +648,12 @@
 
 /* The tick-rail: the resize handle doubles as the cluster's trace line. */
 .resize-handle {
+  display: block;
+  width: auto;
   height: 6px;
   margin: 0 18px -3px;
+  padding: 0;
+  border: 0;
   border-radius: 999px;
   background: linear-gradient(
     90deg,
@@ -662,6 +666,12 @@
   cursor: ns-resize;
   position: relative;
   z-index: 1;
+}
+
+.resize-handle:focus-visible {
+  outline: 3px solid var(--yii-debug-panel-primary);
+  outline-offset: 3px;
+  opacity: 1;
 }
 
 .position-top .resize-handle {
