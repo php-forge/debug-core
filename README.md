@@ -22,11 +22,19 @@ the toolbar data contract, and framework-neutral PHP templates composed with the
 does not register assets, render responses, inject toolbar markup, or depend on Yii2, Yii3, an application container, a
 view implementation, or a framework request lifecycle.
 
+Shared adapter UI contracts include `PHPForge\Debug\Data\FilterEngine`, `FilterPrefix`, `PageSize`, and `QueryInput`,
+plus `PHPForge\Debug\Panel\PanelRenderContext`. Adapters provide a
+`PHPForge\Debug\Routing\DebugUrlGeneratorInterface` implementation so portable panel renderers can build history,
+panel, and action links without importing a framework URL manager.
+
 Adapters collect framework data, convert it into immutable snapshots, expose toolbar data endpoints, define and
 publish assets through their framework, and render the shared templates with their framework view component. They also
 own toolbar response injection. Routes, controllers or actions, URL generation, panel metadata, and framework-specific
 panel views remain in each adapter. Yii adapters resolve the packaged frontend at
 `@vendor/php-forge/debug-core/resources/assets` and configure their own alias for `resources/views`.
+
+The visual and behavioral synchronization contract for the Yii adapters is documented in the
+[Yii Debug UI parity baseline](docs/ui-parity-baseline.md).
 
 Current adapters:
 
