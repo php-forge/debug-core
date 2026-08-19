@@ -84,6 +84,20 @@ final class QueueDriverDetectorTest extends TestCase
         );
     }
 
+    public function testDetectRecognizesYii3ProducerClasses(): void
+    {
+        self::assertSame(
+            ['Sync', false],
+            QueueDriverDetector::detect('Yiisoft\\Queue\\SyncQueueProducer'),
+            'Yii3 synchronous producers must use the shared Sync label and in-process flag.',
+        );
+        self::assertSame(
+            ['Async', true],
+            QueueDriverDetector::detect('Yiisoft\\Queue\\AsyncQueueProducer'),
+            'Yii3 asynchronous producers must surface their async execution model.',
+        );
+    }
+
     public function testDetectReturnsUnknownForEmptyFqcn(): void
     {
         self::setDetectorCache(
