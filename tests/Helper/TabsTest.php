@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Helper;
 
+use InvalidArgumentException;
 use PHPForge\Debug\Helper\Tabs;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -16,6 +17,19 @@ use PHPUnit\Framework\TestCase;
 #[Group('helpers')]
 final class TabsTest extends TestCase
 {
+    public function testRenderAllowsAnyActiveIndexForAnEmptyTabList(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <ul class="yii-debug-tabs" role="tablist" aria-label="Empty tabs">
+            </ul><div class="yii-debug-tab-content">
+            </div>
+            HTML,
+            Tabs::render('empty', 'Empty tabs', [], -1),
+            'An empty tab list must preserve its existing rendering for any requested index.',
+        );
+    }
+
     public function testRenderMarksOnlyTheFirstTabAndPanelAsActive(): void
     {
         $html = Tabs::render(
@@ -81,6 +95,32 @@ final class TabsTest extends TestCase
                 1,
             ),
             'The requested tab and panel must be the only initially active pair.',
+        );
+    }
+
+    public function testRenderThrowsForANegativeActiveIndex(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The active tab index must identify a supplied tab.');
+
+        Tabs::render(
+            'example',
+            'Example tabs',
+            [['label' => 'First', 'content' => '<p>One</p>']],
+            -1,
+        );
+    }
+
+    public function testRenderThrowsForAnOutOfRangeActiveIndex(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The active tab index must identify a supplied tab.');
+
+        Tabs::render(
+            'example',
+            'Example tabs',
+            [['label' => 'First', 'content' => '<p>One</p>']],
+            1,
         );
     }
 }

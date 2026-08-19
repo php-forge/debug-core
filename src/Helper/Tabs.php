@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use InvalidArgumentException;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\List\{Li, Ul};
 use UIAwesome\Html\Palpable\A;
+
+use function array_key_exists;
 
 /**
  * Renders the shared accessible tab pattern used by debug panels.
@@ -21,6 +24,12 @@ final class Tabs
      */
     public static function render(string $id, string $ariaLabel, array $tabs, int $activeIndex = 0): string
     {
+        if ($tabs !== [] && !array_key_exists($activeIndex, $tabs)) {
+            throw new InvalidArgumentException(
+                'The active tab index must identify a supplied tab.',
+            );
+        }
+
         $items = [];
         $panels = [];
 
