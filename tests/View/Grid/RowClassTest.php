@@ -34,7 +34,8 @@ final class RowClassTest extends TestCase
         self::assertSame(
             ['class' => 'yii-debug-row-info'],
             RowClass::for('info'),
-            'Info must map.');
+            'Info must map.'
+        );
         self::assertSame(
             ['class' => 'yii-debug-row-warning'],
             RowClass::for('warning'),
@@ -51,7 +52,8 @@ final class RowClassTest extends TestCase
     {
         self::assertSame(
             [],
-            RowClass::for(null), "'null' must yield no class.",
+            RowClass::for(null),
+            "'null' must yield no class.",
         );
         self::assertSame(
             [],
