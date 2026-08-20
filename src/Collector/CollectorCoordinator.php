@@ -143,13 +143,7 @@ final class CollectorCoordinator
             try {
                 $this->shutdown();
             } catch (Throwable $cleanupFailure) {
-                if ($cleanupFailureHandler !== null) {
-                    try {
-                        $cleanupFailureHandler($cleanupFailure);
-                    } catch (Throwable) {
-                        // Diagnostic observers must not replace the primary application failure.
-                    }
-                }
+                self::reportCleanupFailure($cleanupFailure, $cleanupFailureHandler);
             }
 
             throw $primaryFailure;
@@ -238,5 +232,25 @@ final class CollectorCoordinator
         }
 
         $this->started = true;
+    }
+
+    /**
+     * Reports a secondary cleanup failure without allowing the observer to replace the primary failure.
+     *
+     * @param (callable(Throwable): void)|null $cleanupFailureHandler Secondary-failure observer.
+     */
+    private static function reportCleanupFailure(
+        Throwable $cleanupFailure,
+        callable|null $cleanupFailureHandler,
+    ): void {
+        if ($cleanupFailureHandler === null) {
+            return;
+        }
+
+        try {
+            $cleanupFailureHandler($cleanupFailure);
+        } catch (Throwable) {
+            // Diagnostic observers must not replace the primary application failure.
+        }
     }
 }

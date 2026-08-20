@@ -33,13 +33,9 @@ export function focusToolbarTrigger(root, url) {
 }
 
 export function isToolbarDrawerCloseMessage(event, origin, frameWindow) {
-  var data = event && event.data;
+  var data = toolbarDrawerMessageData(event, origin, frameWindow);
 
   return Boolean(
-    event &&
-    event.origin === origin &&
-    frameWindow &&
-    event.source === frameWindow &&
     data &&
     typeof data === "object" &&
     data.source === "yii-debug-toolbar" &&
@@ -48,17 +44,27 @@ export function isToolbarDrawerCloseMessage(event, origin, frameWindow) {
 }
 
 export function isToolbarDrawerThemeMessage(event, origin, frameWindow) {
-  var data = event && event.data;
+  var data = toolbarDrawerMessageData(event, origin, frameWindow);
 
   return Boolean(
-    event &&
-    event.origin === origin &&
-    frameWindow &&
-    event.source === frameWindow &&
     data &&
+    typeof data === "object" &&
     data.source === "yii-debug-toolbar" &&
     data.type === "theme",
   );
+}
+
+function toolbarDrawerMessageData(event, origin, frameWindow) {
+  if (
+    !event ||
+    event.origin !== origin ||
+    !frameWindow ||
+    event.source !== frameWindow
+  ) {
+    return null;
+  }
+
+  return event.data;
 }
 
 export function requestParentToolbarDrawerClose(
