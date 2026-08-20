@@ -70,7 +70,7 @@ final class SensitiveDataRedactor
      */
     public static function isSensitiveKey(string $key, array $sensitiveKeys = self::DEFAULT_KEYS): bool
     {
-        return isset(array_fill_keys(array_map(strtolower(...), $sensitiveKeys), true)[strtolower($key)]);
+        return isset(self::keyMap($sensitiveKeys)[strtolower($key)]);
     }
 
     /**
@@ -85,11 +85,21 @@ final class SensitiveDataRedactor
      */
     public static function redact(#[SensitiveParameter] array $value, array $sensitiveKeys = self::DEFAULT_KEYS): array
     {
-        $keys = array_fill_keys(array_map(strtolower(...), $sensitiveKeys), true);
-
         $nodes = 0;
 
-        return self::walk($value, $keys, 0, $nodes);
+        return self::walk($value, self::keyMap($sensitiveKeys), 0, $nodes);
+    }
+
+    /**
+     * Normalizes configured keys into a case-insensitive lookup map.
+     *
+     * @param list<string> $sensitiveKeys Exact key names to normalize.
+     *
+     * @return array<string, true> Normalized key lookup.
+     */
+    private static function keyMap(array $sensitiveKeys): array
+    {
+        return array_fill_keys(array_map(strtolower(...), $sensitiveKeys), true);
     }
 
     /**
