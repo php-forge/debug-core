@@ -11,9 +11,13 @@ use SplObjectStorage;
 use Stringable;
 use Throwable;
 
-use function array_map;
+use function array_diff_key;
+use function array_is_list;
+use function array_key_exists;
+use function array_key_first;
 use function base64_decode;
 use function base64_encode;
+use function count;
 use function get_object_vars;
 use function get_resource_type;
 use function in_array;
@@ -38,6 +42,25 @@ final readonly class DebugValue implements JsonSerializable
 {
     private const int MAX_DEPTH = 10;
     private const int MAX_NODES = 10000;
+
+    /**
+     * @var array<string, array<string, true>>
+     */
+    private const array SHAPES = [
+        'null' => ['type' => true],
+        'bool' => ['type' => true, 'value' => true],
+        'int' => ['type' => true, 'value' => true],
+        'float' => ['type' => true, 'value' => true],
+        'special-float' => ['type' => true, 'value' => true],
+        'string' => ['type' => true, 'value' => true],
+        'binary' => ['type' => true, 'encoding' => true, 'data' => true],
+        'array' => ['type' => true, 'entries' => true],
+        'object' => ['type' => true, 'value' => true, 'entries' => true, 'class' => true],
+        'resource' => ['type' => true, 'resourceType' => true],
+        'truncated' => ['type' => true, 'value' => true, 'reason' => true],
+        'recursion' => ['type' => true, 'value' => true, 'reason' => true],
+        'unsupported' => ['type' => true, 'value' => true, 'reason' => true],
+    ];
 
     /**
      * Creates a tagged debug value from normalized fields.
@@ -127,14 +150,15 @@ final readonly class DebugValue implements JsonSerializable
         }
 
         if ($this->type === 'array' || $this->type === 'object') {
-            $data['entries'] = array_map(
-                static fn(array $entry): array => [
+            $data['entries'] = [];
+
+            foreach ($this->entries as $entry) {
+                $data['entries'][] = [
                     'keyType' => $entry['keyType'],
                     'key' => $entry['key'],
                     'value' => $entry['value']->jsonSerialize(),
-                ],
-                $this->entries,
-            );
+                ];
+            }
         }
 
         if ($this->className !== null) {
@@ -204,6 +228,26 @@ final readonly class DebugValue implements JsonSerializable
     }
 
     /**
+     * Returns a required boolean without coercion.
+     *
+     * @param array<string, mixed> $payload Validated payload.
+     */
+    private static function bool(array $payload, string $key, string $path): bool
+    {
+        if (!array_key_exists($key, $payload)) {
+            throw HydrationException::at("{$path}.{$key}", 'a required field');
+        }
+
+        $value = $payload[$key];
+
+        if (!is_bool($value)) {
+            throw HydrationException::at("{$path}.{$key}", 'a boolean');
+        }
+
+        return $value;
+    }
+
+    /**
      * Returns the display label for a non-scalar tagged value.
      *
      * @return string Display-safe label.
@@ -223,23 +267,76 @@ final readonly class DebugValue implements JsonSerializable
     }
 
     /**
+     * Returns a decoded entry object with its exact required shape.
+     *
+     * @return array{keyType: mixed, key: mixed, value: mixed} Validated entry fields.
+     */
+    private static function entryObject(mixed $value, string $path): array
+    {
+        if (!is_array($value) || (array_is_list($value) && $value !== [])) {
+            throw HydrationException::at($path, 'an object');
+        }
+
+        foreach ($value as $key => $_) {
+            if (!is_string($key)) {
+                throw HydrationException::at($path, 'an object with string keys');
+            }
+        }
+
+        if (!array_key_exists('keyType', $value)) {
+            throw HydrationException::at("{$path}.keyType", 'a required field');
+        }
+
+        if (!array_key_exists('key', $value)) {
+            throw HydrationException::at("{$path}.key", 'a required field');
+        }
+
+        if (!array_key_exists('value', $value)) {
+            throw HydrationException::at("{$path}.value", 'a required field');
+        }
+
+        if (count($value) !== 3) {
+            $unknown = array_diff_key(
+                $value,
+                [
+                    'keyType' => true,
+                    'key' => true,
+                    'value' => true,
+                ],
+            );
+
+            if ($unknown !== []) {
+                $key = array_key_first($unknown);
+
+                throw HydrationException::at("{$path}.{$key}", 'a declared field');
+            }
+        }
+
+        return [
+            'keyType' => $value['keyType'],
+            'key' => $value['key'],
+            'value' => $value['value'],
+        ];
+    }
+
+    /**
      * Hydrates a base64-encoded binary value.
      *
-     * @param Payload $payload Validated tagged value payload.
+     * @param array<string, mixed> $payload Validated tagged value payload.
      * @param string $path Payload path used in hydration errors.
      *
      * @return self Hydrated binary value.
      */
-    private static function fromBinary(Payload $payload, string $path): self
+    private static function fromBinary(array $payload, string $path): self
     {
-        if ($payload->string('encoding') !== 'base64') {
+        if (self::string($payload, 'encoding', $path) !== 'base64') {
             throw HydrationException::at(
                 "{$path}.encoding",
                 'base64',
             );
         }
 
-        $decoded = base64_decode($payload->string('data'), true);
+        $decoded = base64_decode(self::string($payload, 'data', $path), true);
 
         if ($decoded === false) {
             throw HydrationException::at(
@@ -257,14 +354,14 @@ final readonly class DebugValue implements JsonSerializable
     /**
      * Hydrates a non-finite floating-point label.
      *
-     * @param Payload $payload Validated tagged value payload.
+     * @param array<string, mixed> $payload Validated tagged value payload.
      * @param string $path Payload path used in hydration errors.
      *
      * @return self Hydrated non-finite floating-point value.
      */
-    private static function fromSpecialFloat(Payload $payload, string $path): self
+    private static function fromSpecialFloat(array $payload, string $path): self
     {
-        $value = $payload->string('value');
+        $value = self::string($payload, 'value', $path);
 
         if (!in_array($value, ['NAN', 'INF', '-INF'], true)) {
             throw HydrationException::at(
@@ -289,9 +386,9 @@ final readonly class DebugValue implements JsonSerializable
      */
     private static function hydrate(mixed $data, string $path, int $depth, int &$nodes): self
     {
-        $payload = Payload::object($data, $path);
+        $type = '';
 
-        $type = $payload->string('type');
+        $payload = self::taggedObject($data, $path, $type);
 
         if (++$nodes > self::MAX_NODES + 1) {
             throw HydrationException::at($path, 'at most 10000 captured nodes');
@@ -301,75 +398,57 @@ final readonly class DebugValue implements JsonSerializable
             throw HydrationException::at($path, 'at most 10 nested levels');
         }
 
-        $payload->shape(
-            match ($type) {
-                'null' => ['type'],
-                'bool', 'int', 'float', 'special-float', 'string' => ['type', 'value'],
-                'binary' => ['type', 'encoding', 'data'],
-                'array' => ['type', 'entries'],
-                'object' => ['type', 'value', 'entries', 'class'],
-                'resource' => ['type', 'resourceType'],
-                'truncated', 'recursion', 'unsupported' => ['type', 'value', 'reason'],
-                default => throw HydrationException::at(
-                    "{$path}.type",
-                    'a known debug-value type',
-                ),
-            }
-        );
-
         return match ($type) {
             'null' => new self('null'),
-            'bool' => new self('bool', $payload->bool('value')),
-            'int' => new self('int', $payload->int('value')),
-            'float' => new self('float', $payload->number('value')),
+            'bool' => new self('bool', self::bool($payload, 'value', $path)),
+            'int' => new self('int', self::int($payload, 'value', $path)),
+            'float' => new self('float', self::number($payload, 'value', $path)),
             'special-float' => self::fromSpecialFloat($payload, $path),
-            'string' => new self('string', $payload->string('value')),
+            'string' => new self('string', self::string($payload, 'value', $path)),
             'binary' => self::fromBinary($payload, $path),
             'array' => new self('array', entries: self::hydrateEntries($payload, $path, $depth, $nodes)),
             'object' => new self(
                 'object',
-                value: $payload->nullableString('value'),
+                value: self::nullableString($payload, 'value', $path),
                 entries: self::hydrateEntries($payload, $path, $depth, $nodes),
-                className: $payload->string('class'),
+                className: self::string($payload, 'class', $path),
             ),
             'resource' => new self(
                 'resource',
-                resourceType: $payload->string('resourceType'),
+                resourceType: self::string($payload, 'resourceType', $path),
             ),
             'truncated', 'recursion', 'unsupported' => new self(
                 $type,
-                value: $payload->nullableString('value'),
-                reason: $payload->string('reason'),
+                value: self::nullableString($payload, 'value', $path),
+                reason: self::string($payload, 'reason', $path),
             ),
+            default => throw HydrationException::at("{$path}.type", 'a known debug-value type'),
         };
     }
 
     /**
      * Hydrates tagged array or object entries.
      *
-     * @param Payload $payload Validated tagged value payload.
+     * @param array<string, mixed> $payload Validated tagged value payload.
      * @param string $path Payload path used in hydration errors.
      *
      * @return list<array{keyType: 'int'|'string', key: int|string, value: self}> Hydrated entries.
      */
-    private static function hydrateEntries(Payload $payload, string $path, int $depth, int &$nodes): array
+    private static function hydrateEntries(array $payload, string $path, int $depth, int &$nodes): array
     {
         $entries = [];
 
-        foreach ($payload->list('entries') as $index => $rawEntry) {
+        foreach (self::list($payload, 'entries', $path) as $index => $rawEntry) {
             $entryPath = "{$path}.entries[{$index}]";
 
-            $entry = Payload::object($rawEntry, $entryPath)
-                ->shape(
-                    [
-                        'keyType',
-                        'key',
-                        'value',
-                    ],
-                );
+            $entry = self::entryObject($rawEntry, $entryPath);
 
-            $keyType = $entry->string('keyType');
-            $key = $entry->raw('key');
+            $keyType = $entry['keyType'];
+            $key = $entry['key'];
+
+            if (!is_string($keyType)) {
+                throw HydrationException::at("{$entryPath}.keyType", 'a string');
+            }
 
             if (
                 ($keyType !== 'int' && $keyType !== 'string')
@@ -385,11 +464,58 @@ final readonly class DebugValue implements JsonSerializable
             $entries[] = [
                 'keyType' => $keyType,
                 'key' => $key,
-                'value' => self::hydrate($entry->raw('value'), "{$entryPath}.value", $depth + 1, $nodes),
+                'value' => self::hydrate(
+                    $entry['value'],
+                    "{$entryPath}.value",
+                    $depth + 1,
+                    $nodes,
+                ),
             ];
         }
 
         return $entries;
+    }
+
+    /**
+     * Returns a required integer without coercion.
+     *
+     * @param array<string, mixed> $payload Validated payload.
+     */
+    private static function int(array $payload, string $key, string $path): int
+    {
+        if (!array_key_exists($key, $payload)) {
+            throw HydrationException::at("{$path}.{$key}", 'a required field');
+        }
+
+        $value = $payload[$key];
+
+        if (!is_int($value)) {
+            throw HydrationException::at("{$path}.{$key}", 'an integer');
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns a required sequential list.
+     *
+     * @param array<string, mixed> $payload Validated payload.
+     *
+     * @return list<mixed> Validated list.
+     */
+    private static function list(array $payload, string $key, string $path): array
+    {
+        if (!array_key_exists($key, $payload)) {
+            throw HydrationException::at("{$path}.{$key}", 'a required field');
+        }
+
+        $value = $payload[$key];
+
+        if (!is_array($value) || !array_is_list($value)) {
+            throw HydrationException::at("{$path}.{$key}", 'a list');
+        }
+
+        return $value;
     }
 
     /**
@@ -544,6 +670,46 @@ final readonly class DebugValue implements JsonSerializable
     }
 
     /**
+     * Returns a string or `null` without coercion.
+     *
+     * @param array<string, mixed> $payload Validated payload.
+     */
+    private static function nullableString(array $payload, string $key, string $path): string|null
+    {
+        if (!array_key_exists($key, $payload)) {
+            throw HydrationException::at("{$path}.{$key}", 'a required field');
+        }
+
+        $value = $payload[$key];
+
+        if ($value !== null && !is_string($value)) {
+            throw HydrationException::at("{$path}.{$key}", 'a string or null');
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns a required finite number as a float.
+     *
+     * @param array<string, mixed> $payload Validated payload.
+     */
+    private static function number(array $payload, string $key, string $path): float
+    {
+        if (!array_key_exists($key, $payload)) {
+            throw HydrationException::at("{$path}.{$key}", 'a required field');
+        }
+
+        $value = $payload[$key];
+
+        if (!is_int($value) && (!is_float($value) || !is_finite($value))) {
+            throw HydrationException::at("{$path}.{$key}", 'a number');
+        }
+
+        return (float) $value;
+    }
+
+    /**
      * Returns a safe display label for an object.
      *
      * @param object $value Object to describe.
@@ -573,5 +739,93 @@ final readonly class DebugValue implements JsonSerializable
         }
 
         return Json::safeString($value::class);
+    }
+
+    /**
+     * Returns a required string without coercion.
+     *
+     * @param array<string, mixed> $payload Validated payload.
+     */
+    private static function string(array $payload, string $key, string $path): string
+    {
+        if (!array_key_exists($key, $payload)) {
+            throw HydrationException::at("{$path}.{$key}", 'a required field');
+        }
+
+        $value = $payload[$key];
+
+        if (!is_string($value)) {
+            throw HydrationException::at("{$path}.{$key}", 'a string');
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns a decoded tagged-value object matching its type-specific shape.
+     *
+     * @param-out string $type Validated tagged-value type.
+     *
+     * @return array<string, mixed> Validated tagged-value fields.
+     */
+    private static function taggedObject(mixed $value, string $path, string &$type): array
+    {
+        if (!is_array($value) || (array_is_list($value) && $value !== [])) {
+            throw HydrationException::at($path, 'an object');
+        }
+
+        foreach ($value as $key => $_) {
+            if (!is_string($key)) {
+                throw HydrationException::at($path, 'an object with string keys');
+            }
+        }
+
+        if (!array_key_exists('type', $value)) {
+            throw HydrationException::at("{$path}.type", 'a required field');
+        }
+
+        $rawType = $value['type'];
+
+        if (!is_string($rawType)) {
+            throw HydrationException::at("{$path}.type", 'a string');
+        }
+
+        $type = $rawType;
+
+        $shape = self::SHAPES[$type] ?? throw HydrationException::at(
+            "{$path}.type",
+            'a known debug-value type',
+        );
+
+        self::validateShape($value, $shape, $path);
+
+        return $value;
+    }
+
+    /**
+     * Validates required and undeclared fields against a cached shape map.
+     *
+     * @param array<array-key, mixed> $payload Decoded payload.
+     * @param array<string, true> $shape Required fields indexed by name.
+     */
+    private static function validateShape(array $payload, array $shape, string $path): void
+    {
+        foreach ($shape as $key => $_) {
+            if (!array_key_exists($key, $payload)) {
+                throw HydrationException::at("{$path}.{$key}", 'a required field');
+            }
+        }
+
+        if (count($payload) === count($shape)) {
+            return;
+        }
+
+        $unknown = array_diff_key($payload, $shape);
+
+        if ($unknown !== []) {
+            $key = array_key_first($unknown);
+
+            throw HydrationException::at("{$path}.{$key}", 'a declared field');
+        }
     }
 }

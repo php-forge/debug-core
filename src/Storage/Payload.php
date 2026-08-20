@@ -308,7 +308,7 @@ final readonly class Payload
             );
         }
 
-        foreach (array_keys($value) as $key) {
+        foreach ($value as $key => $_) {
             if (!is_string($key)) {
                 throw HydrationException::at(
                     $path,
