@@ -91,43 +91,55 @@ final class PageSizeTest extends TestCase
 
     public function testSelectorHtmlMarksTheCurrentOptionSelected(): void
     {
-        $html = PageSize::selectorHtml('25');
-
-        self::assertStringContainsString(
-            'data-yii-debug-pagesize',
-            $html,
-            'Selector must carry the JS hook.',
-        );
-        self::assertStringContainsString(
-            'name="per-page"',
-            $html,
-            'Selector must submit as `per-page`.',
-        );
-        self::assertStringContainsString(
-            '<option value="25" selected>',
-            $html,
-            'The current value must render selected.',
-        );
-        self::assertMatchesRegularExpression(
-            '/<option value="all">\s*All\s*<\/option>/',
-            $html,
-            "The 'all' option must render with its display label.",
-        );
-        self::assertStringContainsString(
-            'yii-debug-grid-pagesize-label',
-            $html,
-            'Label span must carry its class.',
+        self::assertSame(
+            <<<HTML
+            <label class="yii-debug-grid-pagesize"><span class="yii-debug-grid-pagesize-label">Rows</span><select class="yii-debug-grid-pagesize-select" name="per-page" data-yii-debug-pagesize="true">
+            <option value="10">
+            10
+            </option>
+            <option value="25" selected>
+            25
+            </option>
+            <option value="50">
+            50
+            </option>
+            <option value="100">
+            100
+            </option>
+            <option value="all">
+            All
+            </option>
+            </select></label>
+            HTML,
+            PageSize::selectorHtml('25'),
+            'The selector must render the exact JS hook, field name, labels, and selected option.',
         );
     }
 
     public function testSelectorHtmlSelectsCanonicalizedAllKeyword(): void
     {
-        $html = PageSize::selectorHtml(PageSize::current('ALL'));
-
-        self::assertStringContainsString(
-            '<option value="all" selected>',
-            $html,
-            "The canonicalized 'all' keyword must select the matching option.",
+        self::assertSame(
+            <<<HTML
+            <label class="yii-debug-grid-pagesize"><span class="yii-debug-grid-pagesize-label">Rows</span><select class="yii-debug-grid-pagesize-select" name="per-page" data-yii-debug-pagesize="true">
+            <option value="10">
+            10
+            </option>
+            <option value="25">
+            25
+            </option>
+            <option value="50">
+            50
+            </option>
+            <option value="100">
+            100
+            </option>
+            <option value="all" selected>
+            All
+            </option>
+            </select></label>
+            HTML,
+            PageSize::selectorHtml(PageSize::current('ALL')),
+            "The canonicalized 'all' keyword must render the exact selected selector.",
         );
     }
 }

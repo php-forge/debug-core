@@ -47,20 +47,33 @@ final class UserIdentityRendererTest extends TestCase
 
         $html = UserIdentityRenderer::render($view);
 
-        self::assertStringContainsString(
-            '28 d ago',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-user">
+            <header class="yii-debug-user-card">
+            <span class="yii-debug-user-avatar" aria-hidden="true">A</span><div class="yii-debug-user-meta">
+            <h2 class="yii-debug-user-name">
+            admin
+            </h2><div class="yii-debug-user-tags">
+            </div>
+            </div>
+            </header><article class="yii-debug-user-section">
+            <header>
+            <span class="yii-debug-user-section-icon" aria-hidden="true"><svg></svg></span><span>Timestamps</span>
+            </header><dl>
+            <div class="yii-debug-user-row">
+            <dt>
+            Created At
+            </dt><dd>
+            <span class="yii-debug-user-time" title="1640000000"><span class="yii-debug-user-time-rel">28 d ago</span><span class="yii-debug-user-time-abs">Apr 13, 2026 · 14:19</span></span>
+            </dd>
+            </div>
+            </dl>
+            </article>
+            </section>
+            HTML,
             $html,
             'Relative time must surface in the row.',
-        );
-        self::assertStringContainsString(
-            'Apr 13, 2026',
-            $html,
-            'Absolute time must surface in the row.',
-        );
-        self::assertStringContainsString(
-            'yii-debug-user-time',
-            $html,
-            'Timestamp rows must carry the time CSS class.',
         );
     }
 
@@ -97,20 +110,39 @@ final class UserIdentityRendererTest extends TestCase
             substr_count($html, '<button'),
             'Each security attribute must render its reveal button.',
         );
-        self::assertStringContainsString(
-            'data-yii-debug-reveal',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-user">
+            <header class="yii-debug-user-card">
+            <span class="yii-debug-user-avatar" aria-hidden="true">A</span><div class="yii-debug-user-meta">
+            <h2 class="yii-debug-user-name">
+            admin
+            </h2><div class="yii-debug-user-tags">
+            </div>
+            </div>
+            </header><article class="yii-debug-user-section">
+            <header>
+            <span class="yii-debug-user-section-icon" aria-hidden="true"><svg></svg></span><span>Security</span>
+            </header><dl>
+            <div class="yii-debug-user-row">
+            <dt>
+            Auth Key
+            </dt><dd>
+            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Auth Key" data-yii-debug-reveal="true"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">abc</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
+            </dd>
+            </div><div class="yii-debug-user-row">
+            <dt>
+            Password Hash
+            </dt><dd>
+            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Password Hash" data-yii-debug-reveal="true"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">def</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
+            </dd>
+            </div>
+            </dl>
+            </article>
+            </section>
+            HTML,
             $html,
             'Reveal buttons must carry the JS hook attribute.',
-        );
-        self::assertStringContainsString(
-            'aria-label="Reveal Auth Key"',
-            $html,
-            'The reveal control must expose its complete accessible label.',
-        );
-        self::assertStringContainsString(
-            'data-yii-debug-reveal="true"',
-            $html,
-            'The JS hook must retain its enabled boolean value.',
         );
     }
 
@@ -130,30 +162,24 @@ final class UserIdentityRendererTest extends TestCase
 
         $html = UserIdentityRenderer::render($view);
 
-        self::assertStringContainsString(
-            'A</span>',
+        self::assertSame(
+            <<<HTML
+        <section class="yii-debug-user">
+        <header class="yii-debug-user-card">
+        <span class="yii-debug-user-avatar" aria-hidden="true">A</span><div class="yii-debug-user-meta">
+        <h2 class="yii-debug-user-name">
+        admin
+        </h2><p class="yii-debug-user-handle">
+        admin@example.com
+        </p><div class="yii-debug-user-tags">
+        <span class="yii-debug-user-status yii-debug-user-status-success">Active</span><span class="yii-debug-user-pill">ID #1</span>
+        </div>
+        </div>
+        </header>
+        </section>
+        HTML,
             $html,
             'Monogram must render inside the avatar span.',
-        );
-        self::assertStringContainsString(
-            'yii-debug-user-status-success',
-            $html,
-            'Status variant must surface as the CSS modifier.',
-        );
-        self::assertStringContainsString(
-            'admin@example.com',
-            $html,
-            'Email must surface in the handle paragraph.',
-        );
-        self::assertStringContainsString(
-            'yii-debug-user-handle',
-            $html,
-            'Handle paragraph must use the handle CSS class.',
-        );
-        self::assertStringContainsString(
-            'ID #1',
-            $html,
-            'ID pill must surface with the `#` prefix.',
         );
     }
 
@@ -173,8 +199,19 @@ final class UserIdentityRendererTest extends TestCase
 
         $html = UserIdentityRenderer::render($view);
 
-        self::assertStringNotContainsString(
-            'yii-debug-user-handle',
+        self::assertSame(
+            <<<'HTML'
+        <section class="yii-debug-user">
+        <header class="yii-debug-user-card">
+        <span class="yii-debug-user-avatar" aria-hidden="true">A</span><div class="yii-debug-user-meta">
+        <h2 class="yii-debug-user-name">
+        admin
+        </h2><div class="yii-debug-user-tags">
+        </div>
+        </div>
+        </header>
+        </section>
+        HTML,
             $html,
             'Empty email must drop the handle paragraph entirely.',
         );
@@ -196,8 +233,19 @@ final class UserIdentityRendererTest extends TestCase
 
         $html = UserIdentityRenderer::render($view);
 
-        self::assertStringNotContainsString(
-            'yii-debug-user-status',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-user">
+            <header class="yii-debug-user-card">
+            <span class="yii-debug-user-avatar" aria-hidden="true">A</span><div class="yii-debug-user-meta">
+            <h2 class="yii-debug-user-name">
+            admin
+            </h2><div class="yii-debug-user-tags">
+            </div>
+            </div>
+            </header>
+            </section>
+            HTML,
             $html,
             'Empty status label must drop the status pill.',
         );
@@ -225,15 +273,33 @@ final class UserIdentityRendererTest extends TestCase
 
         $html = UserIdentityRenderer::render($view);
 
-        self::assertStringContainsString(
-            'yii-debug-user-empty',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-user">
+            <header class="yii-debug-user-card">
+            <span class="yii-debug-user-avatar" aria-hidden="true">A</span><div class="yii-debug-user-meta">
+            <h2 class="yii-debug-user-name">
+            admin
+            </h2><div class="yii-debug-user-tags">
+            </div>
+            </div>
+            </header><article class="yii-debug-user-section">
+            <header>
+            <span class="yii-debug-user-section-icon" aria-hidden="true"><svg></svg></span><span>Security</span>
+            </header><dl>
+            <div class="yii-debug-user-row">
+            <dt>
+            Token
+            </dt><dd>
+            <span class="yii-debug-user-empty">—</span>
+            </dd>
+            </div>
+            </dl>
+            </article>
+            </section>
+            HTML,
             $html,
             'Empty rows must surface the dedicated CSS class.',
-        );
-        self::assertStringContainsString(
-            '—',
-            $html,
-            'Empty rows must show the em-dash placeholder.',
         );
     }
 
@@ -253,30 +319,72 @@ final class UserIdentityRendererTest extends TestCase
 
         $html = UserIdentityRenderer::render($view);
 
-        self::assertStringContainsString(
-            'yii-debug-user-name',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-user">
+            <header class="yii-debug-user-card">
+            <span class="yii-debug-user-avatar" aria-hidden="true">A</span><div class="yii-debug-user-meta">
+            <h2 class="yii-debug-user-name">
+            admin
+            </h2><p class="yii-debug-user-handle">
+            admin@example.com
+            </p><div class="yii-debug-user-tags">
+            <span class="yii-debug-user-status yii-debug-user-status-success">Active</span><span class="yii-debug-user-pill">ID #1</span>
+            </div>
+            </div>
+            </header><article class="yii-debug-user-section">
+            <header>
+            <span class="yii-debug-user-section-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></svg></span><span>Identity</span>
+            </header><dl>
+            <div class="yii-debug-user-row">
+            <dt>
+            Id
+            </dt><dd>
+            <span class="yii-debug-user-value">1</span>
+            </dd>
+            </div><div class="yii-debug-user-row">
+            <dt>
+            Username
+            </dt><dd>
+            <span class="yii-debug-user-value">admin</span>
+            </dd>
+            </div><div class="yii-debug-user-row">
+            <dt>
+            Email
+            </dt><dd>
+            <span class="yii-debug-user-value">admin@example.com</span>
+            </dd>
+            </div>
+            </dl>
+            </article><article class="yii-debug-user-section">
+            <header>
+            <span class="yii-debug-user-section-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9.5 12l2 2 3.5-4"/></svg></span><span>Security</span>
+            </header><dl>
+            <div class="yii-debug-user-row">
+            <dt>
+            Auth Key
+            </dt><dd>
+            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Auth Key" data-yii-debug-reveal="true"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">authkey-12345</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
+            </dd>
+            </div>
+            </dl>
+            </article><article class="yii-debug-user-section">
+            <header>
+            <span class="yii-debug-user-section-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>Timestamps</span>
+            </header><dl>
+            <div class="yii-debug-user-row">
+            <dt>
+            Created At
+            </dt><dd>
+            <span class="yii-debug-user-time" title="1640000000"><span class="yii-debug-user-time-rel">Dec 20, 2021 · 11:33</span><span class="yii-debug-user-time-abs">Dec 20, 2021 · 11:33</span></span>
+            </dd>
+            </div>
+            </dl>
+            </article>
+            </section>
+            HTML,
             $html,
             'End-to-end view must surface the user-name heading.',
-        );
-        self::assertStringContainsString(
-            'admin',
-            $html,
-            'End-to-end username must reach the rendered DOM.'
-        );
-        self::assertStringContainsString(
-            'yii-debug-user-status-success',
-            $html,
-            'End-to-end status variant must reach the DOM.'
-        );
-        self::assertStringContainsString(
-            'data-yii-debug-reveal',
-            $html,
-            'End-to-end auth_key must trigger the security reveal button.'
-        );
-        self::assertStringContainsString(
-            'yii-debug-user-time',
-            $html,
-            'End-to-end created_at must trigger the timestamp formatter.'
         );
     }
 

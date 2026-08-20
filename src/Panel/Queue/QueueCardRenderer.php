@@ -128,8 +128,12 @@ final class QueueCardRenderer
             ->class('yii-debug-queue-meta-item')
             ->addDataAttribute('field', $label)
             ->html(
-                Span::tag()->class('yii-debug-queue-meta-label')->content($label),
-                Span::tag()->class('yii-debug-queue-meta-value')->content($value),
+                Span::tag()
+                    ->class('yii-debug-queue-meta-label')
+                    ->content($label),
+                Span::tag()
+                    ->class('yii-debug-queue-meta-value')
+                    ->content($value),
             );
     }
 
@@ -206,8 +210,12 @@ final class QueueCardRenderer
         return Details::tag()
             ->class('yii-debug-queue-tree-collapse')
             ->html(
-                Summary::tag()->class('yii-debug-queue-tree-summary')->html($summaryHtml),
-                Div::tag()->class('yii-debug-queue-tree-children')->html(...$children),
+                Summary::tag()
+                    ->class('yii-debug-queue-tree-summary')
+                    ->html($summaryHtml),
+                Div::tag()
+                    ->class('yii-debug-queue-tree-children')
+                    ->html(...$children),
             );
     }
 
@@ -306,8 +314,12 @@ final class QueueCardRenderer
             ->class('yii-debug-queue-card-head')
             ->html(
                 self::renderAvatar($record),
-                Div::tag()->class('yii-debug-queue-headline')->html(...$title),
-                Div::tag()->class('yii-debug-queue-meta-pills')->html(...$pills),
+                Div::tag()
+                    ->class('yii-debug-queue-headline')
+                    ->html(...$title),
+                Div::tag()
+                    ->class('yii-debug-queue-meta-pills')
+                    ->html(...$pills),
             );
     }
 
@@ -384,9 +396,15 @@ final class QueueCardRenderer
         return Div::tag()
             ->class('yii-debug-queue-tree-row')
             ->html(
-                Span::tag()->class('yii-debug-queue-tree-key')->content($key),
-                Span::tag()->class('yii-debug-queue-tree-type')->content($type),
-                Span::tag()->class("yii-debug-queue-tree-value yii-debug-queue-tree-value-{$variant}")->content($value),
+                Span::tag()
+                    ->class('yii-debug-queue-tree-key')
+                    ->content($key),
+                Span::tag()
+                    ->class('yii-debug-queue-tree-type')
+                    ->content($type),
+                Span::tag()
+                    ->class("yii-debug-queue-tree-value yii-debug-queue-tree-value-{$variant}")
+                    ->content($value),
             );
     }
 

@@ -12,8 +12,6 @@ use UIAwesome\Html\Flow\P;
 /**
  * Unit tests for {@see EmptyState} covering the shared empty-state card: container class, headline encoding, trusted
  * body rendering, and body-element ordering.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 #[Group('empty-state')]
@@ -51,8 +49,14 @@ final class EmptyStateTest extends TestCase
 
     public function testCardRendersTrustedBodyMarkupVerbatim(): void
     {
-        self::assertStringContainsString(
-            '<p>Trusted body</p>',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-empty-state">
+            <h2>
+            Nothing captured
+            </h2><p>Trusted body</p>
+            </div>
+            HTML,
             EmptyState::card('Nothing captured', '<p>Trusted body</p>'),
             'Trusted body markup must be rendered verbatim.',
         );

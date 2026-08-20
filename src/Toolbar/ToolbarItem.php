@@ -35,15 +35,8 @@ final readonly class ToolbarItem implements JsonSerializable
     /**
      * Returns the metric payload consumed by the toolbar runtime.
      *
-     * Usage example:
-     *
-     * ```php
-     * $payload = (new \PHPForge\Debug\Toolbar\ToolbarItem('12 ms', label: 'Time'))->jsonSerialize();
-     * ```
-     *
      * @return array{value: string, status: string, label?: string, icon?: string, title?: string, url?: string,
-     * id?: string}
-     * Serialized metric payload.
+     * id?: string} Serialized metric payload.
      */
     public function jsonSerialize(): array
     {

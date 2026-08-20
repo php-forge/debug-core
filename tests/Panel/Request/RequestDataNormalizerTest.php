@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see RequestDataNormalizer} covering captured request data plus the controller summary
- * into the typed {@see \PHPForge\Debug\Panel\Request\RequestView} aggregate (hero header + tab/section list).
+ * Unit tests for {@see RequestDataNormalizer} covering captured request data plus the controller summary into the typed
+ * {@see \PHPForge\Debug\Panel\Request\RequestView} aggregate (hero header + tab/section list).
  */
 #[Group('panel')]
 #[Group('request')]

@@ -7,10 +7,11 @@ namespace PHPForge\Debug\Panel\Dump;
 use PHPForge\Debug\Storage\{PanelSnapshot, Payload};
 
 use function array_map;
-use function is_array;
 
 /**
  * Canonical Dump panel snapshot holding the captured rows in their typed form.
+ *
+ * @phpstan-import-type LogMessage from \PHPForge\Debug\Panel\Log\LogSnapshot
  */
 final readonly class DumpSnapshot implements PanelSnapshot
 {
@@ -20,18 +21,16 @@ final readonly class DumpSnapshot implements PanelSnapshot
     public function __construct(private array $entries) {}
 
     /**
-     * Narrows the raw logger tuples into typed rows.
+     * Converts canonical logger tuples into typed rows.
      *
-     * @param array<int|string, mixed> $messages Logger tuples in capture order; non-array entries are dropped.
+     * @param list<LogMessage> $messages Logger tuples in capture order.
      */
     public static function capture(array $messages): self
     {
         $entries = [];
 
         foreach ($messages as $message) {
-            if (is_array($message)) {
-                $entries[] = DumpRow::fromLoggerTuple($message);
-            }
+            $entries[] = DumpRow::fromLoggerTuple($message);
         }
 
         return new self($entries);

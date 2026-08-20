@@ -71,7 +71,9 @@ final class DbExplainRenderer
             $headerCells = [];
 
             foreach ($columns as $column) {
-                $headerCells[] = Th::tag()->scope('col')->content((string) $column);
+                $headerCells[] = Th::tag()
+                    ->scope('col')
+                    ->content((string) $column);
             }
 
             $bodyRows = [];
@@ -82,8 +84,10 @@ final class DbExplainRenderer
                 foreach ($columns as $column) {
                     $value = $row[$column] ?? null;
                     $cells[] = $value === null
-                        ? Td::tag()->html(Em::tag()->content('NULL'))
-                        : Td::tag()->content(is_scalar($value) ? (string) $value : Dump::export($value));
+                        ? Td::tag()
+                            ->html(Em::tag()->content('NULL'))
+                        : Td::tag()
+                            ->content(is_scalar($value) ? (string) $value : Dump::export($value));
                 }
 
                 $bodyRows[] = Tr::tag()->html(...$cells);

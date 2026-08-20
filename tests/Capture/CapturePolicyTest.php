@@ -16,21 +16,33 @@ use PHPUnit\Framework\TestCase;
 #[Group('capture')]
 final class CapturePolicyTest extends TestCase
 {
+    public function testConstructorAcceptsTheSmallestPositiveBodyLimit(): void
+    {
+        self::assertSame(
+            ['decoded' => null, 'raw' => 'a'],
+            (new CapturePolicy(maxBodyBytes: 1))->redactBody('a', null),
+            'A one-byte body limit must remain valid.',
+        );
+    }
     public function testConstructorRejectsANonPositiveBodyLimit(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('greater than zero');
+        $this->expectExceptionMessage(
+            'greater than zero',
+        );
 
         $policy = new CapturePolicy(maxBodyBytes: 0);
 
-        self::fail('Expected invalid policy construction to fail, got ' . $policy::class . '.');
+        self::fail(
+            'Expected invalid policy construction to fail, got ' . $policy::class . '.',
+        );
     }
 
     public function testPolicySupportsAnEmptySensitiveKeyList(): void
     {
         self::assertSame(
-            'password=visible',
-            (new CapturePolicy([]))->redactText('password=visible'),
+            '=visible',
+            (new CapturePolicy([]))->redactText('=visible'),
             'An explicitly empty key list must disable assignment redaction.',
         );
     }
@@ -44,8 +56,19 @@ final class CapturePolicyTest extends TestCase
             $policy->redact(['private' => 'secret', 'password' => 'visible']),
             'An explicit policy must replace the default key list.',
         );
-        self::assertTrue($policy->isSensitiveKey('PRIVATE'), 'Policy key checks must ignore case.');
-        self::assertFalse($policy->isSensitiveKey('password'), 'Explicit policy keys must replace defaults.');
+        self::assertTrue(
+            $policy->isSensitiveKey('PRIVATE'),
+            'Policy key checks must ignore case.',
+        );
+        self::assertFalse(
+            $policy->isSensitiveKey('password'),
+            'Explicit policy keys must replace defaults.',
+        );
+        self::assertSame(
+            'privateXkey=visible; private.key=[redacted]',
+            (new CapturePolicy(['private.key']))->redactText('privateXkey=visible; private.key=secret'),
+            'Regular-expression characters in configured keys must be matched literally.',
+        );
     }
 
     public function testRedactBodySanitizesObjectsAndOpaqueAssignments(): void
@@ -60,8 +83,8 @@ final class CapturePolicyTest extends TestCase
             $policy->redactBody('{"password":"object-secret"}', (object) ['password' => 'object-secret']),
             'Decoded objects must be normalized and redacted before persistence.',
         );
-        self::assertStringNotContainsString(
-            'opaque-secret',
+        self::assertSame(
+            'password=[redacted]',
             $policy->redactBody('password=opaque-secret', null)['raw'],
             'Opaque assignment bodies must receive best-effort text redaction.',
         );
@@ -92,6 +115,16 @@ final class CapturePolicyTest extends TestCase
             ['decoded' => null, 'raw' => 'abc' . SensitiveDataRedactor::TRUNCATED],
             (new CapturePolicy(maxBodyBytes: 3))->redactBody('abcdef', null),
             'Opaque bodies must be truncated at the configured byte limit.',
+        );
+        self::assertSame(
+            ['decoded' => null, 'raw' => 'abc'],
+            (new CapturePolicy(maxBodyBytes: 3))->redactBody('abc', null),
+            'A body exactly at the byte limit must not be truncated.',
+        );
+        self::assertSame(
+            ['decoded' => null, 'raw' => str_repeat('a', 65_536) . SensitiveDataRedactor::TRUNCATED],
+            (new CapturePolicy())->redactBody(str_repeat('a', 65_537), null),
+            'The default body limit must remain exactly 65,536 bytes.',
         );
     }
 
@@ -124,6 +157,11 @@ final class CapturePolicyTest extends TestCase
             'https://example.test/path?page=1&token=%5Bredacted%5D#result',
             $policy->redactUrl('https://example.test/path?page=1&token=secret#result'),
             'Sensitive query values must be redacted while the fragment is preserved.',
+        );
+        self::assertSame(
+            'https://example.test/path?page=1#result',
+            $policy->redactUrl('https://example.test/path?page=1#result'),
+            'A fragment must not become part of a safe query value.',
         );
     }
 }

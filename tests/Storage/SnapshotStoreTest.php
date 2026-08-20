@@ -88,7 +88,12 @@ final class SnapshotStoreTest extends TestCase
     public function testCommittedTransactionJournalKeepsCommittedData(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('current', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1.0), [], []),
+            10,
+        );
+
         file_put_contents(
             "{$this->path}/.debug-transaction.json",
             json_encode(
@@ -103,7 +108,10 @@ final class SnapshotStoreTest extends TestCase
             ),
         );
 
-        self::assertNotNull($store->readSnapshot('current'), 'Committed transaction data must remain visible.');
+        self::assertNotNull(
+            $store->readSnapshot('current'),
+            'Committed transaction data must remain visible.',
+        );
         self::assertFileDoesNotExist(
             "{$this->path}/.debug-transaction.json",
             'Committed journal must be cleaned during recovery.',
@@ -113,17 +121,28 @@ final class SnapshotStoreTest extends TestCase
     public function testEmptyManifestRebuildsValidSnapshotHistory(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('older', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('older', 1.0), [], []),
+            10,
+        );
+
         file_put_contents("{$this->path}/index.json", '');
 
-        $store->writeSnapshot(new DebugSnapshot($this->summary('newer', 2.0), [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('newer', 2.0), [], []),
+            10,
+        );
 
         self::assertSame(
             ['newer', 'older'],
             array_keys($store->loadManifest()),
             'An empty index file must rebuild from valid snapshot envelopes instead of erasing history.',
         );
-        self::assertNotNull($store->readSnapshot('older'), 'A valid snapshot must survive empty-index recovery.');
+        self::assertNotNull(
+            $store->readSnapshot('older'),
+            'A valid snapshot must survive empty-index recovery.',
+        );
     }
 
 
@@ -224,18 +243,32 @@ final class SnapshotStoreTest extends TestCase
     public function testInvalidManifestRebuildsValidSnapshotHistory(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('oldest', 1.0), [], []), 10);
-        $store->writeSnapshot(new DebugSnapshot($this->summary('older', 2.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('oldest', 1.0), [], []),
+            10,
+        );
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('older', 2.0), [], []),
+            10,
+        );
+
         file_put_contents("{$this->path}/index.json", '{invalid');
 
-        $store->writeSnapshot(new DebugSnapshot($this->summary('newer', 3.0), [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('newer', 3.0), [], []),
+            10,
+        );
 
         self::assertSame(
             ['newer', 'older', 'oldest'],
             array_keys($store->loadManifest()),
             'A corrupt index must be rebuilt from valid snapshot envelopes before appending new history.',
         );
-        self::assertNotNull($store->readSnapshot('older'), 'A valid snapshot must survive index recovery.');
+        self::assertNotNull(
+            $store->readSnapshot('older'),
+            'A valid snapshot must survive index recovery.',
+        );
     }
 
     public function testInvalidManifestResetsStaleSnapshots(): void
@@ -270,26 +303,59 @@ final class SnapshotStoreTest extends TestCase
     public function testInvalidManifestSkipsInvalidAndEmptySnapshotFiles(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('valid', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('valid', 1.0), [], []),
+            10,
+        );
+
         file_put_contents("{$this->path}/index.json", '{invalid');
         file_put_contents("{$this->path}/7.json", '{}');
         file_put_contents("{$this->path}/empty.json", '');
 
-        $store->writeSnapshot(new DebugSnapshot($this->summary('newer', 2.0), [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('newer', 2.0), [], []),
+            10,
+        );
 
-        self::assertSame(['newer', 'valid'], array_keys($store->loadManifest()), 'Only valid envelopes may rebuild.');
-        self::assertFileDoesNotExist("{$this->path}/7.json", 'Invalid tag file must be removed during reconciliation.');
-        self::assertFileDoesNotExist("{$this->path}/empty.json", 'Empty snapshot must be removed during reconciliation.');
+        self::assertSame(
+            [
+                'newer',
+                'valid',
+            ],
+            array_keys($store->loadManifest()),
+            'Only valid envelopes may rebuild.',
+        );
+        self::assertFileDoesNotExist(
+            "{$this->path}/7.json",
+            'Invalid tag file must be removed during reconciliation.',
+        );
+        self::assertFileDoesNotExist(
+            "{$this->path}/empty.json",
+            'Empty snapshot must be removed during reconciliation.',
+        );
     }
 
     public function testInvalidTransactionJournalMakesReadsFailClosed(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('current', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1.0), [], []),
+            10,
+        );
+
         file_put_contents("{$this->path}/.debug-transaction.json", '{invalid');
 
-        self::assertNull($store->readSnapshot('current'), 'Malformed transaction state must fail closed.');
-        self::assertSame([], $store->loadManifest(), 'Malformed transaction state must not expose a partial manifest.');
+        self::assertNull(
+            $store->readSnapshot('current'),
+            'Malformed transaction state must fail closed.',
+        );
+        self::assertSame(
+            [],
+            $store->loadManifest(),
+            'Malformed transaction state must not expose a partial manifest.',
+        );
     }
 
     public function testInvalidTransactionJournalShapeAndStateFailClosed(): void
@@ -301,7 +367,12 @@ final class SnapshotStoreTest extends TestCase
             "{$this->path}/.debug-transaction.json",
             json_encode(['version' => 99], JSON_THROW_ON_ERROR),
         );
-        self::assertSame([], $this->store()->loadManifest(), 'Invalid journal shape must fail closed.');
+
+        self::assertSame(
+            [],
+            $this->store()->loadManifest(),
+            'Invalid journal shape must fail closed.',
+        );
 
         file_put_contents(
             "{$this->path}/.debug-transaction.json",
@@ -316,7 +387,12 @@ final class SnapshotStoreTest extends TestCase
                 JSON_THROW_ON_ERROR,
             ),
         );
-        self::assertSame([], $this->store()->loadManifest(), 'Unknown journal state must fail closed.');
+
+        self::assertSame(
+            [],
+            $this->store()->loadManifest(),
+            'Unknown journal state must fail closed.',
+        );
     }
 
     public function testLoadManifestReturnsNothingWhenTheLockFileCannotBeOpened(): void
@@ -377,17 +453,34 @@ final class SnapshotStoreTest extends TestCase
 
         $empty = $store->loadManifestResult();
 
-        self::assertSame([], $empty->entries, 'A store that does not exist yet must have no entries.');
-        self::assertNull($empty->error, 'A store that does not exist yet must not be reported as a read failure.');
+        self::assertSame(
+            [],
+            $empty->entries,
+            'A store that does not exist yet must have no entries.',
+        );
+        self::assertNull(
+            $empty->error,
+            'A store that does not exist yet must not be reported as a read failure.',
+        );
 
         mkdir($this->path, recursive: true);
         file_put_contents("{$this->path}/index.json", '{invalid');
 
         $corrupt = $store->loadManifestResult();
 
-        self::assertSame([], $corrupt->entries, 'A corrupt manifest must remain fail-closed.');
-        self::assertNotNull($corrupt->error, 'A corrupt manifest must expose a diagnostic through the additive API.');
-        self::assertNotNull($corrupt->error->getPrevious(), 'The decoding failure must remain available for logging.');
+        self::assertSame(
+            [],
+            $corrupt->entries,
+            'A corrupt manifest must remain fail-closed.',
+        );
+        self::assertNotNull(
+            $corrupt->error,
+            'A corrupt manifest must expose a diagnostic through the additive API.',
+        );
+        self::assertNotNull(
+            $corrupt->error->getPrevious(),
+            'The decoding failure must remain available for logging.',
+        );
     }
 
     public function testManifestReadResultReportsEmptyAndUnreadableManifestFiles(): void
@@ -452,6 +545,7 @@ final class SnapshotStoreTest extends TestCase
     {
         mkdir($this->path, recursive: true);
         touch("{$this->path}/index.lock");
+
         file_put_contents(
             "{$this->path}/current.json",
             json_encode(new DebugSnapshot($this->summary('current', 1.0), [], []), JSON_THROW_ON_ERROR),
@@ -470,16 +564,31 @@ final class SnapshotStoreTest extends TestCase
             ),
         );
 
-        self::assertNull($this->store()->readSnapshot('current'), 'Interrupted first write must roll back to no data.');
-        self::assertFileDoesNotExist("{$this->path}/current.json", 'Partial first snapshot must be removed.');
-        self::assertFileDoesNotExist("{$this->path}/index.json", 'Partial first manifest must be removed.');
+        self::assertNull(
+            $this->store()->readSnapshot('current'),
+            'Interrupted first write must roll back to no data.',
+        );
+        self::assertFileDoesNotExist(
+            "{$this->path}/current.json",
+            'Partial first snapshot must be removed.',
+        );
+        self::assertFileDoesNotExist(
+            "{$this->path}/index.json",
+            'Partial first manifest must be removed.',
+        );
     }
 
     public function testPreparedTransactionIsRolledBackBeforeRead(): void
     {
         $store = $this->store();
+
         $oldSnapshot = new DebugSnapshot($this->summary('current', 1.0), ['panel' => ['value' => 'old']], []);
-        $store->writeSnapshot($oldSnapshot, 10);
+
+        $store->writeSnapshot(
+            $oldSnapshot,
+            10,
+        );
+
         $snapshotBefore = file_get_contents("{$this->path}/current.json");
         $manifestBefore = file_get_contents("{$this->path}/index.json");
 
@@ -509,8 +618,15 @@ final class SnapshotStoreTest extends TestCase
 
         $recovered = $store->readSnapshot('current');
 
-        self::assertNotNull($recovered, 'Prepared transaction must recover the previous snapshot.');
-        self::assertSame(['value' => 'old'], $recovered->panels['panel'] ?? null, 'Recovery must restore old detail.');
+        self::assertNotNull(
+            $recovered,
+            'Prepared transaction must recover the previous snapshot.',
+        );
+        self::assertSame(
+            ['value' => 'old'],
+            $recovered->panels['panel'] ?? null,
+            'Recovery must restore old detail.',
+        );
         self::assertFileDoesNotExist(
             "{$this->path}/.debug-transaction.json",
             'Successful recovery must remove the prepared journal.',
@@ -521,6 +637,7 @@ final class SnapshotStoreTest extends TestCase
     {
         mkdir($this->path, recursive: true);
         touch("{$this->path}/index.lock");
+
         file_put_contents(
             "{$this->path}/current.json",
             json_encode(new DebugSnapshot($this->summary('current', 1.0), [], []), JSON_THROW_ON_ERROR),
@@ -563,7 +680,12 @@ final class SnapshotStoreTest extends TestCase
     public function testReadRejectsSnapshotWhoseEnvelopeTagDoesNotMatchFilename(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('source', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('source', 1.0), [], []),
+            10,
+        );
+
         copy("{$this->path}/source.json", "{$this->path}/renamed.json");
 
         self::assertNull(
@@ -637,10 +759,18 @@ final class SnapshotStoreTest extends TestCase
     public function testRetriesOrphanSnapshotCleanupAfterEverySuccessfulCommit(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('kept', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('kept', 1.0), [], []),
+            10,
+        );
+
         file_put_contents("{$this->path}/orphan.json", '{}');
 
-        $store->writeSnapshot(new DebugSnapshot($this->summary('newer', 2.0), [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('newer', 2.0), [], []),
+            10,
+        );
 
         self::assertFileDoesNotExist(
             "{$this->path}/orphan.json",
@@ -727,12 +857,21 @@ final class SnapshotStoreTest extends TestCase
 
         $missing = $store->readSnapshotResult('missing');
 
-        self::assertNull($missing->snapshot, 'A missing snapshot must have no value.');
-        self::assertNull($missing->error, 'A missing snapshot in an empty store must not be a read error.');
+        self::assertNull(
+            $missing->snapshot,
+            'A missing snapshot must have no value.',
+        );
+        self::assertNull(
+            $missing->error,
+            'A missing snapshot in an empty store must not be a read error.',
+        );
 
         $invalid = $store->readSnapshotResult('../outside');
 
-        self::assertNull($invalid->snapshot, 'An invalid tag must have no value.');
+        self::assertNull(
+            $invalid->snapshot,
+            'An invalid tag must have no value.',
+        );
         self::assertSame(
             'Invalid debug snapshot tag: ../outside',
             $invalid->error?->getMessage(),
@@ -744,9 +883,18 @@ final class SnapshotStoreTest extends TestCase
 
         $corrupt = $store->readSnapshotResult('corrupt');
 
-        self::assertNull($corrupt->snapshot, 'A corrupt snapshot must remain fail-closed.');
-        self::assertNotNull($corrupt->error, 'A corrupt snapshot must expose a diagnostic.');
-        self::assertNotNull($corrupt->error->getPrevious(), 'The hydration failure must remain available for logging.');
+        self::assertNull(
+            $corrupt->snapshot,
+            'A corrupt snapshot must remain fail-closed.',
+        );
+        self::assertNotNull(
+            $corrupt->error,
+            'A corrupt snapshot must expose a diagnostic.',
+        );
+        self::assertNotNull(
+            $corrupt->error->getPrevious(),
+            'The hydration failure must remain available for logging.',
+        );
     }
 
     public function testSnapshotReadResultReportsEmptyMismatchAndUnreadableFiles(): void
@@ -765,6 +913,7 @@ final class SnapshotStoreTest extends TestCase
         );
 
         $snapshot = new DebugSnapshot($this->summary('source', 1.0), [], []);
+
         file_put_contents("{$this->path}/renamed.json", json_encode($snapshot, JSON_THROW_ON_ERROR));
 
         self::assertSame(
@@ -818,12 +967,23 @@ final class SnapshotStoreTest extends TestCase
     public function testSnapshotReadResultReturnsPersistedSnapshotWithoutAnError(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('current', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1.0), [], []),
+            10,
+        );
 
         $result = $store->readSnapshotResult('current');
 
-        self::assertSame('current', $result->snapshot?->summary->tag, 'A valid snapshot must remain available.');
-        self::assertNull($result->error, 'A valid snapshot must not produce a read diagnostic.');
+        self::assertSame(
+            'current',
+            $result->snapshot?->summary->tag,
+            'A valid snapshot must remain available.',
+        );
+        self::assertNull(
+            $result->error,
+            'A valid snapshot must not produce a read diagnostic.',
+        );
     }
 
     /**
@@ -965,7 +1125,9 @@ final class SnapshotStoreTest extends TestCase
         );
 
         $this->expectException(StorageException::class);
-        $this->expectExceptionMessage('Unable to apply debug data directory mode');
+        $this->expectExceptionMessage(
+            'Unable to apply debug data directory mode',
+        );
 
         (new SnapshotStore($this->path, 0o700, 0o600))->writeSnapshot(
             new DebugSnapshot($this->summary('current', 1.0), [], []),
@@ -986,7 +1148,9 @@ final class SnapshotStoreTest extends TestCase
         );
 
         $this->expectException(StorageException::class);
-        $this->expectExceptionMessage('Unable to apply debug data file mode');
+        $this->expectExceptionMessage(
+            'Unable to apply debug data file mode',
+        );
 
         (new SnapshotStore($this->path, 0o700, 0o600))->writeSnapshot(
             new DebugSnapshot($this->summary('current', 1.0), [], []),
@@ -1243,7 +1407,12 @@ final class SnapshotStoreTest extends TestCase
     public function testWritePreservesPrimaryFailureWhenImmediateRollbackAlsoFails(): void
     {
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('current', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1.0), [], []),
+            10,
+        );
+
         $temporaryFileCalls = 0;
 
         MockerState::addCondition(
@@ -1258,9 +1427,14 @@ final class SnapshotStoreTest extends TestCase
         );
 
         $this->expectException(StorageException::class);
-        $this->expectExceptionMessage('Unable to write temporary debug data file');
+        $this->expectExceptionMessage(
+            'Unable to write temporary debug data file',
+        );
 
-        $store->writeSnapshot(new DebugSnapshot($this->summary('current', 2.0), [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 2.0), [], []),
+            10,
+        );
     }
 
     public function testWriteRejectsUnreadableExistingTransactionTarget(): void
@@ -1270,27 +1444,46 @@ final class SnapshotStoreTest extends TestCase
         }
 
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('current', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1.0), [], []),
+            10,
+        );
+
         chmod("{$this->path}/current.json", 0o000);
 
         $this->expectException(StorageException::class);
-        $this->expectExceptionMessage('Unable to read debug data file');
+        $this->expectExceptionMessage(
+            'Unable to read debug data file',
+        );
 
-        $store->writeSnapshot(new DebugSnapshot($this->summary('current', 2.0), [], []), 10);
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 2.0), [], []),
+            10,
+        );
     }
 
     public function testWriteRejectsUnreadableManifest(): void
     {
         if (PHP_OS_FAMILY === 'Windows') {
-            self::markTestSkipped('POSIX read permissions are not portable to Windows.');
+            self::markTestSkipped(
+                'POSIX read permissions are not portable to Windows.',
+            );
         }
 
         $store = $this->store();
-        $store->writeSnapshot(new DebugSnapshot($this->summary('current', 1.0), [], []), 10);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('current', 1.0), [], []),
+            10,
+        );
+
         chmod("{$this->path}/index.json", 0o000);
 
         $this->expectException(StorageException::class);
-        $this->expectExceptionMessage('Unable to read debug manifest');
+        $this->expectExceptionMessage(
+            'Unable to read debug manifest',
+        );
 
         try {
             $store->writeSnapshot(new DebugSnapshot($this->summary('newer', 2.0), [], []), 10);

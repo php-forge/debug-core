@@ -52,7 +52,7 @@ final class FilterEngine
             return;
         }
 
-        if (preg_match('/^\s*([<>])\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*$/D', $value, $matches) === 1) {
+        if (preg_match('/^\s*([<>])\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*$/', $value, $matches) === 1) {
             $this->conditions[] = [
                 'attribute' => $attribute,
                 'operator' => $matches[1],
@@ -125,8 +125,6 @@ final class FilterEngine
                 ) {
                     return false;
                 }
-
-                $candidate = (float) $candidate;
 
                 $matched = match ($operator) {
                     '>' => $candidate > $expected,

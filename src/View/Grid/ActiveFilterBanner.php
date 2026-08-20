@@ -14,18 +14,6 @@ use function count;
 
 /**
  * Renders the active-filter banner above a panel grid.
- *
- * The banner surfaces every active `Prefix[attribute]` filter as a removable pill, plus a "Clear all" action. URL
- * construction stays with the caller: the removal-URL builder receives the attribute names to drop and returns the
- * rebuilt link, so every other query parameter (sort, page size, theme) is preserved by the adapter's own routing.
- *
- * Usage example:
- * ```php
- * $html = \PHPForge\Debug\View\Grid\ActiveFilterBanner::render(
- *     ['statusCode' => '404'],
- *     static fn(array $without): string => '/debug?cleared=1',
- * );
- * ```
  */
 final class ActiveFilterBanner
 {

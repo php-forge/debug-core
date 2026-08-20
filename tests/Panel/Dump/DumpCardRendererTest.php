@@ -20,44 +20,43 @@ final class DumpCardRendererTest extends TestCase
 {
     public function testRenderMessageCellAllowsOnlyDumpHighlighterMarkup(): void
     {
-        $message = <<<'HTML'
+        $message = <<<HTML
+        <pre><code style="color: #000000"><span style="color: #0000BB">safe</span></code></pre>
+        <span onclick="alert(1)">unsafe attribute</span><script>alert(1)</script>
+        HTML;
+
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="object">safe</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
             <pre><code style="color: #000000"><span style="color: #0000BB">safe</span></code></pre>
-            <span onclick="alert(1)">unsafe attribute</span><script>alert(1)</script>
-            HTML;
-
-        $html = DumpCardRenderer::renderMessageCell(
-            self::makeRow(message: $message),
-            self::traceLine(),
-            0,
-        );
-
-        self::assertStringContainsString(
-            '<pre><code style="color: #000000"><span style="color: #0000BB">safe</span></code></pre>',
-            $html,
-            'The exact fixed markup emitted by PHP dump highlighters must remain available.',
-        );
-        self::assertStringContainsString(
-            '&lt;span onclick="alert(1)"&gt;unsafe attribute&lt;/span&gt;',
-            $html,
-            'Highlighter tags with arbitrary attributes must be escaped.',
-        );
-        self::assertStringContainsString(
-            '&lt;script&gt;alert(1)&lt;/script&gt;',
-            $html,
-            'Executable tags from a callback or manipulated snapshot must be escaped.',
-        );
-        self::assertStringNotContainsString('<script>', $html, 'Executable dump markup must never reach the UI.');
-        self::assertStringNotContainsString(
-            '<span onclick=',
-            $html,
-            'Arbitrary dump attributes must never reach the UI as markup.',
+            &lt;span onclick="alert(1)"&gt;unsafe attribute&lt;/span&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+            </div>
+            </div>
+            HTML,
+            DumpCardRenderer::renderMessageCell(
+                self::makeRow(message: $message),
+                self::traceLine(),
+                0,
+            ),
+            'Only the exact fixed dump-highlighter markup may survive in the complete card HTML.',
         );
     }
 
     public function testRenderMessageCellDecodesHtml5QuoteEntitiesBeforeTypeDetection(): void
     {
-        self::assertStringContainsString(
-            'data-type="string"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php &apos;hello&apos;
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: '&lt;?php &apos;hello&apos;'),
                 self::traceLine(),
@@ -74,16 +73,20 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-dump-index"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"
+            </div>
+            </div>
+            HTML,
             $html,
             'Index badge must carry the dedicated class.',
         );
-        self::assertStringContainsString(
-            '#1',
-            $html,
-            'Index badge must show the 1-based row number.',
-        );
+
     }
 
     public function testRenderMessageCellEmitsTraceListWhenTraceHasFrames(): void
@@ -94,16 +97,24 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-trace"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"><span class="yii-debug-dump-trace" title="/app/User.php:42">User.php:42</span></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"<ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            </div>
+            </div>
+            HTML,
             $html,
             "Trace list '<ul>' must carry the dedicated class.",
         );
-        self::assertStringContainsString(
-            'User.php',
-            $html,
-            'Trace list must render frame metadata.',
-        );
+
     }
 
     public function testRenderMessageCellEscapesMalformedAndMismatchedDumpTags(): void
@@ -116,12 +127,20 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            '<span style="color: #0000BB">safe&lt;&lt;/code&gt;</span>&lt;broken',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="object">safe</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            <span style="color: #0000BB">safe&lt;&lt;/code&gt;</span>&lt;broken
+            </div>
+            </div>
+            HTML,
             $html,
             'Only balanced allowlisted tags may be reconstructed around malformed persisted input.',
         );
-        self::assertStringNotContainsString('</code></span><broken', $html, 'Mismatched and incomplete tags must stay inert.');
+
     }
 
     public function testRenderMessageCellFormatsMillisecondsAtTheUpperBoundary(): void
@@ -132,10 +151,60 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            date('H:i:s', 1_700_000_000) . '.123',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"><span class="yii-debug-dump-time">22:13:20.123</span></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"
+            </div>
+            </div>
+            HTML,
             $html,
             'Millisecond conversion must use exactly one thousand units per second.',
+        );
+    }
+
+    public function testRenderMessageCellKeepsPollutedAllowlistTokensEscaped(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;x&lt;span style="color: #0000BB"&gt;value&lt;/span&gt;&gt;
+            </div>
+            </div>
+            HTML,
+            DumpCardRenderer::renderMessageCell(
+                self::makeRow(message: '<x<span style="color: #0000BB">value</span>>'),
+                self::traceLine(),
+                0,
+            ),
+            'Allowlisted-looking tokens polluted with nested delimiters must remain inert.',
+        );
+    }
+
+    public function testRenderMessageCellKeepsPollutedClosingTokensEscaped(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="object">value</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;span style="color: #0000BB"&gt;value&lt;x&lt;/span&gt;&gt;
+            </div>
+            </div>
+            HTML,
+            DumpCardRenderer::renderMessageCell(
+                self::makeRow(message: '<span style="color: #0000BB">value<x</span>>'),
+                self::traceLine(),
+                0,
+            ),
+            'A closing token polluted with a leading nested delimiter must not balance an allowlisted opening tag.',
         );
     }
 
@@ -147,14 +216,38 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString('yii-debug-dump-time', $html, 'Time metadata must be retained.');
-        self::assertStringContainsString('yii-debug-dump-trace', $html, 'Trace metadata must be retained.');
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"><span class="yii-debug-dump-time">22:13:20.500</span><span class="yii-debug-dump-trace" title="/app/User.php:42">User.php:42</span></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"<ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            </div>
+            </div>
+            HTML,
+            $html,
+            'Time metadata must be retained.',
+        );
+
     }
 
     public function testRenderMessageCellNormalizesUppercaseScalarIdentifiers(): void
     {
-        self::assertStringContainsString(
-            'data-type="bool"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="bool">bool</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php TRUE
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: '&lt;?php TRUE'),
                 self::traceLine(),
@@ -172,22 +265,38 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-dump-trace" title="/app/User.php">User.php</span>',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"><span class="yii-debug-dump-trace" title="/app/User.php">User.php</span></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"<ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            </div>
+            </div>
+            HTML,
             $html,
             'Line zero must not be exposed as a source location suffix.',
         );
-        self::assertStringNotContainsString(
-            'User.php:0',
-            $html,
-            'Line zero must remain absent from the label and tooltip.',
-        );
+
     }
 
     public function testRenderMessageCellOmitsTimeWhenTimeIsZero(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-dump-time',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(time: 0.0),
                 self::traceLine(),
@@ -199,8 +308,20 @@ final class DumpCardRendererTest extends TestCase
 
     public function testRenderMessageCellOmitsTraceLabelWhenFirstFrameHasNoFile(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-dump-trace',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"<ul class="yii-debug-trace">
+            <li>
+            :
+            </li>
+            </ul>
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(trace: [['line' => 42]]),
                 self::traceLine(),
@@ -212,8 +333,16 @@ final class DumpCardRendererTest extends TestCase
 
     public function testRenderMessageCellOmitsTraceListWhenTraceIsEmpty(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-trace',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(trace: []),
                 self::traceLine(),
@@ -225,8 +354,15 @@ final class DumpCardRendererTest extends TestCase
 
     public function testRenderMessageCellOmitsTypeBadgeWhenPayloadIsEmpty(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-dump-type',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: ''),
                 self::traceLine(),
@@ -244,8 +380,16 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringNotContainsString(
-            'yii-debug-dump-type',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php +42
+            </div>
+            </div>
+            HTML,
             $html,
             'Unrecognized payload prefix must not produce a type badge.',
         );
@@ -259,18 +403,20 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        $expected = date('H:i:s', 1_700_000_000) . '.789';
-
-        self::assertStringContainsString(
-            'class="yii-debug-dump-time"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"><span class="yii-debug-dump-time">22:13:20.789</span></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"
+            </div>
+            </div>
+            HTML,
             $html,
             'Time span must carry the dedicated class.',
         );
-        self::assertStringContainsString(
-            $expected,
-            $html,
-            "Time must format as 'H:i:s.mmm'.",
-        );
+
     }
 
     public function testRenderMessageCellRendersTraceLabelWithBasenameAndLine(): void
@@ -281,27 +427,37 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-dump-trace"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"><span class="yii-debug-dump-trace" title="/app/User.php:42">User.php:42</span></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"<ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            </div>
+            </div>
+            HTML,
             $html,
             'Trace label span must carry the dedicated class.',
-        );
-        self::assertStringContainsString(
-            'User.php:42',
-            $html,
-            "Trace label must show 'basename:line'.",
-        );
-        self::assertStringContainsString(
-            'title="/app/User.php:42"',
-            $html,
-            'Trace label tooltip must keep the full path.',
         );
     }
 
     public function testRenderMessageCellRequiresIdentifierAtThePayloadStart(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-dump-type',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php +Widget
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: '&lt;?php +Widget'),
                 self::traceLine(),
@@ -319,22 +475,34 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            'data-type="array"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="array">array</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php [1, 2, 3]
+            </div>
+            </div>
+            HTML,
             $html,
             "Array type key must be tagged via 'data-type'.",
         );
-        self::assertStringContainsString(
-            '>array<',
-            $html,
-            'Array label must be visible.',
-        );
+
     }
 
     public function testRenderMessageCellSniffsBoolFromTrueOrFalseLiteral(): void
     {
-        self::assertStringContainsString(
-            'data-type="bool"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="bool">bool</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php true
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: '&lt;?php true'),
                 self::traceLine(),
@@ -342,8 +510,16 @@ final class DumpCardRendererTest extends TestCase
             ),
             "'true' literal must be tagged as 'bool'.",
         );
-        self::assertStringContainsString(
-            'data-type="bool"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="bool">bool</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php false
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: '&lt;?php false'),
                 self::traceLine(),
@@ -355,8 +531,16 @@ final class DumpCardRendererTest extends TestCase
 
     public function testRenderMessageCellSniffsNullFromNullLiteral(): void
     {
-        self::assertStringContainsString(
-            'data-type="null"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="null">null</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php null
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: '&lt;?php null'),
                 self::traceLine(),
@@ -368,8 +552,16 @@ final class DumpCardRendererTest extends TestCase
 
     public function testRenderMessageCellSniffsNumberFromLeadingDigit(): void
     {
-        self::assertStringContainsString(
-            'data-type="number"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="number">number</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php 42
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: '&lt;?php 42'),
                 self::traceLine(),
@@ -387,22 +579,34 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            'data-type="object"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="object">yii\base\Component</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php yii\base\Component#42
+            </div>
+            </div>
+            HTML,
             $html,
             "Identifier payload must be tagged as 'object'.",
         );
-        self::assertStringContainsString(
-            'yii\\base\\Component',
-            $html,
-            'The full class identifier must be exposed as the badge label.',
-        );
+
     }
 
     public function testRenderMessageCellSniffsStringTypeFromQuoteCharacter(): void
     {
-        self::assertStringContainsString(
-            'data-type="string"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php 'hello'
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: "&lt;?php 'hello'"),
                 self::traceLine(),
@@ -410,8 +614,16 @@ final class DumpCardRendererTest extends TestCase
             ),
             "Single-quoted payload must be tagged as 'string'.",
         );
-        self::assertStringContainsString(
-            'data-type="string"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "hello"
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
                 self::makeRow(message: '&lt;?php "hello"'),
                 self::traceLine(),
@@ -421,12 +633,41 @@ final class DumpCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderMessageCellSubstitutesInvalidUtf8InTheExactCardHtml(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="object">safe</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            safe�tail
+            </div>
+            </div>
+            HTML,
+            DumpCardRenderer::renderMessageCell(
+                self::makeRow(message: "safe\xFFtail"),
+                self::traceLine(),
+                0,
+            ),
+            'Invalid UTF-8 must be substituted rather than blanking or truncating the card.',
+        );
+    }
+
     public function testRenderMessageCellTrimsWhitespaceBeforeTypeDetection(): void
     {
-        self::assertStringContainsString(
-            'data-type="number"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="number">number</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+                42
+            </div>
+            </div>
+            HTML,
             DumpCardRenderer::renderMessageCell(
-                self::makeRow(message: '   42'),
+                self::makeRow(message: '    42'),
                 self::traceLine(),
                 0,
             ),
@@ -442,16 +683,20 @@ final class DumpCardRendererTest extends TestCase
             0,
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-dump"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-dump">
+            <header class="yii-debug-dump-card-head">
+            <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="string">string</span><span class="yii-debug-dump-meta"></span>
+            </header><div class="yii-debug-dump-body">
+            &lt;?php "x"
+            </div>
+            </div>
+            HTML,
             $html,
             'Outer wrapper class must be present.',
         );
-        self::assertStringContainsString(
-            'class="yii-debug-dump-body"',
-            $html,
-            'Body wrapper class must be present.',
-        );
+
     }
 
     /**

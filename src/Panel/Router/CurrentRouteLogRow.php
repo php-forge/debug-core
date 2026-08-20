@@ -41,7 +41,11 @@ final readonly class CurrentRouteLogRow implements PanelRow
                 ],
             );
 
-        return new self($payload->string('rule'), $payload->string('parent'), $payload->bool('match'));
+        return new self(
+            $payload->string('rule'),
+            $payload->string('parent'),
+            $payload->bool('match'),
+        );
     }
 
     /**
@@ -62,7 +66,11 @@ final readonly class CurrentRouteLogRow implements PanelRow
 
         $parent = $message['parent'] ?? null;
 
-        return new self($message['rule'], is_string($parent) ? $parent : '', $message['match']);
+        return new self(
+            $message['rule'],
+            is_string($parent) ? $parent : '',
+            $message['match'],
+        );
     }
 
     /**

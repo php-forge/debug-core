@@ -27,12 +27,12 @@ final class CapturedSnapshotTest extends TestCase
         $captured = DumpSnapshot::capture(
             [
                 ['dump', LogLevel::INFO, 'application', 1_700_000_000.5, [['file' => '/app/index.php']]],
-                'invalid',
             ],
         );
         $payload = $captured->jsonSerialize();
 
         $snapshot = DumpSnapshot::fromArray($payload, '$.panels.dump');
+
         $capturedRow = $captured->entries()[0] ?? self::fail('Expected one captured dump row.');
         $row = $snapshot->entries()[0] ?? self::fail('Expected one hydrated dump row.');
 
@@ -85,13 +85,62 @@ final class CapturedSnapshotTest extends TestCase
         $captured = LogSnapshot::capture(
             [
                 ['first', LogLevel::INFO, 'application', 100.0, [], 1_024],
-                'invalid',
                 ['second', LogLevel::WARNING, 'application', 100.25, [], 2_048],
+                ['third', LogLevel::ERROR, 'application', 101.0, [], 4_096],
             ],
         );
         $payload = $captured->jsonSerialize();
 
+        self::assertSame(
+            [
+                'entries' => [
+                    [
+                        'id' => 1,
+                        'message' => 'first',
+                        'level' => LogLevel::INFO,
+                        'category' => 'application',
+                        'time' => 100_000.0,
+                        'timeOfPrevious' => 100_000.0,
+                        'timeSincePrevious' => 0.0,
+                        'idOfPrevious' => null,
+                        'idOfNext' => 2,
+                        'memory' => 1_024,
+                        'trace' => [],
+                    ],
+                    [
+                        'id' => 2,
+                        'message' => 'second',
+                        'level' => LogLevel::WARNING,
+                        'category' => 'application',
+                        'time' => 100_250.0,
+                        'timeOfPrevious' => 100_000.0,
+                        'timeSincePrevious' => 0.25,
+                        'idOfPrevious' => 1,
+                        'idOfNext' => 3,
+                        'memory' => 2_048,
+                        'trace' => [],
+                    ],
+                    [
+                        'id' => 3,
+                        'message' => 'third',
+                        'level' => LogLevel::ERROR,
+                        'category' => 'application',
+                        'time' => 101_000.0,
+                        'timeOfPrevious' => 100_250.0,
+                        'timeSincePrevious' => 0.75,
+                        'idOfPrevious' => 2,
+                        'idOfNext' => null,
+                        'memory' => 4_096,
+                        'trace' => [],
+                    ],
+                ],
+            ],
+            $payload,
+            'Log capture must preserve tuple indexes, time deltas, and terminal navigation exactly.',
+        );
+
         $snapshot = LogSnapshot::fromArray($payload, '$.panels.log');
+
         $first = $snapshot->entries()[0] ?? self::fail('Expected the first hydrated log row.');
         $second = $snapshot->entries()[1] ?? self::fail('Expected the second hydrated log row.');
 
@@ -130,6 +179,7 @@ final class CapturedSnapshotTest extends TestCase
         $payload = $captured->jsonSerialize();
 
         $snapshot = MailSnapshot::fromArray($payload, '$.panels.mail');
+
         $capturedMessage = $captured->entries()[0] ?? self::fail('Expected one captured mail message.');
         $message = $snapshot->entries()[0] ?? self::fail('Expected one hydrated mail message.');
 
@@ -169,6 +219,7 @@ final class CapturedSnapshotTest extends TestCase
         $payload = $captured->jsonSerialize();
 
         $snapshot = QueueSnapshot::fromArray($payload, '$.panels.queue');
+
         $capturedRecord = $captured->entries()[0] ?? self::fail('Expected one captured queue record.');
         $record = $snapshot->entries()[0] ?? self::fail('Expected one hydrated queue record.');
 
@@ -233,11 +284,45 @@ final class CapturedSnapshotTest extends TestCase
         $captured = RouterSnapshot::capture(
             'site/index',
             [
-                ['Route resolved.', LogLevel::TRACE],
-                [['rule' => 'yii\\rest\\UrlRule', 'parent' => '', 'match' => false], LogLevel::INFO],
-                [['rule' => 'app\\rules\\ViewRule', 'parent' => 'yii\\rest\\UrlRule', 'match' => true], LogLevel::INFO],
-                [['rule' => 'yii\\rest\\UrlRule', 'match' => false], LogLevel::INFO],
-                [['invalid' => true], LogLevel::INFO],
+                [
+                    'Route resolved.',
+                    LogLevel::TRACE,
+                ],
+                [
+                    ['invalid' => true],
+                    LogLevel::INFO,
+                ],
+                [
+                    [
+                        'rule' => 'yii\\rest\\UrlRule',
+                        'parent' => '',
+                        'match' => false,
+                    ],
+                    LogLevel::INFO,
+                ],
+                [
+                    [
+                        'rule' => 'app\\rules\\ViewRule',
+                        'parent' => 'yii\\rest\\UrlRule',
+                        'match' => true,
+                    ],
+                    LogLevel::INFO,
+                ],
+                [
+                    [
+                        'rule' => 'yii\\rest\\UrlRule',
+                        'match' => false,
+                    ],
+                    LogLevel::INFO,
+                ],
+                [
+                    [
+                        'rule' => 'app\\rules\\AfterRule',
+                        'parent' => '',
+                        'match' => false,
+                    ],
+                    LogLevel::INFO,
+                ],
             ],
             'post/42',
         );
@@ -261,9 +346,9 @@ final class CapturedSnapshotTest extends TestCase
             'Trace message must be retained.',
         );
         self::assertSame(
-            2,
+            3,
             count($snapshot->entries()),
-            'Nested REST duplicate must be omitted.',
+            'Invalid rows and nested REST duplicates must be skipped without dropping later rules.',
         );
     }
 

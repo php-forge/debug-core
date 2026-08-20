@@ -27,12 +27,6 @@ final readonly class DebugSnapshot implements JsonSerializable
     /**
      * Hydrates a versioned request envelope from decoded JSON data.
      *
-     * Usage example:
-     *
-     * ```php
-     * $snapshot = \PHPForge\Debug\Storage\DebugSnapshot::fromArray($data);
-     * ```
-     *
      * @param mixed $data Decoded snapshot envelope.
      *
      * @return self Hydrated request snapshot.
@@ -78,12 +72,6 @@ final readonly class DebugSnapshot implements JsonSerializable
 
     /**
      * Returns the request envelope for JSON serialization.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $data = $snapshot->jsonSerialize();
-     * ```
      *
      * @return array<string, mixed> Versioned request envelope.
      */

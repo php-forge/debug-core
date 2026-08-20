@@ -35,65 +35,15 @@ final class DumpRowTest extends TestCase
         );
     }
 
-    public function testFromLoggerTupleFallsBackToEmptyValuesForAMalformedTuple(): void
-    {
-        $row = DumpRow::fromLoggerTuple([]);
-
-        self::assertSame(
-            '',
-            $row->message,
-            'Missing payload must fall back to an empty string.',
-        );
-        self::assertSame(
-            0,
-            $row->level,
-            "Missing level must fall back to '0'.",
-        );
-        self::assertSame(
-            '',
-            $row->category,
-            'Missing category must fall back to an empty string.',
-        );
-        self::assertSame(
-            0.0,
-            $row->time,
-            "Missing timestamp must fall back to '0'.",
-        );
-        self::assertSame(
-            [],
-            $row->trace,
-            'Missing trace must fall back to an empty list.',
-        );
-    }
-
-    public function testFromLoggerTupleKeepsOnlyStringKeyedArrayTraceFrames(): void
+    public function testFromLoggerTupleUsesCanonicalFieldsAndScalesTime(): void
     {
         $row = DumpRow::fromLoggerTuple(
             [
                 'msg',
                 LogLevel::TRACE,
                 'app',
-                1.0,
-                [['file' => 'a.php', 7 => 'dropped'], 'not-a-frame'],
-            ],
-        );
-
-        self::assertSame(
-            [['file' => 'a.php']],
-            $row->trace,
-            'Non-array frames and integer keys must be dropped.',
-        );
-    }
-
-    public function testFromLoggerTupleNarrowsNumericStringsAndScalesTime(): void
-    {
-        $row = DumpRow::fromLoggerTuple(
-            [
-                'msg',
-                '8',
-                'app',
-                '2.5',
-                [],
+                2.5,
+                [['file' => 'a.php']],
             ],
         );
 
@@ -103,19 +53,24 @@ final class DumpRowTest extends TestCase
             'Payload must round-trip verbatim.',
         );
         self::assertSame(
-            8,
+            LogLevel::TRACE,
             $row->level,
-            "Numeric-string level must narrow to 'int'.",
+            'Level must come from the canonical logger tuple.',
         );
         self::assertSame(
             'app',
             $row->category,
-            'Category must come from the logger tuple category position.',
+            'Category must come from the canonical logger tuple.',
         );
         self::assertSame(
             2_500.0,
             $row->time,
             'Timestamp must be scaled to milliseconds.',
+        );
+        self::assertSame(
+            [['file' => 'a.php']],
+            $row->trace,
+            'Trace frames must be preserved.',
         );
     }
 

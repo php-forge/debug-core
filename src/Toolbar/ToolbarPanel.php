@@ -32,12 +32,6 @@ final readonly class ToolbarPanel implements JsonSerializable
     /**
      * Returns the panel payload consumed by the toolbar runtime.
      *
-     * Usage example:
-     *
-     * ```php
-     * $payload = (new \PHPForge\Debug\Toolbar\ToolbarPanel('request', 'Request'))->jsonSerialize();
-     * ```
-     *
      * @return array{
      *     id: string,
      *     title: string,

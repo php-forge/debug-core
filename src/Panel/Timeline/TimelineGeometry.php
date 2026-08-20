@@ -43,12 +43,11 @@ final class TimelineGeometry
         $ticks = [0 => 0.0];
         $limit = $duration - $step / 4;
 
-        if ($step > $limit) {
-            return $ticks;
-        }
+        $tickCount = (int) floor($limit / $step);
+        $millisecondsList = $tickCount > 0 ? range($step, $tickCount * $step, $step) : [];
 
-        foreach (range($step, $limit, $step) as $milliseconds) {
-            $ticks[(int) $milliseconds] = $milliseconds / $duration * 100;
+        foreach ($millisecondsList as $milliseconds) {
+            $ticks[$milliseconds] = $milliseconds / $duration * 100;
         }
 
         return $ticks;

@@ -47,7 +47,10 @@ final readonly class RequestSnapshot implements PanelSnapshot
         $values = $snapshotData->values();
 
         if (($values['statusCode'] ?? null) !== $statusCode) {
-            throw HydrationException::at("{$path}.statusCode", 'the status code stored in data');
+            throw HydrationException::at(
+                "{$path}.statusCode",
+                'the status code stored in data',
+            );
         }
 
         return new self($snapshotData, $statusCode);

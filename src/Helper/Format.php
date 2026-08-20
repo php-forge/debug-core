@@ -17,11 +17,6 @@ final class Format
     /**
      * Returns a `N.NN MB` string for the given byte count, rounded to the requested precision.
      *
-     * Usage example:
-     * ```php
-     * $memory = \PHPForge\Debug\Helper\Format::bytesToMb(2_097_152);
-     * ```
-     *
      * @param float|int $bytes Byte count to format.
      * @param int $precision Number of decimal places.
      *
@@ -34,11 +29,6 @@ final class Format
 
     /**
      * Returns a CSS percentage (`42%`, `33.333%`) with at most three decimals and trailing zeros trimmed.
-     *
-     * Usage example:
-     * ```php
-     * $width = \PHPForge\Debug\Helper\Format::cssPercent(33.3333);
-     * ```
      *
      * @param float $value Percentage value to format.
      *

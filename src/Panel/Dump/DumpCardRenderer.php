@@ -25,16 +25,17 @@ use function is_int;
 use function ltrim;
 use function preg_match;
 use function preg_replace;
+use function preg_split;
 use function sprintf;
 use function str_replace;
 use function strip_tags;
-use function strpos;
 use function strtolower;
-use function substr;
 
 use const ENT_HTML5;
 use const ENT_NOQUOTES;
 use const ENT_SUBSTITUTE;
+use const PREG_SPLIT_DELIM_CAPTURE;
+use const PREG_SPLIT_NO_EMPTY;
 
 /**
  * Renders the typed dump cells of the dumps grid for the Dump debug panel.
@@ -197,25 +198,13 @@ final class DumpCardRenderer
     {
         $escaped = htmlspecialchars($message, ENT_NOQUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
 
-        $parts = [];
-        $offset = 0;
-
-        while (($start = strpos($escaped, '&lt;', $offset)) !== false) {
-            $end = strpos($escaped, '&gt;', $start + 4);
-
-            if ($end === false) {
-                break;
-            }
-
-            if ($start > $offset) {
-                $parts[] = substr($escaped, $offset, $start - $offset);
-            }
-
-            $parts[] = substr($escaped, $start, $end + 4 - $start);
-            $offset = $end + 4;
-        }
-
-        $parts[] = substr($escaped, $offset);
+        $parts = preg_split(
+            '/(&lt;.*?&gt;)/s',
+            $escaped,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY,
+        );
+        $parts = $parts === false ? [] : $parts;
 
         /** @var list<array{tag: string, index: int, html: string}> $openTags */
         $openTags = [];
@@ -223,7 +212,7 @@ final class DumpCardRenderer
         foreach ($parts as $index => $part) {
             $opening = match (true) {
                 $part === '&lt;pre&gt;' => ['tag' => 'pre', 'html' => '<pre>'],
-                preg_match('/^&lt;(code|span) style="color: (#[0-9A-Fa-f]{6})"&gt;$/', $part, $match) === 1 => [
+                preg_match('/^&lt;(code|span) style="color: (#[0-9A-Fa-f]{6})"&gt;/', $part, $match) === 1 => [
                     'tag' => $match[1],
                     'html' => '<' . $match[1] . ' style="color: ' . $match[2] . '">',
                 ],
@@ -236,7 +225,7 @@ final class DumpCardRenderer
                 continue;
             }
 
-            if (preg_match('/^&lt;\/(pre|code|span)&gt;$/', $part, $match) !== 1 || $openTags === []) {
+            if (preg_match('/^&lt;\/(pre|code|span)&gt;/', $part, $match) !== 1 || $openTags === []) {
                 continue;
             }
 

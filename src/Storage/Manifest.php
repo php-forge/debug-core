@@ -23,12 +23,6 @@ final readonly class Manifest implements JsonSerializable
     /**
      * Hydrates a versioned manifest from decoded JSON data.
      *
-     * Usage example:
-     *
-     * ```php
-     * $manifest = \PHPForge\Debug\Storage\Manifest::fromArray($data);
-     * ```
-     *
      * @param mixed $data Decoded manifest payload.
      *
      * @return self Hydrated request-summary index.
@@ -72,12 +66,6 @@ final readonly class Manifest implements JsonSerializable
 
     /**
      * Returns the versioned manifest for JSON serialization.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $data = (new \PHPForge\Debug\Storage\Manifest([]))->jsonSerialize();
-     * ```
      *
      * @return array<string, mixed> Versioned manifest payload.
      */

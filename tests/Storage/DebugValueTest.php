@@ -465,6 +465,37 @@ final class DebugValueTest extends TestCase
         );
     }
 
+    public function testHydrationAcceptsAnEmptyDecodedObjectBeforeValidatingItsShape(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            '$.type',
+        );
+
+        DebugValue::fromArray([]);
+    }
+
+    public function testHydrationRejectsTheFirstLevelBeyondTheDepthBudget(): void
+    {
+        $payload = ['type' => 'null'];
+
+        for ($depth = 0; $depth < 11; $depth++) {
+            $payload = [
+                'type' => 'array',
+                'entries' => [
+                    ['keyType' => 'int', 'key' => 0, 'value' => $payload],
+                ],
+            ];
+        }
+
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            'at most 10 nested levels',
+        );
+
+        DebugValue::fromArray($payload);
+    }
+
     public function testRoundTripPreservesJsonSafeValuesAndLabelsUnsafeValues(): void
     {
         $object = new stdClass();
@@ -584,6 +615,42 @@ final class DebugValueTest extends TestCase
         );
 
         DebugValue::fromArray(['type' => 'binary', 'encoding' => 'hex', 'data' => 'ff']);
+    }
+
+    public function testThrowHydrationExceptionForEveryInvalidTaggedFieldKind(): void
+    {
+        $cases = [
+            [['type' => 'bool', 'value' => 1], '$.value'],
+            [
+                [
+                    'type' => 'array',
+                    'entries' => [['keyType' => 1, 'key' => 0, 'value' => ['type' => 'null']]],
+                ],
+                '$.entries[0].keyType',
+            ],
+            [['type' => 'int', 'value' => '1'], '$.value'],
+            [['type' => 'array', 'entries' => ['entry' => []]], '$.entries'],
+            [['type' => 'object', 'value' => 1, 'entries' => [], 'class' => 'Fixture'], '$.value'],
+            [['type' => 'float', 'value' => '1.0'], '$.value'],
+            ['invalid', '$'],
+            [['type' => 'null', 0 => 'unexpected'], '$'],
+            [['type' => 'string', 'value' => 1], '$.value'],
+            [['type' => 1], '$.type'],
+            [['type' => 'bool'], '$.value'],
+        ];
+
+        foreach ($cases as [$payload, $path]) {
+            try {
+                DebugValue::fromArray($payload);
+                self::fail("Expected invalid tagged payload at {$path} to fail hydration.");
+            } catch (HydrationException $exception) {
+                self::assertStringContainsString(
+                    $path,
+                    $exception->getMessage(),
+                    "Invalid tagged payload must identify {$path}.",
+                );
+            }
+        }
     }
 
     public function testThrowHydrationExceptionForFieldsThatDoNotBelongToTheTaggedType(): void

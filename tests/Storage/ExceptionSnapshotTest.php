@@ -19,7 +19,9 @@ final class ExceptionSnapshotTest extends TestCase
     public function testThrowableCaptureRedactsMessagesAndOmitsTraceArguments(): void
     {
         $throwable = $this->exceptionContainingSecret('do-not-persist');
+
         $snapshot = ExceptionSnapshot::fromThrowable($throwable);
+
         $serialized = json_encode($snapshot, JSON_THROW_ON_ERROR);
 
         self::assertStringNotContainsString(

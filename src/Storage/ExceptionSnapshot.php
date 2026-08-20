@@ -67,13 +67,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
     /**
      * Hydrates a throwable snapshot from decoded JSON data.
      *
-     * Usage example:
-     *
-     * ```php
-     * $captured = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(new \RuntimeException('Failed.'));
-     * $snapshot = \PHPForge\Debug\Storage\ExceptionSnapshot::fromArray($captured->jsonSerialize());
-     * ```
-     *
      * @param mixed $data Decoded throwable payload.
      * @param string $path Payload path used in hydration errors.
      *
@@ -152,14 +145,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
     /**
      * Captures a throwable and its previous-exception chain without executable state.
      *
-     * Usage example:
-     *
-     * ```php
-     * $snapshot = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(
-     *     new \RuntimeException('Capture failed.'),
-     * );
-     * ```
-     *
      * @param Throwable $throwable Throwable to capture.
      *
      * @return self Captured throwable snapshot.
@@ -207,12 +192,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
     /**
      * Returns the captured throwable class.
      *
-     * Usage example:
-     *
-     * ```php
-     * $class = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(new \RuntimeException())->getClass();
-     * ```
-     *
      * @return string Captured throwable class.
      */
     public function getClass(): string
@@ -222,12 +201,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
 
     /**
      * Returns the captured throwable code.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $code = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(new \RuntimeException('', 42))->getCode();
-     * ```
      *
      * @return int|string Captured throwable code.
      */
@@ -239,12 +212,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
     /**
      * Returns the file where the throwable originated.
      *
-     * Usage example:
-     *
-     * ```php
-     * $file = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(new \RuntimeException())->getFile();
-     * ```
-     *
      * @return string Origin file path.
      */
     public function getFile(): string
@@ -254,12 +221,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
 
     /**
      * Returns the line where the throwable originated.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $line = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(new \RuntimeException())->getLine();
-     * ```
      *
      * @return int Origin line number.
      */
@@ -271,14 +232,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
     /**
      * Returns the captured throwable message.
      *
-     * Usage example:
-     *
-     * ```php
-     * $message = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(
-     *     new \RuntimeException('Capture failed.'),
-     * )->getMessage();
-     * ```
-     *
      * @return string Captured throwable message.
      */
     public function getMessage(): string
@@ -289,15 +242,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
     /**
      * Returns the previous throwable snapshot or `null`.
      *
-     * Usage example:
-     *
-     * ```php
-     * $snapshot = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(
-     *     new \RuntimeException('Outer.', 0, new \LogicException('Inner.')),
-     * );
-     * $previous = $snapshot->getPrevious();
-     * ```
-     *
      * @return self|null Previous throwable snapshot or `null`.
      */
     public function getPrevious(): self|null
@@ -307,12 +251,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
 
     /**
      * Returns the trace frames with their arguments projected to plain display values.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $trace = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(new \RuntimeException())->getTrace();
-     * ```
      *
      * @return list<array<string, mixed>> Display-safe trace frames.
      */
@@ -326,14 +264,6 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
 
     /**
      * Returns the throwable snapshot for JSON serialization.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $data = \PHPForge\Debug\Storage\ExceptionSnapshot::fromThrowable(
-     *     new \RuntimeException('Capture failed.'),
-     * )->jsonSerialize();
-     * ```
      *
      * @return array<string, mixed> Serialized throwable snapshot.
      */

@@ -11,11 +11,14 @@ use PHPForge\Debug\Storage\{PanelSnapshot, Payload};
 use function array_map;
 use function count;
 use function is_array;
+use function max;
 use function usort;
 
 /**
  * Canonical profiling snapshot holding the request metrics, the resolved profile blocks, and the memory samples that
  * feed the timeline chart.
+ *
+ * @phpstan-import-type LogMessage from \PHPForge\Debug\Panel\Log\LogSnapshot
  */
 final readonly class ProfilingSnapshot implements PanelSnapshot
 {
@@ -33,39 +36,32 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
     /**
      * Resolves the logger's begin/end pairs into typed blocks and collects the per-message memory samples.
      *
-     * @param array<int|string, mixed> $messages Raw profile tuples in capture order.
+     * @param list<LogMessage> $messages Profile tuples in capture order.
      */
     public static function capture(int $memory, float $time, array $messages): self
     {
-        $tuples = [];
         $samples = [];
 
         foreach ($messages as $message) {
-            if (!is_array($message)) {
-                continue;
-            }
+            $sampleMemory = $message[5] ?? null;
 
-            $tuples[] = $message;
-
-            $sampleTime = Coerce::floatOrNull($message[3] ?? null);
-            $sampleMemory = Coerce::intOrNull($message[5] ?? null);
-
-            if ($sampleTime !== null && $sampleMemory !== null) {
-                $samples[] = new MemorySample($sampleTime * 1000, $sampleMemory);
+            if ($sampleMemory !== null) {
+                $samples[] = new MemorySample($message[3] * 1000, $sampleMemory);
             }
         }
 
         $entries = [];
 
-        foreach (ProfileTimings::calculate($tuples) as $timing) {
-            $row = ProfileRow::fromTiming($timing, count($entries));
-
-            if ($row !== null) {
-                $entries[] = $row;
-            }
+        foreach (ProfileTimings::calculate($messages) as $timing) {
+            $entries[] = ProfileRow::fromTiming($timing, count($entries));
         }
 
-        return new self($memory, $time, $entries, $samples);
+        return new self(
+            $memory,
+            $time,
+            $entries,
+            $samples,
+        );
     }
 
     /**
@@ -101,23 +97,21 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
             $endMemory = Coerce::intOrNull($context['endMemory'] ?? $context['memory'] ?? null);
             $memoryDiff = Coerce::intOrNull($context['memoryDiff'] ?? null)
                 ?? (($beginMemory !== null && $endMemory !== null) ? $endMemory - $beginMemory : 0);
-            $row = ProfileRow::fromTiming(
+            $level = Coerce::intOrNull($context['nestedLevel'] ?? null);
+
+            $entries[] = ProfileRow::fromTiming(
                 [
                     'timestamp' => $beginTime,
                     'duration' => $duration,
-                    'category' => $context['category'] ?? $message['category'] ?? '',
-                    'info' => $message['token'] ?? '',
-                    'level' => $context['nestedLevel'] ?? 0,
+                    'category' => Coerce::stringOrNull($context['category'] ?? $message['category'] ?? null) ?? '',
+                    'info' => Coerce::stringOrNull($message['token'] ?? null) ?? '',
+                    'level' => $level === null ? 0 : max(0, $level),
                     'memory' => $endMemory ?? 0,
                     'memoryDiff' => $memoryDiff,
-                    'trace' => $context['trace'] ?? [],
+                    'trace' => Coerce::traceFrames($context['trace'] ?? []),
                 ],
                 count($entries),
             );
-
-            if ($row !== null) {
-                $entries[] = $row;
-            }
 
             if ($beginMemory !== null) {
                 $samples[] = new MemorySample($beginTime * 1000, $beginMemory);

@@ -6,10 +6,6 @@ namespace PHPForge\Debug\Tests\Provider;
 
 /**
  * Data provider for {@see \PHPForge\Debug\Tests\PhpInfo\PhpInfoDataNormalizerTest} test cases.
- *
- * Provides the leading header row of a data table paired with the label the head bar must show.
- *
- * @since 0.1
  */
 final class PhpInfoDataNormalizerProvider
 {

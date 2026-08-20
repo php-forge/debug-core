@@ -25,8 +25,14 @@ final class CollectorCoordinatorTest extends TestCase
     {
         $coordinator = new CollectorCoordinator(
             [
-                new CollectorFixture('app.example', ArrayPayloadSnapshotFixture::capture(['value' => 42])),
-                new CollectorFixture('broken', failCapture: true),
+                new CollectorFixture(
+                    'app.example',
+                    ArrayPayloadSnapshotFixture::capture(['value' => 42]),
+                ),
+                new CollectorFixture(
+                    'broken',
+                    failCapture: true,
+                ),
             ],
         );
 
@@ -59,8 +65,13 @@ final class CollectorCoordinatorTest extends TestCase
     {
         $coordinator = new CollectorCoordinator(
             [
-                new CollectorFixture('app.example', ArrayPayloadSnapshotFixture::capture(['value' => 42])),
-                new CollectorFixture('empty'),
+                new CollectorFixture(
+                    'app.example',
+                    ArrayPayloadSnapshotFixture::capture(['value' => 42]),
+                ),
+                new CollectorFixture(
+                    'empty',
+                ),
             ],
         );
 
@@ -85,8 +96,12 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testCollectorReturnsRegisteredInstanceOrNull(): void
     {
-        $collector = new CollectorFixture('app.example');
-        $coordinator = new CollectorCoordinator([$collector]);
+        $collector = new CollectorFixture(
+            'app.example',
+        );
+        $coordinator = new CollectorCoordinator(
+            [$collector],
+        );
 
         self::assertSame(
             $collector,
@@ -102,7 +117,11 @@ final class CollectorCoordinatorTest extends TestCase
     public function testHasCollectorUsesStableId(): void
     {
         $coordinator = new CollectorCoordinator(
-            [new CollectorFixture('app.example')],
+            [
+                new CollectorFixture(
+                    'app.example',
+                ),
+            ],
         );
 
         self::assertTrue(
@@ -117,8 +136,12 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testLifecycleCallsCollectorsOncePerCycle(): void
     {
-        $collector = new CollectorFixture('app.example');
-        $coordinator = new CollectorCoordinator([$collector]);
+        $collector = new CollectorFixture(
+            'app.example',
+        );
+        $coordinator = new CollectorCoordinator(
+            [$collector],
+        );
 
         $coordinator->startup();
         $coordinator->startup();
@@ -135,12 +158,36 @@ final class CollectorCoordinatorTest extends TestCase
             $collector->shutdownCount,
             'Shutdown must run once per cycle.',
         );
+
+        $coordinator->startup();
+        $coordinator->shutdown();
+
+        self::assertSame(
+            2,
+            $collector->startupCount,
+            'A completed shutdown must allow a new lifecycle cycle.',
+        );
+        self::assertSame(
+            2,
+            $collector->shutdownCount,
+            'The second lifecycle cycle must also be cleaned up.',
+        );
     }
 
     public function testRunIgnoresFailingCleanupDiagnosticAndPreservesPrimaryThrowable(): void
     {
-        $primary = new RuntimeException('Primary operation failed.');
-        $coordinator = new CollectorCoordinator([new CollectorFixture('broken', failShutdown: true)]);
+        $primary = new RuntimeException(
+            'Primary operation failed.',
+        );
+        $coordinator = new CollectorCoordinator(
+            [
+                new CollectorFixture(
+                    'broken',
+                    failShutdown: true,
+                ),
+            ],
+        );
+
         $caught = null;
 
         try {
@@ -152,14 +199,29 @@ final class CollectorCoordinatorTest extends TestCase
             $caught = $throwable;
         }
 
-        self::assertSame($primary, $caught, 'A diagnostic failure must not replace the exact primary throwable.');
+        self::assertSame(
+            $primary,
+            $caught,
+            'A diagnostic failure must not replace the exact primary throwable.',
+        );
     }
 
     public function testRunPreservesPrimaryThrowableAndReportsCleanupFailure(): void
     {
-        $primary = new RuntimeException('Primary operation failed.');
+        $primary = new RuntimeException(
+            'Primary operation failed.',
+        );
+
         $cleanupFailure = null;
-        $coordinator = new CollectorCoordinator([new CollectorFixture('broken', failShutdown: true)]);
+
+        $coordinator = new CollectorCoordinator(
+            [
+                new CollectorFixture(
+                    'broken',
+                    failShutdown: true,
+                ),
+            ],
+        );
 
         try {
             $coordinator->run(
@@ -169,10 +231,18 @@ final class CollectorCoordinatorTest extends TestCase
                 },
             );
         } catch (RuntimeException $throwable) {
-            self::assertSame($primary, $throwable, 'The exact primary throwable must be rethrown.');
+            self::assertSame(
+                $primary,
+                $throwable,
+                'The exact primary throwable must be rethrown.',
+            );
         }
 
-        self::assertInstanceOf(RuntimeException::class, $cleanupFailure, 'Cleanup failure must reach the observer.');
+        self::assertInstanceOf(
+            RuntimeException::class,
+            $cleanupFailure,
+            'Cleanup failure must reach the observer.',
+        );
         self::assertSame(
             'Collector shutdown failed.',
             $cleanupFailure->getMessage(),
@@ -180,14 +250,59 @@ final class CollectorCoordinatorTest extends TestCase
         );
     }
 
+    public function testRunPreservesPrimaryThrowableWithoutACleanupFailureHandler(): void
+    {
+        $primary = new RuntimeException(
+            'Primary operation failed.',
+        );
+        $coordinator = new CollectorCoordinator(
+            [
+                new CollectorFixture(
+                    'broken',
+                    failShutdown: true,
+                ),
+            ],
+        );
+
+        $caught = null;
+
+        try {
+            $coordinator->run(static fn(): never => throw $primary);
+        } catch (RuntimeException $throwable) {
+            $caught = $throwable;
+        }
+
+        self::assertSame(
+            $primary,
+            $caught,
+            'Cleanup failure reporting must be optional when an operation already failed.',
+        );
+    }
+
     public function testRunReturnsOperationResultAndCompletesLifecycle(): void
     {
-        $collector = new CollectorFixture('app.example');
-        $coordinator = new CollectorCoordinator([$collector]);
+        $collector = new CollectorFixture(
+            'app.example',
+        );
+        $coordinator = new CollectorCoordinator(
+            [$collector],
+        );
 
-        self::assertSame('result', $coordinator->run(static fn(): string => 'result'), 'Operation result must survive.');
-        self::assertSame(1, $collector->startupCount, 'Run must start the collector.');
-        self::assertSame(1, $collector->shutdownCount, 'Run must stop the collector.');
+        self::assertSame(
+            'result',
+            $coordinator->run(static fn(): string => 'result'),
+            'Operation result must survive.',
+        );
+        self::assertSame(
+            1,
+            $collector->startupCount,
+            'Run must start the collector.',
+        );
+        self::assertSame(
+            1,
+            $collector->shutdownCount,
+            'Run must stop the collector.',
+        );
     }
 
     public function testShutdownContinuesAfterCollectorFailure(): void
@@ -202,8 +317,16 @@ final class CollectorCoordinatorTest extends TestCase
             failShutdown: true,
             shutdownFailureMessage: 'Second shutdown failed.',
         );
-        $successful = new CollectorFixture('successful');
-        $coordinator = new CollectorCoordinator([$firstBroken, $secondBroken, $successful]);
+        $successful = new CollectorFixture(
+            'successful',
+        );
+        $coordinator = new CollectorCoordinator(
+            [
+                $firstBroken,
+                $secondBroken,
+                $successful,
+            ],
+        );
 
         $coordinator->startup();
 
@@ -230,9 +353,19 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testShutdownRetriesOnlyCollectorsWhoseCleanupFailed(): void
     {
-        $successful = new CollectorFixture('successful');
-        $flaky = new CollectorFixture('flaky', shutdownFailuresRemaining: 1);
-        $coordinator = new CollectorCoordinator([$successful, $flaky]);
+        $successful = new CollectorFixture(
+            'successful',
+        );
+        $flaky = new CollectorFixture(
+            'flaky',
+            shutdownFailuresRemaining: 1,
+        );
+        $coordinator = new CollectorCoordinator(
+            [
+                $successful,
+                $flaky,
+            ],
+        );
 
         $coordinator->startup();
 
@@ -245,16 +378,37 @@ final class CollectorCoordinatorTest extends TestCase
         $coordinator->shutdown();
         $coordinator->shutdown();
 
-        self::assertSame(1, $successful->shutdownCount, 'Successful cleanup must not be repeated.');
-        self::assertSame(2, $flaky->shutdownCount, 'Failed cleanup must be retried until it succeeds.');
+        self::assertSame(
+            1,
+            $successful->shutdownCount,
+            'Successful cleanup must not be repeated.',
+        );
+        self::assertSame(
+            2,
+            $flaky->shutdownCount,
+            'Failed cleanup must be retried until it succeeds.',
+        );
     }
 
     public function testStartupAllowsRetryAfterRollback(): void
     {
-        $first = new CollectorFixture('first');
-        $flaky = new CollectorFixture('flaky', startupFailuresRemaining: 1);
-        $later = new CollectorFixture('later');
-        $coordinator = new CollectorCoordinator([$first, $flaky, $later]);
+        $first = new CollectorFixture(
+            'first',
+        );
+        $flaky = new CollectorFixture(
+            'flaky',
+            startupFailuresRemaining: 1,
+        );
+        $later = new CollectorFixture(
+            'later',
+        );
+        $coordinator = new CollectorCoordinator(
+            [
+                $first,
+                $flaky,
+                $later,
+            ],
+        );
 
         $startupFailed = false;
 
@@ -325,9 +479,20 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testStartupRetriesIncompleteRollbackCleanupBeforeStartingANewCycle(): void
     {
-        $flakyCleanup = new CollectorFixture('flaky-cleanup', shutdownFailuresRemaining: 1);
-        $flakyStartup = new CollectorFixture('flaky-startup', startupFailuresRemaining: 1);
-        $coordinator = new CollectorCoordinator([$flakyCleanup, $flakyStartup]);
+        $flakyCleanup = new CollectorFixture(
+            'flaky-cleanup',
+            shutdownFailuresRemaining: 1,
+        );
+        $flakyStartup = new CollectorFixture(
+            'flaky-startup',
+            startupFailuresRemaining: 1,
+        );
+        $coordinator = new CollectorCoordinator(
+            [
+                $flakyCleanup,
+                $flakyStartup,
+            ],
+        );
 
         try {
             $coordinator->startup();
@@ -338,18 +503,47 @@ final class CollectorCoordinatorTest extends TestCase
         $coordinator->startup();
         $coordinator->shutdown();
 
-        self::assertSame(2, $flakyCleanup->startupCount, 'Collector must start again after its cleanup retry succeeds.');
-        self::assertSame(3, $flakyCleanup->shutdownCount, 'Failed rollback, retry, and final cleanup must each run once.');
-        self::assertSame(2, $flakyStartup->startupCount, 'Failed startup must be retried in the new cycle.');
-        self::assertSame(2, $flakyStartup->shutdownCount, 'Partial and successful cycles must both be cleaned.');
+        self::assertSame(
+            2,
+            $flakyCleanup->startupCount,
+            'Collector must start again after its cleanup retry succeeds.',
+        );
+        self::assertSame(
+            3,
+            $flakyCleanup->shutdownCount,
+            'Failed rollback, retry, and final cleanup must each run once.',
+        );
+        self::assertSame(
+            2,
+            $flakyStartup->startupCount,
+            'Failed startup must be retried in the new cycle.',
+        );
+        self::assertSame(
+            2,
+            $flakyStartup->shutdownCount,
+            'Partial and successful cycles must both be cleaned.',
+        );
     }
 
     public function testStartupRollsBackAffectedCollectorsWhenSecondCollectorFails(): void
     {
-        $first = new CollectorFixture('first');
-        $failed = new CollectorFixture('failed', startupFailuresRemaining: 1);
-        $later = new CollectorFixture('later');
-        $coordinator = new CollectorCoordinator([$first, $failed, $later]);
+        $first = new CollectorFixture(
+            'first',
+        );
+        $failed = new CollectorFixture(
+            'failed',
+            startupFailuresRemaining: 1,
+        );
+        $later = new CollectorFixture(
+            'later',
+        );
+        $coordinator = new CollectorCoordinator(
+            [
+                $first,
+                $failed,
+                $later,
+            ],
+        );
 
         $failure = null;
 
@@ -423,8 +617,12 @@ final class CollectorCoordinatorTest extends TestCase
 
         new CollectorCoordinator(
             [
-                new CollectorFixture('app.example'),
-                new CollectorFixture('app.example'),
+                new CollectorFixture(
+                    'app.example',
+                ),
+                new CollectorFixture(
+                    'app.example',
+                ),
             ],
         );
     }
@@ -441,7 +639,9 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testThrowRuntimeExceptionWhenRollbackShutdownFails(): void
     {
-        $first = new CollectorFixture('first');
+        $first = new CollectorFixture(
+            'first',
+        );
         $rollbackFailure = new CollectorFixture(
             'rollback-failure',
             failShutdown: true,
@@ -452,8 +652,17 @@ final class CollectorCoordinatorTest extends TestCase
             startupFailuresRemaining: 1,
             startupFailureMessage: 'Primary startup failed.',
         );
-        $later = new CollectorFixture('later');
-        $coordinator = new CollectorCoordinator([$first, $rollbackFailure, $startupFailure, $later]);
+        $later = new CollectorFixture(
+            'later',
+        );
+        $coordinator = new CollectorCoordinator(
+            [
+                $first,
+                $rollbackFailure,
+                $startupFailure,
+                $later,
+            ],
+        );
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(

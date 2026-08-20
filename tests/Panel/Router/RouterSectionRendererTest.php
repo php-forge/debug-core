@@ -39,7 +39,12 @@ final class RouterSectionRendererTest extends TestCase
             $current,
             [new RouterRuleRow('home', '/', 'GET', '', '', 'App\Web\HomePage')],
             [new ActionRouteRow('App\Web\HomePage', 'home', '/', 0)],
-            [['label' => 'FastRoute Matcher', 'variant' => 'success']],
+            [
+                [
+                    'label' => 'FastRoute Matcher',
+                    'variant' => 'success',
+                ],
+            ],
         );
 
         self::assertSame(

@@ -11,15 +11,6 @@ use function strtolower;
 
 /**
  * Groups {@see phpinfo()} modules by the job they perform.
- *
- * Drives the TOC sidebar layout, the "Loaded extensions" buckets, and the extension/non-extension split that keeps
- * PHP Variables, PHP Credits, and the other reporting blocks out of the extension list.
- *
- * Usage example:
- * ```php
- * \PHPForge\Debug\PhpInfo\PhpInfoModuleGroup::resolve('pdo_mysql');    // 'Database'
- * \PHPForge\Debug\PhpInfo\PhpInfoModuleGroup::isExtension('PHP License'); // false
- * ```
  */
 final class PhpInfoModuleGroup
 {

@@ -10,9 +10,6 @@ use function date;
 
 /**
  * Typed view-model for one captured-request row in the History grid.
- *
- * Projects the manifest's {@see RequestSummary} into the shape the grid renders, adding only the pre-formatted clock
- * time; every value is already typed, so no narrowing happens per cell.
  */
 final readonly class HistoryRow
 {

@@ -25,10 +25,7 @@ final class QueueCardRendererTest extends TestCase
                 self::makeRecord(driverName: 'AMQP', isAsync: true),
             ],
         );
-
-        $hint = QueueCardRenderer::renderAsyncHint(
-            $summary,
-        );
+        $hint = QueueCardRenderer::renderAsyncHint($summary);
 
         self::assertNotNull(
             $hint,
@@ -37,20 +34,14 @@ final class QueueCardRendererTest extends TestCase
 
         $html = $hint->render();
 
-        self::assertStringContainsString(
-            'AMQP',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-queue-hint">
+            <strong>Async driver: AMQP, Redis.</strong> Push events show here, but jobs run in a separate worker process; see the History sidebar for <strong>CLI</strong> debug snapshots that capture the matching exec/error events.
+            </div>
+            HTML,
             $html,
             'AMQP must appear in the driver list.',
-        );
-        self::assertStringContainsString(
-            'Redis',
-            $html,
-            'Redis must appear in the driver list.',
-        );
-        self::assertStringContainsString(
-            'CLI',
-            $html,
-            'Hint must mention the CLI snapshots.',
         );
     }
 
@@ -75,94 +66,145 @@ final class QueueCardRendererTest extends TestCase
             self::makeRecord(driverName: 'Custom', driverClass: ''),
         )->render();
 
-        self::assertStringContainsString('title="yii\\queue\\redis\\Queue">Redis<', $known, 'Known driver class must be the tooltip.');
-        self::assertStringContainsString('title="Unknown driver">Custom<', $unknown, 'Missing driver class must use the fallback tooltip.');
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\\queue\\redis\\Queue">Redis</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            $known,
+            'Known driver class must be the tooltip.',
+        );
+        self::assertSame(
+            <<<'HTML'
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="Unknown driver">Custom</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            $unknown,
+            'Missing driver class must use the fallback tooltip.',
+        );
     }
 
     public function testRenderItemEmitsCardWithClassAndStatusPill(): void
     {
         $record = self::makeRecord(jobClass: 'app\\jobs\\HelloJob', eventType: 'push');
 
-        $html = QueueCardRenderer::renderItem($record)
-            ->render();
-
-        self::assertStringContainsString(
-            'class="yii-debug-queue-card"',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem($record)->render(),
             'Outer wrapper class must be present.',
-        );
-        self::assertStringContainsString(
-            'HelloJob',
-            $html,
-            'Short class name must be rendered.'
-        );
-        self::assertStringContainsString(
-            'app\\jobs\\',
-            $html,
-            'Namespace prefix must be rendered.'
-        );
-        self::assertStringContainsString(
-            'Queued',
-            $html,
-            'Push event must show the `Queued` status pill.'
         );
     }
 
     public function testRenderItemMapsErrorToFailedStatusVariant(): void
     {
-        $html = QueueCardRenderer::renderItem(self::makeRecord(eventType: 'error'))
-            ->render();
-
-        self::assertStringContainsString(
-            'yii-debug-queue-status-failed',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-failed">Failed</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(eventType: 'error'))->render(),
             "Error event must use the 'failed' status variant.",
-        );
-        self::assertStringContainsString(
-            'Failed',
-            $html,
-            "Error event must show the 'Failed' label.",
         );
     }
 
     public function testRenderItemMapsExecToDoneStatusVariant(): void
     {
-        $html = QueueCardRenderer::renderItem(self::makeRecord(eventType: 'exec'))
-            ->render();
-
-        self::assertStringContainsString(
-            'yii-debug-queue-status-done',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-done">Done</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(eventType: 'exec'))->render(),
             "Exec event must use the 'done' status variant.",
         );
-        self::assertStringContainsString(
-            'Done',
-            $html,
-            "Exec event must show the 'Done' label.",
-        );
+
     }
 
     public function testRenderItemOmitsComponentIdFromMetaStrip(): void
     {
-        $html = QueueCardRenderer::renderItem(self::makeRecord(componentId: 'queueEmail'))
-            ->render();
-
-        self::assertStringNotContainsString(
-            'data-field="component"',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(componentId: 'queueEmail'))->render(),
             'Component meta item must be hidden the sidebar/tab strip surfaces it instead.',
-        );
-        self::assertStringNotContainsString(
-            'class="yii-debug-queue-meta"',
-            $html,
-            "'componentId' alone must not produce a meta strip.",
         );
     }
 
     public function testRenderItemOmitsDriverPillWhenDriverNameIsEmpty(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-queue-driver',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
             QueueCardRenderer::renderItem(self::makeRecord(driverName: ''))->render(),
             'Empty driver name must hide the driver pill.',
         );
@@ -170,8 +212,20 @@ final class QueueCardRendererTest extends TestCase
 
     public function testRenderItemOmitsMetaWhenNoOptionalFieldsPresent(): void
     {
-        self::assertStringNotContainsString(
-            'class="yii-debug-queue-meta"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
             QueueCardRenderer::renderItem(self::makeRecord())->render(),
             'No optional fields must omit the meta strip.',
         );
@@ -179,8 +233,20 @@ final class QueueCardRendererTest extends TestCase
 
     public function testRenderItemOmitsPayloadBlockWhenFieldsAreEmpty(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-queue-payload',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
             QueueCardRenderer::renderItem(self::makeRecord(payloadFields: []))->render(),
             'Empty payload fields must omit the block.',
         );
@@ -188,12 +254,9 @@ final class QueueCardRendererTest extends TestCase
 
     public function testRenderItemRendersAvatarHueDeterministicallyFromJobClass(): void
     {
-        $first = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\Hello'))
-            ->render();
-        $second = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\Hello'))
-            ->render();
-        $third = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\World'))
-            ->render();
+        $first = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\Hello'))->render();
+        $second = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\Hello'))->render();
+        $third = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\World'))->render();
 
         self::assertSame(
             self::extractHue($first),
@@ -220,25 +283,34 @@ final class QueueCardRendererTest extends TestCase
             ),
         )->render();
 
-        self::assertStringContainsString(
-            '<details',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <details class="yii-debug-queue-tree-collapse">
+            <summary class="yii-debug-queue-tree-summary">
+            <span class="yii-debug-queue-tree-key">inner</span><span class="yii-debug-queue-tree-type">object</span><span class="yii-debug-queue-tree-class" title="app\models\Inner">app\models\Inner</span>
+            </summary><div class="yii-debug-queue-tree-children">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">value</span><span class="yii-debug-queue-tree-type">int</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-number">42</span>
+            </div>
+            </div>
+            </details>
+            </div>
+            </div>
+            </article>
+            HTML,
             $html,
             "Nested object must render inside a collapsible '<details>'.",
-        );
-        self::assertStringContainsString(
-            'Inner',
-            $html,
-            'Object short class name must be visible.',
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-queue-tree-class" title="app\\models\\Inner">app\\models\\Inner</span>',
-            $html,
-            'Object summary must retain the complete namespace and class name.'
-        );
-        self::assertStringContainsString(
-            '>42<',
-            $html,
-            'Nested int value must be rendered.'
         );
     }
 
@@ -256,37 +328,59 @@ final class QueueCardRendererTest extends TestCase
             ),
         )->render();
 
-        self::assertStringContainsString(
-            '<details',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <details class="yii-debug-queue-tree-collapse">
+            <summary class="yii-debug-queue-tree-summary">
+            <span class="yii-debug-queue-tree-key">items</span><span class="yii-debug-queue-tree-type">list</span><span class="yii-debug-queue-tree-meta">(3)</span>
+            </summary><div class="yii-debug-queue-tree-children">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">0</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="a">"a"</span>
+            </div><div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">1</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="b">"b"</span>
+            </div><div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">2</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="c">"c"</span>
+            </div>
+            </div>
+            </details>
+            </div>
+            </div>
+            </article>
+            HTML,
             $html,
-            "Nested array must render inside '<details>'."
-        );
-        self::assertStringContainsString(
-            '>list<',
-            $html,
-            "List arrays must show the 'list' type label.",
-        );
-        self::assertStringContainsString(
-            '(3)',
-            $html,
-            'Array length must be displayed.',
+            "Nested array must render inside '<details>'.",
         );
     }
 
     public function testRenderItemRendersDriverPillWithName(): void
     {
-        $html = QueueCardRenderer::renderItem(self::makeRecord(driverName: 'AMQP', isAsync: true))
-            ->render();
-
-        self::assertStringContainsString(
-            'class="yii-debug-queue-driver yii-debug-queue-driver-is-async"',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-async" title="yii\queue\sync\Queue">AMQP</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(driverName: 'AMQP', isAsync: true))->render(),
             "Async driver must use the 'is-async' modifier.",
-        );
-        self::assertStringContainsString(
-            '>AMQP<',
-            $html,
-            'Driver name must be visible.',
         );
     }
 
@@ -302,42 +396,62 @@ final class QueueCardRendererTest extends TestCase
         $withoutError = QueueCardRenderer::renderItem(self::makeRecord())
             ->render();
 
-        self::assertStringContainsString(
-            'Boom: something failed',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-failed">Failed</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-error">
+            <strong>Error: </strong>Boom: something failed
+            </div>
+            </article>
+            HTML,
             $withError,
-            'Error message must be rendered.'
+            'Error message must be rendered.',
         );
-        self::assertStringContainsString(
-            'class="yii-debug-queue-error"',
-            $withError,
-            'Error block must carry the dedicated class.'
-        );
-        self::assertStringNotContainsString(
-            'yii-debug-queue-error',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
             $withoutError,
-            'Records without error must omit the block.'
+            'Records without error must omit the block.',
         );
     }
 
     public function testRenderItemRendersFallbackInitialAndHueWhenJobClassIsEmpty(): void
     {
-        $html = QueueCardRenderer::renderItem(self::makeRecord(jobClass: ''))
-            ->render();
-
-        self::assertStringContainsString(
-            '--queue-hue: 210',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 210' aria-hidden="true">?</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            (unknown)
+            </h2>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(jobClass: ''))->render(),
             "Empty class name must fall back to hue '210'.",
-        );
-        self::assertStringContainsString(
-            '>?<',
-            $html,
-            "Empty class name must render '?' as the initial.",
-        );
-        self::assertStringContainsString(
-            '(unknown)',
-            $html,
-            'Empty class name must show `(unknown)` as the title.',
         );
     }
 
@@ -354,55 +468,24 @@ final class QueueCardRendererTest extends TestCase
             ),
         )->render();
 
-        self::assertStringContainsString(
-            'data-field="id"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-meta">
+            <span class="yii-debug-queue-meta-item" data-field="id"><span class="yii-debug-queue-meta-label">id</span><span class="yii-debug-queue-meta-value">msg-7</span></span><span class="yii-debug-queue-meta-item" data-field="ttr"><span class="yii-debug-queue-meta-label">ttr</span><span class="yii-debug-queue-meta-value">30s</span></span><span class="yii-debug-queue-meta-item" data-field="delay"><span class="yii-debug-queue-meta-label">delay</span><span class="yii-debug-queue-meta-value">5s</span></span><span class="yii-debug-queue-meta-item" data-field="priority"><span class="yii-debug-queue-meta-label">priority</span><span class="yii-debug-queue-meta-value">10</span></span><span class="yii-debug-queue-meta-item" data-field="attempt"><span class="yii-debug-queue-meta-label">attempt</span><span class="yii-debug-queue-meta-value">#2</span></span><span class="yii-debug-queue-meta-item" data-field="duration"><span class="yii-debug-queue-meta-label">duration</span><span class="yii-debug-queue-meta-value">123.0 ms</span></span>
+            </div>
+            </article>
+            HTML,
             $html,
             "'jobId' meta item must be rendered.",
-        );
-        self::assertStringContainsString(
-            'msg-7',
-            $html,
-            "'jobId' value must be visible.",
-        );
-        self::assertStringContainsString(
-            'data-field="ttr"',
-            $html,
-            "'ttr' meta item must be rendered.",
-        );
-        self::assertStringContainsString(
-            '30s',
-            $html,
-            "'ttr' value must include the unit.",
-        );
-        self::assertStringContainsString(
-            'data-field="delay"',
-            $html,
-            "'delay' meta item must be rendered.",
-        );
-        self::assertStringContainsString(
-            'data-field="priority"',
-            $html,
-            "'priority' meta item must be rendered.",
-        );
-        self::assertStringContainsString(
-            'data-field="attempt"',
-            $html,
-            "'attempt' meta item must be rendered.",
-        );
-        self::assertStringContainsString(
-            '#2',
-            $html,
-            "'attempt' value must be prefixed with `#`.",
-        );
-        self::assertStringContainsString(
-            'data-field="duration"',
-            $html,
-            "'duration' meta item must be rendered.",
-        );
-        self::assertStringContainsString(
-            '123.0 ms',
-            $html,
-            "'duration' value must format as milliseconds.",
         );
     }
 
@@ -418,47 +501,51 @@ final class QueueCardRendererTest extends TestCase
             ),
         )->render();
 
-        self::assertStringContainsString(
-            'class="yii-debug-queue-payload"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">message</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="first">"first"</span>
+            </div><div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">priority</span><span class="yii-debug-queue-tree-type">int</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-number">5</span>
+            </div><div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">flag</span><span class="yii-debug-queue-tree-type">bool</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-bool">true</span>
+            </div>
+            </div>
+            </div>
+            </article>
+            HTML,
             $html,
             'Payload block must carry the dedicated class.',
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-queue-tree"',
-            $html,
-            'Tree wrapper must be present.',
-        );
-        self::assertStringContainsString(
-            '"first"',
-            $html,
-            'String value must be rendered with quotes.',
-        );
-        self::assertStringContainsString(
-            '>5<',
-            $html,
-            'Numeric value must be rendered.',
-        );
-        self::assertStringContainsString(
-            '>true<',
-            $html,
-            'Boolean value must be rendered.',
-        );
-        self::assertStringContainsString(
-            '>message<',
-            $html,
-            'String key must be visible.',
-        );
-        self::assertStringContainsString(
-            '>priority<',
-            $html,
-            'Numeric key must be visible.',
         );
     }
 
     public function testRenderItemRendersSyncDriverPillWithSyncModifier(): void
     {
-        self::assertStringContainsString(
-            'yii-debug-queue-driver-is-sync',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
             QueueCardRenderer::renderItem(self::makeRecord(driverName: 'Sync', isAsync: false))->render(),
             "Sync driver must use the 'is-sync' modifier.",
         );
@@ -477,18 +564,35 @@ final class QueueCardRendererTest extends TestCase
             ),
         )->render();
 
-        self::assertStringContainsString(
-            'yii-debug-queue-tree-truncated',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <details class="yii-debug-queue-tree-collapse">
+            <summary class="yii-debug-queue-tree-summary">
+            <span class="yii-debug-queue-tree-key">items</span><span class="yii-debug-queue-tree-type">array</span><span class="yii-debug-queue-tree-meta">(2)</span><span class="yii-debug-queue-tree-truncated">truncated</span>
+            </summary><div class="yii-debug-queue-tree-children">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">0</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="a">"a"</span>
+            </div>
+            </div>
+            </details>
+            </div>
+            </div>
+            </article>
+            HTML,
             $html,
             "Truncated arrays must surface the 'truncated' marker chip.",
         );
-        self::assertStringContainsString(
-            '>truncated<',
-            $html,
-            "Truncated marker must render the literal 'truncated' label.",
-        );
-        self::assertStringContainsString('>items<', $html, 'Truncated summary must retain its field key.');
-        self::assertStringContainsString('>array<', $html, 'Truncated associative array must retain its type.');
     }
 
     public function testRenderItemRendersTypeLabelsForEachScalarKind(): void
@@ -505,20 +609,36 @@ final class QueueCardRendererTest extends TestCase
             ),
         )->render();
 
-        self::assertStringContainsString(
-            '>string<',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">msg</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="x">"x"</span>
+            </div><div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">count</span><span class="yii-debug-queue-tree-type">int</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-number">10</span>
+            </div><div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">ratio</span><span class="yii-debug-queue-tree-type">float</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-number">1.5</span>
+            </div><div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">flag</span><span class="yii-debug-queue-tree-type">bool</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-bool">false</span>
+            </div><div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">empty</span><span class="yii-debug-queue-tree-type">null</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-null">null</span>
+            </div>
+            </div>
+            </div>
+            </article>
+            HTML,
             $html,
             'String type label must be present.',
-        );
-        self::assertStringContainsString(
-            '>int<',
-            $html,
-            'Int type label must be present.',
-        );
-        self::assertStringContainsString(
-            '>float<',
-            $html,
-            'Float type label must be present.',
         );
         self::assertMatchesRegularExpression(
             '/>count<.*?>int<.*?>10</s',
@@ -529,16 +649,6 @@ final class QueueCardRendererTest extends TestCase
             '/>ratio<.*?>float<.*?>1\.5</s',
             $html,
             'Float values must remain paired with the float type label.',
-        );
-        self::assertStringContainsString(
-            '>bool<',
-            $html,
-            'Bool type label must be present.',
-        );
-        self::assertStringContainsString(
-            '>null<',
-            $html,
-            "'null' type label must be present.",
         );
     }
 
@@ -552,22 +662,49 @@ final class QueueCardRendererTest extends TestCase
             ),
         )->render();
 
-        self::assertStringContainsString(
-            '(unsupported)',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">handle</span><span class="yii-debug-queue-tree-type">unknown</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-unknown">(unsupported)</span>
+            </div>
+            </div>
+            </div>
+            </article>
+            HTML,
             $html,
             "Unsupported value types must render the '(unsupported)' placeholder.",
-        );
-        self::assertStringContainsString(
-            '>unknown<',
-            $html,
-            "Unsupported value types must carry the 'unknown' type label.",
         );
     }
 
     public function testRenderItemSkipsZeroDelayMetaItem(): void
     {
-        self::assertStringNotContainsString(
-            'data-field="delay"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-meta">
+            <span class="yii-debug-queue-meta-item" data-field="id"><span class="yii-debug-queue-meta-label">id</span><span class="yii-debug-queue-meta-value">msg-1</span></span>
+            </div>
+            </article>
+            HTML,
             QueueCardRenderer::renderItem(self::makeRecord(jobId: 'msg-1', delay: 0))->render(),
             'Zero delay must be hidden only positive delays render.',
         );
@@ -577,19 +714,30 @@ final class QueueCardRendererTest extends TestCase
     {
         $longValue = str_repeat('x', 200);
 
-        $html = QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $longValue]))
-            ->render();
-
-        self::assertStringContainsString(
-            '…',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">data</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…"</span>
+            </div>
+            </div>
+            </div>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $longValue]))->render(),
             'Long strings must be truncated with an ellipsis.',
         );
-        self::assertStringContainsString(
-            "title=\"{$longValue}\"",
-            $html,
-            'Full value must round-trip in the title attribute.',
-        );
+
     }
 
     public function testRenderItemTruncatesStringsAtUnicodeCharacterBoundaries(): void
@@ -597,20 +745,73 @@ final class QueueCardRendererTest extends TestCase
         $exactValue = str_repeat('é', 80);
         $longValue = 'É' . str_repeat('é', 80);
 
-        $exact = QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $exactValue]))->render();
-        $long = QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $longValue]))->render();
-
-        self::assertStringContainsString('>"' . $exactValue . '"<', $exact, 'Exactly 80 characters must not truncate.');
-        self::assertStringNotContainsString('…', $exact, 'The exact string limit must not add an ellipsis.');
-        self::assertStringContainsString('>"É' . str_repeat('é', 79) . '…"<', $long, 'Long Unicode strings must preserve the first 80 characters.');
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">data</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé">"éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"</span>
+            </div>
+            </div>
+            </div>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $exactValue]))->render(),
+            'Exactly 80 characters must not truncate.',
+        );
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 58' aria-hidden="true">H</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            HelloJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header><div class="yii-debug-queue-payload">
+            <div class="yii-debug-queue-tree">
+            <div class="yii-debug-queue-tree-row">
+            <span class="yii-debug-queue-tree-key">data</span><span class="yii-debug-queue-tree-type">string</span><span class="yii-debug-queue-tree-value yii-debug-queue-tree-value-string" title="Ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé">"Éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé…"</span>
+            </div>
+            </div>
+            </div>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $longValue]))->render(),
+            'Long Unicode strings must preserve the first 80 characters.',
+        );
     }
 
     public function testRenderItemUsesOneUnicodeCharacterForTheAvatarInitial(): void
     {
-        $html = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\éclairJob'))->render();
-
-        self::assertStringContainsString('aria-hidden="true">É</span>', $html, 'Avatar initial must be one complete Unicode character.');
-        self::assertStringNotContainsString('>Éc<', $html, 'Avatar initial must not include the second character.');
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-queue-card">
+            <header class="yii-debug-queue-card-head">
+            <span class="yii-debug-queue-avatar" style='--queue-hue: 182' aria-hidden="true">É</span><div class="yii-debug-queue-headline">
+            <h2 class="yii-debug-queue-class">
+            éclairJob
+            </h2><span class="yii-debug-queue-namespace">app\jobs\</span>
+            </div><div class="yii-debug-queue-meta-pills">
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span><span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span><span class="yii-debug-queue-time">00:00:00</span>
+            </div>
+            </header>
+            </article>
+            HTML,
+            QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\éclairJob'))->render(),
+            'Avatar initial must be one complete Unicode character.',
+        );
     }
 
     /**

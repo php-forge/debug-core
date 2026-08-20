@@ -14,8 +14,6 @@ use function date;
 /**
  * Unit tests for {@see HistoryCellRenderer} covering the per-column rendering helpers, the row-attributes builder
  * (`data-yii-debug-*` attributes for the sidebar cursor JS) and the summary header composition.
- *
- * @since 0.1
  */
 #[Group('view')]
 #[Group('history')]
@@ -53,14 +51,21 @@ final class HistoryCellRendererTest extends TestCase
             ],
             'Row data-yii-debug-* attributes must mirror the typed row.',
         );
-        self::assertArrayNotHasKey('class', $options, 'Non-critical rows must not carry a row class.');
+        self::assertArrayNotHasKey(
+            'class',
+            $options,
+            'Non-critical rows must not carry a row class.',
+        );
     }
 
     public function testBuildRowAttributesFlagsCriticalStatusCodesWithDangerHighlight(): void
     {
         $options = HistoryCellRenderer::buildRowAttributes(self::row(['statusCode' => 500]), true);
 
-        self::assertIsString($options['class'] ?? null, 'class entry must be a string.');
+        self::assertIsString(
+            $options['class'] ?? null,
+            'class entry must be a string.',
+        );
         self::assertStringContainsString(
             'yii-debug-row-danger',
             $options['class'],
@@ -101,20 +106,23 @@ final class HistoryCellRendererTest extends TestCase
         $html = HistoryCellRenderer::renderDurationCell(self::row(['processingTime' => 0.125]), 0.25);
 
         self::assertSame(
-            '<span class="yii-debug-gauge" style=\'--yii-debug-gauge: 50%;\'>'
-            . '<span class="yii-debug-gauge-value">125 ms</span>'
-            . '<span class="yii-debug-gauge-bar" aria-hidden="true"></span>'
-            . '</span>',
+            <<<HTML
+            <span class="yii-debug-gauge" style='--yii-debug-gauge: 50%;'><span class="yii-debug-gauge-value">125 ms</span><span class="yii-debug-gauge-bar" aria-hidden="true"></span></span>
+            HTML,
             $html,
             'Rail must sit at half the page maximum.',
         );
-        self::assertStringContainsString(
-            '--yii-debug-gauge: 100%;',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-gauge" style='--yii-debug-gauge: 100%;'><span class="yii-debug-gauge-value">250 ms</span><span class="yii-debug-gauge-bar" aria-hidden="true"></span></span>
+            HTML,
             HistoryCellRenderer::renderDurationCell(self::row(['processingTime' => 0.25]), 0.25),
             'The slowest row must fill its rail.',
         );
-        self::assertStringContainsString(
-            '--yii-debug-gauge: 0%;',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-gauge" style='--yii-debug-gauge: 0%;'><span class="yii-debug-gauge-value">0 ms</span><span class="yii-debug-gauge-bar" aria-hidden="true"></span></span>
+            HTML,
             HistoryCellRenderer::renderDurationCell(self::row(['processingTime' => 0.0]), 0.25),
             'A zero measurement must show an empty rail.',
         );
@@ -122,10 +130,14 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderDurationCellShowsNotSetWhenMissing(): void
     {
-        $html = HistoryCellRenderer::renderDurationCell(self::row([]), 0.25);
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-not-set">(not set)</span>
+            HTML,
+            HistoryCellRenderer::renderDurationCell(self::row([]), 0.25),
+            'Missing duration must surface the muted placeholder.',
+        );
 
-        self::assertStringContainsString('(not set)', $html, 'Missing duration must surface the muted placeholder.');
-        self::assertStringNotContainsString('yii-debug-gauge', $html, 'Missing duration must not draw a rail.');
     }
 
     public function testRenderMemoryCellFormatsMb(): void
@@ -139,18 +151,26 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderMemoryCellScalesGaugeAgainstPageMaximum(): void
     {
-        $html = HistoryCellRenderer::renderMemoryCell(self::row(['peakMemory' => 2097152]), 4194304);
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-gauge" style='--yii-debug-gauge: 50%;'><span class="yii-debug-gauge-value">2.000 MB</span><span class="yii-debug-gauge-bar" aria-hidden="true"></span></span>
+            HTML,
+            HistoryCellRenderer::renderMemoryCell(self::row(['peakMemory' => 2097152]), 4194304),
+            'Rail must sit at half the page maximum.',
+        );
 
-        self::assertStringContainsString('--yii-debug-gauge: 50%;', $html, 'Rail must sit at half the page maximum.');
-        self::assertStringContainsString('2.000 MB', $html, 'Readout must keep its formatted value.');
     }
 
     public function testRenderMemoryCellShowsNotSetWhenMissing(): void
     {
-        $html = HistoryCellRenderer::renderMemoryCell(self::row([]), 4194304);
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-not-set">(not set)</span>
+            HTML,
+            HistoryCellRenderer::renderMemoryCell(self::row([]), 4194304),
+            'Missing peak memory must surface the muted placeholder.',
+        );
 
-        self::assertStringContainsString('(not set)', $html, 'Missing peak memory must surface the muted placeholder.');
-        self::assertStringNotContainsString('yii-debug-gauge', $html, 'Missing peak memory must not draw a rail.');
     }
 
     public function testRenderMethodCellRendersVocabularyColoredText(): void
@@ -160,13 +180,17 @@ final class HistoryCellRendererTest extends TestCase
             HistoryCellRenderer::renderMethodCell(self::row(['method' => 'GET'])),
             "GET must wear the 'get' verb class.",
         );
-        self::assertStringContainsString(
-            'yii-debug-verb-put',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-method yii-debug-verb-put">PATCH</span>
+            HTML,
             HistoryCellRenderer::renderMethodCell(self::row(['method' => 'PATCH'])),
             "PATCH must share the 'put' verb hue.",
         );
-        self::assertStringContainsString(
-            'yii-debug-verb-other',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-method yii-debug-verb-other">COMMAND</span>
+            HTML,
             HistoryCellRenderer::renderMethodCell(self::row(['method' => 'COMMAND'])),
             "COMMAND must fall back to the 'other' verb.",
         );
@@ -185,23 +209,25 @@ final class HistoryCellRendererTest extends TestCase
     {
         $row = self::row(['tag' => 'flood', 'sqlCount' => 500, 'excessiveCallersCount' => 0]);
 
-        $html = HistoryCellRenderer::renderSqlCountCell($row, '/debug/view?panel=db&tag=flood', true, 100);
-
-        self::assertStringContainsString('⚠', $html, 'Critical counts must surface the warning glyph.');
-        self::assertStringContainsString('Too many queries', $html, 'Warning tooltip must explain the breach.');
-        self::assertStringContainsString(
-            'panel=db&amp;tag=flood',
-            $html,
-            'SQL count must link to the request database panel.',
+        self::assertSame(
+            <<<HTML
+            <a href="/debug/view?panel=db&amp;tag=flood" title="Executed 500 database queries.">500 <span title="Too many queries. Allowed count is 100">⚠</span></a>
+            HTML,
+            HistoryCellRenderer::renderSqlCountCell($row, '/debug/view?panel=db&tag=flood', true, 100),
+            'Critical counts must surface the warning glyph.',
         );
+
+
     }
 
     public function testRenderSqlCountCellPluralizesExcessiveCallersCount(): void
     {
         $row = self::row(['tag' => 'flood', 'sqlCount' => 10, 'excessiveCallersCount' => 4]);
 
-        self::assertStringContainsString(
-            '4 callers are making too many calls.',
+        self::assertSame(
+            <<<HTML
+            <a href="/db" title="Executed 10 database queries.">10 <span title="4 callers are making too many calls.">⚠</span></a>
+            HTML,
             HistoryCellRenderer::renderSqlCountCell($row, '/db', false, 100),
             'Multiple excessive callers must surface the plural tooltip form.',
         );
@@ -211,18 +237,24 @@ final class HistoryCellRendererTest extends TestCase
     {
         $row = self::row(['tag' => 'low', 'sqlCount' => 3, 'excessiveCallersCount' => 0]);
 
-        $html = HistoryCellRenderer::renderSqlCountCell($row, '/db', false, 100);
+        self::assertSame(
+            <<<HTML
+            <a href="/db" title="Executed 3 database queries.">3</a>
+            HTML,
+            HistoryCellRenderer::renderSqlCountCell($row, '/db', false, 100),
+            'Plain SQL count must surface as the bare integer.',
+        );
 
-        self::assertStringContainsString('>3<', $html, 'Plain SQL count must surface as the bare integer.');
-        self::assertStringNotContainsString('⚠', $html, 'Non-critical counts must NOT carry the warning glyph.');
     }
 
     public function testRenderSqlCountCellSingularizesSingleExcessiveCaller(): void
     {
         $row = self::row(['tag' => 'flood', 'sqlCount' => 10, 'excessiveCallersCount' => 1]);
 
-        self::assertStringContainsString(
-            '1 caller is making too many calls.',
+        self::assertSame(
+            <<<HTML
+            <a href="/db" title="Executed 10 database queries.">10 <span title="1 caller is making too many calls.">⚠</span></a>
+            HTML,
             HistoryCellRenderer::renderSqlCountCell($row, '/db', false, 100),
             'A single excessive caller must surface the singular tooltip form.',
         );
@@ -239,23 +271,31 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderStatusCellMapsRangeToStatusClass(): void
     {
-        self::assertStringContainsString(
-            'yii-debug-badge yii-debug-status-2xx',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-badge yii-debug-status-2xx">200</span>
+            HTML,
             HistoryCellRenderer::renderStatusCell(self::row(['statusCode' => 200])),
             "Status code '200' must map to '2xx'.",
         );
-        self::assertStringContainsString(
-            'yii-debug-status-3xx',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-badge yii-debug-status-3xx">301</span>
+            HTML,
             HistoryCellRenderer::renderStatusCell(self::row(['statusCode' => 301])),
             "Status code '301' must map to '3xx'.",
         );
-        self::assertStringContainsString(
-            'yii-debug-status-4xx',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-badge yii-debug-status-4xx">404</span>
+            HTML,
             HistoryCellRenderer::renderStatusCell(self::row(['statusCode' => 404])),
             "Status code '404' must map to '4xx'.",
         );
-        self::assertStringContainsString(
-            'yii-debug-status-5xx',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-badge yii-debug-status-5xx">500</span>
+            HTML,
             HistoryCellRenderer::renderStatusCell(self::row(['statusCode' => 500])),
             "Status code '500' must map to '5xx'.",
         );
@@ -274,35 +314,21 @@ final class HistoryCellRendererTest extends TestCase
 
         $html = HistoryCellRenderer::renderSummary(
             $summary,
-            ['2xx' => '/debug?Debug%5BstatusCode%5D=200', '4xx' => '/debug?Debug%5BstatusCode%5D=404'],
+            [
+                '2xx' => '/debug?Debug%5BstatusCode%5D=200',
+                '4xx' => '/debug?Debug%5BstatusCode%5D=404',
+            ],
             '<label class="yii-debug-grid-pagesize"><select data-yii-debug-pagesize name="per-page"></select></label>',
         );
 
-        self::assertStringContainsString('captured requests', $html, 'Multiple requests must use the plural label.');
-        self::assertStringContainsString(
-            'yii-debug-grid-summary-stat-2xx',
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-grid-summary">
+            <span><strong>5</strong> captured requests</span><span class="yii-debug-grid-summary-sep">·</span><a class="yii-debug-grid-summary-stat-2xx" href="/debug?Debug%5BstatusCode%5D=200" title="Filter to 2xx responses (sample 200)"><strong>4</strong> 2xx</a><span class="yii-debug-grid-summary-sep">·</span><a class="yii-debug-grid-summary-stat-4xx" href="/debug?Debug%5BstatusCode%5D=404" title="Filter to 4xx responses (sample 404)"><strong>1</strong> 4xx</a><label class="yii-debug-grid-pagesize"><select data-yii-debug-pagesize name="per-page"></select></label>
+            </header>
+            HTML,
             $html,
-            "'2xx' pill must carry the '2xx' status class.",
-        );
-        self::assertStringContainsString(
-            'yii-debug-grid-summary-stat-4xx',
-            $html,
-            "'4xx' pill must carry the '4xx' status class.",
-        );
-        self::assertStringContainsString(
-            'Debug%5BstatusCode%5D=200',
-            $html,
-            "The '2xx' bucket must link to its sample status filter.",
-        );
-        self::assertStringContainsString(
-            'Debug%5BstatusCode%5D=404',
-            $html,
-            "The '4xx' bucket must link to its sample status filter.",
-        );
-        self::assertStringContainsString(
-            'yii-debug-grid-pagesize',
-            $html,
-            'History summary must include the shared page-size selector.',
+            'Multiple requests must use the plural label.',
         );
     }
 
@@ -321,42 +347,45 @@ final class HistoryCellRendererTest extends TestCase
     {
         $summary = new HistorySummary(totalRequests: 1, statusBuckets: [], statusCodeFilter: null);
 
-        $html = HistoryCellRenderer::renderSummary($summary, [], '');
-
-        self::assertStringContainsString('captured request', $html, 'One request must use the singular label.');
-        self::assertStringNotContainsString('captured requests', $html, 'One request must not use the plural label.');
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-grid-summary">
+            <span><strong>1</strong> captured request</span>
+            </header>
+            HTML,
+            HistoryCellRenderer::renderSummary($summary, [], ''),
+            'One request must use the singular label.',
+        );
     }
 
     public function testRenderTagCellLinksToPanelView(): void
     {
-        $html = HistoryCellRenderer::renderTagCell(self::row(['tag' => 'abc']), '/debug/view?tag=abc');
-
-        self::assertStringContainsString('yii-debug-tag-link', $html, 'Tag link must carry the tag-link CSS class.');
-        self::assertStringContainsString('abc', $html, 'Tag value must surface inside the link.');
-        self::assertStringContainsString('tag=abc', $html, 'Tag cell must link to the matching request view.');
+        self::assertSame(
+            <<<HTML
+            <a class="yii-debug-tag-link" href="/debug/view?tag=abc">abc</a>
+            HTML,
+            HistoryCellRenderer::renderTagCell(self::row(['tag' => 'abc']), '/debug/view?tag=abc'),
+            'Tag link must carry the tag-link CSS class.',
+        );
     }
 
     public function testRenderTimeCellRendersCompactClockWithFullTooltip(): void
     {
-        $html = HistoryCellRenderer::renderTimeCell(self::row(['time' => 1_700_000_000]));
-
-        self::assertStringContainsString('yii-debug-nowrap', $html, 'Time cell must carry the nowrap CSS class.');
-        self::assertStringContainsString(
-            'title="' . date('Y-m-d H:i:s', 1_700_000_000) . '"',
-            $html,
-            'Time cell must carry the full datetime tooltip.',
-        );
-        self::assertStringContainsString(
-            '>' . date('H:i:s', 1_700_000_000) . '<',
-            $html,
-            'Time cell must render the compact clock string.',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-nowrap" title="2023-11-14 22:13:20">22:13:20</span>
+            HTML,
+            HistoryCellRenderer::renderTimeCell(self::row(['time' => 1_700_000_000])),
+            'Time cell must carry the nowrap CSS class.',
         );
     }
 
     public function testRenderTimeCellShowsNotSetForZeroTimestamp(): void
     {
-        self::assertStringContainsString(
-            '(not set)',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-not-set">(not set)</span>
+            HTML,
             HistoryCellRenderer::renderTimeCell(self::row(['time' => 0])),
             'Zero timestamps must surface the muted placeholder.',
         );
@@ -364,10 +393,14 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderUrlCellWrapsUrlInTitleSpan(): void
     {
-        $html = HistoryCellRenderer::renderUrlCell(self::row(['url' => 'http://example.test/path']));
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-url-cell" title="http://example.test/path">http://example.test/path</span>
+            HTML,
+            HistoryCellRenderer::renderUrlCell(self::row(['url' => 'http://example.test/path'])),
+            'URL cell must carry the dedicated class.',
+        );
 
-        self::assertStringContainsString('yii-debug-url-cell', $html, 'URL cell must carry the dedicated class.');
-        self::assertStringContainsString('http://example.test/path', $html, 'URL value must render inside the cell.');
     }
 
     /**

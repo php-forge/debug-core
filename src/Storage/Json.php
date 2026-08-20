@@ -21,12 +21,6 @@ final class Json
     /**
      * Returns valid UTF-8, representing binary text as base64.
      *
-     * Usage example:
-     *
-     * ```php
-     * $label = \PHPForge\Debug\Storage\Json::safeString("\xB1\x31");
-     * ```
-     *
      * @param string $value String to normalize.
      *
      * @return string JSON-safe string.

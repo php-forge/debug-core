@@ -116,8 +116,7 @@ final class UserIdentityRenderer
                             ->addAttribute('aria-hidden', 'true')
                             ->class('yii-debug-user-section-icon')
                             ->html($section->icon),
-                        Span::tag()
-                            ->content($section->label),
+                        Span::tag()->content($section->label),
                     ),
                 Dl::tag()->html(...$rows),
             );
@@ -140,9 +139,15 @@ final class UserIdentityRenderer
                 ->addDataAttribute('yii-debug-reveal', true)
                 ->class('yii-debug-user-reveal')
                 ->html(
-                    Span::tag()->class('yii-debug-user-mask')->content('••••••••••••'),
-                    Span::tag()->class('yii-debug-user-real')->content($attribute->displayValue),
-                    Span::tag()->class('yii-debug-user-reveal-cta')->addAttribute('aria-hidden', 'true'),
+                    Span::tag()
+                        ->class('yii-debug-user-mask')
+                        ->content('••••••••••••'),
+                    Span::tag()
+                        ->class('yii-debug-user-real')
+                        ->content($attribute->displayValue),
+                    Span::tag()
+                        ->class('yii-debug-user-reveal-cta')
+                        ->addAttribute('aria-hidden', 'true'),
                 )
                 ->type('button');
         }
@@ -152,8 +157,12 @@ final class UserIdentityRenderer
                 ->class('yii-debug-user-time')
                 ->title($attribute->displayValue)
                 ->html(
-                    Span::tag()->class('yii-debug-user-time-rel')->content($attribute->timestampRel),
-                    Span::tag()->class('yii-debug-user-time-abs')->content($attribute->timestampAbs),
+                    Span::tag()
+                        ->class('yii-debug-user-time-rel')
+                        ->content($attribute->timestampRel),
+                    Span::tag()
+                        ->class('yii-debug-user-time-abs')
+                        ->content($attribute->timestampAbs),
                 );
         }
 

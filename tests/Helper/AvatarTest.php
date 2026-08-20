@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see Avatar} deriving deterministic avatar hues.
- *
- * @since 0.1
  */
 #[Group('avatar')]
 #[Group('helpers')]

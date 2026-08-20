@@ -41,105 +41,15 @@ final class LogRowTest extends TestCase
         );
     }
 
-    public function testFromLoggerTupleExportsNonStringMessage(): void
+    public function testFromLoggerTupleUsesCanonicalFieldsAndDefaultsOptionalMemory(): void
     {
         $row = LogRow::fromLoggerTuple(
             [
-                ['a' => 1],
+                'message',
                 LogLevel::INFO,
                 'app',
-                1.0,
-                [],
-            ],
-            1,
-            1.0,
-            null,
-            null,
-        );
-
-        self::assertStringContainsString(
-            'a',
-            $row->message,
-            'Array payload must be exported to a readable string.',
-        );
-    }
-
-    public function testFromLoggerTupleFallsBackToZeroesForAMalformedTuple(): void
-    {
-        $row = LogRow::fromLoggerTuple(
-            [],
-            1,
-            0.0,
-            null,
-            null,
-        );
-
-        self::assertSame(
-            0,
-            $row->level,
-            "Missing level must fall back to '0'.",
-        );
-        self::assertSame(
-            '',
-            $row->category,
-            'Missing category must fall back to an empty string.',
-        );
-        self::assertSame(
-            0.0,
-            $row->time,
-            "Missing timestamp must fall back to '0'.",
-        );
-        self::assertSame(
-            0,
-            $row->memory,
-            "Missing memory must fall back to '0'.",
-        );
-        self::assertSame(
-            [],
-            $row->trace,
-            'Missing trace must fall back to an empty list.',
-        );
-    }
-
-    public function testFromLoggerTupleKeepsOnlyStringKeyedArrayTraceFrames(): void
-    {
-        $row = LogRow::fromLoggerTuple(
-            [
-                'msg',
-                LogLevel::INFO,
-                'app',
-                1.0,
-                [
-                    [
-                        'file' => 'a.php',
-                        7 => 'dropped',
-                    ],
-                    'not-a-frame',
-                ],
-            ],
-            1,
-            1.0,
-            null,
-            null,
-        );
-
-        self::assertSame(
-            [['file' => 'a.php']],
-            $row->trace,
-            'Non-array frames and integer keys must be dropped.',
-        );
-    }
-
-    public function testFromLoggerTupleNarrowsNumericStringsAndScalesTime(): void
-    {
-        $row = LogRow::fromLoggerTuple(
-            [
-                'msg',
-                '4',
-                'app',
-                '2.5',
-                [],
-                '4096',
+                2.5,
+                [['file' => 'a.php']],
             ],
             3,
             1.5,
@@ -153,9 +63,9 @@ final class LogRowTest extends TestCase
             'Row id is assigned by the caller.',
         );
         self::assertSame(
-            4,
+            LogLevel::INFO,
             $row->level,
-            "Numeric-string level must narrow to 'int'.",
+            'Level must come from the canonical logger tuple.',
         );
         self::assertSame(
             'app',
@@ -178,9 +88,9 @@ final class LogRowTest extends TestCase
             'Delta stays in seconds.',
         );
         self::assertSame(
-            4_096,
+            0,
             $row->memory,
-            "Numeric-string memory must narrow to 'int'.",
+            'Omitted memory must default to zero.',
         );
         self::assertSame(
             2,
@@ -191,6 +101,11 @@ final class LogRowTest extends TestCase
             4,
             $row->idOfNext,
             'Next id is assigned by the caller.',
+        );
+        self::assertSame(
+            [['file' => 'a.php']],
+            $row->trace,
+            'Trace frames must be preserved.',
         );
     }
 

@@ -11,20 +11,12 @@ use function substr;
 
 /**
  * Splits a fully-qualified class name into its short name and namespace prefix.
- *
- * Multiple renderers (asset, event, log, profile, queue) display the short class name next to a muted namespace prefix;
- * this helper keeps every view aligned on the same splitting rules and on the shared two-tone label markup.
  */
 final class Fqcn
 {
     /**
      * Returns the namespace prefix (everything before the last `\`, without trailing separator), or `''` when none is
      * present.
-     *
-     * Usage example:
-     * ```php
-     * $namespace = \PHPForge\Debug\Helper\Fqcn::namespacePart('App\\Service\\Mailer');
-     * ```
      *
      * @param string $fqcn Fully-qualified class name.
      *
@@ -46,14 +38,6 @@ final class Fqcn
      * Method-suffixed values such as `yii\db\Command::query` keep the `Class::method` pair inside the bold segment;
      * values without a namespace render the bold segment only, and `''` collapses to an em dash. A `<wbr>` between
      * the two segments marks the namespace boundary as the preferred line-break opportunity.
-     *
-     * Usage example:
-     * ```php
-     * \PHPForge\Debug\Helper\Fqcn::renderLabel('yii\db\Command::query');
-     * // <span title="yii\db\Command::query">
-     * //     <span class="yii-debug-muted">yii\db\</span><wbr><strong>Command::query</strong>
-     * // </span>
-     * ```
      *
      * @param string $value Fully-qualified class name, `FQCN::method` pair, or plain category string.
      *
@@ -83,11 +67,6 @@ final class Fqcn
 
     /**
      * Returns the segment after the last `\` separator, or the full `$fqcn` when no separator is present.
-     *
-     * Usage example:
-     * ```php
-     * $name = \PHPForge\Debug\Helper\Fqcn::shortName('App\\Service\\Mailer');
-     * ```
      *
      * @param string $fqcn Fully-qualified class name.
      *

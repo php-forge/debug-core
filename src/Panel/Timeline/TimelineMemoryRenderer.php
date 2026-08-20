@@ -55,16 +55,17 @@ final class TimelineMemoryRenderer
             ->height($height)
             ->html(
                 Defs::tag()->html(self::gradient()),
-                G::tag()->html(
-                    Polygon::tag()
-                        ->points(self::polygonPoints($points, $width, $height))
-                        ->fill('url(#yii-debug-tl-memory-gradient)'),
-                    Polyline::tag()
-                        ->points(self::polylinePoints($points, $width, $height))
-                        ->fill('none')
-                        ->stroke('currentColor')
-                        ->strokeWidth('1.5'),
-                ),
+                G::tag()
+                    ->html(
+                        Polygon::tag()
+                            ->points(self::polygonPoints($points, $width, $height))
+                            ->fill('url(#yii-debug-tl-memory-gradient)'),
+                        Polyline::tag()
+                            ->points(self::polylinePoints($points, $width, $height))
+                            ->fill('none')
+                            ->stroke('currentColor')
+                            ->strokeWidth('1.5'),
+                    ),
             )
             ->preserveAspectRatio('none')
             ->viewBox("0 0 {$width} {$height}")
@@ -107,7 +108,7 @@ final class TimelineMemoryRenderer
     {
         $rendered = "0 {$height}";
 
-        $lastY = (float) $height;
+        $lastY = $height;
 
         foreach ($points as [$x, $y]) {
             $rendered .= ' ' . self::number($x) . ' ' . self::number($y);
@@ -126,11 +127,10 @@ final class TimelineMemoryRenderer
     {
         $rendered = "0 {$height}";
 
-        $lastY = (float) $height;
+        $lastY = $height;
 
         foreach ($points as [$x, $y]) {
             $rendered .= ' ' . self::number($x) . ' ' . self::number($y);
-
             $lastY = $y;
         }
 

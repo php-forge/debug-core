@@ -24,12 +24,6 @@ final class Dump
      * Renders a value as a display string: quoted strings, bare scalars, and 4-space-indented arrays without
      * trailing commas.
      *
-     * Usage example:
-     *
-     * ```php
-     * $text = \PHPForge\Debug\Helper\Dump::asString(['a' => 1]);
-     * ```
-     *
      * @param mixed $value JSON-safe value to render.
      * @param int $depth Maximum nesting level rendered before collapsing to `[...]`.
      *
@@ -43,12 +37,6 @@ final class Dump
     /**
      * Renders a value as a parsable PHP expression: `var_export()` scalars and short-syntax arrays with trailing
      * commas, omitting sequential integer keys.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $code = \PHPForge\Debug\Helper\Dump::export(['a', 'b']);
-     * ```
      *
      * @param mixed $value JSON-safe value to render.
      *

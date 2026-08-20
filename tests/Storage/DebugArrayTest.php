@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see DebugArray} covering the array-typed facade over {@see DebugValue}.
- *
- * @since 0.1
  */
 #[Group('storage')]
 final class DebugArrayTest extends TestCase

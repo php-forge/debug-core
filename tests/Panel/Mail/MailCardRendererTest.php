@@ -26,15 +26,24 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            '--mail-hue: 210',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Empty sender must fall back to hue '210'.",
-        );
-        self::assertStringContainsString(
-            '>?<',
-            $html,
-            "Empty sender must render '?' as the initial.",
         );
     }
 
@@ -49,14 +58,41 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-mail-preview">' . str_repeat('é', 140) . '</span>',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+            </div>
+            </article>
+            HTML,
             $exact,
             'Exactly 140 Unicode characters must remain complete and omit the ellipsis.',
         );
-        self::assertStringNotContainsString('…', $exact, 'The exact preview limit must not be treated as overflow.');
-        self::assertStringContainsString(
-            'class="yii-debug-mail-preview">É' . str_repeat('é', 139) . '…</span>',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé…</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+            </div>
+            </article>
+            HTML,
             $long,
             'Long Unicode previews must start at the first character and truncate on a character boundary.',
         );
@@ -69,15 +105,24 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            '&lt;script&gt;',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">&lt;script&gt;alert(1)&lt;/script&gt;</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            &lt;script&gt;alert(1)&lt;/script&gt;
+            </div>
+            </article>
+            HTML,
             $html,
             'Body must be HTML-escaped.',
-        );
-        self::assertStringNotContainsString(
-            '<script>alert',
-            $html,
-            'Raw script tags must not leak into the output.',
         );
     }
 
@@ -90,8 +135,22 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            '3 d ago',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span><span class="yii-debug-mail-time" title="Nov 11, 2023 · 22:13:20">3 d ago</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Days delta must read 'X d ago'.",
         );
@@ -106,8 +165,22 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            '2 h ago',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span><span class="yii-debug-mail-time" title="Nov 14, 2023 · 20:13:20">2 h ago</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Hours delta must read 'X h ago'.",
         );
@@ -122,8 +195,22 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'just now',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span><span class="yii-debug-mail-time" title="Nov 14, 2023 · 22:13:20">just now</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Under-minute delta must read 'just now'.",
         );
@@ -138,8 +225,22 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            '10 min ago',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span><span class="yii-debug-mail-time" title="Nov 14, 2023 · 22:03:20">10 min ago</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Minutes delta must read 'X min ago'.",
         );
@@ -147,8 +248,22 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemOmitsBodyPreviewWhenBodyIsEmpty(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-mail-preview',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body yii-debug-mail-body-empty">
+            (empty body)
+            </div>
+            </article>
+            HTML,
             MailCardRenderer::renderItem(self::makeMessage(body: ''), self::makeUrlBuilder()),
             'Empty body must omit the preview span.',
         );
@@ -156,8 +271,22 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemOmitsDownloadLinkWhenFileIsEmpty(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-mail-download',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             MailCardRenderer::renderItem(self::makeMessage(file: ''), self::makeUrlBuilder()),
             'Empty file must omit the download link.',
         );
@@ -165,8 +294,22 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemOmitsRecipientBlockWhenAllListsAreEmpty(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-mail-recipients',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             MailCardRenderer::renderItem(self::makeMessage(), self::makeUrlBuilder()),
             'Empty recipient lists must omit the block.',
         );
@@ -174,8 +317,22 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemOmitsTechDetailsWhenBothHeadersAndCharsetAreEmpty(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-mail-tech',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             MailCardRenderer::renderItem(self::makeMessage(headers: '', charset: ''), self::makeUrlBuilder()),
             'Empty headers and charset must omit the tech details.',
         );
@@ -183,8 +340,22 @@ final class MailCardRendererTest extends TestCase
 
     public function testRenderItemOmitsTimeWhenNull(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-mail-time',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             MailCardRenderer::renderItem(self::makeMessage(time: null), self::makeUrlBuilder()),
             "'null' time must omit the time span.",
         );
@@ -231,16 +402,26 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-mail-preview"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, …</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            {$longBody}
+            </div>
+            </article>
+            HTML,
             $html,
             'Preview span must be present when body is non-empty.',
         );
-        self::assertStringContainsString(
-            '…',
-            $html,
-            'Long previews must end with an ellipsis.',
-        );
+
     }
 
     public function testRenderItemRendersDownloadLinkWhenFileIsSet(): void
@@ -250,39 +431,96 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-mail-download"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span><a class="yii-debug-mail-download" href="/debug/download-mail?file=/tmp/mail.eml" title="Download .eml" aria-label="Download .eml"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></a>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             'Download link must carry the dedicated class.',
-        );
-        self::assertStringContainsString(
-            'href="/debug/download-mail?file=/tmp/mail.eml"',
-            $html,
-            'Download href must round-trip the URL builder output.',
         );
     }
 
     public function testRenderItemRendersEachRecipientGroupWhenItIsTheOnlyPopulatedList(): void
     {
         $cases = [
-            'to' => [['only-to@example.com'], [], [], [], 'data-role="to"'],
-            'cc' => [[], ['only-cc@example.com'], [], [], 'data-role="cc"'],
-            'bcc' => [[], [], ['only-bcc@example.com'], [], 'data-role="bcc"'],
-            'reply' => [[], [], [], ['only-reply@example.com'], 'data-role="reply"'],
+            'to' => [
+                ['only-to@example.com'],
+                [],
+                [],
+                [],
+                'to',
+                'TO',
+                'only-to@example.com',
+            ],
+            'cc' => [
+                [],
+                ['only-cc@example.com'],
+                [],
+                [],
+                'cc',
+                'CC',
+                'only-cc@example.com',
+            ],
+            'bcc' => [
+                [],
+                [],
+                ['only-bcc@example.com'],
+                [],
+                'bcc',
+                'BCC',
+                'only-bcc@example.com',
+            ],
+            'reply' => [
+                [],
+                [],
+                [],
+                ['only-reply@example.com'],
+                'reply',
+                'REPLY-TO',
+                'only-reply@example.com',
+            ],
         ];
 
-        foreach ($cases as $name => [$to, $cc, $bcc, $replyTo, $role]) {
+        foreach ($cases as $name => [$to, $cc, $bcc, $replyTo, $role, $label, $address]) {
             $html = MailCardRenderer::renderItem(
                 self::makeMessage(to: $to, cc: $cc, bcc: $bcc, replyTo: $replyTo),
                 self::makeUrlBuilder(),
             );
 
-            self::assertStringContainsString('yii-debug-mail-recipients', $html, "{$name} alone must render recipients.");
-            self::assertStringContainsString($role, $html, "{$name} alone must render its role label.");
             self::assertSame(
-                1,
-                substr_count($html, 'class="yii-debug-mail-recipient-pill"'),
-                "{$name} must render one pill.",
+                <<<HTML
+                <article class="yii-debug-mail-card">
+                <header class="yii-debug-mail-card-head">
+                <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+                <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+                Test subject
+                </h2><span class="yii-debug-mail-preview">Test body</span>
+                </div><div class="yii-debug-mail-meta">
+                <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+                </div>
+                </header><div class="yii-debug-mail-recipients">
+                <div class="yii-debug-mail-recipient-group">
+                <span class="yii-debug-mail-recipient-label" data-role="{$role}">{$label}</span><span class="yii-debug-mail-recipient-pills"><span class="yii-debug-mail-recipient-pill" title="{$address}">{$address}</span></span>
+                </div>
+                </div><div class="yii-debug-mail-body">
+                Test body
+                </div>
+                </article>
+                HTML,
+                $html,
+                "{$name} alone must render the exact recipient card markup.",
             );
         }
     }
@@ -294,16 +532,26 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'yii-debug-mail-body-empty',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body yii-debug-mail-body-empty">
+            (empty body)
+            </div>
+            </article>
+            HTML,
             $html,
             'Empty body must use the empty-body modifier.',
         );
-        self::assertStringContainsString(
-            '(empty body)',
-            $html,
-            'Empty body placeholder must be visible.',
-        );
+
     }
 
     public function testRenderItemRendersFallbackPlaceholdersWhenFromOrSubjectAreEmpty(): void
@@ -313,15 +561,24 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            '(no sender)',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            (no subject)
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Empty from must fall back to '(no sender)'.",
-        );
-        self::assertStringContainsString(
-            '(no subject)',
-            $html,
-            "Empty subject must fall back to '(no subject)'.",
         );
     }
 
@@ -332,15 +589,24 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'sender@example.com',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 191' aria-hidden="true">S</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">sender@example.com</span><h2 class="yii-debug-mail-subject">
+            Welcome
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             'Sender address must be visible.',
-        );
-        self::assertStringContainsString(
-            'Welcome',
-            $html,
-            'Subject must be visible.',
         );
     }
 
@@ -348,7 +614,10 @@ final class MailCardRendererTest extends TestCase
     {
         $html = MailCardRenderer::renderItem(
             self::makeMessage(
-                to: ['a@example.com', 'b@example.com'],
+                to: [
+                    'a@example.com',
+                    'b@example.com',
+                ],
                 cc: ['carbon@example.com'],
                 bcc: ['bcc@example.com'],
                 replyTo: ['reply@example.com'],
@@ -356,40 +625,34 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-mail-recipients"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-recipients">
+            <div class="yii-debug-mail-recipient-group">
+            <span class="yii-debug-mail-recipient-label" data-role="to">TO</span><span class="yii-debug-mail-recipient-pills"><span class="yii-debug-mail-recipient-pill" title="a@example.com">a@example.com</span><span class="yii-debug-mail-recipient-pill" title="b@example.com">b@example.com</span></span>
+            </div><div class="yii-debug-mail-recipient-group">
+            <span class="yii-debug-mail-recipient-label" data-role="cc">CC</span><span class="yii-debug-mail-recipient-pills"><span class="yii-debug-mail-recipient-pill" title="carbon@example.com">carbon@example.com</span></span>
+            </div><div class="yii-debug-mail-recipient-group">
+            <span class="yii-debug-mail-recipient-label" data-role="bcc">BCC</span><span class="yii-debug-mail-recipient-pills"><span class="yii-debug-mail-recipient-pill" title="bcc@example.com">bcc@example.com</span></span>
+            </div><div class="yii-debug-mail-recipient-group">
+            <span class="yii-debug-mail-recipient-label" data-role="reply">REPLY-TO</span><span class="yii-debug-mail-recipient-pills"><span class="yii-debug-mail-recipient-pill" title="reply@example.com">reply@example.com</span></span>
+            </div>
+            </div><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             'Recipients wrapper must be present.',
-        );
-        self::assertStringContainsString(
-            'TO',
-            $html,
-            'TO label must be present.',
-        );
-        self::assertStringContainsString(
-            'CC',
-            $html,
-            'CC label must be present.',
-        );
-        self::assertStringContainsString(
-            'BCC',
-            $html,
-            'BCC label must be present.',
-        );
-        self::assertStringContainsString(
-            'REPLY-TO',
-            $html,
-            'REPLY-TO label must be present.',
-        );
-        self::assertStringContainsString(
-            'a@example.com',
-            $html,
-            'TO pill must include the address.',
-        );
-        self::assertStringContainsString(
-            'title="carbon@example.com">carbon@example.com</span>',
-            $html,
-            'CC pill must include the address.',
         );
         self::assertSame(
             5,
@@ -405,20 +668,24 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'yii-debug-mail-status-fail',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-fail" title="Mailer reported failure"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Failed</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Failed messages must use the 'fail' variant.",
-        );
-        self::assertStringContainsString(
-            'Failed',
-            $html,
-            "Status label must read 'Failed'.",
-        );
-        self::assertStringContainsString(
-            'title="Mailer reported failure"',
-            $html,
-            'Failed status must retain its failure tooltip.',
         );
     }
 
@@ -429,20 +696,24 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'yii-debug-mail-status-ok',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Successful messages must use the 'ok' variant.",
-        );
-        self::assertStringContainsString(
-            'Sent',
-            $html,
-            "Status label must read 'Sent'.",
-        );
-        self::assertStringContainsString(
-            'title="Mailer reported success"',
-            $html,
-            'Successful status must retain its success tooltip.',
         );
     }
 
@@ -453,30 +724,30 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-mail-tech"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div><details class="yii-debug-mail-tech">
+            <summary>
+            <span class="yii-debug-mail-tech-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg></span><span class="yii-debug-mail-tech-label">Raw headers</span><span class="yii-debug-mail-tech-charset" title="Charset">UTF-8</span><span class="yii-debug-mail-tech-chevron" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+            </summary><pre class="yii-debug-mail-headers">
+            X-Foo: bar
+            </pre>
+            </details>
+            </article>
+            HTML,
             $html,
             'Tech details wrapper must be present.',
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-mail-tech-icon"',
-            $html,
-            'Technical details must retain the code icon.',
-        );
-        self::assertStringContainsString(
-            'Raw headers',
-            $html,
-            'Tech summary label must be present.',
-        );
-        self::assertStringContainsString(
-            'X-Foo: bar',
-            $html,
-            'Header content must be visible.',
-        );
-        self::assertStringContainsString(
-            'UTF-8',
-            $html,
-            'Charset must be visible in the summary.',
         );
     }
 
@@ -491,10 +762,55 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString('yii-debug-mail-tech', $headersOnly, 'Headers alone must render details.');
-        self::assertStringContainsString('X-Only: header', $headersOnly, 'Header-only details must retain the value.');
-        self::assertStringContainsString('yii-debug-mail-tech', $charsetOnly, 'Charset alone must render details.');
-        self::assertStringContainsString('UTF-16', $charsetOnly, 'Charset-only details must retain the value.');
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div><details class="yii-debug-mail-tech">
+            <summary>
+            <span class="yii-debug-mail-tech-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg></span><span class="yii-debug-mail-tech-label">Raw headers</span><span class="yii-debug-mail-tech-chevron" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+            </summary><pre class="yii-debug-mail-headers">
+            X-Only: header
+            </pre>
+            </details>
+            </article>
+            HTML,
+            $headersOnly,
+            'Headers alone must render details.',
+        );
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div><details class="yii-debug-mail-tech">
+            <summary>
+            <span class="yii-debug-mail-tech-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg></span><span class="yii-debug-mail-tech-label">Raw headers</span><span class="yii-debug-mail-tech-charset" title="Charset">UTF-16</span><span class="yii-debug-mail-tech-chevron" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+            </summary><pre class="yii-debug-mail-headers">
+            </pre>
+            </details>
+            </article>
+            HTML,
+            $charsetOnly,
+            'Charset alone must render details.',
+        );
     }
 
     public function testRenderItemRendersTimeWhenSet(): void
@@ -504,8 +820,22 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-mail-time"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span><span class="yii-debug-mail-time" title="Nov 14, 2023 · 22:13:20">Nov 14, 2023 · 22:13:20</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             'Time span must carry the dedicated class.',
         );
@@ -527,8 +857,44 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString('>É<', $unicode, 'Unicode initials must be sliced and uppercased safely.');
-        self::assertStringContainsString('>@<', $emptyLocal, 'An empty local part must fall back to the full address.');
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 76' aria-hidden="true">É</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">élise@example.com</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
+            $unicode,
+            'Unicode initials must be sliced and uppercased safely.',
+        );
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 82' aria-hidden="true">@</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">@example.com</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
+            $emptyLocal,
+            'An empty local part must fall back to the full address.',
+        );
     }
 
     public function testRenderItemRendersUppercasedFirstLetterOfLocalPartAsInitial(): void
@@ -538,8 +904,22 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            '>W<',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 204' aria-hidden="true">W</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">wilmer@example.com</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             'Initial must be the uppercased first letter of the local part.',
         );
@@ -552,16 +932,30 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'user@example.com',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-recipients">
+            <div class="yii-debug-mail-recipient-group">
+            <span class="yii-debug-mail-recipient-label" data-role="to">TO</span><span class="yii-debug-mail-recipient-pills"><span class="yii-debug-mail-recipient-pill" title="user@example.com">user@example.com</span></span>
+            </div>
+            </div><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             "Populated 'TO' group must be rendered.",
         );
-        self::assertStringNotContainsString(
-            'CC',
-            $html,
-            "Empty 'CC' group must be skipped.",
-        );
+
     }
 
     public function testRenderItemUsesExactRelativeTimeBoundariesAndUnits(): void
@@ -578,26 +972,60 @@ final class MailCardRendererTest extends TestCase
         ];
 
         foreach ($cases as [$expected, $diff, $description]) {
+            $time = self::NOW - $diff;
+
+            $absoluteTime = date('M j, Y · H:i:s', $time);
+
             $html = MailCardRenderer::renderItem(
-                self::makeMessage(time: self::NOW - $diff),
+                self::makeMessage(time: $time),
                 self::makeUrlBuilder(),
             );
 
-            self::assertStringContainsString(
-                ">{$expected}<",
+            self::assertSame(
+                <<<HTML
+                <article class="yii-debug-mail-card">
+                <header class="yii-debug-mail-card-head">
+                <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+                <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+                Test subject
+                </h2><span class="yii-debug-mail-preview">Test body</span>
+                </div><div class="yii-debug-mail-meta">
+                <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span><span class="yii-debug-mail-time" title="{$absoluteTime}">{$expected}</span>
+                </div>
+                </header><div class="yii-debug-mail-body">
+                Test body
+                </div>
+                </article>
+                HTML,
                 $html,
-                "Relative time must use the canonical unit for {$description}.",
+                "Relative time must render the exact card markup for {$description}.",
             );
         }
 
-        $absolute = date('M j, Y · H:i:s', self::NOW - 2_592_000);
         $html = MailCardRenderer::renderItem(
             self::makeMessage(time: self::NOW - 2_592_000),
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(">{$absolute}<", $html, 'Thirty days must switch to the absolute label.');
-        self::assertStringNotContainsString('30 d ago', $html, 'The thirty-day boundary must not stay relative.');
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span><span class="yii-debug-mail-time" title="Oct 15, 2023 · 22:13:20">Oct 15, 2023 · 22:13:20</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
+            $html,
+            'Thirty days must switch to the absolute label.',
+        );
     }
 
     public function testRenderItemWrapsContentInArticleWithMailCardClass(): void
@@ -607,15 +1035,24 @@ final class MailCardRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-mail-card"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2><span class="yii-debug-mail-preview">Test body</span>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
             $html,
             'Outer wrapper class must be present.',
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-mail-card-head"',
-            $html,
-            'Head wrapper class must be present.',
         );
     }
 

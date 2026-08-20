@@ -22,8 +22,10 @@ final class ProfileCellRendererTest extends TestCase
 {
     public function testRenderCategoryCellKeepsMethodSuffixInsideStrongShortName(): void
     {
-        self::assertStringContainsString(
-            '<strong>Command::query</strong>',
+        self::assertSame(
+            <<<HTML
+            <span title="yii\db\Command::query"><span class="yii-debug-muted">yii\db\</span><wbr><strong>Command::query</strong></span>
+            HTML,
             ProfileCellRenderer::renderCategoryCell(self::makeRow(category: 'yii\\db\\Command::query')),
             'Method pair must render bold as one segment.',
         );
@@ -33,15 +35,12 @@ final class ProfileCellRendererTest extends TestCase
     {
         $cell = ProfileCellRenderer::renderCategoryCell(self::makeRow(category: 'application'));
 
-        self::assertStringContainsString(
-            '<strong>application</strong>',
+        self::assertSame(
+            <<<HTML
+            <span title="application"><strong>application</strong></span>
+            HTML,
             $cell,
             'Plain category must render bold.',
-        );
-        self::assertStringNotContainsString(
-            'yii-debug-muted',
-            $cell,
-            'Plain categories must not emit a namespace prefix.',
         );
     }
 
@@ -49,15 +48,12 @@ final class ProfileCellRendererTest extends TestCase
     {
         $cell = ProfileCellRenderer::renderCategoryCell(self::makeRow(category: 'yii\\db\\Command::query'));
 
-        self::assertStringContainsString(
-            'yii-debug-muted',
+        self::assertSame(
+            <<<HTML
+            <span title="yii\db\Command::query"><span class="yii-debug-muted">yii\db\</span><wbr><strong>Command::query</strong></span>
+            HTML,
             $cell,
             'Namespace prefix must render muted.',
-        );
-        self::assertStringContainsString(
-            'title="yii\db\Command::query"',
-            $cell,
-            'Full category must sit in the `title` attribute.',
         );
     }
 
@@ -93,16 +89,20 @@ final class ProfileCellRendererTest extends TestCase
         $long = 'SELECT ' . str_repeat('a', CellMore::THRESHOLD);
         $html = ProfileCellRenderer::renderInfoCell(self::makeRow(category: 'yii\\db\\Command::query', info: $long));
 
-        self::assertStringContainsString(
-            'yii-debug-cell-more',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-cell-more">
+            <div class="yii-debug-cell-more-body">
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            </div>
+            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">[+] Show more</button>
+            </div>
+            HTML,
             $html,
             'A long statement must collapse behind the clamp.',
         );
-        self::assertStringContainsString(
-            str_repeat('a', CellMore::THRESHOLD),
-            $html,
-            'Clamping must not truncate the statement.',
-        );
+
     }
 
     public function testRenderInfoCellEmitsOneIndentArrowPerLevel(): void
@@ -124,22 +124,25 @@ final class ProfileCellRendererTest extends TestCase
             substr_count($html, '→'),
             'Each indentation arrow must contain the chevron glyph.',
         );
-        self::assertStringContainsString('nested', $html, 'Info text must be visible after the indentation arrows.');
+        self::assertSame(
+            <<<'HTML'
+        <span class="yii-debug-indent">→</span><span class="yii-debug-indent">→</span><span class="yii-debug-indent">→</span>nested
+        HTML,
+            $html,
+            'Info text must be visible after the indentation arrows.',
+        );
     }
 
     public function testRenderInfoCellEscapesInfoText(): void
     {
         $html = ProfileCellRenderer::renderInfoCell(self::makeRow(info: '<script>alert(1)</script>', level: 0));
 
-        self::assertStringContainsString(
-            '&lt;script&gt;',
+        self::assertSame(
+            <<<HTML
+            &lt;script&gt;alert(1)&lt;/script&gt;
+            HTML,
             $html,
-            'Info content must be HTML-escaped.',
-        );
-        self::assertStringNotContainsString(
-            '<script>alert',
-            $html,
-            'Raw script tags must not leak into the output.',
+            'Info content must render as exact HTML-escaped text.',
         );
     }
 
@@ -149,15 +152,14 @@ final class ProfileCellRendererTest extends TestCase
             self::makeRow(category: 'yii\\db\\Command::query', info: 'SELECT * FROM "user"'),
         );
 
-        self::assertStringContainsString(
-            'yii-debug-db-sql',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> * <span class="yii-debug-sql-kw">FROM</span> "user"
+            </div>
+            HTML,
             $html,
             'SQL must reuse the queries-grid presentation.',
-        );
-        self::assertStringContainsString(
-            'yii-debug-sql-kw',
-            $html,
-            'Keywords must carry their token span.',
         );
     }
 
@@ -180,10 +182,12 @@ final class ProfileCellRendererTest extends TestCase
     {
         $html = ProfileCellRenderer::renderInfoCell(self::makeRow(category: 'application', info: 'SELECT me'));
 
-        self::assertStringNotContainsString(
-            'yii-debug-db-sql',
+        self::assertSame(
+            <<<'HTML'
+            SELECT me
+            HTML,
             $html,
-            'Only DB command blocks may highlight.',
+            'Only DB command blocks may render highlighted HTML.',
         );
     }
 
@@ -193,8 +197,12 @@ final class ProfileCellRendererTest extends TestCase
             self::makeRow(category: 'yii\\db\\Command::query', info: 'SELECT 1'),
         );
 
-        self::assertStringNotContainsString(
-            'yii-debug-cell-more',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div>
+            HTML,
             $html,
             'Short statements must stay inline.',
         );
@@ -204,24 +212,21 @@ final class ProfileCellRendererTest extends TestCase
     {
         $html = ProfileCellRenderer::renderInfoCell(self::makeRow(info: 'root', level: 0));
 
-        self::assertStringNotContainsString(
-            'yii-debug-indent',
+        self::assertSame(
+            <<<HTML
+            root
+            HTML,
             $html,
-            "Level '0' must not produce indentation arrows.",
-        );
-        self::assertStringContainsString(
-            'root',
-            $html,
-            "Info text must be visible at level '0'.",
+            "Level '0' must render the exact text without indentation arrows.",
         );
     }
 
     public function testRenderTimeCellExposesFullTimestampInTitleAttribute(): void
     {
-        $expected = date('Y-m-d H:i:s', 1_700_000_000) . '.789';
-
-        self::assertStringContainsString(
-            "title=\"{$expected}\"",
+        self::assertSame(
+            <<<HTML
+            <span title="2023-11-14 22:13:20.789">22:13:20.789</span>
+            HTML,
             ProfileCellRenderer::renderTimeCell(self::makeRow(timestamp: 1_700_000_000_789.0)),
             'Full timestamp must sit in the `title` attribute.',
         );
@@ -229,12 +234,12 @@ final class ProfileCellRendererTest extends TestCase
 
     public function testRenderTimeCellFormatsMillisecondTimestampAsHmsWithMillis(): void
     {
-        $expected = date('H:i:s', 1_700_000_000) . '.789';
-
         $html = ProfileCellRenderer::renderTimeCell(self::makeRow(timestamp: 1_700_000_000_789.0));
 
-        self::assertStringContainsString(
-            ">{$expected}</span>",
+        self::assertSame(
+            <<<HTML
+            <span title="2023-11-14 22:13:20.789">22:13:20.789</span>
+            HTML,
             $html,
             "Visible text must format as 'H:i:s.mmm'.",
         );
@@ -244,8 +249,10 @@ final class ProfileCellRendererTest extends TestCase
     {
         $html = ProfileCellRenderer::renderTimeCell(self::makeRow(timestamp: 1_500.5));
 
-        self::assertStringContainsString(
-            '>' . date('H:i:s', 1) . '.500</span>',
+        self::assertSame(
+            <<<HTML
+            <span title="1970-01-01 00:00:01.500">00:00:01.500</span>
+            HTML,
             $html,
             'Sub-millisecond fractions must not advance the rendered millisecond value.',
         );
@@ -253,14 +260,14 @@ final class ProfileCellRendererTest extends TestCase
 
     public function testRenderTimeCellPadsMillisecondsWithLeadingZeros(): void
     {
-        $expected = date('H:i:s', 1_700_000_000) . '.005';
-
         $html = ProfileCellRenderer::renderTimeCell(
             self::makeRow(timestamp: 1_700_000_000_005.0),
         );
 
-        self::assertStringContainsString(
-            ">{$expected}</span>",
+        self::assertSame(
+            <<<HTML
+            <span title="2023-11-14 22:13:20.005">22:13:20.005</span>
+            HTML,
             $html,
             "Milliseconds below '100' must be zero-padded to three digits.",
         );

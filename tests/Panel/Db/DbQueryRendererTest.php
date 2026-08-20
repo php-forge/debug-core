@@ -67,25 +67,17 @@ final class DbQueryRendererTest extends TestCase
             self::makeUrlBuilder('request-tag-1'),
         );
 
-        self::assertStringContainsString(
-            'yii-debug-db-explain',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div><div class="yii-debug-db-explain">
+            <a class="yii-debug-db-explain-toggle" href="/debug/db-explain?seq=7&amp;tag=request-tag-1" role="button" aria-expanded="false" aria-label="Toggle EXPLAIN output"><span class="yii-debug-db-explain-chevron" aria-hidden="true">›</span><span class="yii-debug-db-explain-label">Explain</span></a><div class="yii-debug-db-explain-text">
+            </div>
+            </div>
+            HTML,
             $html,
             'Explain toggle wrapper must be present.',
-        );
-        self::assertStringContainsString(
-            'seq=7',
-            $html,
-            'Explain URL must carry the row sequence.',
-        );
-        self::assertStringContainsString(
-            'tag=request-tag-1',
-            $html,
-            'Explain URL must carry the request tag.',
-        );
-        self::assertStringContainsString(
-            'aria-label="Toggle EXPLAIN output"',
-            $html,
-            'Toggle must expose an accessible name.',
         );
     }
 
@@ -98,15 +90,18 @@ final class DbQueryRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-trace"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div><ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            HTML,
             $html,
             'Trace list must carry the dedicated class.',
-        );
-        self::assertStringContainsString(
-            'User.php',
-            $html,
-            'Trace list must render frame metadata.',
         );
     }
 
@@ -119,16 +114,16 @@ final class DbQueryRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            '&lt;script&gt;',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            &lt;script&gt;
+            </div>
+            HTML,
             $html,
             'Query content must be HTML-escaped.',
         );
-        self::assertStringNotContainsString(
-            '<script>',
-            $html,
-            'Raw HTML must not leak into the output.',
-        );
+
     }
 
     public function testRenderQueryCellOmitsExplainToggleWhenHasExplainIsFalse(): void
@@ -140,8 +135,12 @@ final class DbQueryRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringNotContainsString(
-            'yii-debug-db-explain',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div>
+            HTML,
             $html,
             'Explain toggle must be hidden when the driver does not support EXPLAIN.',
         );
@@ -156,8 +155,12 @@ final class DbQueryRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringNotContainsString(
-            'yii-debug-db-explain',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div>
+            HTML,
             $html,
             'PRAGMA must not produce an explain toggle.',
         );
@@ -172,8 +175,12 @@ final class DbQueryRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringNotContainsString(
-            'yii-debug-trace',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div>
+            HTML,
             $html,
             'Empty trace must omit the trace list entirely.',
         );
@@ -188,20 +195,14 @@ final class DbQueryRendererTest extends TestCase
             self::makeUrlBuilder(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-db-sql"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div>
+            HTML,
             $html,
             'SQL must be wrapped in the dedicated container.',
-        );
-        self::assertStringContainsString(
-            '<span class="yii-debug-sql-kw">SELECT</span>',
-            $html,
-            'SQL keywords must be highlighted.',
-        );
-        self::assertStringContainsString(
-            '<span class="yii-debug-sql-num">1</span>',
-            $html,
-            'SQL numbers must be highlighted.',
         );
     }
 
@@ -259,13 +260,17 @@ final class DbQueryRendererTest extends TestCase
 
     public function testRenderTypeCellMapsInsertToPostAndDeleteToDeleteVerbs(): void
     {
-        self::assertStringContainsString(
-            'yii-debug-verb-post',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-db-type yii-debug-verb-post">INSERT</span>
+            HTML,
             DbQueryRenderer::renderTypeCell(self::makeRow(type: 'INSERT')),
             "INSERT must map to the 'post' verb.",
         );
-        self::assertStringContainsString(
-            'yii-debug-verb-delete',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-db-type yii-debug-verb-delete">DELETE</span>
+            HTML,
             DbQueryRenderer::renderTypeCell(self::makeRow(type: 'DELETE')),
             "DELETE must map to the 'delete' verb.",
         );
@@ -275,16 +280,14 @@ final class DbQueryRendererTest extends TestCase
     {
         $html = DbQueryRenderer::renderTypeCell(self::makeRow(type: 'SELECT'));
 
-        self::assertStringContainsString(
-            'class="yii-debug-db-type yii-debug-verb-get"',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-db-type yii-debug-verb-get">SELECT</span>
+            HTML,
             $html,
             "SELECT must use the 'get' verb.",
         );
-        self::assertStringContainsString(
-            '>SELECT<',
-            $html,
-            'Type label must be rendered as the badge content.',
-        );
+
     }
 
     /**

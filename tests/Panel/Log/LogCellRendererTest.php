@@ -11,9 +11,9 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see LogCellRenderer} covering the typed cell renderers used by the logs grid (time, level,
- * two-tone category label, time-since-previous navigation, message + trace, SQL highlighting for DB command entries,
- * row options).
+ * Unit tests for {@see LogCellRenderer} covering the typed cell renderers used by the logs grid (time, level, two-tone
+ * category label, time-since-previous navigation, message + trace, SQL highlighting for DB command entries, row options
+ * ).
  */
 #[Group('panel')]
 #[Group('log')]
@@ -71,8 +71,10 @@ final class LogCellRendererTest extends TestCase
 
     public function testRenderCategoryCellKeepsMethodSuffixInsideStrongShortName(): void
     {
-        self::assertStringContainsString(
-            '<strong>Command::query</strong>',
+        self::assertSame(
+            <<<HTML
+            <span title="yii\db\Command::query"><span class="yii-debug-muted">yii\db\</span><wbr><strong>Command::query</strong></span>
+            HTML,
             LogCellRenderer::renderCategoryCell(self::makeRow(category: 'yii\\db\\Command::query')),
             'Method pair must render bold as one segment.',
         );
@@ -82,32 +84,28 @@ final class LogCellRendererTest extends TestCase
     {
         $cell = LogCellRenderer::renderCategoryCell(self::makeRow(category: 'application'));
 
-        self::assertStringContainsString(
-            '<strong>application</strong>',
+        self::assertSame(
+            <<<HTML
+            <span title="application"><strong>application</strong></span>
+            HTML,
             $cell,
             'Plain category must render bold.',
         );
-        self::assertStringNotContainsString(
-            'yii-debug-muted',
-            $cell,
-            'Plain categories must not emit a namespace prefix.',
-        );
+
     }
 
     public function testRenderCategoryCellSplitsFqcnCategoryIntoMutedNamespaceAndStrongShortName(): void
     {
         $cell = LogCellRenderer::renderCategoryCell(self::makeRow(category: 'yii\\web\\UrlManager::parseRequest'));
 
-        self::assertStringContainsString(
-            'yii-debug-muted',
+        self::assertSame(
+            <<<HTML
+            <span title="yii\web\UrlManager::parseRequest"><span class="yii-debug-muted">yii\web\</span><wbr><strong>UrlManager::parseRequest</strong></span>
+            HTML,
             $cell,
             'Namespace prefix must render muted.',
         );
-        self::assertStringContainsString(
-            'title="yii\web\UrlManager::parseRequest"',
-            $cell,
-            'Full category must sit in the `title` attribute.',
-        );
+
     }
 
     public function testRenderLevelCellWrapsLevelNameInVocabularyChip(): void
@@ -122,13 +120,17 @@ final class LogCellRendererTest extends TestCase
             LogCellRenderer::renderLevelCell(self::makeRow(level: LogLevel::WARNING)),
             "Warning level must wear the 'warning' chip.",
         );
-        self::assertStringContainsString(
-            'yii-debug-level-trace',
+        self::assertSame(
+            <<<'HTML'
+        <span class="yii-debug-level-chip yii-debug-level-trace">trace</span>
+        HTML,
             LogCellRenderer::renderLevelCell(self::makeRow(level: LogLevel::TRACE)),
             "Trace level must wear the 'trace' chip.",
         );
-        self::assertStringContainsString(
-            'yii-debug-level-profile',
+        self::assertSame(
+            <<<'HTML'
+        <span class="yii-debug-level-chip yii-debug-level-profile">profile</span>
+        HTML,
             LogCellRenderer::renderLevelCell(self::makeRow(level: LogLevel::PROFILE)),
             "Profile level must wear the 'profile' chip.",
         );
@@ -144,39 +146,38 @@ final class LogCellRendererTest extends TestCase
             self::traceLine(),
         );
 
-        self::assertStringContainsString(
-            'Something happened',
+        self::assertSame(
+            <<<HTML
+            Something happened<ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            HTML,
             $html,
             'Message text must be present.',
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-trace"',
-            $html,
-            'Trace list must carry the dedicated class.',
-        );
-        self::assertStringContainsString(
-            'User.php',
-            $html,
-            'Trace list must render frame metadata.',
         );
     }
 
     public function testRenderMessageCellClampsLongMessageBehindMoreToggle(): void
     {
+        $message = str_repeat('long message segment ', 40);
+
         $html = LogCellRenderer::renderMessageCell(
-            self::makeRow(message: str_repeat('long message segment ', 40)),
+            self::makeRow(message: $message),
             self::traceLine(),
         );
 
-        self::assertStringContainsString(
-            'yii-debug-cell-more',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-cell-more">
+            <div class="yii-debug-cell-more-body">
+            {$message}
+            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">[+] Show more</button>
+            </div>
+            HTML,
             $html,
             'Long message must render inside the clamp.',
-        );
-        self::assertStringContainsString(
-            '[+] Show more',
-            $html,
-            'Clamp must expose the expand toggle.',
         );
     }
 
@@ -187,15 +188,12 @@ final class LogCellRendererTest extends TestCase
             self::traceLine(),
         );
 
-        self::assertStringContainsString(
-            '&lt;script&gt;',
+        self::assertSame(
+            <<<HTML
+            &lt;script&gt;alert(1)&lt;/script&gt;
+            HTML,
             $html,
-            'Message must be HTML-escaped.',
-        );
-        self::assertStringNotContainsString(
-            'yii-debug-trace',
-            $html,
-            'Empty trace must omit the trace list.',
+            'Message must render as exact HTML-escaped text without a trace list.',
         );
     }
 
@@ -206,16 +204,16 @@ final class LogCellRendererTest extends TestCase
             self::traceLine(),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-db-sql"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> * <span class="yii-debug-sql-kw">FROM</span> `user` <span class="yii-debug-sql-kw">WHERE</span> id = <span class="yii-debug-sql-num">1</span>
+            </div>
+            HTML,
             $html,
             'SQL body must wear the mono wrapper.',
         );
-        self::assertStringContainsString(
-            '<span class="yii-debug-sql-kw">SELECT</span>',
-            $html,
-            'Keywords must be token-wrapped.',
-        );
+
     }
 
     public function testRenderMessageCellKeepsPlainEscapingForNonDbCategory(): void
@@ -234,10 +232,12 @@ final class LogCellRendererTest extends TestCase
 
     public function testRenderMessageCellLeavesShortMessageUnclamped(): void
     {
-        self::assertStringNotContainsString(
-            'yii-debug-cell-more',
+        self::assertSame(
+            <<<HTML
+            short message
+            HTML,
             LogCellRenderer::renderMessageCell(self::makeRow(message: 'short message'), self::traceLine()),
-            'Short message must not render the clamp.',
+            'Short message must render exactly without the clamp.',
         );
     }
 
@@ -285,30 +285,14 @@ final class LogCellRendererTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString(
-            'class="yii-debug-since-previous"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-since-previous">
+            <a class="yii-debug-since-previous-btn" href="#log-6">&lt;</a><span>1s 500ms</span><a class="yii-debug-since-previous-btn" href="#log-8">&gt;</a>
+            </div>
+            HTML,
             $html,
             'Wrapper class must be present.',
-        );
-        self::assertStringContainsString(
-            '1s',
-            $html,
-            'Diff must include the seconds component.',
-        );
-        self::assertStringContainsString(
-            '500ms',
-            $html,
-            'Diff must include the milliseconds component.',
-        );
-        self::assertStringContainsString(
-            'href="#log-6"',
-            $html,
-            'Previous arrow must link to the previous row anchor.',
-        );
-        self::assertStringContainsString(
-            'href="#log-8"',
-            $html,
-            'Next arrow must link to the next row anchor.',
         );
     }
 
@@ -323,8 +307,12 @@ final class LogCellRendererTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString(
-            '2h' . "\u{00A0}" . '5m' . "\u{00A0}" . '7s' . "\u{00A0}" . '250ms',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-since-previous">
+            <a class="yii-debug-since-previous-btn" href="#log-1">&lt;</a><span>2h 5m 7s 250ms</span><a class="yii-debug-since-previous-btn" href="#log-2">&gt;</a>
+            </div>
+            HTML,
             $html,
             'Diff components must be integral and rendered in exact descending unit order.',
         );
@@ -341,24 +329,15 @@ final class LogCellRendererTest extends TestCase
             )
         );
 
-        self::assertStringContainsString(
-            'is-disabled',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-since-previous">
+            <span class="yii-debug-since-previous-btn is-disabled">&lt;</span><span>0ms</span><span class="yii-debug-since-previous-btn is-disabled">&gt;</span>
+            </div>
+            HTML,
             $html,
             'Boundary rows must render disabled arrows.',
         );
-        self::assertStringNotContainsString(
-            'href="#log-',
-            $html,
-            'Disabled arrows must not contain anchor hrefs.',
-        );
-        self::assertStringContainsString(
-            '0ms',
-            $html,
-            "Equal timestamps must render '0ms'.",
-        );
-        self::assertStringNotContainsString("0h\u{00A0}", $html, 'Zero hours must be omitted.');
-        self::assertStringNotContainsString("0m\u{00A0}", $html, 'Zero minutes must be omitted.');
-        self::assertStringNotContainsString("0s\u{00A0}", $html, 'Zero seconds must be omitted.');
     }
 
     public function testRenderTimeSincePreviousCellUsesSixtyMinutesPerHour(): void
@@ -372,10 +351,25 @@ final class LogCellRendererTest extends TestCase
             self::makeRow(time: $base + (60 * 60 + 30) * 1000, timeOfPrevious: $base),
         );
 
-        self::assertStringNotContainsString('1h', $belowHour, 'Fifty-nine minutes must stay below one hour.');
-        self::assertStringContainsString('59m', $belowHour, 'The remaining minutes must be preserved below one hour.');
-        self::assertStringContainsString('1h', $aboveHour, 'Sixty minutes must roll over to one hour.');
-        self::assertStringNotContainsString('60m', $aboveHour, 'Rolled-over hours must leave zero minutes omitted.');
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-since-previous">
+            <span class="yii-debug-since-previous-btn is-disabled">&lt;</span><span>59m 30s 0ms</span><span class="yii-debug-since-previous-btn is-disabled">&gt;</span>
+            </div>
+            HTML,
+            $belowHour,
+            'Fifty-nine minutes must stay below one hour.',
+        );
+
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-since-previous">
+            <span class="yii-debug-since-previous-btn is-disabled">&lt;</span><span>1h 30s 0ms</span><span class="yii-debug-since-previous-btn is-disabled">&gt;</span>
+            </div>
+            HTML,
+            $aboveHour,
+            'Sixty minutes must roll over to one hour.',
+        );
     }
 
     /**

@@ -51,12 +51,6 @@ final class CollectorCoordinator
     /**
      * Captures every collector into one versioned request snapshot.
      *
-     * Usage example:
-     *
-     * ```php
-     * $snapshot = $coordinator->capture($summary);
-     * ```
-     *
      * @param RequestSummary $summary Captured request metadata.
      *
      * @return DebugSnapshot Captured request envelope.
@@ -78,17 +72,15 @@ final class CollectorCoordinator
             }
         }
 
-        return new DebugSnapshot($summary, $panels, $failures);
+        return new DebugSnapshot(
+            $summary,
+            $panels,
+            $failures,
+        );
     }
 
     /**
      * Returns the collector registered under the given stable ID.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $collector = $coordinator->collector('app.orders');
-     * ```
      *
      * @param string $id Collector ID.
      *
@@ -101,12 +93,6 @@ final class CollectorCoordinator
 
     /**
      * Returns whether a collector is registered under the given stable ID.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $registered = $coordinator->hasCollector('app.orders');
-     * ```
      *
      * @param string $id Collector ID.
      *
@@ -157,20 +143,10 @@ final class CollectorCoordinator
     /**
      * Stops every collector once and propagates the first shutdown error after cleanup completes.
      *
-     * Usage example:
-     *
-     * ```php
-     * $coordinator->shutdown();
-     * ```
-     *
      * @throws Throwable When a collector cannot shut down.
      */
     public function shutdown(): void
     {
-        if (!$this->started && $this->startedCollectors === []) {
-            return;
-        }
-
         $this->started = false;
 
         $failure = null;
@@ -192,12 +168,6 @@ final class CollectorCoordinator
 
     /**
      * Starts every registered collector once and rolls back affected collectors when startup fails.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $coordinator->startup();
-     * ```
      *
      * @throws Throwable When a collector cannot start.
      */

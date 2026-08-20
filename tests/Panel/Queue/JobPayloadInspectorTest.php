@@ -9,9 +9,9 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see JobPayloadInspector} covering the public-property tree extraction: scalar pass-through,
- * nested array recursion, nested-object expansion with `__class`, the `__truncated` depth fence, resource
- * stringification, and the unreadable/unsupported fallbacks.
+ * Unit tests for {@see JobPayloadInspector} covering the public-property tree extraction: scalar pass-through, nested
+ * array recursion, nested-object expansion with `__class`, the `__truncated` depth fence, resource stringification, and
+ * the unreadable/unsupported fallbacks.
  */
 #[Group('queue')]
 final class JobPayloadInspectorTest extends TestCase
@@ -325,7 +325,11 @@ final class JobPayloadInspectorTest extends TestCase
 
         $fields = JobPayloadInspector::extract($job);
 
-        self::assertSame($visibleArray, $fields['visibleArray'] ?? null, 'Four nested arrays must remain visible.');
+        self::assertSame(
+            $visibleArray,
+            $fields['visibleArray'] ?? null,
+            'Four nested arrays must remain visible.',
+        );
         self::assertSame(
             ['__truncated' => true],
             self::valueAtPath($fields, ['truncatedArray', 'one', 'two', 'three', 'four', 'five']),
@@ -340,9 +344,19 @@ final class JobPayloadInspectorTest extends TestCase
             $fields,
             ['truncatedObject', 'child', 'child', 'child', 'child', 'child'],
         );
-        self::assertIsArray($truncated, 'The sixth nested object must produce a structured marker.');
-        self::assertTrue($truncated['__truncated'] ?? false, 'The object depth marker must be true.');
-        self::assertArrayHasKey('__class', $truncated, 'A truncated object must retain its class name.');
+        self::assertIsArray(
+            $truncated,
+            'The sixth nested object must produce a structured marker.',
+        );
+        self::assertTrue(
+            $truncated['__truncated'] ?? false,
+            'The object depth marker must be true.',
+        );
+        self::assertArrayHasKey(
+            '__class',
+            $truncated,
+            'A truncated object must retain its class name.',
+        );
     }
 
     /**
@@ -351,7 +365,10 @@ final class JobPayloadInspectorTest extends TestCase
     private static function valueAtPath(mixed $value, array $path): mixed
     {
         foreach ($path as $key) {
-            self::assertIsArray($value, "Path segment '{$key}' must be traversable.");
+            self::assertIsArray(
+                $value,
+                "Path segment '{$key}' must be traversable.",
+            );
 
             $value = $value[$key] ?? null;
         }

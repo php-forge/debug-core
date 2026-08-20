@@ -17,10 +17,6 @@ use function number_format;
 /**
  * Renders the History index summary header + the per-cell HTML consumed by the grid columns and the typed
  * row-attributes builder.
- *
- * Stateless static helpers; every method takes a typed {@see HistoryRow} or {@see HistorySummary} and returns a
- * ready-to-echo HTML string (or, for the row-attributes builder, the attribute map the grid consumes for `<tr>`).
- * Link targets are pre-built URL strings supplied by the adapter, so the renderer stays framework-neutral.
  */
 final class HistoryCellRenderer
 {
@@ -194,10 +190,11 @@ final class HistoryCellRenderer
         $requestLabel = $summary->totalRequests === 1 ? 'captured request' : 'captured requests';
 
         $children = [
-            Span::tag()->html(
-                Strong::tag()->content((string) $summary->totalRequests),
-                " {$requestLabel}",
-            ),
+            Span::tag()
+                ->html(
+                    Strong::tag()->content((string) $summary->totalRequests),
+                    " {$requestLabel}",
+                ),
         ];
 
         foreach ($summary->statusBuckets as $bucket) {

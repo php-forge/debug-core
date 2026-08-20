@@ -12,10 +12,8 @@ use PHPUnit\Framework\TestCase;
 use function date;
 
 /**
- * Unit tests for {@see HistoryRow} covering the projection of a manifest {@see RequestSummary} into the row the
- * History grid renders.
- *
- * @since 0.1
+ * Unit tests for {@see HistoryRow} covering the projection of a manifest {@see RequestSummary} into the row the History
+ * grid renders.
  */
 #[Group('view')]
 #[Group('history')]
@@ -61,17 +59,60 @@ final class HistoryRowTest extends TestCase
             ),
         );
 
-        self::assertSame('tag-9', $row->tag, 'Tag must pass through.');
-        self::assertSame('https://example.test/orders', $row->url, 'URL must pass through.');
-        self::assertTrue($row->ajax, 'AJAX flag must pass through.');
-        self::assertSame('POST', $row->method, 'Method must pass through.');
-        self::assertSame('10.0.0.1', $row->ip, 'IP must pass through.');
-        self::assertSame(404, $row->statusCode, 'Status code must pass through.');
-        self::assertSame(7, $row->sqlCount, 'SQL count must pass through.');
-        self::assertSame(2, $row->excessiveCallersCount, 'Excessive-caller count must pass through.');
-        self::assertSame(1, $row->mailCount, 'Mail count must pass through.');
-        self::assertSame(0.125, $row->processingTime, 'Processing time must pass through.');
-        self::assertSame(1_048_576, $row->peakMemory, 'Peak memory must pass through.');
+        self::assertSame(
+            'tag-9',
+            $row->tag,
+            'Tag must pass through.',
+        );
+        self::assertSame(
+            'https://example.test/orders',
+            $row->url,
+            'URL must pass through.',
+        );
+        self::assertTrue(
+            $row->ajax,
+            'AJAX flag must pass through.',
+        );
+        self::assertSame(
+            'POST',
+            $row->method,
+            'Method must pass through.',
+        );
+        self::assertSame(
+            '10.0.0.1',
+            $row->ip,
+            'IP must pass through.',
+        );
+        self::assertSame(
+            404,
+            $row->statusCode,
+            'Status code must pass through.',
+        );
+        self::assertSame(
+            7,
+            $row->sqlCount,
+            'SQL count must pass through.',
+        );
+        self::assertSame(
+            2,
+            $row->excessiveCallersCount,
+            'Excessive-caller count must pass through.',
+        );
+        self::assertSame(
+            1,
+            $row->mailCount,
+            'Mail count must pass through.',
+        );
+        self::assertSame(
+            0.125,
+            $row->processingTime,
+            'Processing time must pass through.',
+        );
+        self::assertSame(
+            1_048_576,
+            $row->peakMemory,
+            'Peak memory must pass through.',
+        );
     }
 
     /**

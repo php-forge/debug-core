@@ -9,14 +9,6 @@ use function strtolower;
 
 /**
  * Resolves the effective debugger theme from the request's cookie and query parameters.
- *
- * The persisted cookie (written by the client-side theme toggle) always outranks the `yii_debug_theme` query
- * parameter, which is only a link-time snapshot; anything other than `dark` resolves to `light`.
- *
- * Usage example:
- * ```php
- * $theme = \PHPForge\Debug\Theme\ThemeResolver::resolve($request->getCookieParams(), $request->getQueryParams());
- * ```
  */
 final class ThemeResolver
 {

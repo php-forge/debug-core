@@ -25,3 +25,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix(ui): add keyboard-resizable drawers with Escape handling and focus restoration.
 - fix: harden packaging, privacy, lifecycle, snapshot recovery, dump and toolbar security, and accelerate value hydration.
 - refactor: simplify strict value hydration, collector cleanup reporting, sensitive-key lookup, and toolbar message validation without changing public contracts.
+- test: enforce complete PHP line, method, and mutation coverage with exact HTML rendering assertions.

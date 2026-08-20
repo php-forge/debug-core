@@ -8,9 +8,6 @@ use function max;
 
 /**
  * Typed capture-wide maxima for the History grid's micro-gauges.
- *
- * Computed once per page from the visible rows, so every Duration/Memory cell scales its rail against the same
- * reference.
  */
 final readonly class HistoryScale
 {

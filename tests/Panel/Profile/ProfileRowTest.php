@@ -41,35 +41,22 @@ final class ProfileRowTest extends TestCase
         );
     }
 
-    public function testFromTimingClampsNegativeLevelToZero(): void
+    public function testFromTimingUsesCanonicalFieldsAndScalesToMilliseconds(): void
     {
         $row = ProfileRow::fromTiming(
-            ['timestamp' => 1.0, 'duration' => 0.5, 'level' => -3],
-            0,
-        );
-
-        self::assertNotNull(
-            $row,
-            'A timing with timestamp and duration must produce a row.',
-        );
-        self::assertSame(
-            0,
-            $row->level,
-            "A negative level must clamp to '0'.",
-        );
-    }
-
-    public function testFromTimingNarrowsNumericStringsAndScalesToMilliseconds(): void
-    {
-        $row = ProfileRow::fromTiming(
-            ['timestamp' => '2.5', 'duration' => '0.125', 'level' => '2', 'memory' => '2048', 'memoryDiff' => '512'],
+            [
+                'timestamp' => 2.5,
+                'duration' => 0.125,
+                'category' => 'database',
+                'info' => 'SELECT 1',
+                'level' => 2,
+                'memory' => 2_048,
+                'memoryDiff' => 512,
+                'trace' => [['file' => 'index.php']],
+            ],
             7,
         );
 
-        self::assertNotNull(
-            $row,
-            'A timing with timestamp and duration must produce a row.',
-        );
         self::assertSame(
             2_500.0,
             $row->timestamp,
@@ -83,66 +70,37 @@ final class ProfileRowTest extends TestCase
         self::assertSame(
             2,
             $row->level,
-            "Numeric-string level must narrow to 'int'.",
+            'Nesting level must come from the canonical timing.',
         );
         self::assertSame(
             2_048,
             $row->memory,
-            "Numeric-string memory must narrow to 'int'.",
+            'Memory must come from the canonical timing.',
         );
         self::assertSame(
             512,
             $row->memoryDiff,
-            "Numeric-string memory delta must narrow to 'int'.",
+            'Memory delta must come from the canonical timing.',
         );
         self::assertSame(
             7,
             $row->seq,
             'Sequence index is assigned by the caller.',
         );
-    }
-
-    public function testFromTimingReturnsNullForIncompleteTimings(): void
-    {
-        self::assertNull(
-            ProfileRow::fromTiming('not-an-array', 0),
-            "A non-array timing yields 'null'.",
-        );
-        self::assertNull(
-            ProfileRow::fromTiming(['duration' => 1.0], 0),
-            "A missing timestamp yields 'null'.",
-        );
-        self::assertNull(
-            ProfileRow::fromTiming(['timestamp' => 1.0], 0),
-            "A missing duration yields 'null'.",
-        );
-    }
-
-    public function testFromTimingUsesZeroForMissingOptionalNumericFields(): void
-    {
-        $row = ProfileRow::fromTiming(
-            ['timestamp' => 1.0, 'duration' => 0.5],
-            0,
-        );
-
-        self::assertNotNull(
-            $row,
-            'A complete timing must produce a row.',
+        self::assertSame(
+            'database',
+            $row->category,
+            'Category must come from the canonical timing.',
         );
         self::assertSame(
-            0,
-            $row->level,
-            'Missing nesting level must default to zero.',
+            'SELECT 1',
+            $row->info,
+            'Profile token must come from the canonical timing.',
         );
         self::assertSame(
-            0,
-            $row->memory,
-            'Missing memory must default to zero bytes.',
-        );
-        self::assertSame(
-            0,
-            $row->memoryDiff,
-            'Missing memory delta must default to zero bytes.',
+            [['file' => 'index.php']],
+            $row->trace,
+            'Trace frames must be preserved.',
         );
     }
 

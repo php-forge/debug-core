@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see Disclosure} rendering shared collapsible sections.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 #[Group('disclosure')]
@@ -21,21 +19,15 @@ final class DisclosureTest extends TestCase
     {
         $hint = Disclosure::hint()->render();
 
-        self::assertStringContainsString(
-            'aria-hidden="true"',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-disclosure-hint" aria-hidden="true"><span data-yii-debug-hint="collapsed">click to expand</span><span data-yii-debug-hint="expanded">click to collapse</span></span>
+            HTML,
             $hint,
             'Hint must stay outside the accessibility tree.',
         );
-        self::assertStringContainsString(
-            'data-yii-debug-hint="collapsed">click to expand',
-            $hint,
-            'Collapsed state must invite expansion.',
-        );
-        self::assertStringContainsString(
-            'data-yii-debug-hint="expanded">click to collapse',
-            $hint,
-            'Expanded state must invite collapse.',
-        );
+
+
     }
 
     public function testRenderEncodesTitleAndKeepsBodyMarkup(): void

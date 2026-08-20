@@ -176,7 +176,9 @@ final class AssetCardRenderer
         return Section::tag()
             ->class('yii-debug-asset-section')
             ->html(
-                H3::tag()->class('yii-debug-asset-section-title')->content('Files'),
+                H3::tag()
+                    ->class('yii-debug-asset-section-title')
+                    ->content('Files'),
                 ...$fileLists,
             );
     }

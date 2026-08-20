@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Log;
 
-use PHPForge\Debug\Helper\{Coerce, Dump};
 use PHPForge\Debug\Storage\{PanelRow, Payload};
-
-use function is_string;
 
 /**
  * Typed log row narrowed once from the Yii logger tuple and persisted in that form.
+ *
+ * @phpstan-import-type LogMessage from LogSnapshot
  */
 final readonly class LogRow implements PanelRow
 {
@@ -20,7 +19,7 @@ final readonly class LogRow implements PanelRow
          */
         public int $id,
         /**
-         * Display string for the log payload, exported via {@see Dump::export()} when the source was not a string.
+         * Display string for the log payload.
          */
         public string $message,
         /**
@@ -96,9 +95,9 @@ final readonly class LogRow implements PanelRow
     }
 
     /**
-     * Narrows one raw Yii logger tuple into a typed row.
+     * Converts one canonical logger tuple into a typed row.
      *
-     * @param array<int|string, mixed> $message Logger tuple `[message, level, category, timestamp, traces, memory]`.
+     * @param LogMessage $message Logger tuple `[message, level, category, timestamp, traces, memory]`.
      * @param int $id One-based row id assigned in capture order.
      * @param float $timeOfPrevious Timestamp of the previous row in seconds; this row's own timestamp for the first.
      * @param int|null $idOfPrevious Row id preceding this one, or `null` for the first row.
@@ -111,22 +110,20 @@ final readonly class LogRow implements PanelRow
         int|null $idOfPrevious,
         int|null $idOfNext,
     ): self {
-        $payload = $message[0] ?? null;
-
-        $timestamp = Coerce::floatOrNull($message[3] ?? null) ?? 0.0;
+        $timestamp = $message[3];
 
         return new self(
             id: $id,
-            message: is_string($payload) ? $payload : Dump::export($payload),
-            level: Coerce::intOrNull($message[1] ?? null) ?? 0,
-            category: Coerce::stringOrNull($message[2] ?? null) ?? '',
+            message: $message[0],
+            level: $message[1],
+            category: $message[2],
             time: $timestamp * 1000,
             timeOfPrevious: $timeOfPrevious * 1000,
             timeSincePrevious: $timestamp - $timeOfPrevious,
             idOfPrevious: $idOfPrevious,
             idOfNext: $idOfNext,
-            memory: Coerce::intOrNull($message[5] ?? null) ?? 0,
-            trace: Coerce::traceFrames($message[4] ?? []),
+            memory: $message[5] ?? 0,
+            trace: $message[4],
         );
     }
 

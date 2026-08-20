@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see Vocabulary} mapping HTTP and SQL values to semantic suffixes.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 #[Group('vocabulary')]

@@ -54,13 +54,6 @@ final class SnapshotStore
 
     /**
      * Removes stored manifests, snapshots, and temporary files.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $store = new \PHPForge\Debug\Storage\SnapshotStore(sys_get_temp_dir() . '/debug', 0o775, null);
-     * $store->clear();
-     * ```
      */
     public function clear(): void
     {
@@ -92,13 +85,6 @@ final class SnapshotStore
 
     /**
      * Returns manifest entries ordered from newest to oldest.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $store = new \PHPForge\Debug\Storage\SnapshotStore(sys_get_temp_dir() . '/debug', 0o775, null);
-     * $entries = $store->loadManifest();
-     * ```
      *
      * @return array<string, RequestSummary> Newest entries first.
      */
@@ -171,13 +157,6 @@ final class SnapshotStore
 
     /**
      * Returns a stored snapshot or `null` when the tag or persisted payload is invalid.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $store = new \PHPForge\Debug\Storage\SnapshotStore(sys_get_temp_dir() . '/debug', 0o775, null);
-     * $snapshot = $store->readSnapshot('request-1');
-     * ```
      *
      * @param string $tag Snapshot tag.
      *
@@ -266,12 +245,6 @@ final class SnapshotStore
 
     /**
      * Writes a snapshot, updates the manifest, and runs garbage collection under one exclusive lock.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $removed = $store->writeSnapshot($snapshot, 50);
-     * ```
      *
      * @param DebugSnapshot $snapshot Snapshot to persist.
      * @param int $historySize Maximum number of retained entries.

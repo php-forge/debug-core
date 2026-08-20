@@ -18,7 +18,7 @@ final class DbExplainRendererTest extends TestCase
     public function testRenderEmptyPlan(): void
     {
         self::assertSame(
-            <<<'HTML'
+            <<<HTML
             <div class="yii-debug-explain">
             <h1 class="yii-debug-explain-title">
             EXPLAIN
@@ -35,7 +35,7 @@ final class DbExplainRendererTest extends TestCase
     public function testRenderError(): void
     {
         self::assertSame(
-            <<<'HTML'
+            <<<HTML
             <div class="yii-debug-explain">
             <h1 class="yii-debug-explain-title">
             EXPLAIN
@@ -54,7 +54,7 @@ final class DbExplainRendererTest extends TestCase
     public function testRenderQueryAndResultTable(): void
     {
         self::assertSame(
-            <<<'HTML'
+            <<<HTML
             <div class="yii-debug-explain">
             <h1 class="yii-debug-explain-title">
             EXPLAIN
