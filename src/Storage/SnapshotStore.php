@@ -7,20 +7,23 @@ namespace PHPForge\Debug\Storage;
 use JsonException;
 use Throwable;
 
-use function array_diff;
+use function array_key_exists;
 use function array_keys;
 use function array_reverse;
 use function count;
 use function fclose;
 use function file_get_contents;
 use function glob;
+use function is_array;
 use function is_dir;
 use function is_file;
+use function is_string;
 use function json_decode;
 use function json_encode;
 use function mkdir;
 use function pathinfo;
 use function preg_match;
+use function usort;
 
 /**
  * Provides JSON filesystem storage, manifest locking, atomic writes, and snapshot garbage collection.
@@ -33,6 +36,8 @@ final class SnapshotStore
         | JSON_UNESCAPED_UNICODE
         | JSON_PRESERVE_ZERO_FRACTION;
     private const string LOCK_FILE = 'index.lock';
+    private const string TRANSACTION_FILE = '.debug-transaction.json';
+    private const int TRANSACTION_VERSION = 1;
 
     /**
      * Creates a filesystem store with directory and file permission modes.
@@ -99,16 +104,65 @@ final class SnapshotStore
      */
     public function loadManifest(): array
     {
-        try {
-            $lock = $this->acquireLock(LOCK_SH);
-        } catch (StorageException) {
-            return [];
+        return $this->loadManifestResult()->entries;
+    }
+
+    /**
+     * Returns manifest entries and preserves any read diagnostic for observable error handling.
+     *
+     * @return ManifestReadResult Newest entries first plus an optional storage failure.
+     */
+    public function loadManifestResult(): ManifestReadResult
+    {
+        if (!is_dir($this->path)) {
+            $error = is_file($this->path)
+                ? new StorageException("Debug data path is not a directory: {$this->path}")
+                : null;
+
+            return new ManifestReadResult([], $error);
         }
 
         try {
-            $manifest = $this->readManifestFile();
+            $lock = $this->acquireLock(LOCK_EX);
+        } catch (StorageException $error) {
+            return new ManifestReadResult([], $error);
+        }
 
-            return $manifest === null ? [] : array_reverse($manifest->entries, true);
+        try {
+            $this->recoverTransaction();
+
+            $file = $this->indexFile();
+
+            if (!is_file($file)) {
+                return new ManifestReadResult([], null);
+            }
+
+            $raw = @file_get_contents($file);
+
+            if ($raw === false) {
+                throw new StorageException(
+                    "Unable to read debug manifest: {$file}",
+                );
+            }
+
+            if ($raw === '') {
+                throw new StorageException(
+                    "Debug manifest is empty: {$file}",
+                );
+            }
+
+            $manifest = Manifest::fromArray(self::decode($raw));
+
+            return new ManifestReadResult(array_reverse($manifest->entries, true), null);
+        } catch (Throwable $failure) {
+            $error = $failure instanceof StorageException
+                ? $failure
+                : new StorageException(
+                    'Unable to read debug manifest.', 0,
+                    $failure,
+                );
+
+            return new ManifestReadResult([], $error);
         } finally {
             fclose($lock);
         }
@@ -130,20 +184,82 @@ final class SnapshotStore
      */
     public function readSnapshot(string $tag): DebugSnapshot|null
     {
+        return $this->readSnapshotResult($tag)->snapshot;
+    }
+
+    /**
+     * Returns a stored snapshot and preserves any read diagnostic for observable error handling.
+     *
+     * @param string $tag Snapshot tag.
+     *
+     * @return SnapshotReadResult Snapshot, missing state, or storage failure.
+     */
+    public function readSnapshotResult(string $tag): SnapshotReadResult
+    {
         if (!self::isValidTag($tag)) {
-            return null;
+            return new SnapshotReadResult(null, new StorageException("Invalid debug snapshot tag: {$tag}"));
         }
 
-        $raw = @file_get_contents($this->snapshotFile($tag));
+        if (!is_dir($this->path)) {
+            $error = is_file($this->path)
+                ? new StorageException(
+                    "Debug data path is not a directory: {$this->path}",
+                )
+                : null;
 
-        if ($raw === false || $raw === '') {
-            return null;
+            return new SnapshotReadResult(null, $error);
         }
 
         try {
-            return DebugSnapshot::fromArray(self::decode($raw));
-        } catch (Throwable) {
-            return null;
+            $lock = $this->acquireLock(LOCK_EX);
+        } catch (StorageException $error) {
+            return new SnapshotReadResult(null, $error);
+        }
+
+        try {
+            $this->recoverTransaction();
+
+            $file = $this->snapshotFile($tag);
+
+            if (!is_file($file)) {
+                return new SnapshotReadResult(null, null);
+            }
+
+            $raw = @file_get_contents($file);
+
+            if ($raw === false) {
+                throw new StorageException(
+                    "Unable to read debug snapshot: {$file}",
+                );
+            }
+
+            if ($raw === '') {
+                throw new StorageException(
+                    "Debug snapshot is empty: {$file}",
+                );
+            }
+
+            $snapshot = DebugSnapshot::fromArray(self::decode($raw));
+
+            if ($snapshot->summary->tag !== $tag) {
+                throw new StorageException(
+                    "Debug snapshot tag does not match its filename: {$file}",
+                );
+            }
+
+            return new SnapshotReadResult($snapshot, null);
+        } catch (Throwable $failure) {
+            $error = $failure instanceof StorageException
+                ? $failure
+                : new StorageException(
+                    "Unable to read debug snapshot: {$tag}",
+                    0,
+                    $failure,
+                );
+
+            return new SnapshotReadResult(null, $error);
+        } finally {
+            fclose($lock);
         }
     }
 
@@ -175,10 +291,11 @@ final class SnapshotStore
         $lock = $this->acquireLock(LOCK_EX);
 
         try {
+            $this->recoverTransaction();
+
             $manifest = $this->readManifestFile();
 
-            $removeStaleSnapshots = $manifest === null;
-            $entries = $manifest instanceof Manifest ? $manifest->entries : [];
+            $entries = ($manifest ?? $this->rebuildManifest())->entries;
 
             unset($entries[$tag]);
 
@@ -186,19 +303,39 @@ final class SnapshotStore
 
             $removed = $this->collectGarbage($entries, $historySize);
 
-            if ($entries !== []) {
-                $this->atomicWrite($snapshotFile, $snapshotJson);
+            $transaction = [
+                'version' => self::TRANSACTION_VERSION,
+                'state' => 'prepared',
+                'tag' => $tag,
+                'snapshotBefore' => $this->readExistingFile($snapshotFile),
+                'manifestBefore' => $this->readExistingFile($this->indexFile()),
+            ];
+
+            $this->atomicWrite($this->transactionFile(), self::encode($transaction));
+
+            try {
+                if ($entries !== []) {
+                    $this->atomicWrite($snapshotFile, $snapshotJson);
+                }
+
+                $this->atomicWrite($this->indexFile(), self::encode(new Manifest($entries)));
+
+                $transaction['state'] = 'committed';
+
+                $this->atomicWrite($this->transactionFile(), self::encode($transaction));
+
+                @unlink($this->transactionFile());
+            } catch (Throwable $failure) {
+                try {
+                    $this->recoverTransaction();
+                } catch (Throwable) {
+                    // Preserve the write failure; the journal remains available for a later recovery attempt.
+                }
+
+                throw $failure;
             }
 
-            if ($removed !== []) {
-                $removeStaleSnapshots = true;
-            }
-
-            $this->atomicWrite($this->indexFile(), self::encode(new Manifest($entries)));
-
-            if ($removeStaleSnapshots) {
-                $this->removeStaleSnapshots($entries);
-            }
+            $this->removeStaleSnapshots($entries);
 
             return $removed;
         } finally {
@@ -275,7 +412,13 @@ final class SnapshotStore
         }
 
         if ($this->fileMode !== null) {
-            @chmod($temporary, $this->fileMode);
+            if (!@chmod($temporary, $this->fileMode)) {
+                @unlink($temporary);
+
+                throw new StorageException(
+                    "Unable to apply debug data file mode for: {$file}",
+                );
+            }
         }
 
         if (!@rename($temporary, $file)) {
@@ -361,13 +504,21 @@ final class SnapshotStore
      */
     private function initialize(): void
     {
+        $created = false;
+
         if (!is_dir($this->path)) {
-            @mkdir($this->path, $this->dirMode, true);
+            $created = @mkdir($this->path, $this->dirMode, true);
         }
 
         if (!is_dir($this->path)) {
             throw new StorageException(
                 "Unable to create debug data directory: {$this->path}",
+            );
+        }
+
+        if ($created && !@chmod($this->path, $this->dirMode)) {
+            throw new StorageException(
+                "Unable to apply debug data directory mode: {$this->path}",
             );
         }
     }
@@ -396,16 +547,48 @@ final class SnapshotStore
     }
 
     /**
+     * Reads an existing transaction target for rollback, or `null` when it does not exist.
+     */
+    private function readExistingFile(string $file): string|null
+    {
+        if (!is_file($file)) {
+            return null;
+        }
+
+        $contents = @file_get_contents($file);
+
+        if ($contents === false) {
+            throw new StorageException(
+                "Unable to read debug data file: {$file}",
+            );
+        }
+
+        return $contents;
+    }
+
+    /**
      * Reads the manifest or returns `null` when persisted JSON is invalid.
      *
      * @return Manifest|null Hydrated manifest or `null` for invalid persisted JSON.
      */
     private function readManifestFile(): Manifest|null
     {
-        $raw = @file_get_contents($this->indexFile());
+        $file = $this->indexFile();
 
-        if ($raw === false || $raw === '') {
+        if (!is_file($file)) {
             return new Manifest([]);
+        }
+
+        $raw = @file_get_contents($file);
+
+        if ($raw === false) {
+            throw new StorageException(
+                "Unable to read debug manifest: {$file}",
+            );
+        }
+
+        if ($raw === '') {
+            return null;
         }
 
         try {
@@ -416,14 +599,11 @@ final class SnapshotStore
     }
 
     /**
-     * Removes snapshot files whose tags no longer appear in the manifest.
-     *
-     * @param array<string, RequestSummary> $entries Retained manifest entries.
+     * Rebuilds a corrupt manifest from valid snapshot envelopes in deterministic request-time order.
      */
-    private function removeStaleSnapshots(array $entries): void
+    private function rebuildManifest(): Manifest
     {
-        $storedTags = [];
-
+        $summaries = [];
         $files = glob("{$this->path}/*.json");
 
         foreach ($files === false ? [] : $files as $file) {
@@ -431,11 +611,138 @@ final class SnapshotStore
                 continue;
             }
 
-            $storedTags[] = pathinfo($file, PATHINFO_FILENAME);
+            $tag = pathinfo($file, PATHINFO_FILENAME);
+
+            if (!self::isValidTag($tag)) {
+                continue;
+            }
+
+            $raw = @file_get_contents($file);
+
+            if ($raw === false || $raw === '') {
+                continue;
+            }
+
+            try {
+                $snapshot = DebugSnapshot::fromArray(self::decode($raw));
+            } catch (Throwable) {
+                continue;
+            }
+
+            if ($snapshot->summary->tag === $tag) {
+                $summaries[] = $snapshot->summary;
+            }
         }
 
-        foreach (array_diff($storedTags, array_keys($entries)) as $tag) {
-            @unlink($this->snapshotFile($tag));
+        usort(
+            $summaries,
+            static fn(RequestSummary $left, RequestSummary $right): int => [$left->time, $left->tag]
+                <=> [$right->time, $right->tag],
+        );
+
+        $entries = [];
+
+        foreach ($summaries as $summary) {
+            $entries[$summary->tag] = $summary;
+        }
+
+        return new Manifest($entries);
+    }
+
+    /**
+     * Recovers a prepared multi-file write or clears a committed journal left behind by a crash.
+     */
+    private function recoverTransaction(): void
+    {
+        $file = $this->transactionFile();
+        $raw = @file_get_contents($file);
+
+        if ($raw === false || $raw === '') {
+            return;
+        }
+
+        try {
+            $transaction = self::decode($raw);
+        } catch (JsonException $exception) {
+            throw new StorageException(
+                "Invalid debug storage transaction journal: {$file}",
+                0,
+                $exception,
+            );
+        }
+
+        if (
+            !is_array($transaction)
+            || ($transaction['version'] ?? null) !== self::TRANSACTION_VERSION
+            || !is_string($transaction['state'] ?? null)
+            || !is_string($transaction['tag'] ?? null)
+            || !self::isValidTag($transaction['tag'])
+            || (!isset($transaction['snapshotBefore']) && !array_key_exists('snapshotBefore', $transaction))
+            || (!isset($transaction['manifestBefore']) && !array_key_exists('manifestBefore', $transaction))
+            || $transaction['snapshotBefore'] !== null && !is_string($transaction['snapshotBefore'])
+            || $transaction['manifestBefore'] !== null && !is_string($transaction['manifestBefore'])
+        ) {
+            throw new StorageException("Invalid debug storage transaction journal: {$file}");
+        }
+
+        if ($transaction['state'] === 'committed') {
+            @unlink($file);
+
+            return;
+        }
+
+        if ($transaction['state'] !== 'prepared') {
+            throw new StorageException("Invalid debug storage transaction journal: {$file}");
+        }
+
+        $snapshotFile = $this->snapshotFile($transaction['tag']);
+
+        if ($transaction['snapshotBefore'] === null) {
+            $this->removeTransactionTarget($snapshotFile);
+        } else {
+            $this->atomicWrite($snapshotFile, $transaction['snapshotBefore']);
+        }
+
+        if ($transaction['manifestBefore'] === null) {
+            $this->removeTransactionTarget($this->indexFile());
+        } else {
+            $this->atomicWrite($this->indexFile(), $transaction['manifestBefore']);
+        }
+
+        @unlink($file);
+    }
+
+    /**
+     * Removes snapshot files whose tags no longer appear in the manifest.
+     *
+     * @param array<string, RequestSummary> $entries Retained manifest entries.
+     */
+    private function removeStaleSnapshots(array $entries): void
+    {
+        $files = glob("{$this->path}/*.json");
+
+        foreach ($files === false ? [] : $files as $file) {
+            if ($file === $this->indexFile()) {
+                continue;
+            }
+
+            $tag = pathinfo($file, PATHINFO_FILENAME);
+
+            if (!array_key_exists($tag, $entries)) {
+                @unlink($file);
+            }
+        }
+    }
+
+    /**
+     * Removes a target created by an interrupted first write without discarding the journal on failure.
+     */
+    private function removeTransactionTarget(string $file): void
+    {
+        if (is_file($file) && !@unlink($file)) {
+            throw new StorageException(
+                "Unable to roll back debug data file: {$file}",
+            );
         }
     }
 
@@ -455,5 +762,13 @@ final class SnapshotStore
         }
 
         return $this->path . "/{$tag}.json";
+    }
+
+    /**
+     * Returns the multi-file write journal path.
+     */
+    private function transactionFile(): string
+    {
+        return "{$this->path}/" . self::TRANSACTION_FILE;
     }
 }

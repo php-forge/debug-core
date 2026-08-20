@@ -26,6 +26,7 @@ import {
   focusToolbarElement,
   focusToolbarTrigger,
   isToolbarDrawerCloseMessage,
+  isToolbarDrawerThemeMessage,
   shouldCloseToolbarDrawer,
 } from "./focus.js";
 import {
@@ -358,10 +359,11 @@ YiiDebugToolbar.prototype.watchTheme = function () {
       }
 
       if (
-        !data ||
-        typeof data !== "object" ||
-        data.source !== "yii-debug-toolbar" ||
-        data.type !== "theme"
+        !isToolbarDrawerThemeMessage(
+          event,
+          window.location.origin,
+          drawerFrame ? drawerFrame.contentWindow : null,
+        )
       ) {
         return;
       }

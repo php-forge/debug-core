@@ -6,8 +6,8 @@ namespace PHPForge\Debug\Panel\Profile;
 
 use PHPForge\Debug\Helper\{Coerce, LogLevel};
 
+use function array_pop;
 use function array_values;
-use function count;
 use function json_encode;
 use function ksort;
 use function md5;
@@ -20,8 +20,8 @@ final class ProfileTimings
     /**
      * Calculates the per-block timings from profile-level log tuples.
      *
-     * Each tuple is `[token, level, category, timestamp, traces, memory]`; a begin marker is matched with the next
-     * end marker carrying the same token, producing one timing entry ordered by the begin position.
+     * Each tuple is `[token, level, category, timestamp, traces, memory]`; a begin marker is matched with the next end
+     * marker carrying the same token, producing one timing entry ordered by the begin position.
      *
      * Usage example:
      *
@@ -46,23 +46,32 @@ final class ProfileTimings
     {
         $timings = [];
         $stack = [];
+        $nestedLevel = 0;
 
         foreach ($messages as $index => $log) {
             $level = Coerce::intOrNull($log[1] ?? null);
+
             $hash = md5(Coerce::string(json_encode($log[0] ?? null)));
 
             if ($level === LogLevel::PROFILE_BEGIN) {
                 $log['index'] = $index;
-                $stack[$hash] = $log;
+                $log['level'] = $nestedLevel++;
+                $stack[$hash][] = $log;
 
                 continue;
             }
 
-            if ($level !== LogLevel::PROFILE_END || !isset($stack[$hash])) {
+            if ($level !== LogLevel::PROFILE_END || ($stack[$hash] ?? []) === []) {
                 continue;
             }
 
-            $begin = $stack[$hash];
+            $begin = array_pop($stack[$hash]);
+            --$nestedLevel;
+
+            if ($stack[$hash] === []) {
+                unset($stack[$hash]);
+            }
+
             $beginIndex = Coerce::intOrNull($begin['index']) ?? 0;
             $beginTimestamp = Coerce::floatOrNull($begin[3] ?? null) ?? 0.0;
             $memory = Coerce::intOrNull($log[5] ?? null) ?? 0;
@@ -72,13 +81,11 @@ final class ProfileTimings
                 'category' => $begin[2] ?? null,
                 'timestamp' => $beginTimestamp,
                 'trace' => $begin[4] ?? [],
-                'level' => count($stack) - 1,
+                'level' => Coerce::intOrNull($begin['level']) ?? 0,
                 'duration' => (Coerce::floatOrNull($log[3] ?? null) ?? 0.0) - $beginTimestamp,
                 'memory' => $memory,
                 'memoryDiff' => $memory - (Coerce::intOrNull($begin[5] ?? null) ?? 0),
             ];
-
-            unset($stack[$hash]);
         }
 
         ksort($timings);

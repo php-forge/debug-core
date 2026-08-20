@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Storage;
 
 use Closure;
 use JsonSerializable;
+use SensitiveParameter;
 use SplObjectStorage;
 use Stringable;
 use Throwable;
@@ -70,7 +71,7 @@ final readonly class DebugValue implements JsonSerializable
      *
      * @return self Tagged debug value.
      */
-    public static function capture(mixed $value): self
+    public static function capture(#[SensitiveParameter] mixed $value): self
     {
         $objects = new SplObjectStorage();
 
@@ -95,51 +96,9 @@ final readonly class DebugValue implements JsonSerializable
      */
     public static function fromArray(mixed $data, string $path = '$'): self
     {
-        $payload = Payload::object($data, $path);
+        $nodes = 0;
 
-        $type = $payload->string('type');
-
-        $payload->shape(
-            match ($type) {
-                'null' => ['type'],
-                'bool', 'int', 'float', 'special-float', 'string' => ['type', 'value'],
-                'binary' => ['type', 'encoding', 'data'],
-                'array' => ['type', 'entries'],
-                'object' => ['type', 'value', 'entries', 'class'],
-                'resource' => ['type', 'resourceType'],
-                'truncated', 'recursion', 'unsupported' => ['type', 'value', 'reason'],
-                default => throw HydrationException::at(
-                    "{$path}.type",
-                    'a known debug-value type',
-                ),
-            }
-        );
-
-        return match ($type) {
-            'null' => new self('null'),
-            'bool' => new self('bool', $payload->bool('value')),
-            'int' => new self('int', $payload->int('value')),
-            'float' => new self('float', $payload->number('value')),
-            'special-float' => self::fromSpecialFloat($payload, $path),
-            'string' => new self('string', $payload->string('value')),
-            'binary' => self::fromBinary($payload, $path),
-            'array' => new self('array', entries: self::hydrateEntries($payload, $path)),
-            'object' => new self(
-                'object',
-                value: $payload->nullableString('value'),
-                entries: self::hydrateEntries($payload, $path),
-                className: $payload->string('class'),
-            ),
-            'resource' => new self(
-                'resource',
-                resourceType: $payload->string('resourceType'),
-            ),
-            'truncated', 'recursion', 'unsupported' => new self(
-                $type,
-                value: $payload->nullableString('value'),
-                reason: $payload->string('reason'),
-            ),
-        };
+        return self::hydrate($data, $path, 0, $nodes);
     }
 
     /**
@@ -321,6 +280,71 @@ final readonly class DebugValue implements JsonSerializable
     }
 
     /**
+     * Hydrates one tagged value while enforcing the same structural budget used during capture.
+     *
+     * @param mixed $data Decoded tagged value.
+     * @param string $path Payload path used in hydration errors.
+     * @param int $depth Current nesting depth.
+     * @param int $nodes Number of tagged values visited across the hydration operation.
+     */
+    private static function hydrate(mixed $data, string $path, int $depth, int &$nodes): self
+    {
+        $payload = Payload::object($data, $path);
+
+        $type = $payload->string('type');
+
+        if (++$nodes > self::MAX_NODES + 1) {
+            throw HydrationException::at($path, 'at most 10000 captured nodes');
+        }
+
+        if ($depth > self::MAX_DEPTH && $type !== 'truncated') {
+            throw HydrationException::at($path, 'at most 10 nested levels');
+        }
+
+        $payload->shape(
+            match ($type) {
+                'null' => ['type'],
+                'bool', 'int', 'float', 'special-float', 'string' => ['type', 'value'],
+                'binary' => ['type', 'encoding', 'data'],
+                'array' => ['type', 'entries'],
+                'object' => ['type', 'value', 'entries', 'class'],
+                'resource' => ['type', 'resourceType'],
+                'truncated', 'recursion', 'unsupported' => ['type', 'value', 'reason'],
+                default => throw HydrationException::at(
+                    "{$path}.type",
+                    'a known debug-value type',
+                ),
+            }
+        );
+
+        return match ($type) {
+            'null' => new self('null'),
+            'bool' => new self('bool', $payload->bool('value')),
+            'int' => new self('int', $payload->int('value')),
+            'float' => new self('float', $payload->number('value')),
+            'special-float' => self::fromSpecialFloat($payload, $path),
+            'string' => new self('string', $payload->string('value')),
+            'binary' => self::fromBinary($payload, $path),
+            'array' => new self('array', entries: self::hydrateEntries($payload, $path, $depth, $nodes)),
+            'object' => new self(
+                'object',
+                value: $payload->nullableString('value'),
+                entries: self::hydrateEntries($payload, $path, $depth, $nodes),
+                className: $payload->string('class'),
+            ),
+            'resource' => new self(
+                'resource',
+                resourceType: $payload->string('resourceType'),
+            ),
+            'truncated', 'recursion', 'unsupported' => new self(
+                $type,
+                value: $payload->nullableString('value'),
+                reason: $payload->string('reason'),
+            ),
+        };
+    }
+
+    /**
      * Hydrates tagged array or object entries.
      *
      * @param Payload $payload Validated tagged value payload.
@@ -328,7 +352,7 @@ final readonly class DebugValue implements JsonSerializable
      *
      * @return list<array{keyType: 'int'|'string', key: int|string, value: self}> Hydrated entries.
      */
-    private static function hydrateEntries(Payload $payload, string $path): array
+    private static function hydrateEntries(Payload $payload, string $path, int $depth, int &$nodes): array
     {
         $entries = [];
 
@@ -343,6 +367,7 @@ final readonly class DebugValue implements JsonSerializable
                         'value',
                     ],
                 );
+
             $keyType = $entry->string('keyType');
             $key = $entry->raw('key');
 
@@ -360,7 +385,7 @@ final readonly class DebugValue implements JsonSerializable
             $entries[] = [
                 'keyType' => $keyType,
                 'key' => $key,
-                'value' => self::fromArray($entry->raw('value'), "{$entryPath}.value"),
+                'value' => self::hydrate($entry->raw('value'), "{$entryPath}.value", $depth + 1, $nodes),
             ];
         }
 
@@ -478,6 +503,7 @@ final readonly class DebugValue implements JsonSerializable
             }
 
             $objects->offsetSet($value);
+
             $entries = [];
 
             foreach (get_object_vars($value) as $key => $entry) {
@@ -532,6 +558,7 @@ final readonly class DebugValue implements JsonSerializable
 
         if ($value instanceof Throwable) {
             $class = $value::class;
+
             $message = $value->getMessage();
 
             return Json::safeString($class) . ': ' . Json::safeString($message);

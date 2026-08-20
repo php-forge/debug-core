@@ -104,6 +104,7 @@ final class ToolbarDataTest extends TestCase
             status: 'warning',
             title: 'Database queries',
             url: '/debug/db',
+            id: 'query-count',
         );
         $panel = new ToolbarPanel(
             id: 'db',
@@ -148,6 +149,7 @@ final class ToolbarDataTest extends TestCase
                                 'status' => 'warning',
                                 'title' => 'Database queries',
                                 'url' => '/debug/db',
+                                'id' => 'query-count',
                             ],
                         ],
                     ],

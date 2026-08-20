@@ -68,6 +68,7 @@ final readonly class ToolbarData implements JsonSerializable
      *             icon?: string,
      *             title?: string,
      *             url?: string,
+     *             id?: string,
      *         }>,
      *         url?: string,
      *         icon?: string,

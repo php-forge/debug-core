@@ -20,6 +20,7 @@ final readonly class ToolbarItem implements JsonSerializable
      * @param string $status Semantic badge status.
      * @param string|null $title Tooltip text or `null` when no tooltip is needed.
      * @param string|null $url Debug page URL or `null` when the metric is not navigable.
+     * @param string|null $id Stable semantic metric identifier or `null` for presentation-only metrics.
      */
     public function __construct(
         public string $value,
@@ -28,6 +29,7 @@ final readonly class ToolbarItem implements JsonSerializable
         public string $status = 'default',
         public string|null $title = null,
         public string|null $url = null,
+        public string|null $id = null,
     ) {}
 
     /**
@@ -39,7 +41,8 @@ final readonly class ToolbarItem implements JsonSerializable
      * $payload = (new \PHPForge\Debug\Toolbar\ToolbarItem('12 ms', label: 'Time'))->jsonSerialize();
      * ```
      *
-     * @return array{value: string, status: string, label?: string, icon?: string, title?: string, url?: string}
+     * @return array{value: string, status: string, label?: string, icon?: string, title?: string, url?: string,
+     * id?: string}
      * Serialized metric payload.
      */
     public function jsonSerialize(): array
@@ -52,6 +55,7 @@ final readonly class ToolbarItem implements JsonSerializable
                 'status' => $this->status,
                 'title' => $this->title,
                 'url' => $this->url,
+                'id' => $this->id,
             ],
             static fn(string|null $value): bool => $value !== null,
         );

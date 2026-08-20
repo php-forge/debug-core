@@ -36,6 +36,15 @@ panel views remain in each adapter. Yii adapters resolve the packaged frontend a
 The visual and behavioral synchronization contract for the Yii adapters is documented in the
 [Yii Debug UI parity baseline](docs/ui-parity-baseline.md).
 
+Persistent adapters apply `PHPForge\Debug\Capture\CapturePolicy` before snapshot capture. Its secure defaults redact
+common credentials, authorization and cookie values recursively, suppress raw bodies whose decoded form changed,
+truncate opaque bodies at 64 KiB, and sanitize query strings and diagnostic assignments. Tagged-value capture and
+hydration also enforce depth and node budgets, while newly captured exception traces intentionally omit arguments.
+
+`SnapshotStore::loadManifest()` and `readSnapshot()` retain their fail-closed `[]` / `null` behavior. Integrations that
+need to report filesystem, lock, recovery, corruption, or envelope-integrity failures can use the additive
+`loadManifestResult()` and `readSnapshotResult()` methods and inspect the result's nullable `error` property.
+
 Current adapters:
 
 - `yii2-extensions/debug`

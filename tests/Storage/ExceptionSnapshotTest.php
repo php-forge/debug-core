@@ -16,6 +16,27 @@ use RuntimeException;
 #[Group('storage')]
 final class ExceptionSnapshotTest extends TestCase
 {
+    public function testThrowableCaptureRedactsMessagesAndOmitsTraceArguments(): void
+    {
+        $throwable = $this->exceptionContainingSecret('do-not-persist');
+        $snapshot = ExceptionSnapshot::fromThrowable($throwable);
+        $serialized = json_encode($snapshot, JSON_THROW_ON_ERROR);
+
+        self::assertStringNotContainsString(
+            'do-not-persist',
+            $serialized,
+            'Neither exception text nor trace arguments may retain a secret.',
+        );
+        self::assertSame(
+            'Failure: password=[redacted]',
+            $snapshot->getMessage(),
+            'Exception messages must redact common assignments before persistence.',
+        );
+
+        foreach ($snapshot->getTrace() as $frame) {
+            self::assertSame([], $frame['args'] ?? null, 'Newly captured trace frames must omit argument values.');
+        }
+    }
     public function testThrowableRoundTripsThroughJson(): void
     {
         $throwable = new RuntimeException('outer failure', 42, new LogicException('inner failure', 7));
@@ -199,6 +220,14 @@ final class ExceptionSnapshotTest extends TestCase
             $frame['short_class'] ?? null,
             'Short class must exclude its namespace.',
         );
+    }
+
+    /**
+     * Creates a throwable whose message and call stack receive the same secret fixture.
+     */
+    private function exceptionContainingSecret(#[\SensitiveParameter] string $secret): RuntimeException
+    {
+        return new RuntimeException("Failure: password={$secret}");
     }
 
     /**

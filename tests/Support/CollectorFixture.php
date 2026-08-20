@@ -24,6 +24,7 @@ final class CollectorFixture implements CollectorInterface
      * @param string $shutdownFailureMessage Shutdown failure message.
      * @param int $startupFailuresRemaining Number of startup calls that should fail.
      * @param string $startupFailureMessage Startup failure message.
+     * @param int $shutdownFailuresRemaining Number of shutdown calls that should fail before succeeding.
      */
     public function __construct(
         private readonly string $collectorId,
@@ -33,6 +34,7 @@ final class CollectorFixture implements CollectorInterface
         private readonly string $shutdownFailureMessage = 'Collector shutdown failed.',
         private int $startupFailuresRemaining = 0,
         private readonly string $startupFailureMessage = 'Collector startup failed.',
+        private int $shutdownFailuresRemaining = 0,
     ) {}
 
     public function capture(): PanelSnapshot|null
@@ -52,8 +54,13 @@ final class CollectorFixture implements CollectorInterface
     public function shutdown(): void
     {
         ++$this->shutdownCount;
+        $shouldFail = $this->failShutdown || $this->shutdownFailuresRemaining > 0;
 
-        if ($this->failShutdown) {
+        if ($this->shutdownFailuresRemaining > 0) {
+            --$this->shutdownFailuresRemaining;
+        }
+
+        if ($shouldFail) {
             throw new RuntimeException($this->shutdownFailureMessage);
         }
     }

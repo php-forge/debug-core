@@ -18,6 +18,42 @@ use PHPUnit\Framework\TestCase;
 #[Group('dump')]
 final class DumpCardRendererTest extends TestCase
 {
+    public function testRenderMessageCellAllowsOnlyDumpHighlighterMarkup(): void
+    {
+        $message = <<<'HTML'
+            <pre><code style="color: #000000"><span style="color: #0000BB">safe</span></code></pre>
+            <span onclick="alert(1)">unsafe attribute</span><script>alert(1)</script>
+            HTML;
+
+        $html = DumpCardRenderer::renderMessageCell(
+            self::makeRow(message: $message),
+            self::traceLine(),
+            0,
+        );
+
+        self::assertStringContainsString(
+            '<pre><code style="color: #000000"><span style="color: #0000BB">safe</span></code></pre>',
+            $html,
+            'The exact fixed markup emitted by PHP dump highlighters must remain available.',
+        );
+        self::assertStringContainsString(
+            '&lt;span onclick="alert(1)"&gt;unsafe attribute&lt;/span&gt;',
+            $html,
+            'Highlighter tags with arbitrary attributes must be escaped.',
+        );
+        self::assertStringContainsString(
+            '&lt;script&gt;alert(1)&lt;/script&gt;',
+            $html,
+            'Executable tags from a callback or manipulated snapshot must be escaped.',
+        );
+        self::assertStringNotContainsString('<script>', $html, 'Executable dump markup must never reach the UI.');
+        self::assertStringNotContainsString(
+            '<span onclick=',
+            $html,
+            'Arbitrary dump attributes must never reach the UI as markup.',
+        );
+    }
+
     public function testRenderMessageCellDecodesHtml5QuoteEntitiesBeforeTypeDetection(): void
     {
         self::assertStringContainsString(
@@ -68,6 +104,24 @@ final class DumpCardRendererTest extends TestCase
             $html,
             'Trace list must render frame metadata.',
         );
+    }
+
+    public function testRenderMessageCellEscapesMalformedAndMismatchedDumpTags(): void
+    {
+        $html = DumpCardRenderer::renderMessageCell(
+            self::makeRow(
+                message: '<span style="color: #0000BB">safe&lt;</code></span><broken',
+            ),
+            self::traceLine(),
+            0,
+        );
+
+        self::assertStringContainsString(
+            '<span style="color: #0000BB">safe&lt;&lt;/code&gt;</span>&lt;broken',
+            $html,
+            'Only balanced allowlisted tags may be reconstructed around malformed persisted input.',
+        );
+        self::assertStringNotContainsString('</code></span><broken', $html, 'Mismatched and incomplete tags must stay inert.');
     }
 
     public function testRenderMessageCellFormatsMillisecondsAtTheUpperBoundary(): void
