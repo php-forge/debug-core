@@ -662,12 +662,12 @@ final class DumpCardRendererTest extends TestCase
             <header class="yii-debug-dump-card-head">
             <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="number">number</span><span class="yii-debug-dump-meta"></span>
             </header><div class="yii-debug-dump-body">
-               42
+                42
             </div>
             </div>
             HTML,
             DumpCardRenderer::renderMessageCell(
-                self::makeRow(message: '   42'),
+                self::makeRow(message: '    42'),
                 self::traceLine(),
                 0,
             ),
