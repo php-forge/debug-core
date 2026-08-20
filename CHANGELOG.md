@@ -23,4 +23,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat(ui): share User guest and RBAC section rendering and support selecting filtered tabs.
 - feat(ui): add sensitive queue-payload redaction and recognize Yii3 queue producers for Dump, Mail, and Queue parity.
 - fix(ui): add keyboard-resizable drawers with Escape handling and focus restoration.
-- fix: harden packaging, privacy, collector lifecycle, snapshot recovery, dump rendering, and toolbar messaging.
+- fix: harden packaging, privacy, lifecycle, snapshot recovery, dump and toolbar security, and accelerate value hydration.
