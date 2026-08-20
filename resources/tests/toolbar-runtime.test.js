@@ -7,6 +7,7 @@ import {
   focusToolbarElement,
   focusToolbarTrigger,
   isToolbarDrawerCloseMessage,
+  isToolbarDrawerThemeMessage,
   requestParentToolbarDrawerClose,
   shouldCloseToolbarDrawer,
 } from "../src/toolbar/focus.js";
@@ -323,6 +324,56 @@ test("drawer close messages are bound to the active same-origin iframe", () => {
   assert.equal(
     isToolbarDrawerCloseMessage(
       { ...message, data: callableData },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
+});
+
+test("theme messages are bound to the active same-origin iframe", () => {
+  var frameWindow = {};
+  var message = {
+    data: { source: "yii-debug-toolbar", type: "theme", theme: "dark" },
+    origin: "https://example.test",
+    source: frameWindow,
+  };
+
+  assert.equal(
+    isToolbarDrawerThemeMessage(message, "https://example.test", frameWindow),
+    true,
+  );
+  assert.equal(
+    isToolbarDrawerThemeMessage(
+      { ...message, origin: "https://attacker.test" },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
+  assert.equal(
+    isToolbarDrawerThemeMessage(message, "https://example.test", {}),
+    false,
+  );
+  assert.equal(
+    isToolbarDrawerThemeMessage(
+      { ...message, data: { ...message.data, type: "close-drawer" } },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
+  assert.equal(
+    isToolbarDrawerThemeMessage(
+      { ...message, data: { ...message.data, source: "another-app" } },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
+  assert.equal(
+    isToolbarDrawerThemeMessage(
+      { ...message, data: null },
       "https://example.test",
       frameWindow,
     ),

@@ -224,6 +224,14 @@ final class DebugValueTest extends TestCase
             'A binary throwable message must remain JSON-safe.',
         );
     }
+    public function testCapturePreservesFiniteFloat(): void
+    {
+        self::assertSame(
+            ['type' => 'float', 'value' => 1.5],
+            DebugValue::capture(1.5)->jsonSerialize(),
+            'Finite floating-point values must retain their numeric representation.',
+        );
+    }
     public function testCapturePreservesNullAsItsOwnTaggedValue(): void
     {
         $value = DebugValue::capture(null);
@@ -383,6 +391,11 @@ final class DebugValueTest extends TestCase
             $this->flatten(DebugValue::capture($deep)),
             'Values nested past the depth limit must be truncated.',
         );
+        self::assertEquals(
+            DebugValue::capture($deep),
+            DebugValue::fromArray(DebugValue::capture($deep)->jsonSerialize()),
+            'A capture-produced depth marker must remain valid during hydration.',
+        );
     }
 
     public function testCaptureTruncatesBeyondTheNodeLimit(): void
@@ -433,6 +446,11 @@ final class DebugValueTest extends TestCase
             'truncated',
             $truncatedValue['type'] ?? null,
             'First out-of-budget node must carry the truncation marker.',
+        );
+        self::assertEquals(
+            $value,
+            DebugValue::fromArray($value->jsonSerialize()),
+            'A capture-produced node marker must remain valid during hydration.',
         );
     }
 
@@ -586,6 +604,39 @@ final class DebugValueTest extends TestCase
         );
 
         DebugValue::fromArray(['type' => 'binary', 'encoding' => 'base64', 'data' => '*invalid*']);
+    }
+
+    public function testThrowHydrationExceptionForPayloadBeyondTheDepthBudget(): void
+    {
+        $payload = ['type' => 'null'];
+
+        for ($depth = 0; $depth < 12; $depth++) {
+            $payload = [
+                'type' => 'array',
+                'entries' => [
+                    ['keyType' => 'int', 'key' => 0, 'value' => $payload],
+                ],
+            ];
+        }
+
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage('at most 10 nested levels');
+
+        DebugValue::fromArray($payload);
+    }
+
+    public function testThrowHydrationExceptionForPayloadBeyondTheNodeBudget(): void
+    {
+        $entries = [];
+
+        for ($index = 0; $index < 10_001; $index++) {
+            $entries[] = ['keyType' => 'int', 'key' => $index, 'value' => ['type' => 'null']];
+        }
+
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage('at most 10000 captured nodes');
+
+        DebugValue::fromArray(['type' => 'array', 'entries' => $entries]);
     }
 
     public function testThrowHydrationExceptionForUnknownFields(): void

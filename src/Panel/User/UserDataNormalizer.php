@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\User;
 
 use PHPForge\Debug\Helper\Icon;
+use PHPForge\Debug\Helper\SensitiveDataRedactor;
 
 use function ctype_digit;
 use function date;
@@ -125,7 +126,7 @@ final class UserDataNormalizer
                 key: $key,
                 label: self::labelFor($key, $labels),
                 displayValue: $display,
-                kind: $kind,
+                kind: $display === SensitiveDataRedactor::PLACEHOLDER ? UserAttribute::KIND_PLAIN : $kind,
             );
         }
 

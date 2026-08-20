@@ -41,7 +41,8 @@ final readonly class ToolbarPanel implements JsonSerializable
      * @return array{
      *     id: string,
      *     title: string,
-     *     items: list<array{value: string, status: string, label?: string, icon?: string, title?: string, url?: string}>,
+     *     items: list<array{value: string, status: string, label?: string, icon?: string, title?: string, url?: string,
+     *     id?: string}>,
      *     url?: string,
      *     icon?: string,
      * } Serialized panel payload.

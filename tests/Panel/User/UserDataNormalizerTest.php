@@ -181,6 +181,22 @@ final class UserDataNormalizerTest extends TestCase
         );
     }
 
+    public function testFromIdentityDoesNotOfferRevealControlsForRedactedValues(): void
+    {
+        $view = UserDataNormalizer::fromIdentity(
+            ['auth_key' => "'[redacted]'"],
+            null,
+        );
+        $attribute = $view->sections[0]->attributes[0] ?? self::fail('Expected the redacted security attribute.');
+
+        self::assertSame(
+            UserAttribute::KIND_PLAIN,
+            $attribute->kind,
+            'An irreversible placeholder must render as plain text instead of offering a reveal control.',
+        );
+        self::assertSame('[redacted]', $attribute->displayValue, 'The placeholder must remain visible.');
+    }
+
     public function testFromIdentityFallsBackMonogramToEmailWhenUsernameMissing(): void
     {
         $view = UserDataNormalizer::fromIdentity(

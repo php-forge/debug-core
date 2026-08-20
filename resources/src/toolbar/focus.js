@@ -47,6 +47,20 @@ export function isToolbarDrawerCloseMessage(event, origin, frameWindow) {
   );
 }
 
+export function isToolbarDrawerThemeMessage(event, origin, frameWindow) {
+  var data = event && event.data;
+
+  return Boolean(
+    event &&
+    event.origin === origin &&
+    frameWindow &&
+    event.source === frameWindow &&
+    data &&
+    data.source === "yii-debug-toolbar" &&
+    data.type === "theme",
+  );
+}
+
 export function requestParentToolbarDrawerClose(
   event,
   browserWindow,

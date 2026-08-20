@@ -22,6 +22,11 @@ final class CollectorCoordinator
     private bool $started = false;
 
     /**
+     * @var array<string, CollectorInterface> Collectors that still require cleanup in the active or failed cycle.
+     */
+    private array $startedCollectors = [];
+
+    /**
      * Materializes collectors and rejects empty or duplicate IDs before request capture.
      *
      * @param iterable<CollectorInterface> $collectors Registered collectors.
@@ -113,6 +118,49 @@ final class CollectorCoordinator
     }
 
     /**
+     * Runs one request operation inside a complete collector lifecycle.
+     *
+     * A cleanup failure is propagated when the operation succeeded. When the operation already failed, its exact
+     * throwable remains primary and an optional diagnostic callback receives the secondary cleanup failure. A failing
+     * diagnostic callback is deliberately ignored so instrumentation never replaces the application failure.
+     *
+     * @template TResult
+     *
+     * @param callable(): TResult $operation Request operation to execute while collectors are active.
+     * @param (callable(Throwable): void)|null $cleanupFailureHandler Optional secondary-failure observer.
+     *
+     * @return TResult Operation result.
+     *
+     * @throws Throwable When startup, the operation, or primary cleanup fails.
+     */
+    public function run(callable $operation, callable|null $cleanupFailureHandler = null): mixed
+    {
+        $this->startup();
+
+        try {
+            $result = $operation();
+        } catch (Throwable $primaryFailure) {
+            try {
+                $this->shutdown();
+            } catch (Throwable $cleanupFailure) {
+                if ($cleanupFailureHandler !== null) {
+                    try {
+                        $cleanupFailureHandler($cleanupFailure);
+                    } catch (Throwable) {
+                        // Diagnostic observers must not replace the primary application failure.
+                    }
+                }
+            }
+
+            throw $primaryFailure;
+        }
+
+        $this->shutdown();
+
+        return $result;
+    }
+
+    /**
      * Stops every collector once and propagates the first shutdown error after cleanup completes.
      *
      * Usage example:
@@ -125,16 +173,19 @@ final class CollectorCoordinator
      */
     public function shutdown(): void
     {
-        if (!$this->started) {
+        if (!$this->started && $this->startedCollectors === []) {
             return;
         }
 
         $this->started = false;
+
         $failure = null;
 
-        foreach ($this->collectors as $collector) {
+        foreach ($this->startedCollectors as $id => $collector) {
             try {
                 $collector->shutdown();
+
+                unset($this->startedCollectors[$id]);
             } catch (Throwable $throwable) {
                 $failure ??= $throwable;
             }
@@ -162,18 +213,22 @@ final class CollectorCoordinator
             return;
         }
 
-        $affectedCollectors = [];
+        if ($this->startedCollectors !== []) {
+            $this->shutdown();
+        }
 
         try {
-            foreach ($this->collectors as $collector) {
-                $affectedCollectors[] = $collector;
+            foreach ($this->collectors as $id => $collector) {
+                $this->startedCollectors[$id] = $collector;
 
                 $collector->startup();
             }
         } catch (Throwable $startupFailure) {
-            foreach ($affectedCollectors as $affectedCollector) {
+            foreach ($this->startedCollectors as $affectedId => $affectedCollector) {
                 try {
                     $affectedCollector->shutdown();
+
+                    unset($this->startedCollectors[$affectedId]);
                 } catch (Throwable) {
                     // Preserve the startup failure while continuing rollback.
                 }

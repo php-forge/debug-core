@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Storage;
 
 use JsonSerializable;
+use PHPForge\Debug\Capture\CapturePolicy;
+use SensitiveParameter;
 use Stringable;
 use Throwable;
 
 use function array_map;
-use function is_array;
 use function is_int;
 use function is_string;
 use function strrpos;
@@ -21,8 +22,8 @@ use function substr;
 final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
 {
     /**
-     * Frame arguments stay in their tagged form so a snapshot read back from disk re-serializes byte for byte;
-     * {@see getTrace()} projects them to display values on demand.
+     * Frame arguments stay in their tagged form so a snapshot read back from disk re-serializes byte for byte; newly
+     * captured snapshots deliberately persist an empty argument list.
      *
      * @param string $class Captured throwable class.
      * @param string $message Captured throwable message.
@@ -163,13 +164,13 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
      *
      * @return self Captured throwable snapshot.
      */
-    public static function fromThrowable(Throwable $throwable): self
+    public static function fromThrowable(#[SensitiveParameter] Throwable $throwable): self
     {
+        $capturePolicy = new CapturePolicy();
         $trace = [];
 
         foreach ($throwable->getTrace() as $entry) {
             $class = is_string($entry['class'] ?? null) ? $entry['class'] : '';
-            $args = is_array($entry['args'] ?? null) ? $entry['args'] : [];
 
             $trace[] = [
                 'namespace' => Json::safeString(self::namespacePart($class)),
@@ -179,7 +180,7 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
                 'function' => Json::safeString($entry['function']),
                 'file' => is_string($entry['file'] ?? null) ? Json::safeString($entry['file']) : null,
                 'line' => is_int($entry['line'] ?? null) ? $entry['line'] : null,
-                'args' => DebugArray::capture($args),
+                'args' => DebugArray::capture([]),
             ];
         }
 
@@ -193,12 +194,12 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
 
         return new self(
             class: Json::safeString($throwable::class),
-            message: Json::safeString($throwable->getMessage()),
+            message: $capturePolicy->redactText(Json::safeString($throwable->getMessage())),
             code: $code,
             file: Json::safeString($throwable->getFile()),
             line: $throwable->getLine(),
             trace: $trace,
-            toString: Json::safeString($toString),
+            toString: $capturePolicy->redactText(Json::safeString($toString)),
             previous: $throwable->getPrevious() !== null ? self::fromThrowable($throwable->getPrevious()) : null,
         );
     }
