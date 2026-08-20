@@ -47,7 +47,10 @@ export function isToolbarDrawerThemeMessage(event, origin, frameWindow) {
   var data = toolbarDrawerMessageData(event, origin, frameWindow);
 
   return Boolean(
-    data && data.source === "yii-debug-toolbar" && data.type === "theme",
+    data &&
+    typeof data === "object" &&
+    data.source === "yii-debug-toolbar" &&
+    data.type === "theme",
   );
 }
 

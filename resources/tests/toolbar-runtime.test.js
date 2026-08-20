@@ -379,6 +379,18 @@ test("theme messages are bound to the active same-origin iframe", () => {
     ),
     false,
   );
+  var callableData = function () {};
+  callableData.source = "yii-debug-toolbar";
+  callableData.type = "theme";
+
+  assert.equal(
+    isToolbarDrawerThemeMessage(
+      { ...message, data: callableData },
+      "https://example.test",
+      frameWindow,
+    ),
+    false,
+  );
 });
 
 test("embedded debug pages request drawer closure after an unhandled Escape", () => {
