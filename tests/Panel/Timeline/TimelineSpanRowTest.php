@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see TimelineSpanRow} covering the category → CSS-variant mapping, the minimum-width floor and
- * the multi-line tooltip composition.
+ * Unit tests for {@see TimelineSpanRow} covering the category → CSS-variant mapping, the minimum-width floor and the
+ * multi-line tooltip composition.
  */
 #[Group('panel')]
 #[Group('timeline')]

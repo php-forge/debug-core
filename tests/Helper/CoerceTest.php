@@ -11,8 +11,6 @@ use Stringable;
 
 /**
  * Unit tests for {@see Coerce} normalizing mixed values.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 #[Group('coerce')]
@@ -130,12 +128,19 @@ final class CoerceTest extends TestCase
     {
         self::assertSame(
             [
-                ['file' => '/app/index.php', 'line' => 10],
+                [
+                    'file' => '/app/index.php',
+                    'line' => 10,
+                ],
                 ['function' => 'run'],
             ],
             Coerce::traceFrames(
                 [
-                    ['file' => '/app/index.php', 'line' => 10, 0 => 'drop'],
+                    [
+                        'file' => '/app/index.php',
+                        'line' => 10,
+                        0 => 'drop',
+                    ],
                     'drop',
                     ['function' => 'run'],
                 ],

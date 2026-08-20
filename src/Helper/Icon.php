@@ -12,9 +12,6 @@ use function preg_match;
 
 /**
  * Renders SVG icons bundled with the debug extension via {@see Svg::tag()}.
- *
- * Icons live in the framework-neutral core asset library and are looked up by name (without extension). Results are
- * cached in-memory for the request, so repeated lookups do not re-read the file or re-run sanitization.
  */
 final class Icon
 {
@@ -25,11 +22,6 @@ final class Icon
 
     /**
      * Returns the rendered SVG markup for the given icon name, or an empty string when the file does not exist.
-     *
-     * Usage example:
-     * ```php
-     * $icon = \PHPForge\Debug\Helper\Icon::render('request');
-     * ```
      *
      * @param string $name Icon basename without the `.svg` extension (for example, `chevron-down`).
      *
@@ -51,6 +43,8 @@ final class Icon
             return self::$cache[$name] = '';
         }
 
-        return self::$cache[$name] = Svg::tag()->filePath($path)->render();
+        return self::$cache[$name] = Svg::tag()
+            ->filePath($path)
+            ->render();
     }
 }

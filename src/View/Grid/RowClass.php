@@ -14,14 +14,6 @@ final class RowClass
     /**
      * Returns the row-attributes array carrying the `yii-debug-row-<variant>` CSS class for the given status level.
      *
-     * Accepts `success`, `info`, `warning`, `danger`, and `error` (aliased to `danger`). Unknown or empty levels yield
-     * an empty array, so the caller can splat the result safely.
-     *
-     * Usage example:
-     * ```php
-     * $attributes = \PHPForge\Debug\View\Grid\RowClass::for('danger');
-     * ```
-     *
      * @param string|null $level Status keyword, or `null` to skip the class.
      *
      * @return array<string, mixed> Row-attributes array with the `class` key set, or `[]` for unknown/`null` levels.
@@ -34,6 +26,6 @@ final class RowClass
             return [];
         }
 
-        return ['class' => 'yii-debug-row-' . $normalized];
+        return ['class' => "yii-debug-row-{$normalized}"];
     }
 }

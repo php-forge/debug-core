@@ -11,9 +11,6 @@ use function max;
 
 /**
  * Typed view-model for a single database query row consumed by the queries grid.
- *
- * Resolved once at capture time from the logger timings, then persisted in that form: the SQL verb, the statement,
- * its duration, the backtrace and its hash, the duplicate count, and the reported row count.
  */
 final readonly class QueryRow implements PanelRow
 {

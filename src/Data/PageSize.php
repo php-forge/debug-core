@@ -29,7 +29,13 @@ final class PageSize
     /**
      * Selector options in display order; the literal `all` disables pagination.
      */
-    public const array OPTIONS = ['10', '25', '50', '100', 'all'];
+    public const array OPTIONS = [
+        '10',
+        '25',
+        '50',
+        '100',
+        'all',
+    ];
 
     /**
      * Returns the `per-page` selector state, canonicalizing `all` and falling back to the default.
@@ -71,11 +77,6 @@ final class PageSize
 
     /**
      * Renders the inline page-size selector shown in the grid summary header.
-     *
-     * Usage example:
-     * ```php
-     * $html = \PHPForge\Debug\Data\PageSize::selectorHtml('50');
-     * ```
      *
      * @param string $current Currently selected raw value (one of {@see OPTIONS} for a highlighted option).
      */

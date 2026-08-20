@@ -50,31 +50,23 @@ final class QueueGridRendererTest extends TestCase
 
     public function testRenderDriverCellAddsAsyncModifier(): void
     {
-        $html = QueueGridRenderer::renderDriverCell(
-            self::makeRecord(driverName: 'Redis', isAsync: true),
-        );
-
-        self::assertStringContainsString(
-            'yii-debug-queue-driver-is-async',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-queue-driver yii-debug-queue-driver-is-async" title="yii\queue\sync\Queue">Redis</span>
+            HTML,
+            QueueGridRenderer::renderDriverCell(self::makeRecord(driverName: 'Redis', isAsync: true)),
             "Async drivers must carry the 'is-async' modifier.",
         );
-        self::assertStringContainsString(
-            'Redis',
-            $html,
-            'Driver label must appear in the cell.',
-        );
-        self::assertStringContainsString(
-            'title="yii\\queue\\sync\\Queue"',
-            $html,
-            'Known driver class must be retained in the tooltip.',
-        );
+
+
     }
 
     public function testRenderDriverCellAddsSyncModifierWhenInProcess(): void
     {
-        self::assertStringContainsString(
-            'yii-debug-queue-driver-is-sync',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span>
+            HTML,
             QueueGridRenderer::renderDriverCell(self::makeRecord(driverName: 'Sync', isAsync: false)),
             "Sync drivers must carry the 'is-sync' modifier.",
         );
@@ -91,8 +83,10 @@ final class QueueGridRendererTest extends TestCase
 
     public function testRenderDriverCellUsesFallbackTooltipWhenDriverClassIsMissing(): void
     {
-        self::assertStringContainsString(
-            'title="Unknown driver"',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="Unknown driver">Custom</span>
+            HTML,
             QueueGridRenderer::renderDriverCell(self::makeRecord(driverName: 'Custom', driverClass: '')),
             'Missing driver class must use the explicit fallback tooltip.',
         );
@@ -132,96 +126,60 @@ final class QueueGridRendererTest extends TestCase
 
     public function testRenderIdCellWrapsJobIdInTagLinkSpan(): void
     {
-        $html = QueueGridRenderer::renderIdCell(
-            self::makeRecord(jobId: '69ffbbf2a6830'),
-        );
-
-        self::assertStringContainsString(
-            'class="yii-debug-tag-link"',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-tag-link">69ffbbf2a6830</span>
+            HTML,
+            QueueGridRenderer::renderIdCell(self::makeRecord(jobId: '69ffbbf2a6830')),
             'Id must reuse the History tag-link styling.',
         );
-        self::assertStringContainsString(
-            '69ffbbf2a6830',
-            $html,
-            'Cell must render the raw job id verbatim.',
-        );
+
     }
 
     public function testRenderJobCellSplitsFqcnAndWiresHref(): void
     {
-        $html = QueueGridRenderer::renderJobCell(
-            self::makeRecord(jobClass: 'app\\jobs\\HelloJob'),
-            '/debug/queue?seq=2',
-        );
-
-        self::assertStringContainsString(
-            '<strong>HelloJob</strong>',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-queue-grid-job">
+            <a class="yii-debug-queue-grid-job-link" href="/debug/queue?seq=2" title="app\jobs\HelloJob"><strong>HelloJob</strong></a><span class="yii-debug-queue-grid-job-namespace">app\jobs\</span>
+            </div>
+            HTML,
+            QueueGridRenderer::renderJobCell(
+                self::makeRecord(jobClass: 'app\\jobs\\HelloJob'),
+                '/debug/queue?seq=2',
+            ),
             'Short class name must render in bold inside the link.',
-        );
-        self::assertStringContainsString(
-            'title="app\\jobs\\HelloJob"',
-            $html,
-            'Job link tooltip must retain the full class name.',
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-queue-grid-job-namespace">app\\jobs\\</span>',
-            $html,
-            'Namespace prefix must appear under the link.',
-        );
-        self::assertStringContainsString(
-            'href="/debug/queue?seq=2"',
-            $html,
-            'Detail href must be wired to the row link.',
         );
     }
 
     public function testRenderStatusCellRendersFailedVariantForErrorEvents(): void
     {
-        $html = QueueGridRenderer::renderStatusCell(
-            self::makeRecord(eventType: 'error'),
-        );
-
-        self::assertStringContainsString(
-            'yii-debug-queue-status-failed',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-queue-status yii-debug-queue-status-failed">Failed</span>
+            HTML,
+            QueueGridRenderer::renderStatusCell(self::makeRecord(eventType: 'error')),
             "Error events must produce the 'failed' modifier.",
-        );
-        self::assertStringContainsString(
-            'Failed',
-            $html,
-            "Error events must show the 'Failed' label.",
         );
     }
 
     public function testRenderStatusCellRendersQueuedVariantForPushEvents(): void
     {
-        $html = QueueGridRenderer::renderStatusCell(
-            self::makeRecord(eventType: 'push'),
-        );
-
-        self::assertStringContainsString(
-            'yii-debug-queue-status-queued',
-            $html,
+        self::assertSame(
+            <<<'HTML'
+            <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span>
+            HTML,
+            QueueGridRenderer::renderStatusCell(self::makeRecord(eventType: 'push')),
             "Push events must produce the 'queued' modifier.",
         );
-        self::assertStringContainsString(
-            'Queued',
-            $html,
-            "Push events must show the 'Queued' label.",
-        );
+
     }
 
     public function testRenderTimeCellFormatsMicrotimeAsHmsWithMilliseconds(): void
     {
-        $html = QueueGridRenderer::renderTimeCell(
-            self::makeRecord(time: 1_704_112_496.789),
-        );
-
         self::assertSame(
             date('H:i:s', 1_704_112_496) . '.789',
-            $html,
+            QueueGridRenderer::renderTimeCell(self::makeRecord(time: 1_704_112_496.789)),
             "Time cell must preserve the exact 'HH:MM:SS.mmm' value.",
         );
     }
@@ -251,7 +209,6 @@ final class QueueGridRendererTest extends TestCase
             QueueGridRenderer::renderTtrCell(self::makeRecord(ttr: null)),
             "Null TTR must yield '—'.",
         );
-
         self::assertSame(
             '—',
             QueueGridRenderer::renderTtrCell(self::makeRecord(ttr: 0)),

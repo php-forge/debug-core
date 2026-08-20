@@ -17,7 +17,6 @@ use function array_key_exists;
 use function array_key_first;
 use function base64_decode;
 use function base64_encode;
-use function count;
 use function get_object_vars;
 use function get_resource_type;
 use function in_array;
@@ -92,12 +91,6 @@ final readonly class DebugValue implements JsonSerializable
     /**
      * Captures an arbitrary PHP value as JSON-safe tagged data.
      *
-     * Usage example:
-     *
-     * ```php
-     * $value = \PHPForge\Debug\Storage\DebugValue::capture(['enabled' => true]);
-     * ```
-     *
      * @param mixed $value PHP value to capture.
      *
      * @return self Tagged debug value.
@@ -114,12 +107,6 @@ final readonly class DebugValue implements JsonSerializable
     /**
      * Hydrates a tagged debug value from decoded JSON data.
      *
-     * Usage example:
-     *
-     * ```php
-     * $value = \PHPForge\Debug\Storage\DebugValue::fromArray(['type' => 'int', 'value' => 42]);
-     * ```
-     *
      * @param mixed $data Decoded tagged value.
      * @param string $path Payload path used in hydration errors.
      *
@@ -134,12 +121,6 @@ final readonly class DebugValue implements JsonSerializable
 
     /**
      * Returns the tagged value for JSON serialization.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $data = \PHPForge\Debug\Storage\DebugValue::capture(['enabled' => true])->jsonSerialize();
-     * ```
      *
      * @return array<string, mixed> Tagged debug value payload.
      */
@@ -784,10 +765,6 @@ final readonly class DebugValue implements JsonSerializable
             if (!array_key_exists($key, $payload)) {
                 throw HydrationException::at("{$path}.{$key}", 'a required field');
             }
-        }
-
-        if (count($payload) === count($shape)) {
-            return;
         }
 
         $unknown = array_diff_key($payload, $shape);

@@ -19,10 +19,6 @@ use function is_string;
 
 /**
  * Renders the typed sections of the Configuration panel detail view.
- *
- * Stateless static helpers: every method takes the data it needs as arguments and returns the rendered HTML tree.
- * Concentrates the render logic (readout cards, extension pills, package list, php-info CTA) in one testable place,
- * keeping the detail view focused on page-level scaffolding.
  */
 final class ConfigCardRenderer
 {
@@ -230,10 +226,8 @@ final class ConfigCardRenderer
         return Div::tag()
             ->class('yii-debug-dl-row')
             ->html(
-                Dt::tag()
-                    ->content($term),
-                Dd::tag()
-                    ->content($value),
+                Dt::tag()->content($term),
+                Dd::tag()->content($value),
             );
     }
 
@@ -303,7 +297,8 @@ final class ConfigCardRenderer
             $metaWrap,
         ];
 
-        return Article::tag()->class('yii-debug-readout-card')
+        return Article::tag()
+            ->class('yii-debug-readout-card')
             ->html(...$children);
     }
 }

@@ -26,12 +26,6 @@ final readonly class PanelFailure implements JsonSerializable
     /**
      * Hydrates a panel failure from decoded JSON data.
      *
-     * Usage example:
-     *
-     * ```php
-     * $failure = \PHPForge\Debug\Storage\PanelFailure::fromArray($data, '$.failures.log');
-     * ```
-     *
      * @param mixed $data Decoded panel failure payload.
      * @param string $path Payload path used in hydration errors.
      *
@@ -65,15 +59,6 @@ final readonly class PanelFailure implements JsonSerializable
     /**
      * Captures a throwable raised during a panel lifecycle stage.
      *
-     * Usage example:
-     *
-     * ```php
-     * $failure = \PHPForge\Debug\Storage\PanelFailure::fromThrowable(
-     *     \PHPForge\Debug\Storage\PanelFailure::CAPTURE,
-     *     new \RuntimeException('Capture failed.'),
-     * );
-     * ```
-     *
      * @param 'capture'|'hydrate' $stage Lifecycle stage the panel failed in.
      * @param Throwable $throwable Panel exception to capture.
      *
@@ -89,15 +74,6 @@ final readonly class PanelFailure implements JsonSerializable
 
     /**
      * Returns the failure record for JSON serialization.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $data = \PHPForge\Debug\Storage\PanelFailure::fromThrowable(
-     *     \PHPForge\Debug\Storage\PanelFailure::CAPTURE,
-     *     new \RuntimeException('Capture failed.'),
-     * )->jsonSerialize();
-     * ```
      *
      * @return array<string, mixed> Serialized failure stage and exception.
      */

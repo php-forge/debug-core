@@ -12,8 +12,6 @@ use function current;
 
 /**
  * Unit tests for {@see ToolbarData} serializing portable toolbar panels and metrics.
- *
- * @since 0.1
  */
 #[Group('toolbar')]
 final class ToolbarDataTest extends TestCase

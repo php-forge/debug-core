@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see Dump} covering the display and parsable renderings of the JSON-safe value domain.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 final class DumpTest extends TestCase

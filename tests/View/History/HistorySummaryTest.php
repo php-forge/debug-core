@@ -12,8 +12,6 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for {@see HistorySummary} covering the manifest aggregation that feeds the History index summary header
  * total requests, per-bucket counts/sample codes/variants and the unique status-code filter map.
- *
- * @since 0.1
  */
 #[Group('view')]
 #[Group('history')]
@@ -58,8 +56,16 @@ final class HistorySummaryTest extends TestCase
             ],
         );
 
-        self::assertSame(2, $summary->totalRequests, 'Total count must reflect every typed manifest entry.');
-        self::assertCount(2, $summary->statusBuckets, 'Each status family must contribute one bucket.');
+        self::assertSame(
+            2,
+            $summary->totalRequests,
+            'Total count must reflect every typed manifest entry.',
+        );
+        self::assertCount(
+            2,
+            $summary->statusBuckets,
+            'Each status family must contribute one bucket.',
+        );
     }
 
     public function testFromManifestExposesEmptyFilterWhenNoStatusCaptured(): void
@@ -83,8 +89,15 @@ final class HistorySummaryTest extends TestCase
 
         $first = $summary->statusBuckets[0] ?? null;
 
-        self::assertNotNull($first, 'Bucket list must be non-empty.');
-        self::assertSame(201, $first->sampleCode, 'Sample code must be the first observed in the bucket.');
+        self::assertNotNull(
+            $first,
+            'Bucket list must be non-empty.',
+        );
+        self::assertSame(
+            201,
+            $first->sampleCode,
+            'Sample code must be the first observed in the bucket.',
+        );
     }
 
     public function testFromManifestKeepsStatusFamilyBoundariesExclusive(): void
@@ -172,9 +185,20 @@ final class HistorySummaryTest extends TestCase
     {
         $summary = HistorySummary::fromManifest([]);
 
-        self::assertSame(0, $summary->totalRequests, 'Empty manifest must yield zero total requests.');
-        self::assertSame([], $summary->statusBuckets, 'Empty manifest must yield no buckets.');
-        self::assertNull($summary->statusCodeFilter, 'Empty manifest must yield a null filter dropdown.');
+        self::assertSame(
+            0,
+            $summary->totalRequests,
+            'Empty manifest must yield zero total requests.',
+        );
+        self::assertSame(
+            [],
+            $summary->statusBuckets,
+            'Empty manifest must yield no buckets.',
+        );
+        self::assertNull(
+            $summary->statusCodeFilter,
+            'Empty manifest must yield a null filter dropdown.',
+        );
     }
 
     public function testFromManifestSkipsRequestsWithStatusBelow200(): void
@@ -188,8 +212,15 @@ final class HistorySummaryTest extends TestCase
 
         $first = $summary->statusBuckets[0] ?? null;
 
-        self::assertNotNull($first, "Bucket list must surface the '200' entry.");
-        self::assertSame(1, $first->count, "Status '100' must not contribute to any bucket.");
+        self::assertNotNull(
+            $first,
+            "Bucket list must surface the '200' entry.",
+        );
+        self::assertSame(
+            1,
+            $first->count,
+            "Status '100' must not contribute to any bucket.",
+        );
     }
 
     public function testFromManifestSortsUniqueStatusCodes(): void

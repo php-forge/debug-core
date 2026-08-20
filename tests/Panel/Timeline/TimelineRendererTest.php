@@ -8,6 +8,7 @@ use PHPForge\Debug\Panel\Profile\ProfileRow;
 use PHPForge\Debug\Panel\Timeline\{TimelineGeometry, TimelineRenderer};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Unit tests for {@see TimelineRenderer} preserving the complete cross-adapter Timeline markup contract.
@@ -16,6 +17,29 @@ use PHPUnit\Framework\TestCase;
 #[Group('timeline')]
 final class TimelineRendererTest extends TestCase
 {
+    public function testRenderChartDeclaresExactScalarDefaults(): void
+    {
+        $parameters = (new ReflectionMethod(TimelineRenderer::class, 'renderChart'))->getParameters();
+        $defaults = [];
+
+        foreach ($parameters as $parameter) {
+            if ($parameter->isDefaultValueAvailable()) {
+                $defaults[$parameter->getName()] = $parameter->getDefaultValue();
+            }
+        }
+
+        self::assertSame(
+            0,
+            $defaults['memory'] ?? null,
+            'Peak memory must default to exactly zero bytes.',
+        );
+        self::assertSame(
+            40,
+            $defaults['memoryHeight'] ?? null,
+            'Memory chart height must default to exactly 40 pixels.',
+        );
+    }
+
     public function testRenderChartFormatsSecondsAndOmitsSingleCategoryLegend(): void
     {
         $rows = TimelineGeometry::spans(
@@ -39,6 +63,83 @@ final class TimelineRendererTest extends TestCase
             'A single category must not render a redundant legend.',
         );
     }
+
+    public function testRenderChartFormatsTickBoundariesExactly(): void
+    {
+        $rows = TimelineGeometry::spans(
+            [new ProfileRow(0.0, 10.0, 'Queue\\Job', 'job', 0, 0, 0, 0, [])],
+            0.0,
+            100.0,
+        );
+
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-tl">
+            <header class="yii-debug-tl-axis">
+            <span class="yii-debug-tl-tick" style='left: 10%;'>1 s</span><span class="yii-debug-tl-tick" style='left: 20%;'>1 s</span><span class="yii-debug-tl-tick" style='left: 30%;'>1.1 s</span>
+            </header><div class="yii-debug-tl-rows" role="list">
+            <div class="yii-debug-tl-row yii-debug-tl-row-queue" title="job
+            10.000 ms · 0.00 MB" role="listitem">
+            <div class="yii-debug-tl-label" style='--depth: 0;'>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span>
+            </div><div class="yii-debug-tl-track">
+            <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
+            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            </div>
+            </div>
+            </div>
+            </div>
+            </section>
+            HTML,
+            TimelineRenderer::renderChart($rows, [1_000 => 10.0, 1_049 => 20.0, 1_050 => 30.0]),
+            'Millisecond-to-second boundaries and decimal trimming must render exactly.',
+        );
+    }
+
+    public function testRenderChartIncludesNonAdjacentLegendVariants(): void
+    {
+        $rows = TimelineGeometry::spans(
+            [
+                new ProfileRow(0.0, 10.0, 'Yii3\\Application::handle', 'app', 0, 0, 0, 0, []),
+                new ProfileRow(10.0, 10.0, 'Queue\\Job', 'queue', 0, 1, 0, 0, []),
+            ],
+            0.0,
+            100.0,
+        );
+
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-tl">
+            <header class="yii-debug-tl-axis">
+            </header><div class="yii-debug-tl-legend">
+            <span class="yii-debug-tl-legend-item yii-debug-tl-row-app"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Application</span></span><span class="yii-debug-tl-legend-item yii-debug-tl-row-queue"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Queue</span></span>
+            </div><div class="yii-debug-tl-rows" role="list">
+            <div class="yii-debug-tl-row yii-debug-tl-row-app" title="app
+            10.000 ms · 0.00 MB" role="listitem">
+            <div class="yii-debug-tl-label" style='--depth: 0;'>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span>
+            </div><div class="yii-debug-tl-track">
+            <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
+            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            </div>
+            </div>
+            </div><div class="yii-debug-tl-row yii-debug-tl-row-queue" title="queue
+            10.000 ms · 0.00 MB" role="listitem">
+            <div class="yii-debug-tl-label" style='--depth: 0;'>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span>
+            </div><div class="yii-debug-tl-track">
+            <div class="yii-debug-tl-bar" style='left: 10%; width: 10%;'>
+            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            </div>
+            </div>
+            </div>
+            </div>
+            </section>
+            HTML,
+            TimelineRenderer::renderChart($rows, []),
+            'Legend traversal must retain variants separated by absent canonical categories.',
+        );
+    }
     public function testRenderChartProducesExactSharedMarkup(): void
     {
         $rows = TimelineGeometry::spans(
@@ -51,7 +152,7 @@ final class TimelineRendererTest extends TestCase
         );
 
         self::assertSame(
-            <<<'HTML'
+            <<<HTML
             <section class="yii-debug-tl">
             <header class="yii-debug-tl-axis">
             <span class="yii-debug-tl-tick" style='left: 0%;'>0 ms</span><span class="yii-debug-tl-tick" style='left: 50%;'>50 ms</span>
@@ -93,10 +194,45 @@ final class TimelineRendererTest extends TestCase
             'A chart without spans must stay empty.',
         );
     }
+
+    public function testRenderChartUsesExactDefaultMemoryValues(): void
+    {
+        $rows = TimelineGeometry::spans(
+            [new ProfileRow(0.0, 10.0, 'Queue\\Job', 'job', 0, 0, 0, 0, [])],
+            0.0,
+            100.0,
+        );
+
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-tl">
+            <header class="yii-debug-tl-axis">
+            </header><div class="yii-debug-tl-rows" role="list">
+            <div class="yii-debug-tl-row yii-debug-tl-row-queue" title="job
+            10.000 ms · 0.00 MB" role="listitem">
+            <div class="yii-debug-tl-label" style='--depth: 0;'>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span>
+            </div><div class="yii-debug-tl-track">
+            <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
+            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            </div>
+            </div>
+            </div>
+            </div><footer class="yii-debug-tl-memory">
+            <span class="yii-debug-tl-memory-label">Memory</span><div class="yii-debug-tl-memory-track" style='height: 40px;'>
+            <svg></svg>
+            </div><span class="yii-debug-tl-memory-peak">0.00 MB</span>
+            </footer>
+            </section>
+            HTML,
+            TimelineRenderer::renderChart($rows, [], '<svg></svg>'),
+            'The default memory value and footer height must render exactly.',
+        );
+    }
     public function testRenderFilterFormProducesExactSharedMarkup(): void
     {
         self::assertSame(
-            <<<'HTML'
+            <<<HTML
             <form class="yii-debug-tl-filter" action="/debug/view" method="get">
             <input name="tag" type="hidden" value="request-1"><input name="panel" type="hidden" value="timeline"><div class="yii-debug-tl-field">
             <label for="tl-duration">Min duration (ms)</label><input id="tl-duration" name="Timeline[duration]" type="number" value="5" min="0" placeholder="0" step="0.1">
@@ -118,7 +254,7 @@ final class TimelineRendererTest extends TestCase
     public function testRenderHintAndSummaryProduceExactSharedMarkup(): void
     {
         self::assertSame(
-            <<<'HTML'
+            <<<HTML
             <header class="yii-debug-grid-summary">
             <span><strong>123</strong> ms total</span><span class="yii-debug-grid-summary-sep">·</span><span><strong>2.00 MB</strong> peak memory</span><span class="yii-debug-grid-summary-sep">·</span><span><strong>2</strong> spans</span>
             </header>

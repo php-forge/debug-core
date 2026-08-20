@@ -11,9 +11,6 @@ use function ksort;
 
 /**
  * Typed aggregate view-model for the History index summary header.
- *
- * Pre-computes the captured-request total, the per-status-bucket counts + sample codes, and the unique status-code list
- * consumed by the grid's status filter dropdown.
  */
 final readonly class HistorySummary
 {

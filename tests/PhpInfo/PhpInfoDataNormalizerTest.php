@@ -21,8 +21,6 @@ use Xepozz\InternalMocker\MockerState;
  * tile-kind classification (pill / path / token list) and the wrapping of module blocks into deep-linkable sections.
  *
  * {@see PhpInfoDataNormalizerProvider} for test case data providers.
- *
- * @since 0.1
  */
 #[Group('phpinfo')]
 final class PhpInfoDataNormalizerTest extends TestCase
@@ -91,7 +89,10 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $osTile = $this->findTileByLabel($view, 'OS');
 
-        self::assertNotNull($osTile, 'Capture must surface the runtime OS tile.');
+        self::assertNotNull(
+            $osTile,
+            'Capture must surface the runtime OS tile.',
+        );
         self::assertSame(
             php_uname('s') . ' ' . php_uname('r'),
             $osTile->displayValue,
@@ -178,7 +179,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputClassifiesAndEnhancesModuleTables(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>curl</h2>
         <table>
         <tr><td class="e">cURL support</td><td class="v">enabled</td></tr>
@@ -193,35 +194,21 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringContainsString(
-            'yii-debug-phpinfo-table-section is-facts',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-curl" data-section="curl"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-curl-heading">curl</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">2 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">cURL support</th><td class="v"><span class="yii-debug-phpinfo-status-pill" data-variant="success">enabled</span></td></tr>
+            <tr class="yii-debug-phpinfo-fact-subheading"><th colspan="2">Features</th></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">HTTP2</th><td class="v"><span class="yii-debug-phpinfo-status-pill" data-variant="success">Yes</span></td></tr>
+            </table></div></div>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-directives"><header class="yii-debug-phpinfo-table-section-head"><span>Configuration directives</span><span class="yii-debug-phpinfo-table-section-count">1 directive</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Configuration directives" class="yii-debug-table is-directives">
+            <tr class="h"><th>Directive</th><th>Local Value</th><th>Master Value</th></tr>
+            <tr><th scope="row" class="e">curl.cainfo</th><td class="v"><i>no value</i></td><td class="v"><i>no value</i></td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'Two-column module metadata must use the compact facts presentation.',
-        );
-        self::assertStringContainsString(
-            '<span>Module information</span><span class="yii-debug-phpinfo-table-section-count">2 values</span>',
-            $view->modulesHtml,
-            'Facts must expose a descriptive heading and exclude subsection rows from the value count.',
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-phpinfo-status-pill" data-variant="success">enabled</span>',
-            $view->modulesHtml,
-            'Enabled module capabilities must render as success pills.',
-        );
-        self::assertStringContainsString(
-            '<tr class="yii-debug-phpinfo-fact-subheading"><th colspan="2">Features</th></tr>',
-            $view->modulesHtml,
-            'Single-cell labels inside fact tables must become full-width subsection headings.',
-        );
-        self::assertStringContainsString(
-            'yii-debug-phpinfo-table-section is-directives',
-            $view->modulesHtml,
-            'Local/master configuration tables must retain a dense directives presentation.',
-        );
-        self::assertStringContainsString(
-            '<span>Configuration directives</span><span class="yii-debug-phpinfo-table-section-count">1 directive</span>',
-            $view->modulesHtml,
-            'Directive tables must surface an accurate directive count.',
         );
     }
 
@@ -423,7 +410,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputDoesNotRedactOrdinaryModuleDirectives(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>session</h2>
         <table>
         <tr class="h"><th>Directive</th><th>Local Value</th><th>Master Value</th></tr>
@@ -433,21 +420,23 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringNotContainsString(
-            'yii-debug-phpinfo-redacted',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-session" data-section="session"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-session-heading">session</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-directives"><header class="yii-debug-phpinfo-table-section-head"><span>Configuration directives</span><span class="yii-debug-phpinfo-table-section-count">1 directive</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Configuration directives" class="yii-debug-table is-directives">
+            <tr class="h"><th>Directive</th><th>Local Value</th><th>Master Value</th></tr>
+            <tr><th scope="row" class="e">session.cookie_path</th><td class="v">/</td><td class="v">/</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'Sensitive-name detection must not hide ordinary lowercase PHP directives.',
         );
-        self::assertStringContainsString(
-            '<td class="v">/</td><td class="v">/</td>',
-            $view->modulesHtml,
-            'Ordinary directive values must remain intact.',
-        );
+
     }
 
     public function testFromOutputDoesNotRedactTokenizerSupport(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>tokenizer</h2>
         <table><tr><td class="e">Tokenizer Support</td><td class="v">enabled</td></tr></table>
         HTML;
@@ -556,8 +545,11 @@ final class PhpInfoDataNormalizerTest extends TestCase
             substr_count($view->modulesHtml, 'data-yii-debug-phpinfo-default-open="true"'),
             'Only the first populated variable group must be expanded initially.',
         );
-        self::assertStringContainsString(
-            '<details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="true" open><summary',
+        self::assertSame(
+            <<<'HTML'
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-php-variables" data-section="PHP Variables"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-php-variables-heading">PHP Variables</h2></header>
+            <details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="true" open><summary class="yii-debug-phpinfo-table-section-head"><span>Request</span><span class="yii-debug-phpinfo-table-section-count">1 row</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Request" class="yii-debug-table is-data"><tr class="H"><th>Variable</th><th>Value</th></tr><tr><th scope="row" class="e">$_REQUEST['page']</th><td class="v">1</td></tr></table></div></details><details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="false"><summary class="yii-debug-phpinfo-table-section-head"><span>Cookies</span><span class="yii-debug-phpinfo-table-section-count">1 row</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Cookies" class="yii-debug-table is-data"><tr class="H"><th>Variable</th><th>Value</th></tr><tr><th scope="row" class="e">$_COOKIE['theme']</th><td  class="v"><span class="yii-debug-phpinfo-redacted" aria-label="Sensitive value hidden">redacted</span></td></tr></table></div></details><details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="false"><summary class="yii-debug-phpinfo-table-section-head"><span>Server</span><span class="yii-debug-phpinfo-table-section-count">1 row</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Server" class="yii-debug-table is-data"><tr class="H"><th>Variable</th><th>Value</th></tr><tr><th scope="row" class="e">$_SERVER['REQUEST_METHOD']</th><td class="v">GET</td></tr></table></div></details><details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="false"><summary class="yii-debug-phpinfo-table-section-head"><span>Environment</span><span class="yii-debug-phpinfo-table-section-count">1 row</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Environment" class="yii-debug-table is-data"><tr class="H"><th>Variable</th><th>Value</th></tr><tr><th scope="row" class="e">APP_ENV</th><td class="v">dev</td></tr></table></div></details></section>
+            HTML,
             $view->modulesHtml,
             'The first variable group must use an open details disclosure.',
         );
@@ -576,7 +568,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
     public function testFromOutputIgnoresColspanSubheadingsWhenSummarizingAModule(): void
     {
         // `php_info_print_table_colspan_header()` emits a single-cell row inside an otherwise two-column facts table.
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>ftp</h2>
         <table>
         <tr><td class="e">FTP support</td><td class="v">enabled</td></tr>
@@ -629,7 +621,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputKeepsLongValueListsInStandaloneModules(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>PDO</h2>
         <table>
         <tr><td class="e">PDO support</td><td class="v">enabled</td></tr>
@@ -644,8 +636,14 @@ final class PhpInfoDataNormalizerTest extends TestCase
             $view->compactModules,
             'Capability lists must not be compressed into a small card.',
         );
-        self::assertStringContainsString(
-            'id="phpinfo-pdo"',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-pdo" data-section="PDO"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-pdo-heading">PDO</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">2 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">PDO support</th><td class="v"><span class="yii-debug-phpinfo-status-pill" data-variant="success">enabled</span></td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">PDO drivers</th><td class="v">mysql, pgsql, sqlite, oci, sqlsrv</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'PDO driver information must retain its own panel.',
         );
@@ -662,8 +660,10 @@ final class PhpInfoDataNormalizerTest extends TestCase
             $view->compactModules,
             'A blank value must block the Overview summary.',
         );
-        self::assertStringContainsString(
-            'id="phpinfo-example"',
+        self::assertSame(
+            <<<'HTML'
+        <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-example" data-section="example"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-example-heading">example</h2></header><div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">1 value</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts"><tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Statistics</th><td class="v"></td></tr></table></div></div></section>
+        HTML,
             $view->modulesHtml,
             'The module must keep its own section instead.',
         );
@@ -671,7 +671,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputKeepsOverviewBoundariesAndDropsEmptySections(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <tr><td> Build Date </td><td> overview build </td></tr>
         <h2>example</h2>
         <table>
@@ -697,7 +697,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputKeepsOverviewHeadingOutOfModuleParsing(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h1>Overview</h1>
         <table>
         <tr><td>Build Date</td><td>overview build</td></tr>
@@ -721,8 +721,16 @@ final class PhpInfoDataNormalizerTest extends TestCase
             array_map(static fn(PhpInfoTocEntry $entry): string => $entry->title, $view->tocEntries),
             'The overview heading must not create a duplicate module navigation entry.',
         );
-        self::assertStringNotContainsString(
-            'id="phpinfo-overview"',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-example" data-section="example"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-example-heading">example</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">4 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">First</th><td class="v">one</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Second</th><td class="v">two</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Third</th><td class="v">three</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Fourth</th><td class="v">four</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'The overview prefix must not be rendered again as a detailed module.',
         );
@@ -746,10 +754,16 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringContainsString(
-            "<span>{$expectedLabel}</span>",
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-example" data-section="example"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-example-heading">example</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data"><header class="yii-debug-phpinfo-table-section-head"><span>{$expectedLabel}</span><span class="yii-debug-phpinfo-table-section-count">1 row</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="{$expectedLabel}" class="yii-debug-table is-data">
+            <tr class="h">{$headers}</tr>
+            <tr><th scope="row" class="e">first</th><td class="v">second</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
-            'Head bar must name the data table.',
+            'Data tables must render the exact labeled module markup.',
         );
     }
 
@@ -759,8 +773,10 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringContainsString(
-            '<span>Notes</span><span class="yii-debug-phpinfo-table-section-count">1 note</span>',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-example" data-section="example"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-example-heading">example</h2></header><div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-note"><header class="yii-debug-phpinfo-table-section-head"><span>Notes</span><span class="yii-debug-phpinfo-table-section-count">1 note</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Notes" class="yii-debug-table is-note"><tr><td>License text</td></tr></table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'A single-column table without a native caption must use the Notes label.',
         );
@@ -769,8 +785,10 @@ final class PhpInfoDataNormalizerTest extends TestCase
     public function testFromOutputLeavesConfigureCommandUntouchedWithoutHome(): void
     {
         unset($_SERVER['HOME'], $_SERVER['USERPROFILE']);
+
         putenv('HOME');
         putenv('USERPROFILE');
+
         MockerState::addCondition('PHPForge\Debug\PhpInfo', 'function_exists', [], false, true);
 
         $view = PhpInfoDataNormalizer::fromOutput(
@@ -791,6 +809,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
     public function testFromOutputMarksLongFactValuesAsWide(): void
     {
         $long = str_repeat('a', 73);
+
         // A fourth fact keeps the module out of the Overview summary, so the rows reach the fact-row normalizer.
         $body = <<<HTML
         <h2>example</h2>
@@ -804,22 +823,27 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringContainsString(
-            'class="yii-debug-phpinfo-fact yii-debug-phpinfo-fact-wide"',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-example" data-section="example"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-example-heading">example</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">4 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Short</th><td class="v">brief</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Another</th><td class="v">value</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Third</th><td class="v">value</td></tr>
+            <tr class="yii-debug-phpinfo-fact yii-debug-phpinfo-fact-wide"><th scope="row" class="e">Long</th><td class="v">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'Values beyond 72 characters must claim the full row.',
         );
-        self::assertStringContainsString(
-            '<tr class="yii-debug-phpinfo-fact">',
-            $view->modulesHtml,
-            'Short values must keep the compact row.',
-        );
+
     }
 
     public function testFromOutputNormalizesFactRowWhitespaceAttributesAndUnicodeWidth(): void
     {
         $unicodeValue = str_repeat('é', 40);
         $boundaryValue = str_repeat('a', 72);
+
         $body = <<<HTML
         <h2>example</h2>
         <table>
@@ -834,41 +858,32 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringContainsString(
-            '<tr data-source="fixture" class="yii-debug-phpinfo-fact-subheading"><th colspan="2"><strong>Heading</strong></th></tr>',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-example" data-section="example"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-example-heading">example</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">5 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr data-source="fixture" class="yii-debug-phpinfo-fact-subheading"><th colspan="2"><strong>Heading</strong></th></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">First</th><td class="v">one</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Second</th><td class="other">enabled</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Status</th><td class="V"><span class="yii-debug-phpinfo-status-pill" data-variant="success">ENABLED</span></td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Unicode</th><td class="v">éééééééééééééééééééééééééééééééééééééééé</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Boundary</th><td class="v">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'Fact subheadings must trim content and normalize row attributes without extra whitespace.',
         );
-        self::assertStringNotContainsString(
-            'yii-debug-phpinfo-fact-wide',
-            $view->modulesHtml,
-            'Unicode values and values of exactly 72 characters must remain compact facts.',
-        );
+
         self::assertSame(
             1,
             substr_count($view->modulesHtml, 'yii-debug-phpinfo-status-pill'),
             'Only class-v status cells may become status pills.',
         );
-        self::assertStringContainsString(
-            'data-variant="success">ENABLED</span>',
-            $view->modulesHtml,
-            'Status matching must ignore case and trim visible pill content.',
-        );
-        self::assertStringContainsString(
-            '<td class="other">enabled</td>',
-            $view->modulesHtml,
-            'Non-status table cells must round-trip unchanged.',
-        );
-        self::assertStringContainsString(
-            '<div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header',
-            $view->modulesHtml,
-            'Ordinary module tables must use non-collapsible div and header chrome.',
-        );
     }
 
     public function testFromOutputOmitsModulesWithoutContentRows(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>Additional Modules</h2>
         <table><tr class="h"><th>Module Name</th></tr></table>
         <h2>Core</h2>
@@ -886,8 +901,15 @@ final class PhpInfoDataNormalizerTest extends TestCase
             array_map(static fn(PhpInfoTocEntry $entry): string => $entry->title, $view->tocEntries),
             'A title-only phpinfo table must not create an empty navigation destination.',
         );
-        self::assertStringNotContainsString(
-            'phpinfo-additional-modules',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-core" data-section="Core"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-core-heading">Core</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">3 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><td>Version</td><td>8.5</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><td>Debug</td><td>disabled</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><td>Thread Safety</td><td>disabled</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'Empty modules must be omitted from the rendered content.',
         );
@@ -899,7 +921,11 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertSame('', $view->modulesHtml, 'Whitespace-only table cells must not create an empty module.');
+        self::assertSame(
+            '',
+            $view->modulesHtml,
+            'Whitespace-only table cells must not create an empty module.',
+        );
         self::assertSame(
             ['Overview'],
             array_map(static fn(PhpInfoTocEntry $entry): string => $entry->title, $view->tocEntries),
@@ -909,7 +935,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputPreservesRedactedRowAttributes(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>Environment</h2>
         <table><tr data-source="fixture"><td class="e">DB_PASSWORD</td><td class="v">secret</td></tr></table>
         HTML;
@@ -925,7 +951,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputProducesTocEntryPerDetailedModuleH2(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>apcu</h2>
         <table><tr><td>Version</td><td>5.1.0</td></tr></table>
         <table>
@@ -967,7 +993,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputProducesUniqueSlugsForTocEntries(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>apcu</h2>
         <table>
         <tr><td>Version</td><td>5.1</td></tr>
@@ -1036,7 +1062,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputReadsMultilineCaseInsensitiveHeadersAndCountsOnlyDataRows(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>example</h2>
         <table>
         <tr class="H">
@@ -1049,8 +1075,13 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringContainsString(
-            '<span>Other</span><span class="yii-debug-phpinfo-table-section-count">2 rows</span>',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-example" data-section="example"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-example-heading">example</h2></header>
+            <details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="true" open><summary class="yii-debug-phpinfo-table-section-head"><span>Other</span><span class="yii-debug-phpinfo-table-section-count">2 rows</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Other" class="yii-debug-table is-data"><tr class="H">
+            <th>Variable</th><th>Value</th>
+            </tr><tr><th scope="row" class="e"><span class="h">first</span></th><td class="v">one</td></tr><tr><th scope="row" class="e">second</th><td class="v">two</td></tr></table></div></details></section>
+            HTML,
             $view->modulesHtml,
             'Multiline uppercase variable headers must enable grouping and stay out of the data count.',
         );
@@ -1076,61 +1107,19 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringNotContainsString(
-            'sensitive-cookie-value',
+        self::assertSame(
+            <<<'HTML'
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-php-variables" data-section="PHP Variables"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-php-variables-heading">PHP Variables</h2></header>
+            <details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="true" open><summary class="yii-debug-phpinfo-table-section-head"><span>Cookies</span><span class="yii-debug-phpinfo-table-section-count">1 row</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Cookies" class="yii-debug-table is-data"><tr class="h"><th>Variable</th><th>Value</th></tr><tr><th scope="row" class="e">$_COOKIE['XSRF-TOKEN']</th><td  class="v"><span class="yii-debug-phpinfo-redacted" aria-label="Sensitive value hidden">redacted</span></td></tr></table></div></details><details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="false"><summary class="yii-debug-phpinfo-table-section-head"><span>Server</span><span class="yii-debug-phpinfo-table-section-count">1 row</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Server" class="yii-debug-table is-data"><tr class="h"><th>Variable</th><th>Value</th></tr><tr><th scope="row" class="e">$_SERVER['PHP_AUTH_PW']</th><td  class="v"><span class="yii-debug-phpinfo-redacted" aria-label="Sensitive value hidden">redacted</span></td></tr></table></div></details><details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="false"><summary class="yii-debug-phpinfo-table-section-head"><span>Environment</span><span class="yii-debug-phpinfo-table-section-count">6 rows</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Environment" class="yii-debug-table is-data"><tr class="h"><th>Variable</th><th>Value</th></tr><tr><th scope="row" class="e">APP_KEY</th><td  class="v"><span class="yii-debug-phpinfo-redacted" aria-label="Sensitive value hidden">redacted</span></td></tr><tr><th scope="row" class="e">WEBHOOK_SIGNATURE</th><td  class="v"><span class="yii-debug-phpinfo-redacted" aria-label="Sensitive value hidden">redacted</span></td></tr><tr><th scope="row" class="e">PWD</th><td class="v">/srv/app</td></tr><tr><th scope="row" class="e">OLDPWD</th><td class="v">/srv</td></tr><tr><th scope="row" class="e">CHPWD_STATUS</th><td class="v">unchanged</td></tr><tr><th scope="row" class="e">APP_NAME</th><td class="v">Yii application</td></tr></table></div></details><details class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-data yii-debug-phpinfo-variable-group" data-yii-debug-phpinfo-collapsible="true" data-yii-debug-phpinfo-default-open="false"><summary class="yii-debug-phpinfo-table-section-head"><span>Other</span><span class="yii-debug-phpinfo-table-section-count">1 row</span></summary><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Other" class="yii-debug-table is-data"><tr class="h"><th>Variable</th><th>Value</th></tr><tr><th scope="row" class="e">database_url</th><td  class="v"><span class="yii-debug-phpinfo-redacted" aria-label="Sensitive value hidden">redacted</span></td></tr></table></div></details></section>
+            HTML,
             $view->modulesHtml,
             'Cookie values must never reach the rendered phpinfo HTML.',
-        );
-        self::assertStringNotContainsString(
-            'sensitive-app-key',
-            $view->modulesHtml,
-            'Credential-like environment values must never reach the rendered phpinfo HTML.',
-        );
-        self::assertStringNotContainsString(
-            'sensitive-basic-auth-value',
-            $view->modulesHtml,
-            'PHP basic-auth credentials must never reach the rendered phpinfo HTML.',
-        );
-        self::assertStringNotContainsString(
-            'sensitive-signature-value',
-            $view->modulesHtml,
-            'Signature values must never reach the rendered phpinfo HTML.',
-        );
-        self::assertStringNotContainsString(
-            'sensitive-database-url',
-            $view->modulesHtml,
-            'Lowercase credential-like variable values must never reach the rendered phpinfo HTML.',
-        );
-        self::assertStringContainsString(
-            'aria-label="Sensitive value hidden">redacted</span>',
-            $view->modulesHtml,
-            'Redacted variables must expose an accessible non-secret placeholder.',
-        );
-        self::assertStringContainsString(
-            '>Yii application</td>',
-            $view->modulesHtml,
-            'Ordinary environment values must remain available.',
-        );
-        self::assertStringContainsString(
-            '>/srv/app</td>',
-            $view->modulesHtml,
-            'The PWD working-directory variable must not be mistaken for a password.',
-        );
-        self::assertStringContainsString(
-            '>/srv</td>',
-            $view->modulesHtml,
-            'The OLDPWD working-directory variable must remain visible.',
-        );
-        self::assertStringContainsString(
-            '>unchanged</td>',
-            $view->modulesHtml,
-            'Environment names containing CHPWD must not be treated as credentials.',
         );
     }
 
     public function testFromOutputRedactsSensitiveVariablesWhenTableHasNoVariableHeader(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>Environment</h2>
         <table>
         <tr><td class="e">DB_PASSWORD</td><td class="v">sensitive-database-password</td></tr>
@@ -1140,30 +1129,38 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringNotContainsString(
-            'sensitive-database-password',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-environment" data-section="Environment"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-environment-heading">Environment</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">2 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">DB_PASSWORD</th><td  class="v"><span class="yii-debug-phpinfo-redacted" aria-label="Sensitive value hidden">redacted</span></td></tr>
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">APP_NAME</th><td class="v">Yii application</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'Redaction must survive the fallback taken when grouping is impossible.',
-        );
-        self::assertStringContainsString(
-            'aria-label="Sensitive value hidden">redacted</span>',
-            $view->modulesHtml,
-            'Placeholder must replace the credential.',
-        );
-        self::assertStringContainsString(
-            '>Yii application</td>',
-            $view->modulesHtml,
-            'Ordinary values must stay visible.',
         );
     }
 
     public function testFromOutputRequiresBothPosixFunctionsForHomeFallback(): void
     {
         unset($_SERVER['HOME'], $_SERVER['USERPROFILE']);
+
         putenv('HOME');
         putenv('USERPROFILE');
-        MockerState::addCondition('PHPForge\Debug\PhpInfo', 'function_exists', ['posix_getpwuid'], true);
-        MockerState::addCondition('PHPForge\Debug\PhpInfo', 'function_exists', ['posix_getuid'], false);
+
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'function_exists',
+            ['posix_getpwuid'],
+            true,
+        );
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'function_exists',
+            ['posix_getuid'],
+            false,
+        );
 
         PhpInfoDataNormalizer::fromOutput('', 'x', 'cli', 'Linux', '');
 
@@ -1177,10 +1174,22 @@ final class PhpInfoDataNormalizerTest extends TestCase
     public function testFromOutputRequiresPosixPasswordLookupForHomeFallback(): void
     {
         unset($_SERVER['HOME'], $_SERVER['USERPROFILE']);
+
         putenv('HOME');
         putenv('USERPROFILE');
-        MockerState::addCondition('PHPForge\Debug\PhpInfo', 'function_exists', ['posix_getpwuid'], false);
-        MockerState::addCondition('PHPForge\Debug\PhpInfo', 'function_exists', ['posix_getuid'], true);
+
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'function_exists',
+            ['posix_getpwuid'],
+            false,
+        );
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'function_exists',
+            ['posix_getuid'],
+            true,
+        );
 
         PhpInfoDataNormalizer::fromOutput('', 'x', 'cli', 'Linux', '');
 
@@ -1196,6 +1205,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
         $body = '<table><tr><td>Loaded Configuration File</td><td>/tmp/php.ini</td></tr></table>';
 
         unset($_SERVER['HOME'], $_SERVER['USERPROFILE']);
+
         putenv('HOME');
         putenv('USERPROFILE');
 
@@ -1223,7 +1233,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputSeparatesPhpCreditsFromPhpVariables(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>PHP Variables</h2><table><tr><td>Variable</td><td>Value</td></tr></table>
         <h1>PHP Credits</h1><table><tr><td>PHP Group</td><td>Contributors</td></tr></table>
         <h2>PHP License</h2><table><tr><td>License text</td></tr></table>
@@ -1241,8 +1251,12 @@ final class PhpInfoDataNormalizerTest extends TestCase
             $titles,
             'The h1-based PHP Credits block must become an independent module instead of extending PHP Variables.',
         );
-        self::assertStringContainsString(
-            'id="phpinfo-php-credits"',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-php-variables" data-section="PHP Variables"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-php-variables-heading">PHP Variables</h2></header><div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">1 value</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts"><tr class="yii-debug-phpinfo-fact"><td>Variable</td><td>Value</td></tr></table></div></div>
+            </section><section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-php-credits" data-section="PHP Credits"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-php-credits-heading">PHP Credits</h2></header><div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">1 value</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts"><tr class="yii-debug-phpinfo-fact"><td>PHP Group</td><td>Contributors</td></tr></table></div></div>
+            </section><section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-php-license" data-section="PHP License"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-php-license-heading">PHP License</h2></header><div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-note"><header class="yii-debug-phpinfo-table-section-head"><span>Notes</span><span class="yii-debug-phpinfo-table-section-count">1 note</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Notes" class="yii-debug-table is-note"><tr><td>License text</td></tr></table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'PHP Credits must expose its own deep-linkable section.',
         );
@@ -1285,7 +1299,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
     {
         $_SERVER['HOME'] = '/home/dev';
 
-        $body = <<<'HTML'
+        $body = <<<HTML
         <table><tr><td>Configure Command</td>
         <td>'./configure' '--prefix=/home/dev/.local/php' '--with-config=/opt/home/dev/etc'</td></tr></table>
         HTML;
@@ -1318,7 +1332,10 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $section = $view->sections[0] ?? null;
 
-        self::assertNotNull($section, 'Normalized output must expose at least one hero section.');
+        self::assertNotNull(
+            $section,
+            'Normalized output must expose at least one hero section.',
+        );
 
         $heroLabels = [];
 
@@ -1335,7 +1352,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputSummarizesSmallFactsOnlyModules(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>calendar</h2>
         <table><tr><td class="e">Calendar support</td><td class="v">enabled</td></tr></table>
         <h2>fileinfo</h2>
@@ -1363,16 +1380,19 @@ final class PhpInfoDataNormalizerTest extends TestCase
             array_map(static fn(PhpInfoTocEntry $entry): string => $entry->title, $view->tocEntries),
             'Modules with directives must retain a standalone TOC entry.',
         );
-        self::assertStringNotContainsString(
-            'id="phpinfo-calendar"',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-bcmath" data-section="bcmath"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-bcmath-heading">bcmath</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">1 value</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts"><tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">BCMath support</th><td class="v"><span class="yii-debug-phpinfo-status-pill" data-variant="success">enabled</span></td></tr></table></div></div>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-directives"><header class="yii-debug-phpinfo-table-section-head"><span>Configuration directives</span><span class="yii-debug-phpinfo-table-section-count">1 directive</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Configuration directives" class="yii-debug-table is-directives">
+            <tr class="h"><th>Directive</th><th>Local Value</th><th>Master Value</th></tr>
+            <tr><th scope="row" class="e">bcmath.scale</th><td class="v">0</td><td class="v">0</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'Compact modules must not retain a duplicate standalone section.',
         );
-        self::assertStringContainsString(
-            'id="phpinfo-bcmath"',
-            $view->modulesHtml,
-            'Modules with configuration must remain in the detailed modules HTML.',
-        );
+
     }
 
     public function testFromOutputSurfacesPathTokensForStandaloneAbsolutePath(): void
@@ -1406,8 +1426,10 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringContainsString(
-            '<span>Module information</span><span class="yii-debug-phpinfo-table-section-count">1 value</span>',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-php-credits" data-section="PHP Credits"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-php-credits-heading">PHP Credits</h2></header><div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">1 value</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts"><tr class="yii-debug-phpinfo-fact"><th>Unknown</th><th>Other</th></tr></table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'A two-column header itself carries a fact value when no known data heading is present.',
         );
@@ -1417,6 +1439,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
     {
         $unicodeToken = str_repeat('é', 20);
         $boundaryToken = str_repeat('a', 32);
+
         $body = <<<HTML
         <table>
         <tr><td>Registered PHP Streams</td><td>single,</td></tr>
@@ -1435,7 +1458,11 @@ final class PhpInfoDataNormalizerTest extends TestCase
             }
         }
 
-        self::assertSame(['cli', PhpInfoTile::KIND_TEXT], $tiles['SAPI'] ?? null, 'Runtime values must be trimmed.');
+        self::assertSame(
+            ['cli', PhpInfoTile::KIND_TEXT],
+            $tiles['SAPI'] ?? null,
+            'Runtime values must be trimmed.',
+        );
         self::assertSame(
             ['128M', PhpInfoTile::KIND_TEXT],
             $tiles['Memory limit'] ?? null,
@@ -1489,11 +1516,28 @@ final class PhpInfoDataNormalizerTest extends TestCase
     public function testFromOutputUsesAndTrimsPosixHomeFallback(): void
     {
         unset($_SERVER['HOME'], $_SERVER['USERPROFILE']);
+
         putenv('HOME');
         putenv('USERPROFILE');
-        MockerState::addCondition('PHPForge\Debug\PhpInfo', 'function_exists', ['posix_getpwuid'], true);
-        MockerState::addCondition('PHPForge\Debug\PhpInfo', 'function_exists', ['posix_getuid'], true);
-        MockerState::addCondition('PHPForge\Debug\PhpInfo', 'posix_getuid', [], 1000);
+
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'function_exists',
+            ['posix_getpwuid'],
+            true,
+        );
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'function_exists',
+            ['posix_getuid'],
+            true,
+        );
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'posix_getuid',
+            [],
+            1000,
+        );
         MockerState::addCondition(
             'PHPForge\Debug\PhpInfo',
             'posix_getpwuid',
@@ -1518,7 +1562,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
     public function testFromOutputUsesNativePhpCreditsTableTitles(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>PHP Variables</h2>
         <h1>PHP Credits</h1>
         <table><tr class="h"><th>PHP Group</th></tr><tr><td>Contributors</td></tr></table>
@@ -1530,36 +1574,22 @@ final class PhpInfoDataNormalizerTest extends TestCase
 
         $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
 
-        self::assertStringContainsString(
-            '<span>PHP Group</span>',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-php-credits" data-section="PHP Credits"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-php-credits-heading">PHP Credits</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-note"><header class="yii-debug-phpinfo-table-section-head"><span>PHP Group</span><span class="yii-debug-phpinfo-table-section-count">1 note</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="PHP Group" class="yii-debug-table is-note"><tr><td>Contributors</td></tr></table></div></div>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>PHP Authors</span><span class="yii-debug-phpinfo-table-section-count">1 value</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="PHP Authors" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><th scope="row" class="e">Zend Engine</th><td class="v">Authors</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'A one-cell phpinfo heading must become the table card title.',
-        );
-        self::assertStringContainsString(
-            '<span>PHP Authors</span>',
-            $view->modulesHtml,
-            'PHP Credits fact tables must retain their native titles.',
-        );
-        self::assertStringNotContainsString(
-            '<span>Notes</span>',
-            $view->modulesHtml,
-            'Native PHP Credits headings must replace the generic Notes label.',
-        );
-        self::assertStringNotContainsString(
-            '<span>Module information</span>',
-            $view->modulesHtml,
-            'Native PHP Credits headings must replace the generic module-information label.',
-        );
-        self::assertStringContainsString(
-            '<span class="yii-debug-phpinfo-table-section-count">1 note</span>',
-            $view->modulesHtml,
-            'The title row must not inflate a note table count.',
         );
     }
 
     public function testFromOutputWrapsModulesHtmlWithSectionChrome(): void
     {
-        $body = <<<'HTML'
+        $body = <<<HTML
         <h2>apcu</h2>
         <table>
         <tr><td>Version</td><td>5.1</td></tr>
@@ -1576,26 +1606,24 @@ final class PhpInfoDataNormalizerTest extends TestCase
             '',
         );
 
-        self::assertStringContainsString(
-            'yii-debug-phpinfo-module',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-apcu" data-section="apcu"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-apcu-heading">apcu</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">3 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><td>Version</td><td>5.1</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><td>Debug</td><td>disabled</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><td>MMAP</td><td>enabled</td></tr>
+            </table></div></div></section>
+            HTML,
             $view->modulesHtml,
             'Modules HTML must wrap blocks with the module class.',
-        );
-        self::assertStringContainsString(
-            'yii-debug-table-wrap',
-            $view->modulesHtml,
-            'Modules HTML must wrap tables in the panel chrome.',
-        );
-        self::assertStringContainsString(
-            'id="phpinfo-apcu"',
-            $view->modulesHtml,
-            'Modules HTML must carry the slug id for TOC anchors.',
         );
     }
 
     public function testResolveHomeDirectoryReturnsEmptyWhenEnvAndPosixUnavailable(): void
     {
         unset($_SERVER['HOME'], $_SERVER['USERPROFILE']);
+
         putenv('HOME');
         putenv('USERPROFILE');
 

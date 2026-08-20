@@ -12,9 +12,9 @@ use Xepozz\InternalMocker\MockerState;
 use function array_map;
 
 /**
- * Unit tests for {@see UserDataNormalizer} covering the narrowing of captured identity data
- * into the typed view-model: hero composition (monogram + status variant), attribute bucketing (Identity / Security /
- * Timestamps / Other), VarDumper-quote stripping, sensitive-key detection and timestamp humanization.
+ * Unit tests for {@see UserDataNormalizer} covering the narrowing of captured identity data into the typed view-model:
+ * hero composition (monogram + status variant), attribute bucketing (Identity / Security /  Timestamps / Other),
+ * VarDumper-quote stripping, sensitive-key detection and timestamp humanization.
  */
 #[Group('panel')]
 #[Group('user')]
@@ -134,7 +134,10 @@ final class UserDataNormalizerTest extends TestCase
 
         $other = $view->sections[1] ?? null;
 
-        self::assertNotNull($other, 'Other attributes section must be present.');
+        self::assertNotNull(
+            $other,
+            'Other attributes section must be present.',
+        );
         self::assertSame(
             ['Preferred Locale Key'],
             array_map(static fn(UserAttribute $attribute): string => $attribute->label, $other->attributes),
@@ -248,14 +251,46 @@ final class UserDataNormalizerTest extends TestCase
             }
         }
 
-        self::assertSame('just now', $relatives['second_59_at'] ?? null, '59 seconds must remain just now.');
-        self::assertSame('1 min ago', $relatives['second_60_at'] ?? null, '60 seconds must become one minute.');
-        self::assertSame('1 min ago', $relatives['second_61_at'] ?? null, '61 seconds must round down to one minute.');
-        self::assertSame('59 min ago', $relatives['second_3599_at'] ?? null, '3599 seconds must round down.');
-        self::assertSame('1 h ago', $relatives['second_3600_at'] ?? null, '3600 seconds must become one hour.');
-        self::assertSame('23 h ago', $relatives['second_86399_at'] ?? null, '86399 seconds must round down.');
-        self::assertSame('1 d ago', $relatives['second_86400_at'] ?? null, '86400 seconds must become one day.');
-        self::assertSame('29 d ago', $relatives['second_2591999_at'] ?? null, 'The last sub-month second must round down.');
+        self::assertSame(
+            'just now',
+            $relatives['second_59_at'] ?? null,
+            '59 seconds must remain just now.',
+        );
+        self::assertSame(
+            '1 min ago',
+            $relatives['second_60_at'] ?? null,
+            '60 seconds must become one minute.',
+        );
+        self::assertSame(
+            '1 min ago',
+            $relatives['second_61_at'] ?? null,
+            '61 seconds must round down to one minute.',
+        );
+        self::assertSame(
+            '59 min ago',
+            $relatives['second_3599_at'] ?? null,
+            '3599 seconds must round down.',
+        );
+        self::assertSame(
+            '1 h ago',
+            $relatives['second_3600_at'] ?? null,
+            '3600 seconds must become one hour.',
+        );
+        self::assertSame(
+            '23 h ago',
+            $relatives['second_86399_at'] ?? null,
+            '86399 seconds must round down.',
+        );
+        self::assertSame(
+            '1 d ago',
+            $relatives['second_86400_at'] ?? null,
+            '86400 seconds must become one day.',
+        );
+        self::assertSame(
+            '29 d ago',
+            $relatives['second_2591999_at'] ?? null,
+            'The last sub-month second must round down.',
+        );
         self::assertSame(
             date('M j, Y · H:i', self::NOW - 2592000),
             $relatives['second_2592000_at'] ?? null,

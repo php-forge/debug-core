@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Dump;
 
-use PHPForge\Debug\Helper\Coerce;
 use PHPForge\Debug\Storage\{PanelRow, Payload};
 
 /**
  * Typed dump row narrowed once from the Yii logger tuple and persisted in that form.
  *
- * The payload is already rendered by the Dump collector `varDump()` pipeline at capture time, so the detail view
- * renders it without re-serializing.
+ * @phpstan-import-type LogMessage from \PHPForge\Debug\Panel\Log\LogSnapshot
  */
 final readonly class DumpRow implements PanelRow
 {
@@ -61,18 +59,18 @@ final readonly class DumpRow implements PanelRow
     }
 
     /**
-     * Narrows one raw Yii logger tuple into a typed row.
+     * Converts one canonical logger tuple into a typed row.
      *
-     * @param array<int|string, mixed> $message Logger tuple `[message, level, category, timestamp, traces]`.
+     * @param LogMessage $message Logger tuple `[message, level, category, timestamp, traces]`.
      */
     public static function fromLoggerTuple(array $message): self
     {
         return new self(
-            message: Coerce::stringOrNull($message[0] ?? null) ?? '',
-            level: Coerce::intOrNull($message[1] ?? null) ?? 0,
-            category: Coerce::stringOrNull($message[2] ?? null) ?? '',
-            time: (Coerce::floatOrNull($message[3] ?? null) ?? 0.0) * 1000,
-            trace: Coerce::traceFrames($message[4] ?? []),
+            message: $message[0],
+            level: $message[1],
+            category: $message[2],
+            time: $message[3] * 1000,
+            trace: $message[4],
         );
     }
 

@@ -16,12 +16,6 @@ use UIAwesome\Html\Sectioning\{Aside, Section};
 
 /**
  * Renders the debugger sidebar partial.
- *
- * Stateless static helpers: the public entry point takes a typed {@see SidebarView} with pre-built link targets and
- * returns ready-to-echo HTML, so the renderer stays framework-neutral.
- *
- * The snapshot card (top section) and panel-list nav (bottom section) are built by private helpers and rendered
- * directly by the shared layout.
  */
 final class SidebarRenderer
 {
@@ -29,11 +23,6 @@ final class SidebarRenderer
 
     /**
      * Renders the full sidebar (`<aside>` with the snapshot card + panel nav).
-     *
-     * Usage example:
-     * ```php
-     * $html = \PHPForge\Debug\View\Sidebar\SidebarRenderer::render($view);
-     * ```
      */
     public static function render(SidebarView $view): string
     {

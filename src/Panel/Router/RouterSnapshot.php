@@ -57,7 +57,12 @@ final readonly class RouterSnapshot implements PanelSnapshot
             $last = $row;
         }
 
-        return new self($action, $route, $message, $entries);
+        return new self(
+            $action,
+            $route,
+            $message,
+            $entries,
+        );
     }
 
     /**

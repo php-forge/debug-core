@@ -6,9 +6,6 @@ namespace PHPForge\Debug\View\Sidebar;
 
 /**
  * Typed view-model for one entry in the debugger sidebar panel navigation.
- *
- * Encapsulates the per-panel resolution (icon SVG, link target, tooltip text, active-state flag) so the renderer
- * stays focused on emitting markup. Used for both the 'History' entry and every registered panel link.
  */
 final readonly class SidebarNavItem
 {

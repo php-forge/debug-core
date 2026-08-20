@@ -64,9 +64,9 @@ final class RequestDataNormalizer
 
         $method = Coerce::stringOrNull($general['method'] ?? null)
             ?? ($summary === null ? '' : $summary->method);
+
         $url = $summary === null ? '' : $summary->url;
         $ip = $summary === null ? '' : $summary->ip;
-
         $capturedAt = $summary === null ? 0.0 : $summary->time;
 
         $time = $capturedAt > 0 ? date('H:i:s', (int) $capturedAt) : '';
@@ -241,6 +241,8 @@ final class RequestDataNormalizer
      */
     private static function statusVariant(int $statusCode): string
     {
-        return Vocabulary::statusClass($statusCode);
+        return Vocabulary::statusClass(
+            $statusCode,
+        );
     }
 }

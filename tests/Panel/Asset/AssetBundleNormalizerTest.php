@@ -17,8 +17,6 @@ use function is_string;
  * file-label unwrapping and `bodyCols` layout hint computation.
  *
  * {@see AssetBundleNormalizerProvider} for test case data providers.
- *
- * @since 0.1
  */
 #[Group('panel')]
 #[Group('asset')]
@@ -36,14 +34,20 @@ final class AssetBundleNormalizerTest extends TestCase
                             'depends' => ['app\\B'],
                         ],
                         'app\\B' => [
-                            'css' => ['b.css', 'c.css'],
+                            'css' => [
+                                'b.css',
+                                'c.css',
+                            ],
                             'js' => [],
                             'depends' => [],
                         ],
                         'app\\C' => [
                             'css' => [],
                             'js' => ['c.js'],
-                            'depends' => ['app\\A', 'app\\B'],
+                            'depends' => [
+                                'app\\A',
+                                'app\\B',
+                            ],
                         ],
                     ],
                 ),

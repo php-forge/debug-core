@@ -113,12 +113,6 @@ final class PhpInfoDataNormalizer
     /**
      * Captures the {@see phpinfo()} report of the current process and narrows it into the typed {@see PhpInfoView}.
      *
-     * Usage example:
-     *
-     * ```php
-     * $view = \PHPForge\Debug\PhpInfo\PhpInfoDataNormalizer::capture();
-     * ```
-     *
      * @return PhpInfoView Typed view-model for the running PHP process.
      */
     public static function capture(): PhpInfoView
@@ -420,7 +414,12 @@ final class PhpInfoDataNormalizer
             );
         }
 
-        return new PhpInfoTile(label: $label, displayValue: $value, rawValue: $value, kind: PhpInfoTile::KIND_TEXT);
+        return new PhpInfoTile(
+            label: $label,
+            displayValue: $value,
+            rawValue: $value,
+            kind: PhpInfoTile::KIND_TEXT,
+        );
     }
 
     /**
@@ -584,7 +583,11 @@ final class PhpInfoDataNormalizer
             return null;
         }
 
-        return new PhpInfoCompactModule(title: $title, slug: $slug, tiles: $tiles);
+        return new PhpInfoCompactModule(
+            title: $title,
+            slug: $slug,
+            tiles: $tiles,
+        );
     }
 
     /**

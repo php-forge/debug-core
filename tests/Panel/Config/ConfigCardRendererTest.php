@@ -9,8 +9,8 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see ConfigCardRenderer} covering readout grid composition, PHP-extension pills, application
- * details rows, the conditional installed-extensions section and the php-info call-to-action link.
+ * Unit tests for {@see ConfigCardRenderer} covering readout grid composition, PHP-extension pills, application details
+ * rows, the conditional installed-extensions section and the php-info call-to-action link.
  */
 #[Group('panel')]
 #[Group('config')]
@@ -22,35 +22,36 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderApplicationDetailsSection($summary->application)->render();
 
-        self::assertStringContainsString(
-            'Charset',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-section">
+            <h2 class="yii-debug-section-title">
+            <span class="yii-debug-section-mark">//</span> Application details
+            </h2><dl class="yii-debug-dl">
+            <div class="yii-debug-dl-row">
+            <dt>
+            Charset
+            </dt><dd>
+            UTF-8
+            </dd>
+            </div><div class="yii-debug-dl-row">
+            <dt>
+            Current language
+            </dt><dd>
+            en-US (English, United States)
+            </dd>
+            </div><div class="yii-debug-dl-row">
+            <dt>
+            Source language
+            </dt><dd>
+            en (English)
+            </dd>
+            </div>
+            </dl>
+            </section>
+            HTML,
             $html,
             'Charset row must be labeled.',
-        );
-        self::assertStringContainsString(
-            'UTF-8',
-            $html,
-            'Charset value must be rendered.'
-        );
-        self::assertStringContainsString(
-            'Current language',
-            $html,
-            'Current language row must be labeled.'
-        );
-        self::assertStringContainsString(
-            'en-US (English, United States)',
-            $html,
-            'Current language must include its language and region display names.'
-        );
-        self::assertStringContainsString(
-            'Source language',
-            $html,
-            'Source language row must be labeled.'
-        );
-        self::assertStringContainsString(
-            'en (English)',
-            $html,
-            'Source language must include its display language.',
         );
     }
 
@@ -60,8 +61,34 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderApplicationDetailsSection($summary->application)->render();
 
-        self::assertStringContainsString(
-            '—',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-section">
+            <h2 class="yii-debug-section-title">
+            <span class="yii-debug-section-mark">//</span> Application details
+            </h2><dl class="yii-debug-dl">
+            <div class="yii-debug-dl-row">
+            <dt>
+            Charset
+            </dt><dd>
+            —
+            </dd>
+            </div><div class="yii-debug-dl-row">
+            <dt>
+            Current language
+            </dt><dd>
+            —
+            </dd>
+            </div><div class="yii-debug-dl-row">
+            <dt>
+            Source language
+            </dt><dd>
+            —
+            </dd>
+            </div>
+            </dl>
+            </section>
+            HTML,
             $html,
             'Empty charset must render the em-dash placeholder.',
         );
@@ -85,35 +112,22 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = $section->render();
 
-        self::assertStringContainsString(
-            'Installed extensions',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-section">
+            <h2 class="yii-debug-section-title">
+            <span class="yii-debug-section-mark">&gt;_</span> Installed extensions <span class="yii-debug-section-count">2</span>
+            </h2><div class="yii-debug-packages">
+            <article class="yii-debug-package">
+            <span class="yii-debug-package-glyph" aria-hidden="true">◆</span><span class="yii-debug-package-name">acme/foo</span><span class="yii-debug-package-version">v1.0.0</span>
+            </article><article class="yii-debug-package">
+            <span class="yii-debug-package-glyph" aria-hidden="true">◆</span><span class="yii-debug-package-name">acme/bar</span><span class="yii-debug-package-version">v2.5.1</span>
+            </article>
+            </div>
+            </section>
+            HTML,
             $html,
             'Section heading must be present.',
-        );
-        self::assertStringContainsString(
-            'acme/foo',
-            $html,
-            'First package name must be listed.',
-        );
-        self::assertStringContainsString(
-            'v1.0.0',
-            $html,
-            "First package version must be prefixed with 'v'.",
-        );
-        self::assertStringContainsString(
-            'acme/bar',
-            $html,
-            'Second package name must be listed.',
-        );
-        self::assertStringContainsString(
-            'v2.5.1',
-            $html,
-            "Second package version must be prefixed with 'v'.",
-        );
-        self::assertStringContainsString(
-            '>2<',
-            $html,
-            'Section count chip must render the roster size.',
         );
     }
 
@@ -133,39 +147,18 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderPhpExtensionsSection($summary->php)->render();
 
-        self::assertStringContainsString(
-            'Xdebug',
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-section">
+            <h2 class="yii-debug-section-title">
+            <span class="yii-debug-section-mark">::</span> PHP extensions
+            </h2><div class="yii-debug-ext-strip">
+            <span class="yii-debug-ext-pill is-on"><span class="yii-debug-ext-pill-dot" aria-hidden="true"></span><span class="yii-debug-ext-pill-label">Xdebug</span><span class="yii-debug-ext-pill-state">on</span></span><span class="yii-debug-ext-pill is-off"><span class="yii-debug-ext-pill-dot" aria-hidden="true"></span><span class="yii-debug-ext-pill-label">APCu</span><span class="yii-debug-ext-pill-state">off</span></span><span class="yii-debug-ext-pill is-off"><span class="yii-debug-ext-pill-dot" aria-hidden="true"></span><span class="yii-debug-ext-pill-label">Memcache</span><span class="yii-debug-ext-pill-state">off</span></span><span class="yii-debug-ext-pill is-off"><span class="yii-debug-ext-pill-dot" aria-hidden="true"></span><span class="yii-debug-ext-pill-label">Memcached</span><span class="yii-debug-ext-pill-state">off</span></span>
+            </div>
+            </section>
+            HTML,
             $html,
             'Xdebug label must be present.',
-        );
-        self::assertStringContainsString(
-            'APCu',
-            $html,
-            'APCu label must be present.',
-        );
-        self::assertStringContainsString(
-            'Memcache',
-            $html,
-            'Memcache label must be present.',
-        );
-        self::assertStringContainsString(
-            'Memcached',
-            $html,
-            'Memcached label must be present.',
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-ext-pill is-on"><span class="yii-debug-ext-pill-dot" aria-hidden="true"></span>'
-                . '<span class="yii-debug-ext-pill-label">Xdebug</span>'
-                . '<span class="yii-debug-ext-pill-state">on</span>',
-            $html,
-            "Enabled Xdebug must pair the 'is-on' modifier with the 'on' label.",
-        );
-        self::assertStringContainsString(
-            'class="yii-debug-ext-pill is-off"><span class="yii-debug-ext-pill-dot" aria-hidden="true"></span>'
-                . '<span class="yii-debug-ext-pill-label">APCu</span>'
-                . '<span class="yii-debug-ext-pill-state">off</span>',
-            $html,
-            "Disabled APCu must pair the 'is-off' modifier with the 'off' label.",
         );
     }
 
@@ -173,30 +166,12 @@ final class ConfigCardRendererTest extends TestCase
     {
         $html = ConfigCardRenderer::renderPhpInfoCta('/debug/default/php-info')->render();
 
-        self::assertStringContainsString(
-            'class="yii-debug-cta"',
+        self::assertSame(
+            <<<HTML
+            <a class="yii-debug-cta" href="/debug/default/php-info" rel="noopener" target="_blank"><span class="yii-debug-cta-prompt" aria-hidden="true">→</span><span>View full phpinfo</span><span class="yii-debug-cta-external" aria-hidden="true">↗</span></a>
+            HTML,
             $html,
             'CTA must carry the wrapper class.',
-        );
-        self::assertStringContainsString(
-            'href="/debug/default/php-info"',
-            $html,
-            'CTA href must round-trip the caller-provided URL.',
-        );
-        self::assertStringContainsString(
-            'target="_blank"',
-            $html,
-            'CTA must open in a new tab.',
-        );
-        self::assertStringContainsString(
-            'rel="noopener"',
-            $html,
-            "CTA must declare 'rel=\"noopener\"' for safety.",
-        );
-        self::assertStringContainsString(
-            'View full phpinfo',
-            $html,
-            'CTA must show the descriptive label.',
         );
     }
 
@@ -206,16 +181,24 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderReadoutGrid($summary)->render();
 
-        self::assertStringContainsString(
-            'yii-debug-readout-chip yii-debug-readout-chip-muted',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-readout">
+            <article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Yii</span><span class="yii-debug-readout-value">2.0.0</span><span class="yii-debug-readout-meta">framework</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">PHP</span><span class="yii-debug-readout-value">8.3.0</span><span class="yii-debug-readout-meta">runtime</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Environment</span><span class="yii-debug-readout-value">dev</span><span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip yii-debug-readout-chip-muted">debug off</span></span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Application</span><span class="yii-debug-readout-value">Test</span><span class="yii-debug-readout-meta">instance</span>
+            </article>
+            </div>
+            HTML,
             $html,
             'Disabled chip must use the muted modifier.',
         );
-        self::assertStringContainsString(
-            'off',
-            $html,
-            "Disabled chip must read 'off'.",
-        );
+
     }
 
     public function testRenderReadoutGridShowsDebugOnChipWhenDebugIsTrue(): void
@@ -224,25 +207,22 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderReadoutGrid($summary)->render();
 
-        self::assertStringContainsString(
-            'debug',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-readout">
+            <article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Yii</span><span class="yii-debug-readout-value">2.0.0</span><span class="yii-debug-readout-meta">framework</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">PHP</span><span class="yii-debug-readout-value">8.3.0</span><span class="yii-debug-readout-meta">runtime</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Environment</span><span class="yii-debug-readout-value">dev</span><span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip">debug on</span></span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Application</span><span class="yii-debug-readout-value">Test</span><span class="yii-debug-readout-meta">instance</span>
+            </article>
+            </div>
+            HTML,
             $html,
             'Debug chip text must be present.',
-        );
-        self::assertStringContainsString(
-            'on',
-            $html,
-            "Debug chip must read 'on' when debug is 'true'.",
-        );
-        self::assertStringContainsString(
-            '<span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip">debug',
-            $html,
-            'Stringable readout metadata must be rendered as HTML instead of escaped text.',
-        );
-        self::assertStringNotContainsString(
-            'yii-debug-readout-chip-muted">debug',
-            $html,
-            'Active chip must not be muted.',
         );
     }
 
@@ -252,8 +232,20 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderReadoutGrid($summary)->render();
 
-        self::assertStringContainsString(
-            '—',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-readout">
+            <article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Yii</span><span class="yii-debug-readout-value">2.0.0</span><span class="yii-debug-readout-meta">framework</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">PHP</span><span class="yii-debug-readout-value">8.3.0</span><span class="yii-debug-readout-meta">runtime</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Environment</span><span class="yii-debug-readout-value">dev</span><span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip">debug on</span></span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Application</span><span class="yii-debug-readout-value">—</span><span class="yii-debug-readout-meta">instance</span>
+            </article>
+            </div>
+            HTML,
             $html,
             "Empty 'name' must render the em-dash placeholder.",
         );
@@ -265,8 +257,20 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderReadoutGrid($summary)->render();
 
-        self::assertStringContainsString(
-            'instance',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-readout">
+            <article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Yii</span><span class="yii-debug-readout-value">2.0.0</span><span class="yii-debug-readout-meta">framework</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">PHP</span><span class="yii-debug-readout-value">8.3.0</span><span class="yii-debug-readout-meta">runtime</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Environment</span><span class="yii-debug-readout-value">dev</span><span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip">debug on</span></span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Application</span><span class="yii-debug-readout-value">Test</span><span class="yii-debug-readout-meta">instance</span>
+            </article>
+            </div>
+            HTML,
             $html,
             "Empty 'version' must fall back to 'instance' text.",
         );
@@ -278,16 +282,24 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderReadoutGrid($summary)->render();
 
-        self::assertStringContainsString(
-            'v1.2.3',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-readout">
+            <article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Yii</span><span class="yii-debug-readout-value">2.0.0</span><span class="yii-debug-readout-meta">framework</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">PHP</span><span class="yii-debug-readout-value">8.3.0</span><span class="yii-debug-readout-meta">runtime</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Environment</span><span class="yii-debug-readout-value">dev</span><span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip">debug on</span></span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Application</span><span class="yii-debug-readout-value">Test</span><span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip yii-debug-readout-chip-muted">v1.2.3</span></span>
+            </article>
+            </div>
+            HTML,
             $html,
             'Version chip must show the prefixed application version.',
         );
-        self::assertStringNotContainsString(
-            '>instance<',
-            $html,
-            "Version chip must replace the 'instance' fallback.",
-        );
+
     }
 
     public function testRenderReadoutGridShowsYiiAndPhpAndEnvironmentAndApplicationCards(): void
@@ -296,45 +308,22 @@ final class ConfigCardRendererTest extends TestCase
 
         $html = ConfigCardRenderer::renderReadoutGrid($summary)->render();
 
-        self::assertStringContainsString(
-            'class="yii-debug-readout"',
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-readout">
+            <article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Yii</span><span class="yii-debug-readout-value">2.0.50</span><span class="yii-debug-readout-meta">framework</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">PHP</span><span class="yii-debug-readout-value">8.3.10</span><span class="yii-debug-readout-meta">runtime</span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Environment</span><span class="yii-debug-readout-value">prod</span><span class="yii-debug-readout-meta"><span class="yii-debug-readout-chip">debug on</span></span>
+            </article><article class="yii-debug-readout-card">
+            <span class="yii-debug-readout-corner" data-corner="tl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="tr" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="bl" aria-hidden="true"></span><span class="yii-debug-readout-corner" data-corner="br" aria-hidden="true"></span><span class="yii-debug-readout-label">Application</span><span class="yii-debug-readout-value">Demo</span><span class="yii-debug-readout-meta">instance</span>
+            </article>
+            </div>
+            HTML,
             $html,
             'Outer wrapper class must be present.',
-        );
-        self::assertStringContainsString(
-            'Yii',
-            $html,
-            'Yii readout label must be present.',
-        );
-        self::assertStringContainsString(
-            '2.0.50',
-            $html,
-            'Yii readout value must be present.',
-        );
-        self::assertStringContainsString(
-            'PHP',
-            $html,
-            'PHP readout label must be present.',
-        );
-        self::assertStringContainsString(
-            '8.3.10',
-            $html,
-            'PHP readout value must be present.',
-        );
-        self::assertStringContainsString(
-            'Environment',
-            $html,
-            'Environment readout label must be present.',
-        );
-        self::assertStringContainsString(
-            'Application',
-            $html,
-            'Application readout label must be present.',
-        );
-        self::assertStringContainsString(
-            'Demo',
-            $html,
-            'Application readout value must be present.',
         );
     }
 

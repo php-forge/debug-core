@@ -13,6 +13,7 @@ use UIAwesome\Html\Root\{Footer, Header};
 use UIAwesome\Html\Sectioning\Section;
 
 use function count;
+use function in_array;
 use function number_format;
 use function rtrim;
 use function sprintf;
@@ -84,8 +85,7 @@ final class TimelineRenderer
                     ->class('yii-debug-tl-hint-body')
                     ->html(
                         'The timeline is most useful for requests that take hundreds of milliseconds, where you can ',
-                        Em::tag()
-                            ->content('see'),
+                        Em::tag()->content('see'),
                         ' which operations dominate. For quick requests the ',
                         A::tag()
                             ->href($profilingUrl)
@@ -162,8 +162,7 @@ final class TimelineRenderer
             ->html(
                 Span::tag()
                     ->html(
-                        Strong::tag()
-                            ->content(number_format($duration)),
+                        Strong::tag()->content(number_format($duration)),
                         ' ms total',
                     ),
                 Span::tag()
@@ -171,10 +170,7 @@ final class TimelineRenderer
                     ->content('·'),
                 Span::tag()
                     ->html(
-                        Strong::tag()
-                            ->content(
-                                Format::bytesToMb($memory)
-                            ),
+                        Strong::tag()->content(Format::bytesToMb($memory)),
                         ' peak memory',
                     ),
                 Span::tag()
@@ -182,10 +178,7 @@ final class TimelineRenderer
                     ->content('·'),
                 Span::tag()
                     ->html(
-                        Strong::tag()
-                    ->content(
-                        (string) $spanCount
-                    ),
+                        Strong::tag()->content((string) $spanCount),
                         ' spans',
                     ),
             )
@@ -230,7 +223,9 @@ final class TimelineRenderer
         $present = [];
 
         foreach ($rows as $row) {
-            $present[$row->variant] = true;
+            if (!in_array($row->variant, $present, true)) {
+                $present[] = $row->variant;
+            }
         }
 
         if (count($present) < 2) {
@@ -240,7 +235,7 @@ final class TimelineRenderer
         $items = [];
 
         foreach (self::LEGEND_LABELS as $variant => $label) {
-            if (!isset($present[$variant])) {
+            if (!in_array($variant, $present, true)) {
                 continue;
             }
 
@@ -299,10 +294,12 @@ final class TimelineRenderer
                     ->html(
                         Div::tag()
                             ->class('yii-debug-tl-bar')
-                            ->style([
-                                'left' => $row->cssLeft . '%',
-                                'width' => $row->cssWidth . '%',
-                            ])
+                            ->style(
+                                [
+                                    'left' => $row->cssLeft . '%',
+                                    'width' => $row->cssWidth . '%',
+                                ],
+                            )
                             ->html(
                                 Span::tag()
                                     ->class('yii-debug-tl-bar-duration')

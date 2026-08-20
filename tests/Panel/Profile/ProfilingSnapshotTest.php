@@ -25,19 +25,26 @@ final class ProfilingSnapshotTest extends TestCase
             [
                 [
                     'token' => 'SELECT 1',
+                    'category' => 'message category',
                     'context' => [
                         'category' => 'Yiisoft\\Db\\Command::query',
                         'beginTime' => 100.05,
+                        'time' => 999.0,
                         'endTime' => 100.06,
                         'duration' => 0.01,
                         'beginMemory' => 2_048,
                         'endMemory' => 3_072,
+                        'memory' => 999,
                         'nestedLevel' => 1,
                         'trace' => [['file' => '/app/index.php', 'line' => 12]],
                     ],
                 ],
                 'malformed',
                 ['token' => 'missing context'],
+                [
+                    'token' => 'missing duration',
+                    'context' => ['beginTime' => 100.0],
+                ],
                 [
                     'token' => 'GET /',
                     'context' => [
@@ -48,7 +55,15 @@ final class ProfilingSnapshotTest extends TestCase
                         'beginMemory' => 1_024,
                         'endMemory' => 4_096,
                         'memoryDiff' => 3_072,
-                        'nestedLevel' => 0,
+                        'nestedLevel' => -1,
+                    ],
+                ],
+                [
+                    'token' => 'defaults',
+                    'category' => 'fallback category',
+                    'context' => [
+                        'beginTime' => 101.0,
+                        'duration' => 0.01,
                     ],
                 ],
             ],
@@ -79,6 +94,17 @@ final class ProfilingSnapshotTest extends TestCase
                         'seq' => 1,
                         'memory' => 4_096,
                         'memoryDiff' => 3_072,
+                        'trace' => [],
+                    ],
+                    [
+                        'timestamp' => 101_000.0,
+                        'duration' => 10.0,
+                        'category' => 'fallback category',
+                        'info' => 'defaults',
+                        'level' => 0,
+                        'seq' => 2,
+                        'memory' => 0,
+                        'memoryDiff' => 0,
                         'trace' => [],
                     ],
                 ],
@@ -117,6 +143,7 @@ final class ProfilingSnapshotTest extends TestCase
             'Incomplete messages without memory must not produce samples.',
         );
     }
+
     public function testCapturePairsLoggerMessagesAndHydratesTheResult(): void
     {
         $captured = ProfilingSnapshot::capture(
@@ -129,7 +156,6 @@ final class ProfilingSnapshotTest extends TestCase
                 ['inner', LogLevel::PROFILE_BEGIN, 'database', 1.02, [], 120],
                 ['inner', LogLevel::PROFILE_END, 'database', 1.05, [], 140],
                 ['outer', LogLevel::PROFILE_END, 'application', 1.1, [], 200],
-                'invalid',
             ],
         );
 
@@ -169,6 +195,21 @@ final class ProfilingSnapshotTest extends TestCase
             ],
             array_map(static fn($row): array => $row->jsonSerialize(), $snapshot->entries()),
             'Profile begin/end pairs must retain ordering, nesting, timing, memory, and traces.',
+        );
+        self::assertSame(
+            [
+                ['time' => 900.0, 'memory' => 50],
+                ['time' => 1_000.0, 'memory' => 100],
+                ['time' => 1_010.0, 'memory' => 110],
+                ['time' => 1_020.0, 'memory' => 120],
+                ['time' => 1_050.0, 'memory' => 140],
+                ['time' => 1_100.0, 'memory' => 200],
+            ],
+            array_map(
+                static fn(MemorySample $sample): array => ['time' => $sample->time, 'memory' => $sample->memory],
+                $captured->samples(),
+            ),
+            'Logger tuple timestamps and memory values must use the canonical indexes and millisecond conversion.',
         );
         self::assertSame(
             array_map(

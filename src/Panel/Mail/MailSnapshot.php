@@ -56,7 +56,9 @@ final readonly class MailSnapshot implements PanelSnapshot
             $entries[] = MailMessage::fromArray($entry, "{$path}.entries[{$index}]");
         }
 
-        return new self($entries);
+        return new self(
+            $entries,
+        );
     }
 
     /**

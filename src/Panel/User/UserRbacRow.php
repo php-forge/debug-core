@@ -9,13 +9,6 @@ use function is_string;
 
 /**
  * Represents one RBAC item row (role or permission) in the User panel detail view.
- *
- * Usage example:
- *
- * ```php
- * $row = \PHPForge\Debug\Panel\User\UserRbacRow::fromArray($rawItem);
- * echo $row->name;
- * ```
  */
 final readonly class UserRbacRow
 {
@@ -38,19 +31,6 @@ final readonly class UserRbacRow
 
     /**
      * Builds a row from the normalized array shape produced by RBAC adapters.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $row = \PHPForge\Debug\Panel\User\UserRbacRow::fromArray([
-     *     'name' => 'admin',
-     *     'description' => 'Administrator',
-     *     'ruleName' => '',
-     *     'data' => '',
-     *     'createdAt' => 1700000000,
-     *     'updatedAt' => 1700000001,
-     * ]);
-     * ```
      *
      * @param array<array-key, mixed> $row Associative array with keys `name`, `description`, `ruleName`, `data`,
      * `createdAt`, and `updatedAt`.

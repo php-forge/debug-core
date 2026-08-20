@@ -10,15 +10,17 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see ThemeResolver} covering the cookie-over-query precedence and the light fallback.
- *
- * @since 0.1
  */
 #[Group('theme')]
 final class ThemeResolverTest extends TestCase
 {
     public function testResolveDefaultsToLightWithoutAnySignal(): void
     {
-        self::assertSame('light', ThemeResolver::resolve([], []), 'No signal must resolve to light.');
+        self::assertSame(
+            'light',
+            ThemeResolver::resolve([], []),
+            'No signal must resolve to light.',
+        );
     }
 
     public function testResolveIgnoresNonStringAndUnknownValues(): void

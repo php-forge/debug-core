@@ -30,16 +30,34 @@ final class AssetCardRendererTest extends TestCase
 
         $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
 
-        self::assertStringContainsString(
-            'class="yii-debug-asset-card"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            <span class="yii-debug-asset-chip yii-debug-asset-chip-css"><strong>1</strong> css</span>
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="1">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Files
+            </h3><div class="yii-debug-asset-files">
+            <div class="yii-debug-asset-file">
+            <span class="yii-debug-asset-file-type yii-debug-asset-file-type-css">.css</span><span class="yii-debug-asset-file-name" title="style.css">style.css</span>
+            </div>
+            </div>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             'Card must carry the wrapper class.',
         );
-        self::assertStringContainsString(
-            "id=\"{$bundle->id}\"",
-            $html,
-            'Card must expose the bundle anchor id.',
-        );
+
     }
 
     public function testRenderCardEmitsCssFilesListAndChipForCssOnlyBundle(): void
@@ -50,23 +68,38 @@ final class AssetCardRendererTest extends TestCase
             );
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
+
         $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
 
-        self::assertStringContainsString(
-            '<strong>1</strong> css<',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            <span class="yii-debug-asset-chip yii-debug-asset-chip-css"><strong>1</strong> css</span>
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="1">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Files
+            </h3><div class="yii-debug-asset-files">
+            <div class="yii-debug-asset-file">
+            <span class="yii-debug-asset-file-type yii-debug-asset-file-type-css">.css</span><span class="yii-debug-asset-file-name" title="app.css">app.css</span>
+            </div>
+            </div>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             "CSS-only bundle must render the 'css' chip.",
         );
-        self::assertStringContainsString(
-            'class="yii-debug-asset-file-type yii-debug-asset-file-type-css"',
-            $html,
-            'CSS file rows must be rendered through the typed file renderer.',
-        );
-        self::assertStringContainsString(
-            'title="app.css">app.css<',
-            $html,
-            'CSS file rows must retain the file label and tooltip.',
-        );
+
+
     }
 
     public function testRenderCardEmitsJsFilesListAndChipForJsOnlyBundle(): void
@@ -80,21 +113,35 @@ final class AssetCardRendererTest extends TestCase
 
         $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
 
-        self::assertStringContainsString(
-            '<strong>1</strong> js<',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            <span class="yii-debug-asset-chip yii-debug-asset-chip-js"><strong>1</strong> js</span>
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="1">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Files
+            </h3><div class="yii-debug-asset-files">
+            <div class="yii-debug-asset-file">
+            <span class="yii-debug-asset-file-type yii-debug-asset-file-type-js">.js</span><span class="yii-debug-asset-file-name" title="app.js">app.js</span>
+            </div>
+            </div>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             "JS-only bundle must render the 'js' chip.",
         );
-        self::assertStringContainsString(
-            'yii-debug-asset-file-type-js',
-            $html,
-            'JS file row must carry the type modifier class.',
-        );
-        self::assertStringContainsString(
-            'app.js',
-            $html,
-            'JS file label must be rendered.',
-        );
+
+
     }
 
     public function testRenderCardEmitsPluralChipForMultipleDependencies(): void
@@ -118,8 +165,30 @@ final class AssetCardRendererTest extends TestCase
 
         $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
 
-        self::assertStringContainsString(
-            '<strong>3</strong> deps<',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            <span class="yii-debug-asset-chip yii-debug-asset-chip-deps"><strong>3</strong> deps</span>
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="1">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Wiring
+            </h3><div class="yii-debug-asset-depends">
+            <span class="yii-debug-asset-depends-label">Depends on 3</span><div class="yii-debug-asset-depends-list">
+            <a class="yii-debug-asset-depend" href="#app\-a" title="app\A"><span class="yii-debug-asset-depend-icon" aria-hidden="true">↳</span><span class="yii-debug-asset-depend-name">A</span></a><a class="yii-debug-asset-depend" href="#app\-b" title="app\B"><span class="yii-debug-asset-depend-icon" aria-hidden="true">↳</span><span class="yii-debug-asset-depend-name">B</span></a><a class="yii-debug-asset-depend" href="#app\-c" title="app\C"><span class="yii-debug-asset-depend-icon" aria-hidden="true">↳</span><span class="yii-debug-asset-depend-name">C</span></a>
+            </div>
+            </div>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             "Multiple dependencies must read 'N deps'.",
         );
@@ -141,8 +210,19 @@ final class AssetCardRendererTest extends TestCase
             $html,
             'Header must render the bundle short name.',
         );
-        self::assertStringContainsString(
-            'class="yii-debug-asset-card-fqcn">vendor\\package\\<',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="vendor\package\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">vendor\package\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            </div>
+            </header>
+            </article>
+            HTML,
             $html,
             'Header must render the namespace prefix.',
         );
@@ -159,15 +239,32 @@ final class AssetCardRendererTest extends TestCase
 
         $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
 
-        self::assertStringContainsString(
-            '<strong>1</strong> dep<',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            <span class="yii-debug-asset-chip yii-debug-asset-chip-deps"><strong>1</strong> dep</span>
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="1">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Wiring
+            </h3><div class="yii-debug-asset-depends">
+            <span class="yii-debug-asset-depends-label">Depends on 1</span><div class="yii-debug-asset-depends-list">
+            <a class="yii-debug-asset-depend" href="#app\-other" title="app\Other"><span class="yii-debug-asset-depend-icon" aria-hidden="true">↳</span><span class="yii-debug-asset-depend-name">Other</span></a>
+            </div>
+            </div>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             "Single dependency must read '1 dep'.",
-        );
-        self::assertStringNotContainsString(
-            '1</strong> deps<',
-            $html,
-            "Singular form must not pluralize to 'deps'.",
         );
     }
 
@@ -189,21 +286,47 @@ final class AssetCardRendererTest extends TestCase
 
         $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
 
-        self::assertStringContainsString(
-            'data-cols="2"',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            <span class="yii-debug-asset-chip yii-debug-asset-chip-css"><strong>1</strong> css</span>
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="2">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Files
+            </h3><div class="yii-debug-asset-files">
+            <div class="yii-debug-asset-file">
+            <span class="yii-debug-asset-file-type yii-debug-asset-file-type-css">.css</span><span class="yii-debug-asset-file-name" title="app.css">app.css</span>
+            </div>
+            </div>
+            </section><section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Wiring
+            </h3><dl class="yii-debug-asset-wiring">
+            <div class="yii-debug-asset-wiring-row">
+            <dt class="yii-debug-asset-wiring-label">
+            source
+            </dt><dd class="yii-debug-asset-wiring-value">
+            @app/assets
+            </dd>
+            </div>
+            </dl>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             "Files + wiring must produce a '2-column' body.",
         );
-        self::assertStringContainsString(
-            'Files',
-            $html,
-            'Files section heading must be present.',
-        );
-        self::assertStringContainsString(
-            'Wiring',
-            $html,
-            'Wiring section heading must be present.',
-        );
+
+
     }
 
     public function testRenderCardLinksDependencyToRegisteredAnchor(): void
@@ -219,24 +342,35 @@ final class AssetCardRendererTest extends TestCase
             );
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected the source bundle.');
-        $target = $summary->bundles[1] ?? self::fail('Expected the target bundle.');
 
         $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
 
-        self::assertStringContainsString(
-            "href=\"#{$target->id}\"",
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            <span class="yii-debug-asset-chip yii-debug-asset-chip-deps"><strong>1</strong> dep</span>
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="1">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Wiring
+            </h3><div class="yii-debug-asset-depends">
+            <span class="yii-debug-asset-depends-label">Depends on 1</span><div class="yii-debug-asset-depends-list">
+            <a class="yii-debug-asset-depend" href="#app\-target" title="app\Target"><span class="yii-debug-asset-depend-icon" aria-hidden="true">↳</span><span class="yii-debug-asset-depend-name">Target</span></a>
+            </div>
+            </div>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             'Dep link must target the registered anchor.',
-        );
-        self::assertStringContainsString(
-            'title="app\\Target"',
-            $html,
-            'Dep link must keep the FQCN in the title.',
-        );
-        self::assertStringContainsString(
-            '>Target<',
-            $html,
-            'Dep link must show the short class name.',
         );
     }
 
@@ -251,20 +385,21 @@ final class AssetCardRendererTest extends TestCase
 
         $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
 
-        self::assertStringNotContainsString(
-            'yii-debug-asset-card-body',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-bare-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            BareAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            </div>
+            </header>
+            </article>
+            HTML,
             $html,
             'Empty bundles must omit the card body.',
-        );
-        self::assertStringNotContainsString(
-            'yii-debug-asset-section',
-            $html,
-            'No body means no sections.',
-        );
-        self::assertStringNotContainsString(
-            'yii-debug-asset-chip-',
-            $html,
-            'Zero CSS, JS, and dependency counts must omit their header chips.',
         );
     }
 
@@ -284,8 +419,33 @@ final class AssetCardRendererTest extends TestCase
             $html,
             "Populated 'basePath' must render its row.",
         );
-        self::assertStringContainsString(
-            '@webroot/assets',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="1">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Wiring
+            </h3><dl class="yii-debug-asset-wiring">
+            <div class="yii-debug-asset-wiring-row">
+            <dt class="yii-debug-asset-wiring-label">
+            base
+            </dt><dd class="yii-debug-asset-wiring-value">
+            @webroot/assets
+            </dd>
+            </div>
+            </dl>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             "Populated 'basePath' value must be rendered.",
         );
@@ -307,8 +467,33 @@ final class AssetCardRendererTest extends TestCase
             $html,
             "Populated 'baseUrl' must render its row.",
         );
-        self::assertStringContainsString(
-            '/assets',
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-asset-card" id="app\-app-asset">
+            <header class="yii-debug-asset-card-head">
+            <span class="yii-debug-asset-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 3l8 4.5v9L12 21l-8-4.5v-9zm0 9l8-4.5M12 12v9m0-9L4 7.5m12-2.25l-8 4.5"/></svg></span><div class="yii-debug-asset-card-title">
+            <h2 class="yii-debug-asset-card-name">
+            AppAsset
+            </h2><span class="yii-debug-asset-card-fqcn">app\</span>
+            </div><div class="yii-debug-asset-card-meta">
+            </div>
+            </header><div class="yii-debug-asset-card-body" data-cols="1">
+            <section class="yii-debug-asset-section">
+            <h3 class="yii-debug-asset-section-title">
+            Wiring
+            </h3><dl class="yii-debug-asset-wiring">
+            <div class="yii-debug-asset-wiring-row">
+            <dt class="yii-debug-asset-wiring-label">
+            url
+            </dt><dd class="yii-debug-asset-wiring-value">
+            /assets
+            </dd>
+            </div>
+            </dl>
+            </section>
+            </div>
+            </article>
+            HTML,
             $html,
             "Populated 'baseUrl' value must be rendered.",
         );

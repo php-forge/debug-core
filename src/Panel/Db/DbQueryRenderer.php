@@ -30,12 +30,6 @@ final class DbQueryRenderer
      * accepted; metadata, session-control, and transaction-control statements either error or return noise, so they
      * are filtered out.
      *
-     * Usage example:
-     *
-     * ```php
-     * $supported = \PHPForge\Debug\Panel\Db\DbQueryRenderer::canBeExplained('SELECT');
-     * ```
-     *
      * @param string $type SQL command verb (case-insensitive).
      */
     public static function canBeExplained(string $type): bool
@@ -108,8 +102,7 @@ final class DbQueryRenderer
                                 ->content('Explain'),
                         )
                         ->role('button'),
-                    Div::tag()
-                        ->class('yii-debug-db-explain-text'),
+                    Div::tag()->class('yii-debug-db-explain-text'),
                 );
         }
 

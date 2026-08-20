@@ -6,9 +6,6 @@ namespace PHPForge\Debug\Panel\Asset;
 
 /**
  * Typed view-model for a single asset bundle rendered in the Asset Bundles detail view.
- *
- * Carries every value already normalized from the panel's mixed payload, so the consuming view iterates and reads
- * properties without further type narrowing.
  */
 final readonly class AssetBundleView
 {

@@ -41,12 +41,6 @@ final class LogLevel
     /**
      * Returns the lowercase display name of a level, matching the Yii logger naming.
      *
-     * Usage example:
-     *
-     * ```php
-     * $name = \PHPForge\Debug\Helper\LogLevel::name(\PHPForge\Debug\Helper\LogLevel::ERROR);
-     * ```
-     *
      * @param int $level Log-level wire value.
      *
      * @return string Display name; `unknown` for unrecognized values.

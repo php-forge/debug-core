@@ -18,9 +18,9 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightEscapesHtmlInsideStringLiteralsAndPlainSegments(): void
     {
         self::assertSame(
-            '<span class="yii-debug-sql-kw">SELECT</span> a &amp; b, '
-            . "<span class=\"yii-debug-sql-str\">'&lt;script&gt;alert(1)&lt;/script&gt;'</span> "
-            . '<span class="yii-debug-sql-kw">FROM</span> t',
+            <<<HTML
+            <span class="yii-debug-sql-kw">SELECT</span> a &amp; b, <span class="yii-debug-sql-str">'&lt;script&gt;alert(1)&lt;/script&gt;'</span> <span class="yii-debug-sql-kw">FROM</span> t
+            HTML,
             SqlHighlighter::highlight("SELECT a & b, '<script>alert(1)</script>' FROM t"),
             'Markup must be escaped in every segment.',
         );
@@ -29,7 +29,9 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightHandlesBackslashEscapedQuoteInsideStringLiteral(): void
     {
         self::assertSame(
-            "<span class=\"yii-debug-sql-str\">'a\\'s'</span>",
+            <<<HTML
+            <span class="yii-debug-sql-str">'a\\'s'</span>
+            HTML,
             SqlHighlighter::highlight("'a\\'s'"),
             'Backslash escape must extend the literal.',
         );
@@ -38,7 +40,9 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightKeepsDigitsAttachedToIdentifiersUnwrapped(): void
     {
         self::assertSame(
-            '<span class="yii-debug-sql-kw">FROM</span> tbl1',
+            <<<HTML
+            <span class="yii-debug-sql-kw">FROM</span> tbl1
+            HTML,
             SqlHighlighter::highlight('FROM tbl1'),
             'Digits inside identifiers must stay plain.',
         );
@@ -56,7 +60,9 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightKeepsKeywordsInsideStringLiteralsUnwrapped(): void
     {
         self::assertSame(
-            "<span class=\"yii-debug-sql-str\">'it''s from where'</span>",
+            <<<HTML
+            <span class="yii-debug-sql-str">'it''s from where'</span>
+            HTML,
             SqlHighlighter::highlight("'it''s from where'"),
             'Doubled-quote escape must extend the literal.',
         );
@@ -65,8 +71,9 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightLeavesQuotedIdentifiersUnwrapped(): void
     {
         self::assertSame(
-            '<span class="yii-debug-sql-kw">SELECT</span> "from", `where` '
-            . '<span class="yii-debug-sql-kw">FROM</span> t',
+            <<<HTML
+            <span class="yii-debug-sql-kw">SELECT</span> "from", `where` <span class="yii-debug-sql-kw">FROM</span> t
+            HTML,
             SqlHighlighter::highlight('SELECT "from", `where` FROM t'),
             'Quoted identifiers must stay span-free.',
         );
@@ -75,7 +82,9 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightMatchesKeywordsCaseInsensitively(): void
     {
         self::assertSame(
-            '<span class="yii-debug-sql-kw">select</span> <span class="yii-debug-sql-num">1</span>',
+            <<<HTML
+            <span class="yii-debug-sql-kw">select</span> <span class="yii-debug-sql-num">1</span>
+            HTML,
             SqlHighlighter::highlight('select 1'),
             'Lowercase keywords must be wrapped.',
         );
@@ -120,8 +129,9 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightWrapsBindParametersAndPlaceholders(): void
     {
         self::assertSame(
-            '<span class="yii-debug-sql-kw">WHERE</span> id <span class="yii-debug-sql-kw">IN</span> '
-            . '(<span class="yii-debug-sql-param">:ids</span>, <span class="yii-debug-sql-param">?</span>)',
+            <<<HTML
+            <span class="yii-debug-sql-kw">WHERE</span> id <span class="yii-debug-sql-kw">IN</span> (<span class="yii-debug-sql-param">:ids</span>, <span class="yii-debug-sql-param">?</span>)
+            HTML,
             SqlHighlighter::highlight('WHERE id IN (:ids, ?)'),
             'Named and positional parameters must be wrapped.',
         );
@@ -130,8 +140,9 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightWrapsIntegerAndDecimalNumbers(): void
     {
         self::assertSame(
-            '<span class="yii-debug-sql-kw">LIMIT</span> <span class="yii-debug-sql-num">10</span> '
-            . '<span class="yii-debug-sql-kw">OFFSET</span> <span class="yii-debug-sql-num">3.14</span>',
+            <<<HTML
+            <span class="yii-debug-sql-kw">LIMIT</span> <span class="yii-debug-sql-num">10</span> <span class="yii-debug-sql-kw">OFFSET</span> <span class="yii-debug-sql-num">3.14</span>
+            HTML,
             SqlHighlighter::highlight('LIMIT 10 OFFSET 3.14'),
             'Integers and decimals must be wrapped.',
         );
@@ -140,9 +151,10 @@ final class SqlHighlighterTest extends TestCase
     public function testHighlightWrapsLineAndBlockComments(): void
     {
         self::assertSame(
-            "<span class=\"yii-debug-sql-comment\">/* multi\nline */</span> "
-            . '<span class="yii-debug-sql-num">1</span> '
-            . '<span class="yii-debug-sql-comment">-- tail note</span>',
+            <<<HTML
+            <span class="yii-debug-sql-comment">/* multi
+            line */</span> <span class="yii-debug-sql-num">1</span> <span class="yii-debug-sql-comment">-- tail note</span>
+            HTML,
             SqlHighlighter::highlight("/* multi\nline */ 1 -- tail note"),
             'Both comment forms must be wrapped.',
         );

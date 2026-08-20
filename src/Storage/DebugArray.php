@@ -22,30 +22,19 @@ final readonly class DebugArray implements JsonSerializable
     /**
      * Captures an array as tagged debug data.
      *
-     * Usage example:
-     *
-     * ```php
-     * $array = \PHPForge\Debug\Storage\DebugArray::capture(['enabled' => true]);
-     * ```
-     *
      * @param array<array-key, mixed> $value PHP values to capture.
      *
      * @return self Tagged array facade.
      */
     public static function capture(#[SensitiveParameter] array $value): self
     {
-        return new self(DebugValue::capture($value));
+        return new self(
+            DebugValue::capture($value),
+        );
     }
 
     /**
      * Hydrates a tagged debug array from decoded JSON data.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $data = \PHPForge\Debug\Storage\DebugArray::capture(['enabled' => true])->jsonSerialize();
-     * $array = \PHPForge\Debug\Storage\DebugArray::fromArray($data, '$.panel.data');
-     * ```
      *
      * @param mixed $value Decoded tagged value.
      * @param string $path Payload path used in hydration errors.
@@ -63,17 +52,13 @@ final readonly class DebugArray implements JsonSerializable
             );
         }
 
-        return new self($debugValue);
+        return new self(
+            $debugValue,
+        );
     }
 
     /**
      * Returns the tagged array for JSON serialization.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $data = \PHPForge\Debug\Storage\DebugArray::capture(['enabled' => true])->jsonSerialize();
-     * ```
      *
      * @return array<string, mixed> Tagged array payload.
      */

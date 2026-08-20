@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Log;
 
-use PHPForge\Debug\Helper\Coerce;
 use PHPForge\Debug\Storage\{PanelSnapshot, Payload};
 
 use function array_map;
 use function count;
-use function is_array;
 
 /**
  * Canonical Log panel snapshot holding the captured rows in their typed form.
+ *
+ * @phpstan-type TraceFrame array<string, mixed>
+ * @phpstan-type LogMessage array{
+ *   0: string,
+ *   1: int,
+ *   2: string,
+ *   3: float,
+ *   4: list<TraceFrame>,
+ *   5?: int
+ * }
  */
 final readonly class LogSnapshot implements PanelSnapshot
 {
@@ -22,31 +30,23 @@ final readonly class LogSnapshot implements PanelSnapshot
     public function __construct(private array $entries) {}
 
     /**
-     * Narrows the raw logger tuples into typed rows, deriving the previous/next links and the inter-row deltas.
+     * Converts canonical logger tuples into typed rows, deriving the previous/next links and the inter-row deltas.
      *
-     * @param array<int|string, mixed> $messages Logger tuples in capture order; non-array entries are dropped.
+     * @param list<LogMessage> $messages Logger tuples in capture order.
      */
     public static function capture(array $messages): self
     {
-        $tuples = [];
-
-        foreach ($messages as $message) {
-            if (is_array($message)) {
-                $tuples[] = $message;
-            }
-        }
-
         $entries = [];
 
-        $count = count($tuples);
+        $count = count($messages);
 
         $previousId = null;
         $previousTime = null;
 
-        foreach ($tuples as $index => $message) {
+        foreach ($messages as $index => $message) {
             $id = $index + 1;
 
-            $timestamp = Coerce::floatOrNull($message[3] ?? null) ?? 0.0;
+            $timestamp = $message[3];
 
             $previousTime ??= $timestamp;
 

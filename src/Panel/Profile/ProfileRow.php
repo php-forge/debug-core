@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Profile;
 
-use PHPForge\Debug\Helper\Coerce;
 use PHPForge\Debug\Storage\{PanelRow, Payload};
 
-use function is_array;
 use function max;
 
 /**
  * Typed profile block derived once from the Yii logger timings and persisted in that form.
+ *
+ * @phpstan-import-type ProfileTiming from ProfileTimings
  */
 final readonly class ProfileRow implements PanelRow
 {
@@ -85,38 +85,23 @@ final readonly class ProfileRow implements PanelRow
     }
 
     /**
-     * Narrows one timing returned by {@see ProfileTimings::calculate()} into a typed row.
+     * Converts one timing returned by {@see ProfileTimings::calculate()} into a typed row.
      *
-     * @param mixed $timing Raw timing entry.
+     * @param ProfileTiming $timing Profile timing entry.
      * @param int $seq Zero-based sequence index to assign.
-     *
-     * @return self|null Typed row, or `null` when the timing carries no usable timestamp or duration.
      */
-    public static function fromTiming(mixed $timing, int $seq): self|null
+    public static function fromTiming(array $timing, int $seq): self
     {
-        if (!is_array($timing)) {
-            return null;
-        }
-
-        $timestamp = Coerce::floatOrNull($timing['timestamp'] ?? null);
-        $duration = Coerce::floatOrNull($timing['duration'] ?? null);
-
-        if ($timestamp === null || $duration === null) {
-            return null;
-        }
-
-        $level = Coerce::intOrNull($timing['level'] ?? null);
-
         return new self(
-            timestamp: $timestamp * 1000,
-            duration: $duration * 1000,
-            category: Coerce::stringOrNull($timing['category'] ?? null) ?? '',
-            info: Coerce::stringOrNull($timing['info'] ?? null) ?? '',
-            level: $level === null ? 0 : max(0, $level),
+            timestamp: $timing['timestamp'] * 1000,
+            duration: $timing['duration'] * 1000,
+            category: $timing['category'],
+            info: $timing['info'],
+            level: $timing['level'],
             seq: $seq,
-            memory: Coerce::intOrNull($timing['memory'] ?? null) ?? 0,
-            memoryDiff: Coerce::intOrNull($timing['memoryDiff'] ?? null) ?? 0,
-            trace: Coerce::traceFrames($timing['trace'] ?? []),
+            memory: $timing['memory'],
+            memoryDiff: $timing['memoryDiff'],
+            trace: $timing['trace'],
         );
     }
 

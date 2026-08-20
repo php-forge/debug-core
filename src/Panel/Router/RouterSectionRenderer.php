@@ -17,21 +17,12 @@ use function sprintf;
 
 /**
  * Renders the Router panel detail view from framework-neutral row models.
- *
- * Stateless static helpers: the public entry point takes the typed Current Route view plus pre-built rule and
- * action rows, and returns a fully-rendered HTML string. Concentrates tab-strip wiring, badge tinting, the three
- * section tables (Current Route logs / Router Rules / Action Routes), and the callout block in one testable place.
  */
 final class RouterSectionRenderer
 {
     /**
      * Renders the entire Router panel detail: the router-wide flags strip, the tab strip (Current Route / Router
      * Rules / Action Routes), and the per-tab content panels.
-     *
-     * Usage example:
-     * ```php
-     * $html = \PHPForge\Debug\Panel\Router\RouterSectionRenderer::renderTabs($current, $rules, $actions, $badges);
-     * ```
      *
      * @param RouterCurrentView $current Current-route resolver view.
      * @param list<RouterRuleRow> $ruleRows Router rules in display order.
@@ -91,13 +82,24 @@ final class RouterSectionRenderer
                     ->html(
                         Thead::tag()
                             ->html(
-                                Tr::tag()->html(
-                                    Th::tag()->scope('col')->content('#'),
-                                    Th::tag()->scope('col')->content('Action'),
-                                    Th::tag()->scope('col')->content('Route'),
-                                    Th::tag()->scope('col')->content('First Matching Rule'),
-                                    Th::tag()->scope('col')->content('Rules Tested'),
-                                ),
+                                Tr::tag()
+                                    ->html(
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('#'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Action'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Route'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('First Matching Rule'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Rules Tested'),
+                                    ),
                             ),
                         Tbody::tag()->html(...$rows),
                     ),
@@ -226,11 +228,18 @@ final class RouterSectionRenderer
                     ->html(
                         Thead::tag()
                             ->html(
-                                Tr::tag()->html(
-                                    Th::tag()->scope('col')->content('#'),
-                                    Th::tag()->scope('col')->content('Rule'),
-                                    Th::tag()->scope('col')->content('Parent'),
-                                ),
+                                Tr::tag()
+                                    ->html(
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('#'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Rule'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Parent'),
+                                    ),
                             ),
                         Tbody::tag()->html(...$rows),
                     ),
@@ -274,15 +283,30 @@ final class RouterSectionRenderer
                     ->html(
                         Thead::tag()
                             ->html(
-                                Tr::tag()->html(
-                                    Th::tag()->scope('col')->content('#'),
-                                    Th::tag()->scope('col')->content('Rule'),
-                                    Th::tag()->scope('col')->content('Target'),
-                                    Th::tag()->scope('col')->content('Verb'),
-                                    Th::tag()->scope('col')->content('Suffix'),
-                                    Th::tag()->scope('col')->content('Mode'),
-                                    Th::tag()->scope('col')->content('Type'),
-                                ),
+                                Tr::tag()
+                                    ->html(
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('#'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Rule'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Target'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Verb'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Suffix'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Mode'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Type'),
+                                    ),
                             ),
                         Tbody::tag()->html(...$rows),
                     ),
@@ -305,17 +329,13 @@ final class RouterSectionRenderer
         $items = [];
 
         if ($current->route !== '') {
-            $items[] = Dt::tag()
-                ->content('Resolved route');
-            $items[] = Dd::tag()
-                ->html(Code::tag()->content($current->route));
+            $items[] = Dt::tag()->content('Resolved route');
+            $items[] = Dd::tag()->html(Code::tag()->content($current->route));
         }
 
         if ($current->action !== '') {
-            $items[] = Dt::tag()
-                ->content('Dispatched action');
-            $items[] = Dd::tag()
-                ->html(Code::tag()->content($current->action));
+            $items[] = Dt::tag()->content('Dispatched action');
+            $items[] = Dd::tag()->html(Code::tag()->content($current->action));
         }
 
         return Dl::tag()

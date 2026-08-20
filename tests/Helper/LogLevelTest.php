@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see LogLevel} pinning the wire values shared with the Yii logger constants.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 final class LogLevelTest extends TestCase
@@ -53,7 +51,11 @@ final class LogLevelTest extends TestCase
             LogLevel::name(LogLevel::PROFILE_END),
             'Profile-end marker must keep the logger name.',
         );
-        self::assertSame('unknown', LogLevel::name(0x999), 'Unrecognized values must degrade to unknown.');
+        self::assertSame(
+            'unknown',
+            LogLevel::name(0x999),
+            'Unrecognized values must degrade to unknown.',
+        );
     }
     public function testWireValuesMatchTheYiiLoggerConstants(): void
     {

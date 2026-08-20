@@ -14,12 +14,6 @@ final class HydrationException extends RuntimeException
     /**
      * Creates an exception that identifies an invalid payload path and its expected value.
      *
-     * Usage example:
-     *
-     * ```php
-     * throw \PHPForge\Debug\Storage\HydrationException::at('$.summary.statusCode', 'an integer');
-     * ```
-     *
      * @param string $path Path of the invalid payload value.
      * @param string $expected Description of the expected value.
      *

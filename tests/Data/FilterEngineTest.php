@@ -25,7 +25,10 @@ final class FilterEngineTest extends TestCase
         $engine->addCondition('level', null);
         $engine->addCondition('level', ['error']);
 
-        $rows = [['level' => 'info'], ['level' => 'error']];
+        $rows = [
+            ['level' => 'info'],
+            ['level' => 'error'],
+        ];
 
         self::assertSame(
             $engine->filter($rows),
@@ -47,6 +50,49 @@ final class FilterEngineTest extends TestCase
         );
     }
 
+    public function testFilterAppliesConditionsAfterNumericAndPartialMatches(): void
+    {
+        $engine = new FilterEngine();
+
+        $engine->addCondition('duration', '>5');
+        $engine->addCondition('category', 'db');
+
+        self::assertSame(
+            [
+                [
+                    'duration' => 6,
+                    'category' => 'db',
+                ],
+            ],
+            $engine->filter(
+                [
+                    ['duration' => 6, 'category' => 'app'],
+                    ['duration' => 6, 'category' => 'db'],
+                ],
+            ),
+            'A numeric match must not skip later conditions.',
+        );
+
+        $engine->addCondition('message', 'query', partial: true);
+        $engine->addCondition('category', 'db');
+
+        self::assertSame(
+            [
+                [
+                    'message' => 'query complete',
+                    'category' => 'db',
+                ],
+            ],
+            $engine->filter(
+                [
+                    ['message' => 'query complete', 'category' => 'app'],
+                    ['message' => 'query complete', 'category' => 'db'],
+                ],
+            ),
+            'A partial match must not skip later conditions.',
+        );
+    }
+
     public function testFilterComparesNonScalarCandidatesThroughDumpExport(): void
     {
         $engine = new FilterEngine();
@@ -55,7 +101,12 @@ final class FilterEngineTest extends TestCase
 
         self::assertCount(
             1,
-            $engine->filter([['payload' => ['alpha' => 1]], ['payload' => ['beta' => 2]]]),
+            $engine->filter(
+                [
+                    ['payload' => ['alpha' => 1]],
+                    ['payload' => ['beta' => 2]],
+                ],
+            ),
             'Array candidates must match through their exported representation.',
         );
     }
@@ -81,8 +132,26 @@ final class FilterEngineTest extends TestCase
 
         self::assertSame(
             [['message' => 'Session started']],
-            $engine->filter([['message' => 'Session started'], ['message' => 'Connection opened']]),
+            $engine->filter(
+                [
+                    ['message' => 'Session started'],
+                    ['message' => 'Connection opened'],
+                ],
+            ),
             'Partial conditions must match case-insensitive substrings.',
+        );
+
+        $engine->addCondition('message', 'ÁRBOL', partial: true);
+
+        self::assertSame(
+            [['message' => 'El árbol crece']],
+            $engine->filter(
+                [
+                    ['message' => 'El árbol crece'],
+                    ['message' => 'Tree'],
+                ],
+            ),
+            'Partial conditions must apply Unicode-aware case folding.',
         );
     }
 
@@ -94,8 +163,39 @@ final class FilterEngineTest extends TestCase
 
         self::assertSame(
             [['level' => 'error']],
-            $engine->filter([['level' => 'error'], ['level' => 'error-handler']]),
+            $engine->filter(
+                [
+                    ['level' => 'error'],
+                    ['level' => 'error-handler'],
+                ],
+            ),
             'Default conditions must match the whole value case-insensitively.',
+        );
+
+        $engine->addCondition('label', 'ÜBER');
+
+        self::assertSame(
+            [['label' => 'über']],
+            $engine->filter(
+                [
+                    ['label' => 'über'],
+                    ['label' => 'uber'],
+                ],
+            ),
+            'Whole-value conditions must apply Unicode-aware case folding to both operands.',
+        );
+
+        $engine->addCondition('label', 'über');
+
+        self::assertSame(
+            [['label' => 'ÜBER']],
+            $engine->filter(
+                [
+                    ['label' => 'ÜBER'],
+                    ['label' => 'uber'],
+                ],
+            ),
+            'Whole-value conditions must apply Unicode-aware case folding to the candidate.',
         );
     }
 
@@ -107,7 +207,13 @@ final class FilterEngineTest extends TestCase
 
         self::assertSame(
             [['sqlCount' => 9]],
-            $engine->filter([['sqlCount' => 3], ['sqlCount' => 9]]),
+            $engine->filter(
+                [
+                    ['sqlCount' => 3],
+                    ['sqlCount' => 5],
+                    ['sqlCount' => 9],
+                ],
+            ),
             'A leading `>` must compare numerically.',
         );
 
@@ -115,7 +221,13 @@ final class FilterEngineTest extends TestCase
 
         self::assertSame(
             [['duration' => '0.25']],
-            $engine->filter([['duration' => '0.25'], ['duration' => '0.75']]),
+            $engine->filter(
+                [
+                    ['duration' => '0.25'],
+                    ['duration' => '0.5'],
+                    ['duration' => '0.75'],
+                ],
+            ),
             'A leading `<` must compare numeric strings numerically.',
         );
     }
@@ -143,7 +255,6 @@ final class FilterEngineTest extends TestCase
     public function testFilterRejectsMalformedInternalConditions(): void
     {
         $engine = new FilterEngine();
-
         $property = new ReflectionProperty($engine, 'conditions');
 
         $property->setValue($engine, [['attribute' => 'value', 'operator' => '>', 'value' => '5']]);
@@ -171,8 +282,48 @@ final class FilterEngineTest extends TestCase
 
         self::assertSame(
             [],
-            $engine->filter([['sqlCount' => 'many'], ['sqlCount' => null]]),
+            $engine->filter(
+                [
+                    ['sqlCount' => 'many'],
+                    ['sqlCount' => null],
+                ],
+            ),
             'Numeric operators must drop rows whose candidate is not numeric.',
+        );
+    }
+
+    public function testFilterRequiresTheEntireComparisonGrammarToMatch(): void
+    {
+        foreach (['prefix >5', '>5 suffix'] as $value) {
+            $engine = new FilterEngine();
+
+            $engine->addCondition('value', $value);
+
+            self::assertSame(
+                [['value' => $value]],
+                $engine->filter(
+                    [
+                        ['value' => $value],
+                        ['value' => 9],
+                    ],
+                ),
+                'Comparison syntax with leading or trailing data must remain a text condition.',
+            );
+        }
+
+        $engine = new FilterEngine();
+
+        $engine->addCondition('value', ">5\n");
+
+        self::assertSame(
+            [['value' => 9]],
+            $engine->filter(
+                [
+                    ['value' => 3],
+                    ['value' => 9],
+                ],
+            ),
+            'Trailing whitespace, including a final newline, must remain valid comparison syntax.',
         );
     }
 

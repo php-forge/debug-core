@@ -6,9 +6,6 @@ namespace PHPForge\Debug\Panel\Config;
 
 /**
  * Typed view-model for the application section of the Configuration panel.
- *
- * Mirrors the `application` slice of the configuration snapshot payload after every value has been narrowed
- * to its declared scalar type; the consuming view reads properties without further type checks.
  */
 final readonly class ApplicationConfig
 {

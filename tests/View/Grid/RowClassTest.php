@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see RowClass} covering the status-level to row-class mapping used by the debug grids.
- *
- * @since 0.1
  */
 #[Group('view')]
 #[Group('grid')]
@@ -28,16 +26,42 @@ final class RowClassTest extends TestCase
 
     public function testForMapsKnownLevelsToRowClasses(): void
     {
-        self::assertSame(['class' => 'yii-debug-row-success'], RowClass::for('success'), 'Success must map.');
-        self::assertSame(['class' => 'yii-debug-row-info'], RowClass::for('info'), 'Info must map.');
-        self::assertSame(['class' => 'yii-debug-row-warning'], RowClass::for('warning'), 'Warning must map.');
-        self::assertSame(['class' => 'yii-debug-row-danger'], RowClass::for('danger'), 'Danger must map.');
+        self::assertSame(
+            ['class' => 'yii-debug-row-success'],
+            RowClass::for('success'),
+            'Success must map.',
+        );
+        self::assertSame(
+            ['class' => 'yii-debug-row-info'],
+            RowClass::for('info'),
+            'Info must map.');
+        self::assertSame(
+            ['class' => 'yii-debug-row-warning'],
+            RowClass::for('warning'),
+            'Warning must map.',
+        );
+        self::assertSame(
+            ['class' => 'yii-debug-row-danger'],
+            RowClass::for('danger'),
+            'Danger must map.',
+        );
     }
 
     public function testForReturnsEmptyArrayForUnknownOrNullLevels(): void
     {
-        self::assertSame([], RowClass::for(null), '`null` must yield no class.');
-        self::assertSame([], RowClass::for(''), 'Empty string must yield no class.');
-        self::assertSame([], RowClass::for('primary'), 'Unknown levels must yield no class.');
+        self::assertSame(
+            [],
+            RowClass::for(null), "'null' must yield no class.",
+        );
+        self::assertSame(
+            [],
+            RowClass::for(''),
+            'Empty string must yield no class.',
+        );
+        self::assertSame(
+            [],
+            RowClass::for('primary'),
+            'Unknown levels must yield no class.',
+        );
     }
 }

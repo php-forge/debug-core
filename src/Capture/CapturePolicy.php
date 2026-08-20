@@ -60,7 +60,10 @@ final readonly class CapturePolicy
      */
     public function redact(#[SensitiveParameter] array $value): array
     {
-        return SensitiveDataRedactor::redact($value, $this->sensitiveKeys);
+        return SensitiveDataRedactor::redact(
+            $value,
+            $this->sensitiveKeys,
+        );
     }
 
     /**

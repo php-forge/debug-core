@@ -51,6 +51,7 @@ final class SnapshotHydrationTest extends TestCase
         ];
 
         $snapshot = AssetSnapshot::fromArray($payload, '$.panels.asset');
+
         $bundle = $snapshot->bundles()[0] ?? self::fail('Expected one hydrated asset bundle.');
 
         self::assertSame(
@@ -109,6 +110,7 @@ final class SnapshotHydrationTest extends TestCase
         ];
 
         $snapshot = DbSnapshot::fromArray($payload, '$.panels.db');
+
         $query = $snapshot->entries()[0] ?? self::fail('Expected one hydrated query row.');
 
         self::assertSame(
@@ -138,6 +140,7 @@ final class SnapshotHydrationTest extends TestCase
         ];
 
         $snapshot = EventSnapshot::fromArray($payload, '$.panels.event');
+
         $event = $snapshot->entries()[0] ?? self::fail('Expected one hydrated event row.');
 
         self::assertSame(

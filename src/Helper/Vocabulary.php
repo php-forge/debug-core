@@ -12,14 +12,8 @@ use function strtoupper;
 final class Vocabulary
 {
     /**
-     * Returns the level suffix (`error`, `warning`, `info`, `trace`, `profile`, or `other`) for a
-     * {@see LogLevel} wire value. Profile begin/end markers share the `profile` hue.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $level = \PHPForge\Debug\Helper\Vocabulary::logLevel(\PHPForge\Debug\Helper\LogLevel::WARNING);
-     * ```
+     * Returns the level suffix (`error`, `warning`, `info`, `trace`, `profile`, or `other`) for a {@see LogLevel} wire
+     * value. Profile begin/end markers share the `profile` hue.
      *
      * @param int $level Log-level wire value.
      *
@@ -39,11 +33,6 @@ final class Vocabulary
     /**
      * Returns the verb suffix for an SQL statement type.
      *
-     * Usage example:
-     * ```php
-     * $verb = \PHPForge\Debug\Helper\Vocabulary::sqlVerb('SELECT');
-     * ```
-     *
      * @param string $type SQL statement type.
      *
      * @return string Semantic verb suffix.
@@ -62,11 +51,6 @@ final class Vocabulary
     /**
      * Returns the status-class suffix for an HTTP status code.
      *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Helper\Vocabulary::statusClass(404);
-     * ```
-     *
      * @param int $code HTTP status code.
      *
      * @return string Status-class suffix.
@@ -84,11 +68,6 @@ final class Vocabulary
 
     /**
      * Returns the semantic verb suffix for an HTTP method.
-     *
-     * Usage example:
-     * ```php
-     * $verb = \PHPForge\Debug\Helper\Vocabulary::verb('PATCH');
-     * ```
      *
      * @param string $method HTTP method.
      *

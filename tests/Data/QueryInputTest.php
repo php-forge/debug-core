@@ -32,7 +32,10 @@ final class QueryInputTest extends TestCase
         );
 
         self::assertSame(
-            ['statusCode' => '404', 'count' => '7'],
+            [
+                'statusCode' => '404',
+                'count' => '7',
+            ],
             $filters,
             'Empty strings, arrays, and integer keys must be dropped; numeric values must stringify.',
         );

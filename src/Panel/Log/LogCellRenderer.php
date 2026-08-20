@@ -135,9 +135,11 @@ final class LogCellRenderer
     public static function renderTimeSincePreviousCell(LogRow $row): string
     {
         $diffMsTotal = (int) ($row->time - $row->timeOfPrevious);
+
         $diffSecondsTotal = intdiv($diffMsTotal, 1000);
         $diffMinutesTotal = intdiv($diffSecondsTotal, 60);
         $diffHours = intdiv($diffMinutesTotal, 60);
+
         $diffMs = $diffMsTotal % 1000;
         $diffSeconds = $diffSecondsTotal % 60;
         $diffMinutes = $diffMinutesTotal % 60;
@@ -145,18 +147,18 @@ final class LogCellRenderer
         $parts = [];
 
         if ($diffHours > 0) {
-            $parts[] = $diffHours . 'h';
+            $parts[] = "{$diffHours}h";
         }
 
         if ($diffMinutes > 0) {
-            $parts[] = $diffMinutes . 'm';
+            $parts[] = "{$diffMinutes}m";
         }
 
         if ($diffSeconds > 0) {
-            $parts[] = $diffSeconds . 's';
+            $parts[] = "{$diffSeconds}s";
         }
 
-        $parts[] = $diffMs . 'ms';
+        $parts[] = "{$diffMs}ms";
 
         return Div::tag()
             ->class('yii-debug-since-previous')

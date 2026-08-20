@@ -4,16 +4,26 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Profile;
 
-use PHPForge\Debug\Helper\{Coerce, LogLevel};
+use PHPForge\Debug\Helper\LogLevel;
 
 use function array_pop;
 use function array_values;
-use function json_encode;
 use function ksort;
-use function md5;
 
 /**
  * Pairs profile begin/end log tuples into per-block timings.
+ *
+ * @phpstan-import-type LogMessage from \PHPForge\Debug\Panel\Log\LogSnapshot
+ * @phpstan-type ProfileTiming array{
+ *   info: string,
+ *   category: string,
+ *   timestamp: float,
+ *   trace: list<array<string, mixed>>,
+ *   level: int,
+ *   duration: float,
+ *   memory: int,
+ *   memoryDiff: int
+ * }
  */
 final class ProfileTimings
 {
@@ -23,68 +33,56 @@ final class ProfileTimings
      * Each tuple is `[token, level, category, timestamp, traces, memory]`; a begin marker is matched with the next end
      * marker carrying the same token, producing one timing entry ordered by the begin position.
      *
-     * Usage example:
+     * @param list<LogMessage> $messages Profile log tuples in capture order.
      *
-     * ```php
-     * $timings = \PHPForge\Debug\Panel\Profile\ProfileTimings::calculate($tuples);
-     * ```
-     *
-     * @param array<int, array<int|string, mixed>> $messages Profile log tuples in capture order.
-     *
-     * @return list<array{
-     *   info: mixed,
-     *   category: mixed,
-     *   timestamp: float,
-     *   trace: mixed,
-     *   level: int,
-     *   duration: float,
-     *   memory: int,
-     *   memoryDiff: int
-     * }> Timings ordered by their begin marker.
+     * @return list<ProfileTiming> Timings ordered by their begin marker.
      */
     public static function calculate(array $messages): array
     {
         $timings = [];
+        /** @var array<array-key, list<array{message: LogMessage, index: int, level: int}>> $stack */
         $stack = [];
         $nestedLevel = 0;
 
         foreach ($messages as $index => $log) {
-            $level = Coerce::intOrNull($log[1] ?? null);
-
-            $hash = md5(Coerce::string(json_encode($log[0] ?? null)));
+            $level = $log[1];
+            $tokenKey = $log[0];
 
             if ($level === LogLevel::PROFILE_BEGIN) {
-                $log['index'] = $index;
-                $log['level'] = $nestedLevel++;
-                $stack[$hash][] = $log;
+                $stack[$tokenKey][] = [
+                    'message' => $log,
+                    'index' => $index,
+                    'level' => $nestedLevel++,
+                ];
 
                 continue;
             }
 
-            if ($level !== LogLevel::PROFILE_END || ($stack[$hash] ?? []) === []) {
+            if ($level !== LogLevel::PROFILE_END || ($stack[$tokenKey] ?? []) === []) {
                 continue;
             }
 
-            $begin = array_pop($stack[$hash]);
+            $begin = array_pop($stack[$tokenKey]);
             --$nestedLevel;
 
-            if ($stack[$hash] === []) {
-                unset($stack[$hash]);
+            if ($stack[$tokenKey] === []) {
+                unset($stack[$tokenKey]);
             }
 
-            $beginIndex = Coerce::intOrNull($begin['index']) ?? 0;
-            $beginTimestamp = Coerce::floatOrNull($begin[3] ?? null) ?? 0.0;
-            $memory = Coerce::intOrNull($log[5] ?? null) ?? 0;
+            $beginMessage = $begin['message'];
+            $beginIndex = $begin['index'];
+            $beginTimestamp = $beginMessage[3];
+            $memory = $log[5] ?? 0;
 
             $timings[$beginIndex] = [
-                'info' => $begin[0] ?? null,
-                'category' => $begin[2] ?? null,
+                'info' => $beginMessage[0],
+                'category' => $beginMessage[2],
                 'timestamp' => $beginTimestamp,
-                'trace' => $begin[4] ?? [],
-                'level' => Coerce::intOrNull($begin['level']) ?? 0,
-                'duration' => (Coerce::floatOrNull($log[3] ?? null) ?? 0.0) - $beginTimestamp,
+                'trace' => $beginMessage[4],
+                'level' => $begin['level'],
+                'duration' => $log[3] - $beginTimestamp,
                 'memory' => $memory,
-                'memoryDiff' => $memory - (Coerce::intOrNull($begin[5] ?? null) ?? 0),
+                'memoryDiff' => $memory - ($beginMessage[5] ?? 0),
             ];
         }
 

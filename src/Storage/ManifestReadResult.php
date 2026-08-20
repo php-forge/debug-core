@@ -6,9 +6,6 @@ namespace PHPForge\Debug\Storage;
 
 /**
  * Exposes a manifest read together with an optional storage diagnostic.
- *
- * An empty {@see $entries} list with no {@see $error} represents a valid empty store. Consumers that only need the
- * legacy fail-closed behavior can continue to use {@see SnapshotStore::loadManifest()}.
  */
 final readonly class ManifestReadResult
 {

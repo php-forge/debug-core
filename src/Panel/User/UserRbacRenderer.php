@@ -6,6 +6,8 @@ namespace PHPForge\Debug\Panel\User;
 
 use UIAwesome\Html\Heading\H2;
 
+use function implode;
+
 /**
  * Composes the shared Roles and Permissions section around adapter-owned grid markup.
  */
@@ -22,20 +24,20 @@ final class UserRbacRenderer
      */
     public static function render(string|null $rolesGrid, string|null $permissionsGrid): string
     {
-        $html = '';
+        $sections = [];
 
         if ($rolesGrid !== null) {
-            $html .= H2::tag()
+            $sections[] = H2::tag()
                 ->content('Roles')
                 ->render() . $rolesGrid;
         }
 
         if ($permissionsGrid !== null) {
-            $html .= H2::tag()
+            $sections[] = H2::tag()
                 ->content('Permissions')
                 ->render() . $permissionsGrid;
         }
 
-        return $html;
+        return implode('', $sections);
     }
 }

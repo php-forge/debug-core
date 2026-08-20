@@ -49,12 +49,6 @@ final readonly class RequestSummary implements JsonSerializable
     /**
      * Hydrates request metadata from decoded JSON data.
      *
-     * Usage example:
-     *
-     * ```php
-     * $summary = \PHPForge\Debug\Storage\RequestSummary::fromArray($data);
-     * ```
-     *
      * @param mixed $data Decoded request metadata.
      * @param string $path Payload path used in hydration errors.
      *
@@ -114,12 +108,6 @@ final readonly class RequestSummary implements JsonSerializable
     /**
      * Returns the request metadata for JSON serialization.
      *
-     * Usage example:
-     *
-     * ```php
-     * $data = $summary->jsonSerialize();
-     * ```
-     *
      * @return array<string, mixed> Serialized request metadata.
      */
     public function jsonSerialize(): array
@@ -143,12 +131,6 @@ final readonly class RequestSummary implements JsonSerializable
 
     /**
      * Returns a copy enriched with processing time and peak memory usage.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $profiledSummary = $summary->withProfiling(0.015, 2_097_152);
-     * ```
      *
      * @param float $processingTime Processing duration in seconds.
      * @param int $peakMemory Peak memory in bytes.

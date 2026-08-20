@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see Format} covering the megabyte readout and the trimmed CSS percentage formatter.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 #[Group('format')]

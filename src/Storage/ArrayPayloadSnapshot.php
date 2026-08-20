@@ -7,9 +7,6 @@ namespace PHPForge\Debug\Storage;
 /**
  * Provides the capture/hydrate/serialize cycle for panels whose payload stays genuinely dynamic (application
  * configuration, dumped values, and user-configured request globals).
- *
- * The using class returns the JSON key its payload is persisted under from {@see payloadKey()}, and exposes the payload
- * through a domain-named accessor delegating to {@see values()}.
  */
 trait ArrayPayloadSnapshot
 {
@@ -22,20 +19,6 @@ trait ArrayPayloadSnapshot
 
     /**
      * Captures arbitrary array values in a JSON-safe snapshot.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $prototype = new class(\PHPForge\Debug\Storage\DebugArray::capture([])) {
-     *     use \PHPForge\Debug\Storage\ArrayPayloadSnapshot;
-     *
-     *     protected static function payloadKey(): string
-     *     {
-     *         return 'data';
-     *     }
-     * };
-     * $snapshot = $prototype::capture(['enabled' => true]);
-     * ```
      *
      * @param array<array-key, mixed> $values Raw payload captured for the request.
      *
@@ -50,21 +33,6 @@ trait ArrayPayloadSnapshot
 
     /**
      * Hydrates a dynamic payload from decoded JSON data.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $prototype = new class(\PHPForge\Debug\Storage\DebugArray::capture([])) {
-     *     use \PHPForge\Debug\Storage\ArrayPayloadSnapshot;
-     *
-     *     protected static function payloadKey(): string
-     *     {
-     *         return 'data';
-     *     }
-     * };
-     * $data = $prototype::capture(['enabled' => true])->jsonSerialize();
-     * $snapshot = $prototype::fromArray($data, '$.panel');
-     * ```
      *
      * @param mixed $data Decoded JSON payload.
      * @param string $path Payload path used in hydration errors.
@@ -84,20 +52,6 @@ trait ArrayPayloadSnapshot
 
     /**
      * Returns the tagged payload for JSON serialization.
-     *
-     * Usage example:
-     *
-     * ```php
-     * $prototype = new class(\PHPForge\Debug\Storage\DebugArray::capture([])) {
-     *     use \PHPForge\Debug\Storage\ArrayPayloadSnapshot;
-     *
-     *     protected static function payloadKey(): string
-     *     {
-     *         return 'data';
-     *     }
-     * };
-     * $data = $prototype::capture(['enabled' => true])->jsonSerialize();
-     * ```
      *
      * @return array<string, mixed> Tagged payload indexed by its persistence key.
      */

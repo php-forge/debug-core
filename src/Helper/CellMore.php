@@ -12,10 +12,6 @@ use function strlen;
 
 /**
  * Wraps long grid-cell content in a collapsible clamp with an expand/collapse pill toggle.
- *
- * The body collapses to a few lines through a CSS max-height clamp — the markup is never truncated server side, so
- * any cell payload (plain text, highlighted SQL, trace lists) stays intact. The `debug.min.js` `cell-more` delegation
- * flips the `is-open` state and swaps the toggle label.
  */
 final class CellMore
 {
@@ -37,11 +33,6 @@ final class CellMore
      * The decision reads the raw source rather than the rendered markup, so highlighting or trace lists never tip a
      * short value over the threshold.
      *
-     * Usage example:
-     * ```php
-     * \PHPForge\Debug\Helper\CellMore::clamp($highlightedSql, $row->query);
-     * ```
-     *
      * @param string $content Rendered cell HTML.
      * @param string $source Raw payload the content was rendered from.
      *
@@ -54,11 +45,6 @@ final class CellMore
 
     /**
      * Wraps the rendered cell content in the collapsible clamp container.
-     *
-     * Usage example:
-     * ```php
-     * \PHPForge\Debug\Helper\CellMore::wrap($renderedCellHtml);
-     * ```
      *
      * @param string $content Rendered cell HTML to clamp; emitted verbatim inside the body container.
      *

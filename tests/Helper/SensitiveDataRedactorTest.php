@@ -10,8 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see SensitiveDataRedactor} covering exact, case-insensitive, and nested key replacement.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 final class SensitiveDataRedactorTest extends TestCase
@@ -31,11 +29,38 @@ final class SensitiveDataRedactorTest extends TestCase
             json_encode(SensitiveDataRedactor::redact($deep), JSON_THROW_ON_ERROR),
             'Redaction must stop traversing beyond the depth budget.',
         );
-        self::assertCount(10_001, $wide, 'Redaction must retain one explicit marker at the node boundary.');
+        self::assertCount(
+            10_001,
+            $wide,
+            'Redaction must retain one explicit marker at the node boundary.',
+        );
         self::assertSame(
             SensitiveDataRedactor::TRUNCATED,
             $wide[10_000] ?? null,
             'Redaction must stop traversing values beyond the node budget.',
+        );
+    }
+
+    public function testDefaultPolicyPreservesTheExactDepthBoundaryAndLaterSiblings(): void
+    {
+        $value = [
+            'tooDeep' => ['password' => 'secret'],
+            'after' => 'preserved',
+        ];
+        $expected = [
+            'tooDeep' => SensitiveDataRedactor::TRUNCATED,
+            'after' => 'preserved',
+        ];
+
+        for ($depth = 0; $depth < 10; $depth++) {
+            $value = ['nested' => $value];
+            $expected = ['nested' => $expected];
+        }
+
+        self::assertSame(
+            $expected,
+            SensitiveDataRedactor::redact($value),
+            'Only arrays beyond depth ten must truncate, without dropping later siblings.',
         );
     }
 

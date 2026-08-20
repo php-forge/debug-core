@@ -128,7 +128,9 @@ final class RequestSectionRenderer
 
         return Tr::tag()
             ->html(
-                Th::tag()->scope('row')->content((string) $name),
+                Th::tag()
+                    ->scope('row')
+                    ->content((string) $name),
                 Td::tag()->html($escaped),
             );
     }
@@ -178,12 +180,18 @@ final class RequestSectionRenderer
                     ->class('yii-debug-table yii-debug-table-mono')
                     ->style(['table-layout' => 'fixed'])
                     ->html(
-                        Thead::tag()->html(
-                            Tr::tag()->html(
-                                Th::tag()->scope('col')->content('Name'),
-                                Th::tag()->scope('col')->content('Value'),
+                        Thead::tag()
+                            ->html(
+                                Tr::tag()
+                                    ->html(
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Name'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Value'),
+                                    ),
                             ),
-                        ),
                         Tbody::tag()->html(...$rows),
                     ),
             )

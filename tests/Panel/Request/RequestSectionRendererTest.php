@@ -18,88 +18,100 @@ final class RequestSectionRendererTest extends TestCase
 {
     public function testRenderHeroEmitsFlagChipsForEachActiveFlag(): void
     {
-        $html = RequestSectionRenderer::renderHero(self::makeHero(flags: ['AJAX', 'HTTPS']));
-
-        self::assertStringContainsString(
-            '>AJAX</span>',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-request-hero">
+            <div class="yii-debug-request-hero-line">
+            <span class="yii-debug-request-hero-method yii-debug-verb-get">GET</span><span class="yii-debug-request-hero-url" title="http://example.test/">http://example.test/</span><span class="yii-debug-snapshot-status yii-debug-status-2xx">200</span>
+            </div><div class="yii-debug-request-hero-meta">
+            <span class="yii-debug-snapshot-tag">AJAX</span><span class="yii-debug-snapshot-tag">HTTPS</span>
+            </div>
+            </header>
+            HTML,
+            RequestSectionRenderer::renderHero(self::makeHero(flags: ['AJAX', 'HTTPS'])),
             'AJAX flag must surface in the meta strip.',
         );
-        self::assertStringContainsString(
-            '>HTTPS</span>',
-            $html,
-            'HTTPS flag must surface in the meta strip.',
-        );
+
     }
 
     public function testRenderHeroEmitsMetaSpansForEachNonEmptyMetaPiece(): void
     {
-        $html = RequestSectionRenderer::renderHero(
-            self::makeHero(ip: '127.0.0.1', time: '12:34:56', durationMs: '7.5 ms'),
-        );
-
-        self::assertStringContainsString(
-            '>127.0.0.1</span>',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-request-hero">
+            <div class="yii-debug-request-hero-line">
+            <span class="yii-debug-request-hero-method yii-debug-verb-get">GET</span><span class="yii-debug-request-hero-url" title="http://example.test/">http://example.test/</span><span class="yii-debug-snapshot-status yii-debug-status-2xx">200</span>
+            </div><div class="yii-debug-request-hero-meta">
+            <span>127.0.0.1</span><span>12:34:56</span><span>7.5 ms</span>
+            </div>
+            </header>
+            HTML,
+            RequestSectionRenderer::renderHero(self::makeHero(ip: '127.0.0.1', time: '12:34:56', durationMs: '7.5 ms')),
             'Non-empty ip must surface in the meta strip.',
-        );
-        self::assertStringContainsString(
-            '>12:34:56</span>',
-            $html,
-            'Non-empty time must surface in the meta strip.',
-        );
-        self::assertStringContainsString(
-            '>7.5 ms</span>',
-            $html,
-            'Non-empty durationMs must surface in the meta strip.',
         );
     }
 
     public function testRenderHeroOmitsMethodPillWhenMethodIsEmpty(): void
     {
-        $html = RequestSectionRenderer::renderHero(self::makeHero(method: ''));
-
-        self::assertStringNotContainsString(
-            'yii-debug-request-hero-method',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-request-hero">
+            <div class="yii-debug-request-hero-line">
+            <span class="yii-debug-request-hero-url" title="http://example.test/">http://example.test/</span><span class="yii-debug-snapshot-status yii-debug-status-2xx">200</span>
+            </div><div class="yii-debug-request-hero-meta">
+            </div>
+            </header>
+            HTML,
+            RequestSectionRenderer::renderHero(self::makeHero(method: '')),
             'Empty method must drop the method pill.',
         );
     }
 
     public function testRenderHeroOmitsStatusPillWhenStatusCodeIsZero(): void
     {
-        $html = RequestSectionRenderer::renderHero(self::makeHero(statusCode: 0));
-
-        self::assertStringNotContainsString(
-            'yii-debug-snapshot-status',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-request-hero">
+            <div class="yii-debug-request-hero-line">
+            <span class="yii-debug-request-hero-method yii-debug-verb-get">GET</span><span class="yii-debug-request-hero-url" title="http://example.test/">http://example.test/</span>
+            </div><div class="yii-debug-request-hero-meta">
+            </div>
+            </header>
+            HTML,
+            RequestSectionRenderer::renderHero(self::makeHero(statusCode: 0)),
             'Zero status must drop the status pill.',
         );
     }
 
     public function testRenderHeroRendersStatusPillWithVariantModifier(): void
     {
-        $html = RequestSectionRenderer::renderHero(self::makeHero(statusCode: 500, statusVariant: '5xx'));
-
-        self::assertStringContainsString(
-            'yii-debug-snapshot-status yii-debug-status-5xx',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-request-hero">
+            <div class="yii-debug-request-hero-line">
+            <span class="yii-debug-request-hero-method yii-debug-verb-get">GET</span><span class="yii-debug-request-hero-url" title="http://example.test/">http://example.test/</span><span class="yii-debug-snapshot-status yii-debug-status-5xx">500</span>
+            </div><div class="yii-debug-request-hero-meta">
+            </div>
+            </header>
+            HTML,
+            RequestSectionRenderer::renderHero(self::makeHero(statusCode: 500, statusVariant: '5xx')),
             'Variant must surface as a vocabulary status class.',
         );
-        self::assertStringContainsString(
-            '>500</span>',
-            $html,
-            'Status code value must render inside the pill.',
-        );
+
     }
 
     public function testRenderHeroTintsMethodPillWithVocabularyVerb(): void
     {
-        $html = RequestSectionRenderer::renderHero(self::makeHero(method: 'POST'));
-
-        self::assertStringContainsString(
-            'yii-debug-request-hero-method yii-debug-verb-post',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-request-hero">
+            <div class="yii-debug-request-hero-line">
+            <span class="yii-debug-request-hero-method yii-debug-verb-post">POST</span><span class="yii-debug-request-hero-url" title="http://example.test/">http://example.test/</span><span class="yii-debug-snapshot-status yii-debug-status-2xx">200</span>
+            </div><div class="yii-debug-request-hero-meta">
+            </div>
+            </header>
+            HTML,
+            RequestSectionRenderer::renderHero(self::makeHero(method: 'POST')),
             "POST must wear the 'post' verb class.",
         );
     }
@@ -108,32 +120,36 @@ final class RequestSectionRendererTest extends TestCase
     {
         $section = new RequestSection(caption: 'Server', entries: ['HTTP_HOST' => 'localhost'], filterable: true);
 
-        $html = RequestSectionRenderer::renderSection($section);
-
-        self::assertStringContainsString(
-            'type="search"',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-section-header">
+            <h2>
+            Server
+            </h2><input class="yii-debug-filter-input" type="search" aria-label="Filter Server" data-yii-debug-filter="true" placeholder="Filter…">
+            </header><div class="yii-debug-table-wrap" data-yii-debug-filter-target="true">
+            <table class="yii-debug-table yii-debug-table-mono" style='table-layout: fixed;'>
+            <thead>
+            <tr>
+            <th scope="col">
+            Name
+            </th><th scope="col">
+            Value
+            </th>
+            </tr>
+            </thead><tbody>
+            <tr>
+            <th scope="row">
+            HTTP_HOST
+            </th><td>
+            &#039;localhost&#039;
+            </td>
+            </tr>
+            </tbody>
+            </table>
+            </div>
+            HTML,
+            RequestSectionRenderer::renderSection($section),
             'Filterable section must expose a search input.',
-        );
-        self::assertStringContainsString(
-            'data-yii-debug-filter="true"',
-            $html,
-            'Filterable section input must carry the enabled filtering marker.',
-        );
-        self::assertStringContainsString(
-            'data-yii-debug-filter-target="true"',
-            $html,
-            'Filterable table must be the JS filter target.',
-        );
-        self::assertStringContainsString(
-            '<h2>' . "\n" . 'Server' . "\n" . '</h2>',
-            $html,
-            'Section header must render its caption.',
-        );
-        self::assertStringContainsString(
-            "style='table-layout: fixed;'",
-            $html,
-            'Section table must keep its fixed layout.',
         );
     }
 
@@ -141,40 +157,56 @@ final class RequestSectionRendererTest extends TestCase
     {
         $section = new RequestSection(caption: 'Server', entries: [], filterable: true);
 
-        $html = RequestSectionRenderer::renderSection($section);
-
-        self::assertStringNotContainsString(
-            'type="search"',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-section-header">
+            <h2>
+            Server
+            </h2>
+            </header><p class="yii-debug-table-empty">
+            No data
+            </p>
+            HTML,
+            RequestSectionRenderer::renderSection($section),
             'Empty section must not render the filter input.',
         );
-        self::assertStringContainsString(
-            'No data',
-            $html,
-            "Empty section must show the 'No data' placeholder.",
-        );
+
     }
 
     public function testRenderSectionPicksHtmlSpecialCharsEscapingForRowValues(): void
     {
         $section = new RequestSection(caption: 'Headers', entries: ['X-Custom' => "'quoted' <script>alert(1)</script>"]);
 
-        $html = RequestSectionRenderer::renderSection($section);
-
-        self::assertStringNotContainsString(
-            '<script>alert(1)</script>',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <header class="yii-debug-section-header">
+            <h2>
+            Headers
+            </h2>
+            </header><div class="yii-debug-table-wrap">
+            <table class="yii-debug-table yii-debug-table-mono" style='table-layout: fixed;'>
+            <thead>
+            <tr>
+            <th scope="col">
+            Name
+            </th><th scope="col">
+            Value
+            </th>
+            </tr>
+            </thead><tbody>
+            <tr>
+            <th scope="row">
+            X-Custom
+            </th><td>
+            &#039;\&#039;quoted\&#039; &lt;script&gt;alert(1)&lt;/script&gt;&#039;
+            </td>
+            </tr>
+            </tbody>
+            </table>
+            </div>
+            HTML,
+            RequestSectionRenderer::renderSection($section),
             'Raw payload must never reach the rendered HTML.',
-        );
-        self::assertStringContainsString(
-            '&lt;script&gt;',
-            $html,
-            'Tag characters must be escaped.',
-        );
-        self::assertStringContainsString(
-            '&#039;',
-            $html,
-            'Single quotes must be escaped by ENT_QUOTES.',
         );
     }
 
@@ -182,11 +214,9 @@ final class RequestSectionRendererTest extends TestCase
     {
         $section = new RequestSection(caption: 'Headers', entries: ['a' => 'A', 'b' => 'B', 'c' => 'C']);
 
-        $html = RequestSectionRenderer::renderSection($section);
-
         self::assertSame(
             3,
-            substr_count($html, '<td>'),
+            substr_count(RequestSectionRenderer::renderSection($section), '<td>'),
             'Each entry must produce exactly one body row.',
         );
     }
@@ -198,22 +228,22 @@ final class RequestSectionRendererTest extends TestCase
             new RequestTab(label: 'Headers', sections: []),
         ];
 
-        $html = RequestSectionRenderer::renderTabs($tabs);
-
-        self::assertStringContainsString(
-            'is-active',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <ul class="yii-debug-tabs" role="tablist" aria-label="Request data">
+            <li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link is-active" id="request-tab-0" href="#request-panel-0" role="tab" tabindex="0" aria-controls="request-panel-0" aria-selected="true" data-yii-debug-toggle="tab">Parameters</a>
+            </li><li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link" id="request-tab-1" href="#request-panel-1" role="tab" tabindex="-1" aria-controls="request-panel-1" aria-selected="false" data-yii-debug-toggle="tab">Headers</a>
+            </li>
+            </ul><div class="yii-debug-tab-content">
+            <div class="yii-debug-tab-panel is-active" id="request-panel-0" role="tabpanel" aria-labelledby="request-tab-0">
+            </div><div class="yii-debug-tab-panel" id="request-panel-1" role="tabpanel" aria-labelledby="request-tab-1" hidden>
+            </div>
+            </div>
+            HTML,
+            RequestSectionRenderer::renderTabs($tabs),
             "First tab must carry the 'is-active' class.",
-        );
-        self::assertStringContainsString(
-            'aria-selected="true"',
-            $html,
-            "First tab anchor must have 'aria-selected=true'.",
-        );
-        self::assertStringContainsString(
-            'aria-selected="false"',
-            $html,
-            "Subsequent tab anchors must have 'aria-selected=false'.",
         );
     }
 
@@ -222,21 +252,75 @@ final class RequestSectionRendererTest extends TestCase
         $tabs = [
             new RequestTab(
                 label: 'Parameters',
-                sections: [new RequestSection(caption: 'Query parameters', entries: ['page' => 1])],
+                sections: [
+                    new RequestSection(caption: 'Query parameters', entries: ['page' => 1]),
+                    new RequestSection(caption: 'Body parameters', entries: ['name' => 'Ada']),
+                ],
             ),
         ];
 
-        $html = RequestSectionRenderer::renderTabs($tabs);
-
         self::assertSame(
-            1,
-            substr_count($html, 'Query parameters'),
-            'A nested section must render exactly once.',
-        );
-        self::assertSame(
-            1,
-            substr_count($html, 'page'),
-            'A nested section row must render exactly once.',
+            <<<'HTML'
+            <ul class="yii-debug-tabs" role="tablist" aria-label="Request data">
+            <li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link is-active" id="request-tab-0" href="#request-panel-0" role="tab" tabindex="0" aria-controls="request-panel-0" aria-selected="true" data-yii-debug-toggle="tab">Parameters</a>
+            </li>
+            </ul><div class="yii-debug-tab-content">
+            <div class="yii-debug-tab-panel is-active" id="request-panel-0" role="tabpanel" aria-labelledby="request-tab-0">
+            <header class="yii-debug-section-header">
+            <h2>
+            Query parameters
+            </h2>
+            </header><div class="yii-debug-table-wrap">
+            <table class="yii-debug-table yii-debug-table-mono" style='table-layout: fixed;'>
+            <thead>
+            <tr>
+            <th scope="col">
+            Name
+            </th><th scope="col">
+            Value
+            </th>
+            </tr>
+            </thead><tbody>
+            <tr>
+            <th scope="row">
+            page
+            </th><td>
+            1
+            </td>
+            </tr>
+            </tbody>
+            </table>
+            </div><header class="yii-debug-section-header">
+            <h2>
+            Body parameters
+            </h2>
+            </header><div class="yii-debug-table-wrap">
+            <table class="yii-debug-table yii-debug-table-mono" style='table-layout: fixed;'>
+            <thead>
+            <tr>
+            <th scope="col">
+            Name
+            </th><th scope="col">
+            Value
+            </th>
+            </tr>
+            </thead><tbody>
+            <tr>
+            <th scope="row">
+            name
+            </th><td>
+            &#039;Ada&#039;
+            </td>
+            </tr>
+            </tbody>
+            </table>
+            </div>
+            </div>
+            </div>
+            HTML,
+            RequestSectionRenderer::renderTabs($tabs),
+            'Every nested section must be concatenated into the exact tab-panel HTML.',
         );
     }
 
@@ -247,23 +331,25 @@ final class RequestSectionRendererTest extends TestCase
             new RequestTab(label: 'Headers', sections: []),
         ];
 
-        $html = RequestSectionRenderer::renderTabs($tabs);
-
-        self::assertStringContainsString(
-            'href="#request-panel-0"',
-            $html,
+        self::assertSame(
+            <<<HTML
+            <ul class="yii-debug-tabs" role="tablist" aria-label="Request data">
+            <li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link is-active" id="request-tab-0" href="#request-panel-0" role="tab" tabindex="0" aria-controls="request-panel-0" aria-selected="true" data-yii-debug-toggle="tab">Parameters</a>
+            </li><li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link" id="request-tab-1" href="#request-panel-1" role="tab" tabindex="-1" aria-controls="request-panel-1" aria-selected="false" data-yii-debug-toggle="tab">Headers</a>
+            </li>
+            </ul><div class="yii-debug-tab-content">
+            <div class="yii-debug-tab-panel is-active" id="request-panel-0" role="tabpanel" aria-labelledby="request-tab-0">
+            </div><div class="yii-debug-tab-panel" id="request-panel-1" role="tabpanel" aria-labelledby="request-tab-1" hidden>
+            </div>
+            </div>
+            HTML,
+            RequestSectionRenderer::renderTabs($tabs),
             "First tab 'href' must point to 'request-panel-0'.",
         );
-        self::assertStringContainsString(
-            'aria-controls="request-panel-1"',
-            $html,
-            "Second tab 'aria-controls' must match its panel id.",
-        );
-        self::assertStringContainsString(
-            'id="request-panel-0"',
-            $html,
-            "First panel 'id' must match its tab href.",
-        );
+
+
     }
 
     public function testRequestSectionDefaultsToNonFilterable(): void

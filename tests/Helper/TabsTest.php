@@ -11,8 +11,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see Tabs} covering the accessible active and inactive tab states.
- *
- * @since 0.1
  */
 #[Group('helpers')]
 final class TabsTest extends TestCase
@@ -36,34 +34,35 @@ final class TabsTest extends TestCase
             'example',
             'Example tabs',
             [
-                ['label' => 'First', 'content' => '<p>One</p>'],
-                ['label' => 'Second', 'content' => '<p>Two</p>'],
+                [
+                    'label' => 'First',
+                    'content' => '<p>One</p>',
+                ],
+                [
+                    'label' => 'Second',
+                    'content' => '<p>Two</p>',
+                ],
             ],
         );
 
-        self::assertStringContainsString(
-            '<a class="yii-debug-tab-link is-active" id="example-tab-0" href="#example-panel-0" role="tab" '
-            . 'tabindex="0" aria-controls="example-panel-0" aria-selected="true" data-yii-debug-toggle="tab">First</a>',
+        self::assertSame(
+            <<<HTML
+            <ul class="yii-debug-tabs" role="tablist" aria-label="Example tabs">
+            <li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link is-active" id="example-tab-0" href="#example-panel-0" role="tab" tabindex="0" aria-controls="example-panel-0" aria-selected="true" data-yii-debug-toggle="tab">First</a>
+            </li><li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link" id="example-tab-1" href="#example-panel-1" role="tab" tabindex="-1" aria-controls="example-panel-1" aria-selected="false" data-yii-debug-toggle="tab">Second</a>
+            </li>
+            </ul><div class="yii-debug-tab-content">
+            <div class="yii-debug-tab-panel is-active" id="example-panel-0" role="tabpanel" aria-labelledby="example-tab-0">
+            <p>One</p>
+            </div><div class="yii-debug-tab-panel" id="example-panel-1" role="tabpanel" aria-labelledby="example-tab-1" hidden>
+            <p>Two</p>
+            </div>
+            </div>
+            HTML,
             $html,
             'First tab must be selected, active, and keyboard-focusable.',
-        );
-        self::assertStringContainsString(
-            '<a class="yii-debug-tab-link" id="example-tab-1" href="#example-panel-1" role="tab" tabindex="-1" '
-            . 'aria-controls="example-panel-1" aria-selected="false" data-yii-debug-toggle="tab">Second</a>',
-            $html,
-            'Inactive tab must be unselected and removed from the initial tab order.',
-        );
-        self::assertStringContainsString(
-            '<div class="yii-debug-tab-panel is-active" id="example-panel-0" role="tabpanel" '
-            . 'aria-labelledby="example-tab-0">',
-            $html,
-            'First panel must be active and visible.',
-        );
-        self::assertStringContainsString(
-            '<div class="yii-debug-tab-panel" id="example-panel-1" role="tabpanel" '
-            . 'aria-labelledby="example-tab-1" hidden>',
-            $html,
-            'Inactive panel must remain hidden until its tab is selected.',
         );
     }
 
@@ -89,8 +88,14 @@ final class TabsTest extends TestCase
                 'example',
                 'Example tabs',
                 [
-                    ['label' => 'First', 'content' => '<p>One</p>'],
-                    ['label' => 'Second', 'content' => '<p>Two</p>'],
+                    [
+                        'label' => 'First',
+                        'content' => '<p>One</p>',
+                    ],
+                    [
+                        'label' => 'Second',
+                        'content' => '<p>Two</p>',
+                    ],
                 ],
                 1,
             ),
@@ -101,12 +106,19 @@ final class TabsTest extends TestCase
     public function testRenderThrowsForANegativeActiveIndex(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The active tab index must identify a supplied tab.');
+        $this->expectExceptionMessage(
+            'The active tab index must identify a supplied tab.',
+        );
 
         Tabs::render(
             'example',
             'Example tabs',
-            [['label' => 'First', 'content' => '<p>One</p>']],
+            [
+                [
+                    'label' => 'First',
+                    'content' => '<p>One</p>',
+                ],
+            ],
             -1,
         );
     }
@@ -114,12 +126,19 @@ final class TabsTest extends TestCase
     public function testRenderThrowsForAnOutOfRangeActiveIndex(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The active tab index must identify a supplied tab.');
+        $this->expectExceptionMessage(
+            'The active tab index must identify a supplied tab.',
+        );
 
         Tabs::render(
             'example',
             'Example tabs',
-            [['label' => 'First', 'content' => '<p>One</p>']],
+            [
+                [
+                    'label' => 'First',
+                    'content' => '<p>One</p>',
+                ],
+            ],
             1,
         );
     }

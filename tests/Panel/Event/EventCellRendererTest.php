@@ -20,37 +20,29 @@ final class EventCellRendererTest extends TestCase
     {
         $cell = EventCellRenderer::renderClassCell(self::makeRow(class: 'stdClass'));
 
-        self::assertStringContainsString(
-            '<strong>stdClass</strong>',
+        self::assertSame(
+            <<<HTML
+            <span title="stdClass"><strong>stdClass</strong></span>
+            HTML,
             $cell,
             'Short name must render bold.',
         );
-        self::assertStringNotContainsString(
-            'yii-debug-muted',
-            $cell,
-            'Global classes must not emit a namespace prefix.',
-        );
+
     }
 
     public function testRenderClassCellSplitsFqcnIntoMutedNamespaceAndStrongShortName(): void
     {
         $cell = EventCellRenderer::renderClassCell(self::makeRow(class: 'yii\\base\\Event'));
 
-        self::assertStringContainsString(
-            'yii-debug-muted',
+        self::assertSame(
+            <<<HTML
+            <span title="yii\base\Event"><span class="yii-debug-muted">yii\base\</span><wbr><strong>Event</strong></span>
+            HTML,
             $cell,
             'Namespace prefix must render muted.',
         );
-        self::assertStringContainsString(
-            '<strong>Event</strong>',
-            $cell,
-            'Short name must render bold.',
-        );
-        self::assertStringContainsString(
-            'yii\base\Event',
-            $cell,
-            'Full FQCN must sit in the `title` attribute.',
-        );
+
+
     }
 
     public function testRenderSenderCellRendersEmDashForStaticEvents(): void
@@ -66,16 +58,14 @@ final class EventCellRendererTest extends TestCase
     {
         $cell = EventCellRenderer::renderSenderCell(self::makeRow(senderClass: 'yii\\web\\Application'));
 
-        self::assertStringContainsString(
-            'yii-debug-muted',
+        self::assertSame(
+            <<<HTML
+            <span title="yii\web\Application"><span class="yii-debug-muted">yii\web\</span><wbr><strong>Application</strong></span>
+            HTML,
             $cell,
             'Namespace prefix must render muted.',
         );
-        self::assertStringContainsString(
-            '<strong>Application</strong>',
-            $cell,
-            'Short name must render bold.',
-        );
+
     }
 
     public function testRenderStaticCellRendersEmDashForObjectEvents(): void
@@ -91,16 +81,14 @@ final class EventCellRendererTest extends TestCase
     {
         $cell = EventCellRenderer::renderStaticCell(self::makeRow(isStatic: '1'));
 
-        self::assertStringContainsString(
-            'yii-debug-badge-muted',
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-badge yii-debug-badge-muted">static</span>
+            HTML,
             $cell,
             'Static flag must render the muted badge.',
         );
-        self::assertStringContainsString(
-            'static',
-            $cell,
-            "Badge text must read 'static'.",
-        );
+
     }
 
     public function testRenderTimeCellFormatsTimestampAsHmsWithMillis(): void
