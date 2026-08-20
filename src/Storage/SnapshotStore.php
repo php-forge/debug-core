@@ -158,7 +158,8 @@ final class SnapshotStore
             $error = $failure instanceof StorageException
                 ? $failure
                 : new StorageException(
-                    'Unable to read debug manifest.', 0,
+                    'Unable to read debug manifest.',
+                    0,
                     $failure,
                 );
 
