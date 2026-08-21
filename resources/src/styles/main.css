@@ -127,7 +127,7 @@
 
   strong,
   b {
-    font-weight: 650;
+    font-weight: 600;
   }
 
   a {
@@ -176,8 +176,8 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--yii-debug-panel-primary);
-    outline-offset: 2px;
+    outline: 3px solid var(--yii-debug-focus-ring);
+    outline-offset: 3px;
   }
 
   /**
@@ -447,7 +447,6 @@
       color: var(--yii-debug-panel-primary-strong);
       transform: translateY(-1px);
       text-decoration: none;
-      outline: none;
     }
 
     &:hover .yii-debug-brand-icon,
@@ -508,7 +507,6 @@
       );
       color: var(--yii-debug-panel-primary-strong);
       transform: translateY(-1px);
-      outline: none;
     }
 
     .yii-debug-brand-icon {
@@ -591,6 +589,15 @@
    * Request overview — a continuous telemetry rail for identity, response,
    * runtime metrics, and capture metadata.
    */
+  .yii-debug-request-hero {
+    margin-bottom: var(--yii-debug-space-4);
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
+    border: var(--yii-debug-border);
+    border-radius: var(--yii-debug-radius-md);
+    background: var(--yii-debug-panel-surface-muted);
+    box-shadow: var(--yii-debug-shadow-sm);
+  }
+
   .yii-debug-request-overview {
     overflow: hidden;
     margin-bottom: var(--yii-debug-space-4);
@@ -656,6 +663,20 @@
     color: var(--yii-debug-panel-text);
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .yii-debug-request-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px var(--yii-debug-space-3);
+    margin-top: 6px;
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+
+    &:empty {
+      display: none;
+    }
   }
 
   .yii-debug-request-overview-status {
@@ -869,7 +890,6 @@
 
     &:focus {
       border-color: var(--yii-debug-panel-primary);
-      outline: none;
     }
   }
 
@@ -1077,7 +1097,7 @@
     background: var(--yii-debug-panel-surface-muted);
     color: var(--yii-debug-panel-text);
     font-size: var(--yii-debug-fs-xs);
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.01em;
     line-height: 1.4;
   }
@@ -1085,6 +1105,11 @@
   .yii-debug-badge-success {
     background: var(--yii-debug-success);
     color: #fff;
+  }
+
+  .yii-debug-badge-info {
+    background: var(--yii-debug-info);
+    color: var(--yii-debug-panel-bg);
   }
 
   .yii-debug-badge-warning {
@@ -1533,7 +1558,6 @@
     &:hover,
     &:focus-visible {
       background: var(--yii-debug-panel-surface-hover);
-      outline: 0;
     }
   }
 
@@ -1805,7 +1829,6 @@
     }
 
     &:focus {
-      outline: 0;
       border-color: var(--yii-debug-panel-primary);
       box-shadow: 0 0 0 3px
         color-mix(in srgb, var(--yii-debug-panel-primary), transparent 82%);
@@ -1852,7 +1875,6 @@
     font-size: var(--yii-debug-fs-xs);
 
     &:focus {
-      outline: 0;
       border-color: var(--yii-debug-panel-primary);
       box-shadow: 0 0 0 2px
         color-mix(in srgb, var(--yii-debug-panel-primary), transparent 84%);
@@ -2023,7 +2045,7 @@
       );
       backdrop-filter: blur(6px);
       font-family: var(--yii-debug-font-sans);
-      font-size: 10px;
+      font-size: var(--yii-debug-fs-xs);
       letter-spacing: 0.12em;
     }
 
@@ -2096,15 +2118,26 @@
     }
   }
 
-  /* Tables wrapped with .yii-debug-table-mono get a refined card frame. */
-  .yii-debug-table-wrap:has(.yii-debug-table-mono) {
-    overflow: auto;
-    max-height: 70vh;
+  /**
+   * Request key/value tables wrap safely at narrow widths. Keep scrolling on
+   * the page instead of turning every Request section into a nested viewport.
+   */
+  .yii-debug-table-wrap:has(> .yii-debug-table-mono) {
+    overflow: clip;
     border-radius: var(--yii-debug-radius-md);
     box-shadow:
       var(--yii-debug-shadow-sm),
       inset 0 0 0 1px
         color-mix(in srgb, var(--yii-debug-panel-border) 60%, transparent);
+  }
+
+  .yii-debug-table-mono {
+    min-width: 0;
+
+    tbody th {
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
   }
 
   /**
@@ -2467,7 +2500,6 @@
     &:hover,
     &:focus {
       border-color: var(--yii-debug-panel-primary);
-      outline: none;
     }
 
     .yii-debug-user-mask,
@@ -2498,7 +2530,7 @@
         transparent 80%
       );
       color: var(--yii-debug-panel-primary);
-      font-size: 10px;
+      font-size: var(--yii-debug-fs-xs);
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -2765,7 +2797,6 @@
 
     &:focus {
       border-color: var(--yii-debug-panel-primary);
-      outline: none;
     }
   }
 
@@ -2871,6 +2902,33 @@
 
   .yii-debug-db-explain.is-open .yii-debug-db-explain-text {
     display: block;
+  }
+
+  .yii-debug-db-explain-text.is-error {
+    display: block;
+    padding: var(--yii-debug-space-2) var(--yii-debug-space-3);
+    border-left: 3px solid var(--yii-debug-danger);
+    border-radius: var(--yii-debug-radius-sm);
+    background: color-mix(
+      in srgb,
+      var(--yii-debug-danger),
+      transparent 92%
+    );
+    color: var(--yii-debug-danger);
+    font-size: var(--yii-debug-fs-sm);
+    font-weight: 600;
+  }
+
+  .yii-debug-db-explain-all {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--yii-debug-space-3);
+  }
+
+  .yii-debug-db-explain-all-toggle {
+    min-width: 104px;
+    justify-content: center;
+    white-space: nowrap;
   }
 
   /**
@@ -3185,7 +3243,6 @@
       color: var(--yii-debug-panel-primary-strong);
       transform: translateY(-1px);
       text-decoration: none;
-      outline: none;
     }
   }
 
@@ -3214,7 +3271,7 @@
   .yii-debug-mail-recipient-label {
     color: var(--yii-debug-panel-muted);
     font-family: var(--yii-debug-font-mono);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 700;
     letter-spacing: 0.14em;
     text-align: right;
@@ -3343,7 +3400,7 @@
     background: var(--yii-debug-panel-surface);
     color: var(--yii-debug-panel-text);
     font-family: var(--yii-debug-font-mono);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: none;
@@ -3666,7 +3723,7 @@
 
   .yii-debug-queue-tree-type {
     color: var(--yii-debug-panel-muted);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 1px 6px;
@@ -3690,7 +3747,7 @@
 
   .yii-debug-queue-tree-truncated {
     color: var(--yii-debug-warning);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 1px 6px;
@@ -3808,7 +3865,7 @@
     color: var(--yii-debug-panel-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
   }
 
   .yii-debug-queue-meta-value {
@@ -3858,7 +3915,7 @@
     display: inline-flex;
     padding: 1px 8px;
     border-radius: var(--yii-debug-radius-pill);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -4159,7 +4216,7 @@
     background: var(--yii-debug-panel-surface-muted);
     color: var(--yii-debug-panel-muted);
     font-family: var(--yii-debug-font-mono);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -4246,7 +4303,7 @@
     margin: 0;
     color: var(--yii-debug-panel-muted);
     font-family: var(--yii-debug-font-sans);
-    font-size: 11px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -4273,7 +4330,7 @@
     border-radius: var(--yii-debug-radius-md);
     background: var(--yii-debug-panel-surface-muted);
     font-family: var(--yii-debug-font-mono);
-    font-size: 11px;
+    font-size: var(--yii-debug-fs-xs);
     min-width: 0;
   }
 
@@ -4285,7 +4342,7 @@
     padding: 0 5px;
     border-radius: var(--yii-debug-radius-pill);
     font-family: var(--yii-debug-font-mono);
-    font-size: 9px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 700;
     letter-spacing: 0.02em;
   }
@@ -4339,7 +4396,7 @@
     margin: 0;
     color: var(--yii-debug-panel-muted);
     font-family: var(--yii-debug-font-mono);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -4371,7 +4428,7 @@
   .yii-debug-asset-depends-label {
     color: var(--yii-debug-success);
     font-family: var(--yii-debug-font-sans);
-    font-size: 11px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -4413,7 +4470,6 @@
       );
       color: var(--yii-debug-success);
       text-decoration: none;
-      outline: none;
       transform: translateY(-1px);
     }
   }
@@ -4683,7 +4739,7 @@
     background: var(--yii-debug-panel-surface);
     color: var(--yii-debug-panel-text);
     font-family: var(--yii-debug-font-mono);
-    font-size: 11px;
+    font-size: var(--yii-debug-fs-xs);
     text-decoration: none;
     transition:
       background-color 120ms ease,
@@ -4741,7 +4797,7 @@
     background: var(--yii-debug-panel-surface);
     color: var(--yii-debug-danger);
     font-family: var(--yii-debug-font-mono);
-    font-size: 11px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-decoration: none;
@@ -5516,7 +5572,7 @@
   .yii-debug-phpinfo-toc-title-note {
     margin-left: auto;
     color: var(--yii-debug-panel-muted);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
   }
 
   .yii-debug-phpinfo-toc-overview,
@@ -5577,7 +5633,6 @@
     &:focus-visible {
       background: var(--yii-debug-panel-surface-hover);
       color: var(--yii-debug-panel-text);
-      outline: 0;
     }
   }
 
@@ -5596,7 +5651,7 @@
     border-radius: var(--yii-debug-radius-pill);
     background: var(--yii-debug-panel-surface-muted);
     color: var(--yii-debug-panel-muted);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     font-variant-numeric: tabular-nums;
     text-align: center;
   }
@@ -5689,7 +5744,6 @@
     }
 
     &:focus {
-      outline: 0;
       border-color: var(--yii-debug-panel-primary);
       box-shadow: 0 0 0 3px
         color-mix(in srgb, var(--yii-debug-panel-primary), transparent 80%);
@@ -5713,7 +5767,6 @@
     &:focus-visible {
       background: var(--yii-debug-panel-surface-hover);
       color: var(--yii-debug-panel-link-hover);
-      outline: 0;
     }
   }
 
@@ -5944,7 +5997,7 @@
     background: var(--yii-debug-panel-surface-muted);
     color: var(--yii-debug-panel-muted);
     font-family: var(--yii-debug-font-mono);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     font-variant-numeric: tabular-nums;
   }
 
@@ -5966,7 +6019,7 @@
     gap: var(--yii-debug-space-2);
     color: var(--yii-debug-panel-muted);
     font-size: var(--yii-debug-fs-xs);
-    font-weight: 650;
+    font-weight: 600;
 
     .yii-debug-phpinfo-extension-group-count {
       margin-left: auto;
@@ -6020,7 +6073,7 @@
     dt {
       margin: 0;
       color: var(--yii-debug-panel-muted);
-      font-size: 10px;
+      font-size: var(--yii-debug-fs-xs);
       font-weight: 600;
       line-height: 1.2;
     }
@@ -6054,7 +6107,7 @@
     border-radius: var(--yii-debug-radius-pill);
     border: 1px solid transparent;
     font-family: var(--yii-debug-font-mono);
-    font-size: 11px;
+    font-size: var(--yii-debug-fs-xs);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -6094,7 +6147,7 @@
     background: var(--yii-debug-panel-surface-muted);
     color: var(--yii-debug-panel-text);
     font-family: var(--yii-debug-font-mono);
-    font-size: 11px;
+    font-size: var(--yii-debug-fs-xs);
   }
 
   /**
@@ -6157,7 +6210,7 @@
       color: var(--yii-debug-panel-text);
       font-family: var(--yii-debug-font-sans);
       font-size: var(--yii-debug-fs-xl);
-      font-weight: 650;
+      font-weight: 600;
       text-align: left;
     }
   }
@@ -6197,7 +6250,6 @@
       &:hover,
       &:focus-visible {
         background: var(--yii-debug-panel-surface-hover);
-        outline: 0;
       }
 
       > span:first-child {
@@ -6228,7 +6280,7 @@
     background: var(--yii-debug-panel-surface);
     color: var(--yii-debug-panel-muted);
     font-family: var(--yii-debug-font-mono);
-    font-size: 10px;
+    font-size: var(--yii-debug-fs-xs);
     font-variant-numeric: tabular-nums;
     font-weight: 500;
   }
@@ -6379,7 +6431,7 @@
           color: var(--yii-debug-panel-text);
           font-family: var(--yii-debug-font-sans);
           font-size: var(--yii-debug-fs-xs);
-          font-weight: 650;
+          font-weight: 600;
           letter-spacing: 0.02em;
           text-align: left;
         }
@@ -6396,8 +6448,8 @@
     border: 1px solid transparent;
     border-radius: var(--yii-debug-radius-pill);
     font-family: var(--yii-debug-font-mono);
-    font-size: 10px;
-    font-weight: 650;
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 600;
     letter-spacing: 0.03em;
   }
 
@@ -6514,6 +6566,17 @@
 
     .yii-debug-nav-link-icon {
       margin-right: var(--yii-debug-space-1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
     }
   }
 }

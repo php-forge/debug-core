@@ -206,11 +206,16 @@ final class RouterSectionRenderer
         $rows = [];
 
         foreach ($current->logs as $i => $row) {
+            $result = $row->match
+                ? self::renderBadgeChip('Matched', 'success')
+                : self::renderBadgeChip('Not matched', 'muted');
+
             $tr = Tr::tag()
                 ->html(
                     Td::tag()->content((string) ($i + 1)),
                     Td::tag()->content($row->rule),
                     Td::tag()->content($row->parent),
+                    Td::tag()->html($result),
                 );
 
             if ($row->match) {
@@ -239,6 +244,9 @@ final class RouterSectionRenderer
                                         Th::tag()
                                             ->scope('col')
                                             ->content('Parent'),
+                                        Th::tag()
+                                            ->scope('col')
+                                            ->content('Result'),
                                     ),
                             ),
                         Tbody::tag()->html(...$rows),

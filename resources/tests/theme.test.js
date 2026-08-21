@@ -6,6 +6,7 @@ import {
   normalizeTheme,
   preserveThemeInLinks,
   readStoredTheme,
+  themeToggleLabel,
   writeTheme,
 } from "../src/core/theme.js";
 
@@ -32,6 +33,12 @@ test("normalizeTheme accepts explicit aliases without matching modifier classes"
   assert.equal(normalizeTheme("LIGHT"), "light");
   assert.equal(normalizeTheme("dark:bg-slate-900"), null);
   assert.equal(normalizeTheme("light dark"), null);
+});
+
+test("themeToggleLabel describes the action for the current theme", () => {
+  assert.equal(themeToggleLabel("dark"), "Switch to light theme");
+  assert.equal(themeToggleLabel("light"), "Switch to dark theme");
+  assert.equal(themeToggleLabel(null), "Switch to dark theme");
 });
 
 test("addThemeToDebugUrl updates same-origin debug routes only", () => {

@@ -45,7 +45,6 @@
 
     &:focus {
       border-color: var(--yii-debug-panel-primary);
-      outline: none;
     }
   }
 }
@@ -177,7 +176,8 @@
 }
 
 .yii-debug-tl-label {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -228,21 +228,13 @@
 }
 
 .yii-debug-tl-bar-duration {
-  position: absolute;
-  top: 50%;
-  left: calc(100% + 6px);
-  transform: translateY(-50%);
+  justify-self: end;
   color: var(--yii-debug-panel-muted);
   font-family: var(--yii-debug-font-mono);
-  font-size: 10px;
+  font-size: var(--yii-debug-fs-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
   white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.12s ease;
-}
-
-.yii-debug-tl-row:hover .yii-debug-tl-bar-duration {
-  opacity: 1;
 }
 
 /*
@@ -352,4 +344,32 @@
   margin-left: var(--yii-debug-space-2);
   color: var(--yii-debug-panel-text);
   font-weight: 700;
+}
+
+@media (width <= 640px) {
+  .yii-debug-tl,
+  .yii-debug-tl-rows {
+    --yii-debug-tl-label-col: 52%;
+
+    grid-template-columns:
+      minmax(140px, var(--yii-debug-tl-label-col))
+      minmax(0, 1fr);
+  }
+
+  .yii-debug-tl-label {
+    gap: 6px;
+    padding: 7px var(--yii-debug-space-2);
+  }
+
+  .yii-debug-tl-memory {
+    grid-template-columns:
+      minmax(140px, var(--yii-debug-tl-label-col))
+      minmax(0, 1fr);
+  }
+
+  .yii-debug-tl-memory-peak {
+    grid-column: 2;
+    margin: 4px 0 0;
+    text-align: right;
+  }
 }

@@ -10,6 +10,7 @@ import {
   readStoredTheme,
   readThemeCookie,
   THEME_PARAM,
+  themeToggleLabel,
   writeTheme,
 } from "./theme.js";
 import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
@@ -86,6 +87,27 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
     }
 
     var icon = button.querySelector(".yii-debug-brand-icon");
+    var updateToggle = function (theme) {
+      var label = themeToggleLabel(theme);
+
+      button.setAttribute("data-current-theme", theme);
+      button.setAttribute("aria-label", label);
+      button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+      button.setAttribute("title", label);
+
+      if (icon) {
+        icon.innerHTML =
+          theme === "dark"
+            ? button.getAttribute("data-icon-sun")
+            : button.getAttribute("data-icon-moon");
+      }
+    };
+    var initial =
+      normalizeTheme(
+        document.documentElement.getAttribute("data-yii-debug-theme"),
+      ) || "light";
+
+    updateToggle(initial);
 
     button.addEventListener("click", function () {
       var current =
@@ -95,16 +117,9 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
       var next = current === "dark" ? "light" : "dark";
 
       document.documentElement.setAttribute("data-yii-debug-theme", next);
-      button.setAttribute("data-current-theme", next);
+      updateToggle(next);
       writeTheme(next);
       preserveThemeInLinks(next);
-
-      if (icon) {
-        icon.innerHTML =
-          next === "dark"
-            ? button.getAttribute("data-icon-sun")
-            : button.getAttribute("data-icon-moon");
-      }
 
       if (window.parent && window.parent !== window) {
         window.parent.postMessage(

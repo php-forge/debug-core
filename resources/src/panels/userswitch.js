@@ -58,33 +58,79 @@ import { ajax, on } from "../core/dom.js";
           renderError(form, xhr);
         },
       });
-    };
-
-  on(
-    document.getElementById("debug-userswitch__filter"),
-    "click",
-    function (e) {
-      var el;
-      if (
-        e.target.tagName.toLowerCase() === "td" &&
-        e.target.parentElement.parentElement.tagName.toLowerCase() === "tbody"
-      ) {
-        el = e.target.parentElement;
-      } else if (
-        e.target.tagName.toLowerCase() === "tr" &&
-        e.target.parentElement.tagName.toLowerCase() === "tbody"
-      ) {
-        el = e.target;
-      } else {
-        return;
+    },
+    closestElement = function (target, selector) {
+      if (target && target.nodeType !== 1) {
+        target = target.parentElement;
       }
 
-      var form = document.getElementById("debug-userswitch__set-identity");
-      document.getElementById("user_id").value = el.dataset.key;
-      sendSetIdentity(form);
-      e.stopPropagation();
+      return target && typeof target.closest === "function"
+        ? target.closest(selector)
+        : null;
     },
-  );
+    findSwitchRow = function (filter, target) {
+      var row = closestElement(target, "tbody tr[data-key]");
+
+      return row && filter.contains(row) ? row : null;
+    },
+    isInteractiveTarget = function (row, target) {
+      var interactive = closestElement(
+        target,
+        'a, button, input, select, textarea, label, summary, [role="button"], [role="link"], [contenteditable="true"]',
+      );
+
+      return interactive !== null && row.contains(interactive);
+    },
+    switchToRow = function (filter, target) {
+      var row = findSwitchRow(filter, target);
+      var form;
+      var userId;
+
+      if (!row || isInteractiveTarget(row, target)) {
+        return false;
+      }
+
+      form = document.getElementById("debug-userswitch__set-identity");
+      userId = document.getElementById("user_id");
+
+      if (!form || !userId) {
+        return false;
+      }
+
+      userId.value = row.dataset.key;
+      sendSetIdentity(form);
+
+      return true;
+    };
+
+  var filter = document.getElementById("debug-userswitch__filter");
+
+  on(filter, "click", function (e) {
+    if (!switchToRow(filter, e.target)) {
+      return;
+    }
+
+    e.stopPropagation();
+  });
+  on(filter, "keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " ") {
+      return;
+    }
+
+    var row = findSwitchRow(filter, e.target);
+
+    if (!row || e.target !== row || isInteractiveTarget(row, e.target)) {
+      return;
+    }
+
+    e.preventDefault();
+
+    if (!switchToRow(filter, row)) {
+      return;
+    }
+
+    e.stopPropagation();
+  });
   on(
     document.getElementById("debug-userswitch__reset-identity-button"),
     "click",

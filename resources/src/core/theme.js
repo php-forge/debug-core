@@ -21,6 +21,12 @@ export function normalizeTheme(value) {
   return hasDark ? "dark" : "light";
 }
 
+export function themeToggleLabel(theme) {
+  return normalizeTheme(theme) === "dark"
+    ? "Switch to light theme"
+    : "Switch to dark theme";
+}
+
 export function readStoredTheme(key = THEME_STORAGE_KEY) {
   try {
     return window.localStorage
