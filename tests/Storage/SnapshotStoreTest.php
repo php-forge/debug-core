@@ -8,6 +8,7 @@ use PHPForge\Debug\Storage\{DebugSnapshot, RequestSummary, SnapshotStore, Storag
 use PHPUnit\Framework\Attributes\{Group, TestWith};
 use PHPUnit\Framework\TestCase;
 use Xepozz\InternalMocker\MockerState;
+
 use function is_array;
 
 /**
