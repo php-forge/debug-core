@@ -12,7 +12,6 @@ use function array_keys;
 use function array_reverse;
 use function count;
 use function fclose;
-use function file_get_contents;
 use function glob;
 use function is_array;
 use function is_dir;
@@ -253,6 +252,22 @@ final class SnapshotStore
      */
     public function writeSnapshot(DebugSnapshot $snapshot, int $historySize): array
     {
+        return $this->writeSnapshotResult($snapshot, $historySize)->removed;
+    }
+
+    /**
+     * Writes a snapshot and returns the already-hydrated committed manifest together with evicted entries.
+     *
+     * Adapters that need the resulting manifest can consume this result without acquiring the lock and decoding the
+     * index a second time.
+     *
+     * @param DebugSnapshot $snapshot Snapshot to persist.
+     * @param int $historySize Maximum number of retained entries.
+     *
+     * @return SnapshotWriteResult Committed manifest and entries evicted from it.
+     */
+    public function writeSnapshotResult(DebugSnapshot $snapshot, int $historySize): SnapshotWriteResult
+    {
         self::assertValidHistorySize($historySize);
 
         $tag = $snapshot->summary->tag;
@@ -267,7 +282,7 @@ final class SnapshotStore
         try {
             $this->recoverTransaction();
 
-            $manifest = $this->readManifestFile();
+            [$manifest, $manifestBefore] = $this->readManifestFile();
 
             $entries = ($manifest ?? $this->rebuildManifest())->entries;
 
@@ -282,7 +297,7 @@ final class SnapshotStore
                 'state' => 'prepared',
                 'tag' => $tag,
                 'snapshotBefore' => $this->readExistingFile($snapshotFile),
-                'manifestBefore' => $this->readExistingFile($this->indexFile()),
+                'manifestBefore' => $manifestBefore,
             ];
 
             $this->atomicWrite($this->transactionFile(), self::encode($transaction));
@@ -311,7 +326,10 @@ final class SnapshotStore
 
             $this->removeStaleSnapshots($entries);
 
-            return $removed;
+            return new SnapshotWriteResult(
+                array_reverse($entries, true),
+                $removed,
+            );
         } finally {
             fclose($lock);
         }
@@ -543,14 +561,14 @@ final class SnapshotStore
     /**
      * Reads the manifest or returns `null` when persisted JSON is invalid.
      *
-     * @return Manifest|null Hydrated manifest or `null` for invalid persisted JSON.
+     * @return array{Manifest|null, string|null} Hydrated manifest and its raw rollback payload.
      */
-    private function readManifestFile(): Manifest|null
+    private function readManifestFile(): array
     {
         $file = $this->indexFile();
 
         if (!is_file($file)) {
-            return new Manifest([]);
+            return [new Manifest([]), null];
         }
 
         $raw = @file_get_contents($file);
@@ -562,13 +580,13 @@ final class SnapshotStore
         }
 
         if ($raw === '') {
-            return null;
+            return [null, $raw];
         }
 
         try {
-            return Manifest::fromArray(self::decode($raw));
+            return [Manifest::fromArray(self::decode($raw)), $raw];
         } catch (Throwable) {
-            return null;
+            return [null, $raw];
         }
     }
 
