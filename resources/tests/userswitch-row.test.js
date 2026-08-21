@@ -117,6 +117,7 @@ test("delegated row activation supports nested clicks without hijacking controls
 });
 
 test("focusable rows activate with Enter and Space only", () => {
+  sends = 0;
   var childEnter = event(cell, "Enter");
   var rowEnter = event(row, "Enter");
   var rowSpace = event(row, " ");
@@ -124,14 +125,14 @@ test("focusable rows activate with Enter and Space only", () => {
 
   handlers.keydown(childEnter);
 
-  assert.equal(sends, 1);
+  assert.equal(sends, 0);
   assert.equal(childEnter.prevented, false);
 
   handlers.keydown(rowEnter);
   handlers.keydown(rowSpace);
   handlers.keydown(rowArrow);
 
-  assert.equal(sends, 3);
+  assert.equal(sends, 2);
   assert.equal(rowEnter.prevented, true);
   assert.equal(rowEnter.stopped, true);
   assert.equal(rowSpace.prevented, true);

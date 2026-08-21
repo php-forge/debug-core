@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   addThemeToDebugUrl,
+  bindThemeToggle,
   normalizeTheme,
   preserveThemeInLinks,
   readStoredTheme,
@@ -39,6 +40,61 @@ test("themeToggleLabel describes the action for the current theme", () => {
   assert.equal(themeToggleLabel("dark"), "Switch to light theme");
   assert.equal(themeToggleLabel("light"), "Switch to dark theme");
   assert.equal(themeToggleLabel(null), "Switch to dark theme");
+});
+
+test("bindThemeToggle synchronizes accessible state before and after a click", () => {
+  installBrowserGlobals();
+
+  function element(attributes = {}) {
+    const values = new Map(Object.entries(attributes));
+    const listeners = new Map();
+
+    return {
+      innerHTML: "",
+      addEventListener(type, listener) {
+        listeners.set(type, listener);
+      },
+      click() {
+        listeners.get("click")();
+      },
+      getAttribute(name) {
+        return values.get(name) ?? null;
+      },
+      setAttribute(name, value) {
+        values.set(name, value);
+      },
+    };
+  }
+
+  const root = element({ "data-yii-debug-theme": "dark" });
+  const icon = element();
+  const button = element({
+    "data-icon-moon": "<svg>moon</svg>",
+    "data-icon-sun": "<svg>sun</svg>",
+  });
+  const themes = [];
+
+  button.querySelector = () => icon;
+  document.documentElement = root;
+  document.querySelectorAll = () => [];
+
+  bindThemeToggle(button, (theme) => themes.push(theme));
+
+  assert.equal(button.getAttribute("aria-label"), "Switch to light theme");
+  assert.equal(button.getAttribute("aria-pressed"), "true");
+  assert.equal(button.getAttribute("title"), "Switch to light theme");
+  assert.equal(button.getAttribute("data-current-theme"), "dark");
+  assert.equal(icon.innerHTML, "<svg>sun</svg>");
+
+  button.click();
+
+  assert.equal(root.getAttribute("data-yii-debug-theme"), "light");
+  assert.equal(button.getAttribute("aria-label"), "Switch to dark theme");
+  assert.equal(button.getAttribute("aria-pressed"), "false");
+  assert.equal(button.getAttribute("title"), "Switch to dark theme");
+  assert.equal(button.getAttribute("data-current-theme"), "light");
+  assert.equal(icon.innerHTML, "<svg>moon</svg>");
+  assert.deepEqual(themes, ["light"]);
 });
 
 test("addThemeToDebugUrl updates same-origin debug routes only", () => {

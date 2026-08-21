@@ -5,12 +5,12 @@ import "../panels/db.js";
 import "../panels/phpinfo-search.js";
 import "../panels/userswitch.js";
 import {
+  bindThemeToggle,
   normalizeTheme,
   preserveThemeInLinks,
   readStoredTheme,
   readThemeCookie,
   THEME_PARAM,
-  themeToggleLabel,
   writeTheme,
 } from "./theme.js";
 import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
@@ -79,55 +79,18 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
     return theme;
   }
 
-  function bindThemeToggle() {
-    var button = document.querySelector("[data-yii-debug-theme-toggle]");
-
-    if (!button) {
-      return;
-    }
-
-    var icon = button.querySelector(".yii-debug-brand-icon");
-    var updateToggle = function (theme) {
-      var label = themeToggleLabel(theme);
-
-      button.setAttribute("data-current-theme", theme);
-      button.setAttribute("aria-label", label);
-      button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
-      button.setAttribute("title", label);
-
-      if (icon) {
-        icon.innerHTML =
-          theme === "dark"
-            ? button.getAttribute("data-icon-sun")
-            : button.getAttribute("data-icon-moon");
-      }
-    };
-    var initial =
-      normalizeTheme(
-        document.documentElement.getAttribute("data-yii-debug-theme"),
-      ) || "light";
-
-    updateToggle(initial);
-
-    button.addEventListener("click", function () {
-      var current =
-        normalizeTheme(
-          document.documentElement.getAttribute("data-yii-debug-theme"),
-        ) || "light";
-      var next = current === "dark" ? "light" : "dark";
-
-      document.documentElement.setAttribute("data-yii-debug-theme", next);
-      updateToggle(next);
-      writeTheme(next);
-      preserveThemeInLinks(next);
-
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(
-          { source: "yii-debug-toolbar", type: "theme", theme: next },
-          window.location.origin,
-        );
-      }
-    });
+  function bindThemeToggleButton() {
+    bindThemeToggle(
+      document.querySelector("[data-yii-debug-theme-toggle]"),
+      function (next) {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(
+            { source: "yii-debug-toolbar", type: "theme", theme: next },
+            window.location.origin,
+          );
+        }
+      },
+    );
   }
 
   function closest(element, selector) {
@@ -209,7 +172,7 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
   }
 
   preserveThemeInLinks(applyTheme());
-  bindThemeToggle();
+  bindThemeToggleButton();
 
   document.addEventListener("click", function (event) {
     var tab = findToggle(event.target, "tab");
