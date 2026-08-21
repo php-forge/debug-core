@@ -5,6 +5,7 @@ import "../panels/db.js";
 import "../panels/phpinfo-search.js";
 import "../panels/userswitch.js";
 import {
+  bindThemeToggle,
   normalizeTheme,
   preserveThemeInLinks,
   readStoredTheme,
@@ -78,41 +79,18 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
     return theme;
   }
 
-  function bindThemeToggle() {
-    var button = document.querySelector("[data-yii-debug-theme-toggle]");
-
-    if (!button) {
-      return;
-    }
-
-    var icon = button.querySelector(".yii-debug-brand-icon");
-
-    button.addEventListener("click", function () {
-      var current =
-        normalizeTheme(
-          document.documentElement.getAttribute("data-yii-debug-theme"),
-        ) || "light";
-      var next = current === "dark" ? "light" : "dark";
-
-      document.documentElement.setAttribute("data-yii-debug-theme", next);
-      button.setAttribute("data-current-theme", next);
-      writeTheme(next);
-      preserveThemeInLinks(next);
-
-      if (icon) {
-        icon.innerHTML =
-          next === "dark"
-            ? button.getAttribute("data-icon-sun")
-            : button.getAttribute("data-icon-moon");
-      }
-
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage(
-          { source: "yii-debug-toolbar", type: "theme", theme: next },
-          window.location.origin,
-        );
-      }
-    });
+  function bindThemeToggleButton() {
+    bindThemeToggle(
+      document.querySelector("[data-yii-debug-theme-toggle]"),
+      function (next) {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(
+            { source: "yii-debug-toolbar", type: "theme", theme: next },
+            window.location.origin,
+          );
+        }
+      },
+    );
   }
 
   function closest(element, selector) {
@@ -194,7 +172,7 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
   }
 
   preserveThemeInLinks(applyTheme());
-  bindThemeToggle();
+  bindThemeToggleButton();
 
   document.addEventListener("click", function (event) {
     var tab = findToggle(event.target, "tab");

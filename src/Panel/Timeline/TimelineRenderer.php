@@ -288,6 +288,9 @@ final class TimelineRenderer
                         Span::tag()
                             ->class('yii-debug-tl-name')
                             ->html(Fqcn::renderLabel($row->category)),
+                        Span::tag()
+                            ->class('yii-debug-tl-bar-duration')
+                            ->content(sprintf('%.1f ms', $row->duration)),
                     ),
                 Div::tag()
                     ->class('yii-debug-tl-track')
@@ -299,11 +302,6 @@ final class TimelineRenderer
                                     'left' => $row->cssLeft . '%',
                                     'width' => $row->cssWidth . '%',
                                 ],
-                            )
-                            ->html(
-                                Span::tag()
-                                    ->class('yii-debug-tl-bar-duration')
-                                    ->content(sprintf('%.1f ms', $row->duration)),
                             ),
                     ),
             )

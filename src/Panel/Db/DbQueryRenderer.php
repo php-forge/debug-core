@@ -84,10 +84,13 @@ final class DbQueryRenderer
         }
 
         if ($hasExplain && self::canBeExplained($row->type)) {
+            $explainTargetId = "yii-debug-db-explain-{$row->seq}";
+
             $children[] = Div::tag()
                 ->class('yii-debug-db-explain')
                 ->html(
                     A::tag()
+                        ->addAriaAttribute('controls', $explainTargetId)
                         ->addAriaAttribute('expanded', 'false')
                         ->addAriaAttribute('label', 'Toggle EXPLAIN output')
                         ->class('yii-debug-db-explain-toggle')
@@ -102,7 +105,9 @@ final class DbQueryRenderer
                                 ->content('Explain'),
                         )
                         ->role('button'),
-                    Div::tag()->class('yii-debug-db-explain-text'),
+                    Div::tag()
+                        ->class('yii-debug-db-explain-text')
+                        ->id($explainTargetId),
                 );
         }
 

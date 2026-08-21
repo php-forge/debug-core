@@ -81,10 +81,9 @@ final class TimelineRendererTest extends TestCase
             <div class="yii-debug-tl-row yii-debug-tl-row-queue" title="job
             10.000 ms · 0.00 MB" role="listitem">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
-            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div>
             </div>
             </div>
@@ -117,19 +116,17 @@ final class TimelineRendererTest extends TestCase
             <div class="yii-debug-tl-row yii-debug-tl-row-app" title="app
             10.000 ms · 0.00 MB" role="listitem">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
-            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div>
             </div>
             </div><div class="yii-debug-tl-row yii-debug-tl-row-queue" title="queue
             10.000 ms · 0.00 MB" role="listitem">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track">
             <div class="yii-debug-tl-bar" style='left: 10%; width: 10%;'>
-            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div>
             </div>
             </div>
@@ -162,19 +159,17 @@ final class TimelineRendererTest extends TestCase
             <div class="yii-debug-tl-row yii-debug-tl-row-app" title="GET /
             50.000 ms · 0.00 MB" role="listitem">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span><span class="yii-debug-tl-bar-duration">50.0 ms</span>
             </div><div class="yii-debug-tl-track">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 50%;'>
-            <span class="yii-debug-tl-bar-duration">50.0 ms</span>
             </div>
             </div>
             </div><div class="yii-debug-tl-row yii-debug-tl-row-db" title="SELECT 1
             10.000 ms · 0.00 MB" role="listitem">
             <div class="yii-debug-tl-label" style='--depth: 1;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yiisoft\Db\Command::query"><span class="yii-debug-muted">Yiisoft\Db\</span><wbr><strong>Command::query</strong></span></span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yiisoft\Db\Command::query"><span class="yii-debug-muted">Yiisoft\Db\</span><wbr><strong>Command::query</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track">
             <div class="yii-debug-tl-bar" style='left: 25%; width: 10%;'>
-            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div>
             </div>
             </div>
@@ -211,10 +206,9 @@ final class TimelineRendererTest extends TestCase
             <div class="yii-debug-tl-row yii-debug-tl-row-queue" title="job
             10.000 ms · 0.00 MB" role="listitem">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
-            <span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div>
             </div>
             </div>

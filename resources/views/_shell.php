@@ -30,6 +30,7 @@ use UIAwesome\Html\Root\Header;
 if ($useShell) {
     $chip = ['class' => 'yii-debug-brand-chip'];
     $themeIcon = $debugTheme === 'dark' ? $themeIconSun : $themeIconMoon;
+    $themeAction = $debugTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
 
     $yiiChip = A::tag($chip)
         ->class('yii-debug-brand-chip-yii')
@@ -71,7 +72,8 @@ if ($useShell) {
             ->html($actionIcon, $actionLabel)
             ->title($actionTitle);
     $themeChip = Button::tag($chip)
-        ->addAriaAttribute('label', 'Toggle debug panel theme')
+        ->addAriaAttribute('label', $themeAction)
+        ->addAriaAttribute('pressed', $debugTheme === 'dark' ? 'true' : 'false')
         ->addDataAttribute('yii-debug-theme-toggle', true)
         ->class('yii-debug-brand-chip-theme')
         ->dataAttributes(
@@ -87,7 +89,7 @@ if ($useShell) {
                 ->class('yii-debug-brand-icon')
                 ->html($themeIcon),
         )
-        ->title('Toggle debug panel theme')
+        ->title($themeAction)
         ->type('button');
     $header = Header::tag()
         ->class('yii-debug-brand-bar')

@@ -87,6 +87,8 @@ final class RouterSectionRendererTest extends TestCase
             Rule
             </th><th scope="col">
             Parent
+            </th><th scope="col">
+            Result
             </th>
             </tr>
             </thead><tbody>
@@ -96,6 +98,8 @@ final class RouterSectionRendererTest extends TestCase
             </td><td>
             /admin
             </td><td>
+            </td><td>
+            <span class="yii-debug-badge yii-debug-badge-muted">Not matched</span>
             </td>
             </tr><tr class="yii-debug-row-success">
             <td>
@@ -103,6 +107,8 @@ final class RouterSectionRendererTest extends TestCase
             </td><td>
             /site
             </td><td>
+            </td><td>
+            <span class="yii-debug-badge yii-debug-badge-success">Matched</span>
             </td>
             </tr>
             </tbody>
@@ -262,6 +268,8 @@ final class RouterSectionRendererTest extends TestCase
             Rule
             </th><th scope="col">
             Parent
+            </th><th scope="col">
+            Result
             </th>
             </tr>
             </thead><tbody>
@@ -271,6 +279,8 @@ final class RouterSectionRendererTest extends TestCase
             </td><td>
             /admin
             </td><td>
+            </td><td>
+            <span class="yii-debug-badge yii-debug-badge-muted">Not matched</span>
             </td>
             </tr>
             </tbody>

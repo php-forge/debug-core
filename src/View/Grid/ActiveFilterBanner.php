@@ -56,6 +56,7 @@ final class ActiveFilterBanner
 
             $pills .= A::tag()
                 ->class('yii-debug-active-filter-pill')
+                ->addAriaAttribute('label', "Remove {$attr}: {$val} filter")
                 ->addAttribute('title', 'Remove this filter')
                 ->href($removeUrl([$attr]))
                 ->html($pillContent)
@@ -71,6 +72,7 @@ final class ActiveFilterBanner
 
         $clearAll = A::tag()
             ->class('yii-debug-active-filters-clear')
+            ->addAriaAttribute('label', 'Clear all active filters')
             ->addAttribute('title', 'Clear all filters and show every row')
             ->href($removeUrl(array_keys($activeFilters)))
             ->content('Clear all')

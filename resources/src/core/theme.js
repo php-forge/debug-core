@@ -21,6 +21,60 @@ export function normalizeTheme(value) {
   return hasDark ? "dark" : "light";
 }
 
+export function themeToggleLabel(theme) {
+  return normalizeTheme(theme) === "dark"
+    ? "Switch to light theme"
+    : "Switch to dark theme";
+}
+
+export function bindThemeToggle(button, onThemeChange) {
+  if (!button) {
+    return;
+  }
+
+  const icon = button.querySelector(".yii-debug-brand-icon");
+  const updateToggle = (theme) => {
+    const normalized = normalizeTheme(theme) || "light";
+    const label = themeToggleLabel(normalized);
+
+    button.setAttribute("data-current-theme", normalized);
+    button.setAttribute("aria-label", label);
+    button.setAttribute(
+      "aria-pressed",
+      normalized === "dark" ? "true" : "false",
+    );
+    button.setAttribute("title", label);
+
+    if (icon) {
+      icon.innerHTML =
+        normalized === "dark"
+          ? button.getAttribute("data-icon-sun")
+          : button.getAttribute("data-icon-moon");
+    }
+  };
+  const initial = normalizeTheme(
+    document.documentElement.getAttribute("data-yii-debug-theme"),
+  );
+
+  updateToggle(initial);
+
+  button.addEventListener("click", () => {
+    const current = normalizeTheme(
+      document.documentElement.getAttribute("data-yii-debug-theme"),
+    );
+    const next = current === "dark" ? "light" : "dark";
+
+    document.documentElement.setAttribute("data-yii-debug-theme", next);
+    updateToggle(next);
+    writeTheme(next);
+    preserveThemeInLinks(next);
+
+    if (onThemeChange) {
+      onThemeChange(next);
+    }
+  });
+}
+
 export function readStoredTheme(key = THEME_STORAGE_KEY) {
   try {
     return window.localStorage

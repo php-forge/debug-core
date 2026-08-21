@@ -56,6 +56,7 @@
   --yii-debug-panel-link-hover: light-dark(#0e8a5f, #7fe4b8);
   --yii-debug-panel-primary: light-dark(#0e7a55, #2fd08c);
   --yii-debug-panel-primary-strong: light-dark(#0a5c40, #17a673);
+  --yii-debug-focus-ring: light-dark(#075c40, #7fe4b8);
   --yii-debug-success: light-dark(#128a50, #34c97e);
   --yii-debug-warning: light-dark(#b26a00, #e8a33d);
   --yii-debug-danger: light-dark(#c93838, #f16a6a);

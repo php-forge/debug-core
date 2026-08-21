@@ -72,7 +72,7 @@ final class DbQueryRendererTest extends TestCase
             <div class="yii-debug-db-sql">
             <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
             </div><div class="yii-debug-db-explain">
-            <a class="yii-debug-db-explain-toggle" href="/debug/db-explain?seq=7&amp;tag=request-tag-1" role="button" aria-expanded="false" aria-label="Toggle EXPLAIN output"><span class="yii-debug-db-explain-chevron" aria-hidden="true">›</span><span class="yii-debug-db-explain-label">Explain</span></a><div class="yii-debug-db-explain-text">
+            <a class="yii-debug-db-explain-toggle" href="/debug/db-explain?seq=7&amp;tag=request-tag-1" role="button" aria-controls="yii-debug-db-explain-7" aria-expanded="false" aria-label="Toggle EXPLAIN output"><span class="yii-debug-db-explain-chevron" aria-hidden="true">›</span><span class="yii-debug-db-explain-label">Explain</span></a><div class="yii-debug-db-explain-text" id="yii-debug-db-explain-7">
             </div>
             </div>
             HTML,

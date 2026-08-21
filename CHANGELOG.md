@@ -27,3 +27,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - refactor: simplify strict value hydration, collector cleanup reporting, sensitive-key lookup, and toolbar message validation without changing public contracts.
 - test: enforce complete PHP line, method, and mutation coverage with exact HTML rendering assertions.
 - perf: return the committed manifest from snapshot writes and reuse its raw rollback payload to avoid duplicate index reads and hydration.
+- fix(ui): polish Request/Timeline layout, typography, focus/motion behavior, keyboard switching, and EXPLAIN status announcements.
