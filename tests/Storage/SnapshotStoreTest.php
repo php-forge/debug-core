@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\{Group, TestWith};
 use PHPUnit\Framework\TestCase;
 use Xepozz\InternalMocker\MockerState;
 
+use function is_array;
+
 /**
  * Unit tests for {@see SnapshotStore} covering the JSON filesystem boundary: atomic writes, manifest locking, history
  * garbage collection, and the failure paths that keep a broken filesystem from corrupting a capture.
@@ -983,6 +985,77 @@ final class SnapshotStoreTest extends TestCase
         self::assertNull(
             $result->error,
             'A valid snapshot must not produce a read diagnostic.',
+        );
+    }
+
+    public function testSnapshotWriteResultReadsExistingManifestOnce(): void
+    {
+        $store = $this->store();
+
+        $store->writeSnapshot(
+            new DebugSnapshot($this->summary('older', 1_700_000_000.0), [], []),
+            10,
+        );
+
+        MockerState::resetState();
+
+        $store->writeSnapshotResult(
+            new DebugSnapshot($this->summary('newer', 1_700_000_001.0), [], []),
+            10,
+        );
+
+        $reads = 0;
+
+        foreach (MockerState::getTraces('PHPForge\\Debug\\Storage', 'file_get_contents') as $trace) {
+            if (!is_array($trace)) {
+                continue;
+            }
+
+            $arguments = $trace['arguments'] ?? null;
+
+            if (is_array($arguments) && ($arguments[0] ?? null) === "{$this->path}/index.json") {
+                $reads++;
+            }
+        }
+
+        self::assertSame(
+            1,
+            $reads,
+            'The existing manifest must be read once per write.',
+        );
+    }
+
+    public function testSnapshotWriteResultReturnsCommittedManifestAndEvictions(): void
+    {
+        $store = $this->store();
+
+        $older = $this->summary('older', 1_700_000_000.0);
+        $newer = $this->summary('newer', 1_700_000_001.0);
+
+        $store->writeSnapshot(
+            new DebugSnapshot($older, [], []),
+            10,
+        );
+
+        $result = $store->writeSnapshotResult(
+            new DebugSnapshot($newer, [], []),
+            1,
+        );
+
+        self::assertSame(
+            ['newer'],
+            array_keys($result->entries),
+            'Committed entries must be returned newest first.',
+        );
+        self::assertSame(
+            ['older'],
+            array_map(static fn(RequestSummary $summary): string => $summary->tag, $result->removed),
+            'Every eviction must be returned.',
+        );
+        self::assertEquals(
+            $store->loadManifest(),
+            $result->entries,
+            'Returned entries must match persisted data.',
         );
     }
 
