@@ -34,7 +34,6 @@
         "maglnet/composer-require-checker": "^4.1",
         "php-forge/baseline": "^0.1",
         "php-forge/coding-standard": "^0.3",
-        "php-forge/foxy": "^0.2",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-strict-rules": "^2.0.3",
         "phpunit/phpunit": "^12.5",
@@ -66,7 +65,6 @@
         "sort-packages": true,
         "allow-plugins": {
             "infection/extension-installer": true,
-            "php-forge/foxy": true,
             "phpstan/extension-installer": true,
             "yii2-extensions/scaffold": true
         }
