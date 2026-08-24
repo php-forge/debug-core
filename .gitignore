@@ -43,6 +43,9 @@ node_modules
 .stryker-tmp
 reports/mutation
 
+# local browser quality artifacts
+artifacts
+
 # vagrant (if present)
 .vagrant
 

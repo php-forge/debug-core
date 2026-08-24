@@ -20,7 +20,7 @@ final class TimelineMemoryRendererTest extends TestCase
     {
         self::assertSame(
             <<<'HTML'
-            <svg width="100" height="20" preserveAspectRatio="none" viewBox="0 0 100 20" xmlns="http://www.w3.org/2000/svg">
+            <svg width="100" height="20" aria-hidden="true" focusable="false" preserveAspectRatio="none" viewBox="0 0 100 20" xmlns="http://www.w3.org/2000/svg">
             <defs>
             <linearGradient id="yii-debug-tl-memory-gradient" x1="0" x2="0" y1="1" y2="0">
             <stop offset="10%" stop-color="currentColor" stop-opacity="0.18"><stop offset="60%" stop-color="currentColor" stop-opacity="0.45"><stop offset="90%" stop-color="currentColor" stop-opacity="0.65"><stop offset="100%" stop-color="currentColor" stop-opacity="0.85">
@@ -75,7 +75,7 @@ final class TimelineMemoryRendererTest extends TestCase
     {
         self::assertSame(
             <<<HTML
-            <svg width="100" height="100" preserveAspectRatio="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <svg width="100" height="100" aria-hidden="true" focusable="false" preserveAspectRatio="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
             <linearGradient id="yii-debug-tl-memory-gradient" x1="0" x2="0" y1="1" y2="0">
             <stop offset="10%" stop-color="currentColor" stop-opacity="0.18"><stop offset="60%" stop-color="currentColor" stop-opacity="0.45"><stop offset="90%" stop-color="currentColor" stop-opacity="0.65"><stop offset="100%" stop-color="currentColor" stop-opacity="0.85">
@@ -101,7 +101,7 @@ final class TimelineMemoryRendererTest extends TestCase
     {
         self::assertSame(
             <<<HTML
-            <svg width="1920" height="40" preserveAspectRatio="none" viewBox="0 0 1920 40" xmlns="http://www.w3.org/2000/svg">
+            <svg width="1920" height="40" aria-hidden="true" focusable="false" preserveAspectRatio="none" viewBox="0 0 1920 40" xmlns="http://www.w3.org/2000/svg">
             <defs>
             <linearGradient id="yii-debug-tl-memory-gradient" x1="0" x2="0" y1="1" y2="0">
             <stop offset="10%" stop-color="currentColor" stop-opacity="0.18"><stop offset="60%" stop-color="currentColor" stop-opacity="0.45"><stop offset="90%" stop-color="currentColor" stop-opacity="0.65"><stop offset="100%" stop-color="currentColor" stop-opacity="0.85">

@@ -183,3 +183,31 @@ test("XHR tracking detaches in-flight listeners before instance reuse", () => {
   assert.equal(replacement.profile, "replacement-tag");
   assert.equal(replacement.profilerUrl, "/debug/replacement");
 });
+
+test("AJAX tracking rejects unsafe debug profile response links", () => {
+  var startIndex = requestStack.length;
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/hostile-link");
+  xhr.readyState = 4;
+  xhr.status = 200;
+  xhr.headers = {
+    "X-Debug-Tag": "hostile-tag",
+    "X-Debug-Link": "javascript:alert(1)",
+  };
+  xhr.dispatch("readystatechange");
+
+  assert.equal(requestStack[startIndex].profile, "hostile-tag");
+  assert.equal(requestStack[startIndex].profilerUrl, null);
+
+  xhr.open("GET", "/api/cross-origin-link");
+  xhr.readyState = 4;
+  xhr.status = 200;
+  xhr.headers = {
+    "X-Debug-Tag": "cross-origin-tag",
+    "X-Debug-Link": "https://attacker.test/debug/view",
+  };
+  xhr.dispatch("readystatechange");
+
+  assert.equal(requestStack[startIndex + 1].profilerUrl, null);
+});

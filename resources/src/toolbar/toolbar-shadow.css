@@ -87,7 +87,7 @@
   flex: none;
   align-items: center;
   gap: 0;
-  min-height: 32px;
+  min-height: var(--yii-debug-control-min-size);
   padding: 3px 8px;
   border: 1px solid var(--yii-debug-panel-border);
   border-radius: 999px;
@@ -242,7 +242,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 32px;
+  min-height: var(--yii-debug-control-min-size);
   max-width: 260px;
   padding: 3px 10px;
   border: 1px solid var(--yii-debug-panel-border);
@@ -444,23 +444,43 @@
 
 /* HTTP verb readouts in the AJAX popover — vocabulary-colored text. */
 .verb-get {
-  color: color-mix(in srgb, var(--yii-debug-verb-get) 80%, var(--yii-debug-panel-text));
+  color: color-mix(
+    in srgb,
+    var(--yii-debug-verb-get) 80%,
+    var(--yii-debug-panel-text)
+  );
 }
 
 .verb-post {
-  color: color-mix(in srgb, var(--yii-debug-verb-post) 80%, var(--yii-debug-panel-text));
+  color: color-mix(
+    in srgb,
+    var(--yii-debug-verb-post) 80%,
+    var(--yii-debug-panel-text)
+  );
 }
 
 .verb-put {
-  color: color-mix(in srgb, var(--yii-debug-verb-put) 80%, var(--yii-debug-panel-text));
+  color: color-mix(
+    in srgb,
+    var(--yii-debug-verb-put) 80%,
+    var(--yii-debug-panel-text)
+  );
 }
 
 .verb-delete {
-  color: color-mix(in srgb, var(--yii-debug-verb-delete) 80%, var(--yii-debug-panel-text));
+  color: color-mix(
+    in srgb,
+    var(--yii-debug-verb-delete) 80%,
+    var(--yii-debug-panel-text)
+  );
 }
 
 .verb-other {
-  color: color-mix(in srgb, var(--yii-debug-verb-other) 80%, var(--yii-debug-panel-text));
+  color: color-mix(
+    in srgb,
+    var(--yii-debug-verb-other) 80%,
+    var(--yii-debug-panel-text)
+  );
 }
 
 /* Verdict-free readouts keep the neutral pill fill. */
@@ -563,8 +583,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: var(--yii-debug-control-min-size);
+  height: var(--yii-debug-control-min-size);
   border: 1px solid var(--yii-debug-panel-border);
   border-radius: 999px;
   color: var(--yii-debug-panel-text);
@@ -714,6 +734,42 @@
 
   .drawer {
     height: min(var(--yii-debug-toolbar-drawer-height), 70vh);
+  }
+}
+
+@media (pointer: coarse) {
+  .brand,
+  .panel,
+  .control,
+  .ajax-link {
+    min-height: 44px;
+  }
+
+  .control {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (forced-colors: active) {
+  .bar,
+  .brand,
+  .panel,
+  .control,
+  .drawer,
+  .metric-value,
+  .brand-version {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+    color: CanvasText;
+  }
+
+  .panel-active,
+  .panel:focus-within,
+  .control:focus-visible {
+    border-color: Highlight;
+    outline-color: Highlight;
   }
 }
 

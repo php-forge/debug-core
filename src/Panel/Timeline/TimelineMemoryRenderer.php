@@ -52,6 +52,8 @@ final class TimelineMemoryRenderer
         usort($points, static fn(array $a, array $b): int => $a[0] <=> $b[0]);
 
         return Svg::tag()
+            ->addAriaAttribute('hidden', 'true')
+            ->addAttribute('focusable', 'false')
             ->height($height)
             ->html(
                 Defs::tag()->html(self::gradient()),

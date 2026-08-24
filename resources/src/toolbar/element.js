@@ -41,14 +41,13 @@ import {
   renderAjaxProfileLink,
   renderToolbarLinkAttributes,
   shouldOpenToolbarDrawer,
-  toolbarItemTag,
-  toolbarPanelContainerTag,
 } from "./panel.js";
 import {
   normalizeToolbarPosition,
   toolbarDrawerHeight,
   toolbarDrawerHeightForKey,
 } from "./position.js";
+import { normalizeToolbarUrl, sameToolbarUrl } from "./url.js";
 
 /**
  * Styles injected into the toolbar's open shadow DOM. Authored in
@@ -72,6 +71,10 @@ export function YiiDebugToolbar() {
   self.lastLoadedTag = null;
   self.lastLoadedUrl = null;
   self.loadGeneration = 0;
+  self.toolbarRoot = null;
+  self.barRoot = null;
+  self.drawerRoot = null;
+  self.drawerPosition = null;
   self.boundPointerMove = self.onPointerMove.bind(self);
   self.boundPointerUp = self.onPointerUp.bind(self);
   self.boundHostThemeRefresh = self.refreshHostThemeControl.bind(self);
@@ -155,7 +158,25 @@ YiiDebugToolbar.prototype.disconnectedCallback = function () {
 
 YiiDebugToolbar.prototype.setAjaxRequests = function (requests) {
   this.ajaxRequests = requests;
-  this.render();
+
+  if (!this.data || !this.expanded || !this.barRoot) {
+    return;
+  }
+
+  var current = this.barRoot.querySelector(".ajax-panel");
+
+  if (!current) {
+    this.render();
+
+    return;
+  }
+
+  var staging = document.createElement("div");
+  staging.innerHTML = this.renderAjaxPanel();
+
+  if (staging.firstElementChild) {
+    current.replaceWith(staging.firstElementChild);
+  }
 };
 
 YiiDebugToolbar.prototype.detectTheme = function () {
@@ -417,12 +438,16 @@ YiiDebugToolbar.prototype.withTheme = function (url) {
   return addThemeToUrl(url, theme);
 };
 
+YiiDebugToolbar.prototype.normalizeUrl = function (url) {
+  return normalizeToolbarUrl(url);
+};
+
 YiiDebugToolbar.prototype.followTag = function (tag) {
   if (!tag || this.currentTag === tag) {
     return;
   }
 
-  var url = this.getAttribute("data-url");
+  var url = this.normalizeUrl(this.getAttribute("data-url"));
 
   if (!url) {
     return;
@@ -468,7 +493,7 @@ YiiDebugToolbar.prototype.followTag = function (tag) {
 
 YiiDebugToolbar.prototype.load = function (done, attempt, generation) {
   var self = this;
-  var url = this.getAttribute("data-url");
+  var url = this.normalizeUrl(this.getAttribute("data-url"));
   var retryAttempt = typeof attempt === "number" ? attempt : 0;
   var requestGeneration = resolveToolbarLoadGeneration(
     this.loadGeneration,
@@ -490,7 +515,7 @@ YiiDebugToolbar.prototype.load = function (done, attempt, generation) {
   };
 
   if (!url) {
-    this.renderError("Debug toolbar data URL is missing.");
+    this.renderError("Debug toolbar data URL is missing or unsafe.");
     notify(false);
     return;
   }
@@ -583,7 +608,7 @@ YiiDebugToolbar.prototype.dispatchAttachedEvent = function () {
 };
 
 YiiDebugToolbar.prototype.ensureShadowSkeleton = function () {
-  if (this.contentRoot) {
+  if (this.toolbarRoot) {
     return;
   }
 
@@ -591,20 +616,31 @@ YiiDebugToolbar.prototype.ensureShadowSkeleton = function () {
   style.textContent = toolbarStyles;
   this.shadowRoot.appendChild(style);
 
-  this.contentRoot = document.createElement("div");
-  this.contentRoot.style.display = "contents";
-  this.shadowRoot.appendChild(this.contentRoot);
+  this.toolbarRoot = document.createElement("div");
+  this.barRoot = document.createElement("div");
+  this.drawerRoot = document.createElement("div");
+  this.barRoot.className = "bar";
+  this.drawerRoot.style.display = "contents";
+  this.toolbarRoot.appendChild(this.barRoot);
+  this.toolbarRoot.appendChild(this.drawerRoot);
+  this.shadowRoot.appendChild(this.toolbarRoot);
+
+  // Retain the historical internal alias for adapter-side diagnostics.
+  this.contentRoot = this.toolbarRoot;
 
   this.bindDelegatedEvents();
 };
 
 YiiDebugToolbar.prototype.renderError = function (message) {
   this.ensureShadowSkeleton();
-  this.contentRoot.innerHTML =
-    '<div class="toolbar expanded"><div class="bar"><strong>Yii Debugger</strong>' +
+  this.toolbarRoot.className = "toolbar expanded";
+  this.barRoot.innerHTML =
+    "<strong>Yii Debugger</strong>" +
     '<span class="error-message">' +
     escapeHtml(message) +
-    "</span></div></div>";
+    "</span>";
+  this.drawerRoot.innerHTML = "";
+  this.drawerPosition = null;
 };
 
 YiiDebugToolbar.prototype.getPosition = function () {
@@ -636,21 +672,15 @@ YiiDebugToolbar.prototype.render = function () {
   });
   var profilingChip = profilingPanel ? this.renderPanel(profilingPanel) : "";
 
-  this.contentRoot.innerHTML =
-    '<div class="' +
-    classes.join(" ") +
-    '">' +
-    '<div class="bar">' +
-    (this.expanded
-      ? this.renderBrand() +
-        profilingChip +
-        this.renderAjaxPanel() +
-        this.renderPanels(["profiling"]) +
-        this.renderControls()
-      : this.renderCollapsedOpener()) +
-    "</div>" +
-    this.renderDrawer(position) +
-    "</div>";
+  this.toolbarRoot.className = classes.join(" ");
+  this.barRoot.innerHTML = this.expanded
+    ? this.renderBrand() +
+      profilingChip +
+      this.renderAjaxPanel() +
+      this.renderPanels(["profiling"]) +
+      this.renderControls()
+    : this.renderCollapsedOpener();
+  this.syncDrawer(position);
 
   this.bindEvents();
   this.applyDrawerHeight();
@@ -814,16 +844,19 @@ YiiDebugToolbar.prototype.renderPanels = function (excludeIds) {
 
 YiiDebugToolbar.prototype.isPanelActive = function (panel) {
   var items = panel.items || [];
+  var panelUrl = this.normalizeUrl(panel.url);
 
   if (!this.activeUrl) {
     return false;
   }
-  if (panel.url && sameUrl(panel.url, this.activeUrl)) {
+  if (panelUrl && sameUrl(panelUrl, this.activeUrl)) {
     return true;
   }
 
   for (var i = 0; i < items.length; i++) {
-    if (items[i].url && sameUrl(items[i].url, this.activeUrl)) {
+    var itemUrl = this.normalizeUrl(items[i].url);
+
+    if (itemUrl && sameUrl(itemUrl, this.activeUrl)) {
       return true;
     }
   }
@@ -859,7 +892,13 @@ YiiDebugToolbar.prototype.iconHtml = function (iconName, cls) {
 YiiDebugToolbar.prototype.renderPanel = function (panel) {
   var metrics = "";
   var items = panel.items || [];
-  var panelElement = toolbarPanelContainerTag(panel);
+  var panelUrl = this.normalizeUrl(panel.url);
+  var hasLinkedItem = items.some(
+    function (item) {
+      return this.normalizeUrl(item.url) !== null;
+    }.bind(this),
+  );
+  var panelElement = panelUrl && !hasLinkedItem ? "a" : "div";
   var rawTitle =
     typeof panel.title === "string" ? panel.title : panel.id || "Panel";
   var hasTitle = rawTitle !== "";
@@ -869,15 +908,18 @@ YiiDebugToolbar.prototype.renderPanel = function (panel) {
 
   items.forEach(function (item) {
     var status = item.status || "default";
-    var itemElement = toolbarItemTag(item);
+    var normalizedItemUrl = this.normalizeUrl(item.url);
     var itemUrl = renderToolbarLinkAttributes(
-      item.url,
-      item.url ? this.withTheme(item.url) : "",
+      normalizedItemUrl,
+      normalizedItemUrl ? this.withTheme(normalizedItemUrl) : "",
       escapeHtml,
     );
+    var itemElement = itemUrl === "" ? "span" : "a";
     var itemTitle = item.title ? ' title="' + escapeHtml(item.title) + '"' : "";
     var metricClass =
-      item.url && sameUrl(item.url, this.activeUrl) ? " metric-active" : "";
+      normalizedItemUrl && sameUrl(normalizedItemUrl, this.activeUrl)
+        ? " metric-active"
+        : "";
 
     metrics +=
       "<" +
@@ -911,12 +953,12 @@ YiiDebugToolbar.prototype.renderPanel = function (panel) {
       ? '<span class="panel-title">' + escapeHtml(rawTitle) + "</span>"
       : "");
   var panelLinkAttributes = renderToolbarLinkAttributes(
-    panel.url,
-    panel.url ? this.withTheme(panel.url) : "",
+    panelUrl,
+    panelUrl ? this.withTheme(panelUrl) : "",
     escapeHtml,
   );
 
-  if (panel.url && panelElement !== "a") {
+  if (panelUrl && panelElement !== "a") {
     panelLabel =
       '<a class="panel-link"' +
       panelLinkAttributes +
@@ -1022,6 +1064,70 @@ YiiDebugToolbar.prototype.renderDrawer = function (position) {
   return position === "top" ? drawer + handle : handle + drawer;
 };
 
+/**
+ * Keeps the drawer browsing context alive while the fast-changing toolbar bar
+ * is refreshed for AJAX metrics. The iframe is created only when the drawer
+ * opens and navigated only when its effective URL changes.
+ */
+YiiDebugToolbar.prototype.syncDrawer = function (position) {
+  if (!this.drawerOpen || !this.activeUrl) {
+    if (this.drawerRoot.childNodes.length > 0) {
+      this.drawerRoot.innerHTML = "";
+    }
+    this.drawerPosition = null;
+
+    return;
+  }
+
+  var source = this.withTheme(this.activeUrl);
+
+  if (!source) {
+    this.drawerOpen = false;
+    this.activeUrl = "";
+    this.drawerRoot.innerHTML = "";
+    this.drawerPosition = null;
+
+    return;
+  }
+
+  var frame = this.drawerRoot.querySelector("iframe");
+
+  if (!frame) {
+    this.drawerRoot.innerHTML = this.renderDrawer(position);
+    this.drawerPosition = position;
+
+    return;
+  }
+
+  if (!sameToolbarUrl(frame.getAttribute("src"), source)) {
+    frame.setAttribute("src", source);
+  }
+
+  var drawer = this.drawerRoot.querySelector(".drawer");
+  var handle = this.drawerRoot.querySelector(".resize-handle");
+
+  if (!drawer || !handle) {
+    this.drawerRoot.innerHTML = this.renderDrawer(position);
+    this.drawerPosition = position;
+
+    return;
+  }
+
+  if (this.drawerPosition === position) {
+    return;
+  }
+
+  if (position === "top") {
+    this.drawerRoot.appendChild(drawer);
+    this.drawerRoot.appendChild(handle);
+  } else {
+    this.drawerRoot.appendChild(handle);
+    this.drawerRoot.appendChild(drawer);
+  }
+
+  this.drawerPosition = position;
+};
+
 YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
   var root = this.shadowRoot;
   var self = this;
@@ -1076,7 +1182,8 @@ YiiDebugToolbar.prototype.bindEvents = function () {
     });
   }
 
-  if (resizeHandle) {
+  if (resizeHandle && !resizeHandle.__yiiDebugResizeEventsBound) {
+    resizeHandle.__yiiDebugResizeEventsBound = true;
     resizeHandle.addEventListener("keydown", function (event) {
       self.onResizeKeyDown(event);
     });
@@ -1104,14 +1211,16 @@ YiiDebugToolbar.prototype.toggleExpanded = function () {
 };
 
 YiiDebugToolbar.prototype.openPanel = function (url) {
-  if (!url) {
+  var normalizedUrl = this.normalizeUrl(url);
+
+  if (!normalizedUrl) {
     return;
   }
 
   this.expanded = true;
   this.drawerOpen = true;
-  this.activeUrl = url;
-  this.restoreFocusUrl = url;
+  this.activeUrl = normalizedUrl;
+  this.restoreFocusUrl = normalizedUrl;
   writeStorageItem(storageKey, "1");
   this.render();
   focusToolbarElement(this.shadowRoot, ".close-drawer");

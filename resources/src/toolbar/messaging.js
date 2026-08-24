@@ -9,6 +9,7 @@ import {
   sameUrl,
   toolbars,
 } from "./state.js";
+import { normalizeToolbarUrl } from "./url.js";
 
 /**
  * AJAX request tracking — installs replacements for `XMLHttpRequest.open` and
@@ -120,7 +121,9 @@ function trackXhr() {
         item.statusCode = xhr.status;
         item.error = xhr.status < 200 || xhr.status >= 400;
         item.profile = xhr.getResponseHeader("X-Debug-Tag");
-        item.profilerUrl = xhr.getResponseHeader("X-Debug-Link");
+        item.profilerUrl = normalizeToolbarUrl(
+          xhr.getResponseHeader("X-Debug-Link"),
+        );
         notifyAjaxChange();
       };
 
@@ -176,7 +179,9 @@ function trackFetch() {
           item.statusCode = response.status;
           item.error = response.status < 200 || response.status >= 400;
           item.profile = response.headers.get("X-Debug-Tag");
-          item.profilerUrl = response.headers.get("X-Debug-Link");
+          item.profilerUrl = normalizeToolbarUrl(
+            response.headers.get("X-Debug-Link"),
+          );
           notifyAjaxChange();
 
           return response;

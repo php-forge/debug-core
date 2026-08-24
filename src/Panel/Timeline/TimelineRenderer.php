@@ -263,10 +263,12 @@ final class TimelineRenderer
                     ->class('yii-debug-tl-memory-label')
                     ->content('Memory'),
                 Div::tag()
+                    ->addAriaAttribute('hidden', 'true')
                     ->class('yii-debug-tl-memory-track')
                     ->html($svg)
                     ->style(['height' => "{$height}px"]),
                 Span::tag()
+                    ->addAriaAttribute('label', 'Peak memory ' . Format::bytesToMb($memory))
                     ->class('yii-debug-tl-memory-peak')
                     ->content(Format::bytesToMb($memory)),
             );
@@ -275,6 +277,7 @@ final class TimelineRenderer
     private static function renderRow(TimelineSpanRow $row): Div
     {
         return Div::tag()
+            ->addAriaAttribute('label', $row->tooltip)
             ->addAttribute('role', 'listitem')
             ->class("yii-debug-tl-row yii-debug-tl-row-{$row->variant}")
             ->html(
@@ -293,6 +296,7 @@ final class TimelineRenderer
                             ->content(sprintf('%.1f ms', $row->duration)),
                     ),
                 Div::tag()
+                    ->addAriaAttribute('hidden', 'true')
                     ->class('yii-debug-tl-track')
                     ->html(
                         Div::tag()

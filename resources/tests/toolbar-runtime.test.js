@@ -30,6 +30,7 @@ import {
   toolbarDrawerHeight,
   toolbarDrawerHeightForKey,
 } from "../src/toolbar/position.js";
+import { normalizeToolbarUrl, sameToolbarUrl } from "../src/toolbar/url.js";
 
 function focusable(attributes = {}) {
   return {
@@ -168,6 +169,7 @@ test("toolbar data URL resolution rejects unusable inputs", () => {
 });
 
 test("toolbar item links remain focusable without nested interactive elements", () => {
+  var location = "https://example.test/";
   var linkedItem = { url: "/debug/request/status" };
   var unlinkedItem = { value: "200" };
   var itemOnlyPanel = { items: [linkedItem] };
@@ -176,22 +178,42 @@ test("toolbar item links remain focusable without nested interactive elements", 
     url: "/debug/request",
   };
 
-  assert.equal(toolbarPanelContainerTag(itemOnlyPanel), "div");
-  assert.equal(toolbarItemTag(linkedItem), "a");
-  assert.equal(toolbarItemTag(unlinkedItem), "span");
-  assert.equal(toolbarPanelContainerTag(panelAndItemLinks), "div");
+  assert.equal(toolbarPanelContainerTag(itemOnlyPanel, location), "div");
+  assert.equal(toolbarItemTag(linkedItem, location), "a");
+  assert.equal(toolbarItemTag(unlinkedItem, location), "span");
+  assert.equal(toolbarPanelContainerTag(panelAndItemLinks, location), "div");
   assert.equal(
-    toolbarPanelContainerTag({
-      items: [unlinkedItem, linkedItem],
-      url: "/debug/request",
-    }),
+    toolbarPanelContainerTag(
+      {
+        items: [unlinkedItem, linkedItem],
+        url: "/debug/request",
+      },
+      location,
+    ),
     "div",
   );
   assert.equal(
-    toolbarPanelContainerTag({ items: [unlinkedItem], url: "/debug" }),
+    toolbarPanelContainerTag(
+      { items: [unlinkedItem], url: "/debug" },
+      location,
+    ),
     "a",
   );
-  assert.equal(toolbarPanelContainerTag({ items: [unlinkedItem] }), "div");
+  assert.equal(
+    toolbarPanelContainerTag({ items: [unlinkedItem] }, location),
+    "div",
+  );
+  assert.equal(
+    toolbarPanelContainerTag(
+      { items: [unlinkedItem], url: "https://attacker.test/debug" },
+      location,
+    ),
+    "div",
+  );
+  assert.equal(
+    toolbarItemTag({ url: "javascript:alert(1)" }, location),
+    "span",
+  );
 });
 
 test("toolbar native links carry the active theme without changing drawer URLs", () => {
@@ -204,6 +226,86 @@ test("toolbar native links carry the active theme without changing drawer URLs",
     ' href="/debug/request?tag=1&yii_debug_theme=dark" data-debug-url="/debug/request?tag=1"',
   );
   assert.equal(renderToolbarLinkAttributes(null, null, String), "");
+});
+
+test("toolbar URL normalization enforces the same-origin HTTP boundary", () => {
+  var location = "https://example.test/app";
+
+  assert.equal(
+    normalizeToolbarUrl("/custom-debug/view?tag=1", location),
+    "/custom-debug/view?tag=1",
+  );
+  assert.equal(
+    normalizeToolbarUrl("https://example.test/debug/view", location),
+    "https://example.test/debug/view",
+  );
+  assert.equal(
+    normalizeToolbarUrl("https://other.test/debug/view", location),
+    null,
+  );
+  assert.equal(
+    normalizeToolbarUrl("//example.test/debug/view", location),
+    null,
+  );
+  assert.equal(
+    normalizeToolbarUrl("\\\\example.test\\debug\\view", location),
+    null,
+  );
+  assert.equal(normalizeToolbarUrl("javascript:alert(1)", location), null);
+  assert.equal(normalizeToolbarUrl("data:text/html,test", location), null);
+  assert.equal(
+    normalizeToolbarUrl("https://user@example.test/debug/view", location),
+    null,
+  );
+});
+
+test("toolbar link renderers drop unsafe navigation targets", () => {
+  var location = "https://example.test/";
+
+  assert.equal(
+    renderToolbarLinkAttributes(
+      "javascript:alert(1)",
+      "javascript:alert(1)",
+      String,
+      location,
+    ),
+    "",
+  );
+  assert.equal(
+    renderAjaxProfileLink(
+      "hostile",
+      "https://other.test/debug/view",
+      "https://other.test/debug/view",
+      String,
+      location,
+    ),
+    "n/a",
+  );
+  assert.equal(
+    shouldOpenToolbarDrawer(
+      { button: 0, ctrlKey: false, metaKey: false, shiftKey: false },
+      "data:text/html,test",
+      location,
+    ),
+    false,
+  );
+});
+
+test("equivalent drawer URLs keep the existing iframe browsing context", () => {
+  var location = "https://example.test/app";
+
+  assert.equal(
+    sameToolbarUrl(
+      "/debug/view?tag=1",
+      "https://example.test/debug/view?tag=1",
+      location,
+    ),
+    true,
+  );
+  assert.equal(
+    sameToolbarUrl("/debug/view?tag=1", "/debug/view?tag=2", location),
+    false,
+  );
 });
 
 test("toolbar drawer preserves native modified-click navigation", () => {

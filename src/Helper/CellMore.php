@@ -62,7 +62,7 @@ final class CellMore
                     ->addAriaAttribute('expanded', 'false')
                     ->addAttribute('data-yii-debug-toggle', 'cell-more')
                     ->class('yii-debug-cell-more-toggle')
-                    ->content('[+] Show more')
+                    ->content('Show more')
                     ->type(ButtonType::BUTTON),
             )
             ->render();

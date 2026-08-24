@@ -173,7 +173,7 @@ final class LogCellRendererTest extends TestCase
             <div class="yii-debug-cell-more">
             <div class="yii-debug-cell-more-body">
             {$message}
-            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">[+] Show more</button>
+            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">Show more</button>
             </div>
             HTML,
             $html,

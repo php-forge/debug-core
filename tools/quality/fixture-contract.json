@@ -1,0 +1,37 @@
+{
+    "storageVersion": 4,
+    "historyFilter": "quality-fixture",
+    "security": {
+        "exactKey": "password",
+        "exactSentinel": "SYNTHETIC_EXACT_REDACTION_SENTINEL",
+        "sensitiveKeyPrefix": "fixture_blocked_",
+        "prefixedKey": "fixture_blocked_account",
+        "prefixedSentinel": "SYNTHETIC_PREFIX_REDACTION_SENTINEL",
+        "controlKey": "fixture_visible_control",
+        "controlValue": "SYNTHETIC_NON_SENSITIVE_CONTROL",
+        "placeholder": "[redacted]"
+    },
+    "states": {
+        "empty": {
+            "tag": "quality-fixture-empty-v1",
+            "timestamp": 1787529600.0
+        },
+        "dense": {
+            "tag": "quality-fixture-dense-v1",
+            "timestamp": 1787529601.0,
+            "rows": 80
+        }
+    },
+    "apps": [
+        {
+            "name": "vue",
+            "path": "../../app-vue",
+            "baseURL": "http://localhost:8080"
+        },
+        {
+            "name": "react",
+            "path": "../../app-react",
+            "baseURL": "http://localhost:8081"
+        }
+    ]
+}

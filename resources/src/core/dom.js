@@ -55,6 +55,17 @@ export function ajax(url, settings) {
       settings.error(xhr);
     }
   };
+  var abort = function () {
+    if (completed) {
+      return;
+    }
+
+    completed = true;
+
+    if (settings.abort) {
+      settings.abort(xhr);
+    }
+  };
 
   xhr.open(method, url, true);
   xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
@@ -80,5 +91,8 @@ export function ajax(url, settings) {
     }
   };
   xhr.ontimeout = fail;
+  xhr.onabort = abort;
   xhr.send(settings.data || "");
+
+  return xhr;
 }

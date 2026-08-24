@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Helper;
 
+use InvalidArgumentException;
 use PHPForge\Debug\Helper\SensitiveDataRedactor;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -14,6 +15,55 @@ use PHPUnit\Framework\TestCase;
 #[Group('helpers')]
 final class SensitiveDataRedactorTest extends TestCase
 {
+    public function testConfigurationRejectsEmptyPrefixesAndInvalidPatterns(): void
+    {
+        try {
+            SensitiveDataRedactor::redact(['value' => 'secret'], [], ['']);
+            self::fail('An empty sensitive-key prefix would match every key and must be rejected.');
+        } catch (InvalidArgumentException $exception) {
+            self::assertStringContainsString(
+                'must not be empty',
+                $exception->getMessage(),
+                'The empty-prefix error must explain the unsafe configuration.',
+            );
+        }
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('not a valid PCRE pattern');
+
+        SensitiveDataRedactor::isSensitiveKey('value', [], [], ['~[~']);
+    }
+
+    public function testDefaultKeysCoverCommonEnvironmentCredentialNames(): void
+    {
+        self::assertSame(
+            [
+                'DB_PASSWORD' => SensitiveDataRedactor::PLACEHOLDER,
+                'AWS_SECRET_ACCESS_KEY' => SensitiveDataRedactor::PLACEHOLDER,
+                'DATABASE_URL' => SensitiveDataRedactor::PLACEHOLDER,
+                'MY_APP_PASSWORD' => SensitiveDataRedactor::PLACEHOLDER,
+                'REDIS_PASSWORD' => SensitiveDataRedactor::PLACEHOLDER,
+                'SMTP_API_TOKEN' => SensitiveDataRedactor::PLACEHOLDER,
+                'DATABASE_HOST' => 'database.test',
+                'tokenizer' => 'safe-service',
+                'passwordless' => true,
+            ],
+            SensitiveDataRedactor::redact(
+                [
+                    'DB_PASSWORD' => 'database-secret',
+                    'AWS_SECRET_ACCESS_KEY' => 'cloud-secret',
+                    'DATABASE_URL' => 'mysql://user:secret@database.test/app',
+                    'MY_APP_PASSWORD' => 'application-secret',
+                    'REDIS_PASSWORD' => 'redis-secret',
+                    'SMTP_API_TOKEN' => 'smtp-secret',
+                    'DATABASE_HOST' => 'database.test',
+                    'tokenizer' => 'safe-service',
+                    'passwordless' => true,
+                ],
+            ),
+            'High-risk environment credential names must be redacted without hiding safe connection metadata.',
+        );
+    }
     public function testDefaultPolicyBoundsDepthAndNodeTraversal(): void
     {
         $deep = ['password' => 'secret'];
@@ -61,6 +111,44 @@ final class SensitiveDataRedactorTest extends TestCase
             $expected,
             SensitiveDataRedactor::redact($value),
             'Only arrays beyond depth ten must truncate, without dropping later siblings.',
+        );
+    }
+
+    public function testLiteralPrefixesAndPatternsAreAdditiveAndConfigurable(): void
+    {
+        $value = [
+            'PRIVATE_ONE' => 'one',
+            'privateTwo' => 'two',
+            'credential_123' => 'three',
+            'public' => 'visible',
+        ];
+
+        self::assertSame(
+            [
+                'PRIVATE_ONE' => SensitiveDataRedactor::PLACEHOLDER,
+                'privateTwo' => SensitiveDataRedactor::PLACEHOLDER,
+                'credential_123' => SensitiveDataRedactor::PLACEHOLDER,
+                'public' => 'visible',
+            ],
+            SensitiveDataRedactor::redact(
+                $value,
+                [],
+                ['private'],
+                ['~^credential_\d+$~i'],
+            ),
+            'Literal prefixes and PCRE patterns must augment exact-key matching throughout a value tree.',
+        );
+        self::assertTrue(
+            SensitiveDataRedactor::isSensitiveKey('PrivateValue', [], ['PRIVATE']),
+            'Literal prefixes must ignore case.',
+        );
+        self::assertFalse(
+            SensitiveDataRedactor::isSensitiveKey('not_credential_123', [], [], ['~^credential_\d+$~i']),
+            'Configured patterns must retain their caller-defined anchoring semantics.',
+        );
+        self::assertFalse(
+            SensitiveDataRedactor::isSensitiveKey('MY_APP_PASSWORD', SensitiveDataRedactor::DEFAULT_KEYS, [], []),
+            'An explicit empty pattern list must opt out while retaining exact default keys.',
         );
     }
 
