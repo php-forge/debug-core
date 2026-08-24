@@ -91,22 +91,61 @@ if ($useShell) {
         )
         ->title($themeAction)
         ->type('button');
+    $densityChip = Button::tag($chip)
+        ->addAriaAttribute('label', 'Switch to compact density')
+        ->addAriaAttribute('pressed', 'false')
+        ->addDataAttribute('yii-debug-density-toggle', true)
+        ->class('yii-debug-brand-chip-control yii-debug-brand-chip-density')
+        ->html(
+            Span::tag()
+                ->addDataAttribute('yii-debug-density-label', true)
+                ->class('yii-debug-brand-label')
+                ->content('Cozy'),
+        )
+        ->title('Switch to compact density')
+        ->type('button');
+    $copyChip = Button::tag($chip)
+        ->addAriaAttribute('label', 'Copy debug link')
+        ->addDataAttribute('yii-debug-copy-link', true)
+        ->class('yii-debug-brand-chip-control yii-debug-brand-chip-copy')
+        ->html(
+            Span::tag()
+                ->addAriaAttribute('live', 'polite')
+                ->addDataAttribute('yii-debug-copy-label', true)
+                ->class('yii-debug-brand-label')
+                ->content('Copy link'),
+        )
+        ->title('Copy debug link')
+        ->type('button');
     $header = Header::tag()
         ->class('yii-debug-brand-bar')
-        ->html($yiiChip, $phpChip, $memoryChip, $actionChip, $themeChip);
+        ->html($yiiChip, $phpChip, $memoryChip, $actionChip, $densityChip, $copyChip, $themeChip);
+    $skipLink = A::tag()
+        ->class('yii-debug-skip-link')
+        ->content('Skip to debug content')
+        ->href('#yii-debug-main');
     $shell = Div::tag()
         ->class('yii-debug-page default-' . $mode)
         ->html(
+            $skipLink,
             $header,
             Div::tag()
                 ->class('yii-debug-layout')
                 ->html(
                     $sidebar,
-                    Main::tag()->class('yii-debug-main yii-debug-card')->html($content),
+                    Main::tag()
+                        ->addAttribute('tabindex', '-1')
+                        ->id('yii-debug-main')
+                        ->class('yii-debug-main yii-debug-card')
+                        ->html($content),
                 ),
         );
 } else {
-    $shell = Main::tag()->class('yii-debug-main-bare')->html($content);
+    $shell = Main::tag()
+        ->addAttribute('tabindex', '-1')
+        ->id('yii-debug-main')
+        ->class('yii-debug-main-bare')
+        ->html($content);
 }
 ?>
 <?= $shell->render();

@@ -57,6 +57,21 @@ jobs:
       - name: Build assets.
         run: npm run build
 
+      - name: Enforce asset size budgets.
+        run: npm run check:size
+
+      - name: Enforce strict token contrast.
+        run: npm run check:contrast:strict
+
+      - name: Validate browser suite discovery.
+        run: npm run test:e2e:list
+
+      - name: Install Playwright Chromium.
+        run: npx playwright install --with-deps chromium
+
+      - name: Test the large-data browser harness.
+        run: npm run test:perf
+
       - name: Detect dist drift.
         run: |
           status="$(git status --porcelain --untracked-files=all --ignored=matching -- resources/assets/dist/)"

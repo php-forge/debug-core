@@ -1,44 +1,68 @@
-function hasToolbarItemLink(items) {
+import { normalizeToolbarUrl } from "./url.js";
+
+function hasToolbarItemLink(items, locationValue) {
+  if (!items) {
+    return false;
+  }
+
   return items.some(function (item) {
-    return Boolean(item.url);
+    return normalizeToolbarUrl(item.url, locationValue) !== null;
   });
 }
 
-export function renderAjaxProfileLink(profile, profileUrl, nativeUrl, escape) {
-  if (!profileUrl) {
+export function renderAjaxProfileLink(
+  profile,
+  profileUrl,
+  nativeUrl,
+  escape,
+  locationValue,
+) {
+  var attributes = renderToolbarLinkAttributes(
+    profileUrl,
+    nativeUrl,
+    escape,
+    locationValue,
+  );
+
+  if (attributes === "") {
     return "n/a";
   }
 
-  return (
-    '<a class="ajax-link"' +
-    renderToolbarLinkAttributes(profileUrl, nativeUrl, escape) +
-    ">" +
-    escape(profile) +
-    "</a>"
-  );
+  return '<a class="ajax-link"' + attributes + ">" + escape(profile) + "</a>";
 }
 
-export function renderToolbarLinkAttributes(url, nativeUrl, escape) {
-  if (!url) {
+export function renderToolbarLinkAttributes(
+  url,
+  nativeUrl,
+  escape,
+  locationValue,
+) {
+  var drawerUrl = normalizeToolbarUrl(url, locationValue);
+  var linkUrl = normalizeToolbarUrl(nativeUrl || url, locationValue);
+
+  if (drawerUrl === null || linkUrl === null) {
     return "";
   }
 
   return (
-    ' href="' + escape(nativeUrl) + '" data-debug-url="' + escape(url) + '"'
+    ' href="' + escape(linkUrl) + '" data-debug-url="' + escape(drawerUrl) + '"'
   );
 }
 
-export function toolbarPanelContainerTag(panel) {
-  return panel.url && !hasToolbarItemLink(panel.items) ? "a" : "div";
+export function toolbarPanelContainerTag(panel, locationValue) {
+  return normalizeToolbarUrl(panel.url, locationValue) !== null &&
+    !hasToolbarItemLink(panel.items, locationValue)
+    ? "a"
+    : "div";
 }
 
-export function toolbarItemTag(item) {
-  return item.url ? "a" : "span";
+export function toolbarItemTag(item, locationValue) {
+  return normalizeToolbarUrl(item.url, locationValue) !== null ? "a" : "span";
 }
 
-export function shouldOpenToolbarDrawer(event, url) {
+export function shouldOpenToolbarDrawer(event, url, locationValue) {
   return Boolean(
-    url &&
+    normalizeToolbarUrl(url, locationValue) &&
     event.button !== 1 &&
     !event.ctrlKey &&
     !event.metaKey &&

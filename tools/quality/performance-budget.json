@@ -1,0 +1,23 @@
+{
+    "largeData": {
+        "50": {
+            "maxRenderMs": 250,
+            "maxFilterMs": 80,
+            "maxDomNodes": 500
+        },
+        "1000": {
+            "maxRenderMs": 1000,
+            "maxFilterMs": 250,
+            "maxDomNodes": 6500
+        },
+        "5000": {
+            "maxRenderMs": 3500,
+            "maxFilterMs": 800,
+            "maxDomNodes": 32000
+        }
+    },
+    "livePanel": {
+        "maxDomContentLoadedMs": 3000,
+        "maxDomNodes": 15000
+    }
+}

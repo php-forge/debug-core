@@ -1,0 +1,72 @@
+{
+    "compression": {
+        "algorithm": "gzip",
+        "level": 9
+    },
+    "files": {
+        "css/debug.min.css": {
+            "maxBytes": 155500,
+            "maxGzipBytes": 19000
+        },
+        "fonts/ibm-plex-sans-latin-400-normal.woff2": {
+            "maxBytes": 23800,
+            "maxGzipBytes": 23800
+        },
+        "fonts/ibm-plex-sans-latin-500-normal.woff2": {
+            "maxBytes": 25500,
+            "maxGzipBytes": 25500
+        },
+        "fonts/ibm-plex-sans-latin-600-normal.woff2": {
+            "maxBytes": 25500,
+            "maxGzipBytes": 25500
+        },
+        "fonts/ibm-plex-sans-latin-700-normal.woff2": {
+            "maxBytes": 24000,
+            "maxGzipBytes": 24000
+        },
+        "fonts/jetbrains-mono-latin-400-normal.woff2": {
+            "maxBytes": 22300,
+            "maxGzipBytes": 22300
+        },
+        "fonts/jetbrains-mono-latin-500-normal.woff2": {
+            "maxBytes": 23000,
+            "maxGzipBytes": 23000
+        },
+        "fonts/jetbrains-mono-latin-700-normal.woff2": {
+            "maxBytes": 23100,
+            "maxGzipBytes": 23100
+        },
+        "js/db.min.js": {
+            "maxBytes": 6010,
+            "maxGzipBytes": 1935
+        },
+        "js/debug.min.js": {
+            "maxBytes": 24050,
+            "maxGzipBytes": 7560
+        },
+        "js/dom.min.js": {
+            "maxBytes": 965,
+            "maxGzipBytes": 565
+        },
+        "js/focus.min.js": {
+            "maxBytes": 950,
+            "maxGzipBytes": 475
+        },
+        "js/phpinfo-search.min.js": {
+            "maxBytes": 6760,
+            "maxGzipBytes": 2210
+        },
+        "js/toolbar.min.js": {
+            "maxBytes": 57950,
+            "maxGzipBytes": 15450
+        },
+        "js/userswitch.min.js": {
+            "maxBytes": 1810,
+            "maxGzipBytes": 865
+        }
+    },
+    "total": {
+        "maxBytes": 420700,
+        "maxGzipBytes": 214800
+    }
+}

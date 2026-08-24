@@ -64,8 +64,9 @@ test("addThemeToUrl stamps same-origin debug links", () => {
   );
   assert.equal(
     addThemeToUrl("https://other.test/debug/view?tag=1", "dark"),
-    "https://other.test/debug/view?tag=1",
+    null,
   );
+  assert.equal(addThemeToUrl("javascript:alert(1)", "dark"), null);
 });
 
 test("writeThemeCookie persists the shared toolbar preference", () => {

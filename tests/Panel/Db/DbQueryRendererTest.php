@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Panel\Db;
 
 use PHPForge\Debug\Helper\Coerce;
-use PHPForge\Debug\Panel\Db\{DbQueryRenderer, QueryRow};
+use PHPForge\Debug\Panel\Db\{DbQueryRenderer, NPlusOneFinding, QueryRow};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -56,6 +56,72 @@ final class DbQueryRendererTest extends TestCase
             DbQueryRenderer::renderDurationCell(self::makeRow(duration: 0.0)),
             "Zero duration must render as '0.0 ms'.",
         );
+    }
+
+    public function testRenderNPlusOneSummaryEscapesScopedContext(): void
+    {
+        $finding = new NPlusOneFinding(
+            fingerprint: 'caller-a',
+            count: 4,
+            totalDuration: 12.5,
+            firstSequence: 7,
+            sequences: [7, 8, 9, 10],
+            representativeQuery: 'SELECT * FROM user WHERE id = 1',
+        );
+
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-n1-summary" role="region" aria-label="Potential N+1 query groups on &lt;this&gt; &amp; &quot;page&quot;">
+            <div class="yii-debug-db-n1-heading">
+            <strong>Potential N+1 queries on &lt;this&gt; &amp; "page"</strong><a class="yii-debug-db-n1-clear" href="#" hidden data-yii-debug-n1-clear="true">Show all queries</a>
+            </div><ul class="yii-debug-db-n1-list">
+            <li>
+            <a class="yii-debug-db-n1-link" href="#yii-debug-db-n1-7" title="SELECT * FROM user WHERE id = 1" data-yii-debug-n1-filter="yii-debug-db-n1-7"><strong>4×</strong><span class="yii-debug-db-n1-fingerprint">SELECT * FROM user WHERE id = 1</span><span>12.5 ms</span></a>
+            </li>
+            </ul><span class="yii-debug-sr-only" aria-atomic="true" aria-live="polite" data-yii-debug-n1-status="true"></span>
+            </div>
+            HTML,
+            DbQueryRenderer::renderNPlusOneSummary([$finding], '  on <this> & "page"  '),
+            'Scoped summary context must be trimmed and escaped in text and ARIA attributes.',
+        );
+    }
+    public function testRenderNPlusOneWorkflowLinksSummaryAndRows(): void
+    {
+        $finding = new NPlusOneFinding(
+            fingerprint: 'caller-a',
+            count: 4,
+            totalDuration: 12.5,
+            firstSequence: 7,
+            sequences: [7, 8, 9, 10],
+            representativeQuery: 'SELECT * FROM user WHERE id = 1',
+        );
+
+        $summary = DbQueryRenderer::renderNPlusOneSummary([$finding]);
+        $query = DbQueryRenderer::renderQueryCell(
+            self::makeRow(seq: 7),
+            self::traceLine(),
+            false,
+            self::makeUrlBuilder(),
+            $finding,
+        );
+
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-n1-summary" role="region" aria-label="Potential N+1 query groups">
+            <div class="yii-debug-db-n1-heading">
+            <strong>Potential N+1 queries</strong><a class="yii-debug-db-n1-clear" href="#" hidden data-yii-debug-n1-clear="true">Show all queries</a>
+            </div><ul class="yii-debug-db-n1-list">
+            <li>
+            <a class="yii-debug-db-n1-link" href="#yii-debug-db-n1-7" title="SELECT * FROM user WHERE id = 1" data-yii-debug-n1-filter="yii-debug-db-n1-7"><strong>4×</strong><span class="yii-debug-db-n1-fingerprint">SELECT * FROM user WHERE id = 1</span><span>12.5 ms</span></a>
+            </li>
+            </ul><span class="yii-debug-sr-only" aria-atomic="true" aria-live="polite" data-yii-debug-n1-status="true"></span>
+            </div>
+            HTML,
+            $summary,
+            'Default summary output must remain backward compatible.',
+        );
+        self::assertStringContainsString('id="yii-debug-db-n1-7"', $query);
+        self::assertStringContainsString('Potential N+1 · 4 similar', $query);
     }
 
     public function testRenderQueryCellEmitsExplainToggleWithBuiltUrl(): void

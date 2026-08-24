@@ -136,7 +136,9 @@ final class UserIdentityRenderer
         if ($attribute->kind === UserAttribute::KIND_SECURITY) {
             return Button::tag()
                 ->addAriaAttribute('label', 'Reveal ' . $attribute->label)
+                ->addAriaAttribute('pressed', 'false')
                 ->addDataAttribute('yii-debug-reveal', true)
+                ->addDataAttribute('yii-debug-reveal-label', $attribute->label)
                 ->class('yii-debug-user-reveal')
                 ->html(
                     Span::tag()

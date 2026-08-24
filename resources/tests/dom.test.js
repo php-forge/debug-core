@@ -63,9 +63,10 @@ test("ajax preserves object settings and encodes POST requests", () => {
     },
   };
 
-  ajax(settings);
+  var returnedRequest = ajax(settings);
 
   assert.equal(settings.url, "https://example.test/debug/user/set-identity");
+  assert.equal(returnedRequest, request);
   assert.equal(request.method, "post");
   assert.equal(request.url, settings.url);
   assert.equal(request.async, true);
@@ -140,4 +141,34 @@ test("ajax reports a timeout once and uses the default timeout", () => {
   request.onreadystatechange();
 
   assert.equal(errors, 1);
+});
+
+test("ajax exposes cancellation without reporting it as a request failure", () => {
+  var request;
+  var aborts = 0;
+  var errors = 0;
+
+  globalThis.XMLHttpRequest = function XMLHttpRequest() {
+    request = this;
+  };
+  globalThis.XMLHttpRequest.prototype.open = function () {};
+  globalThis.XMLHttpRequest.prototype.setRequestHeader = function () {};
+  globalThis.XMLHttpRequest.prototype.send = function () {};
+
+  ajax("https://example.test/debug/db-explain", {
+    abort() {
+      aborts += 1;
+    },
+    error() {
+      errors += 1;
+    },
+  });
+
+  request.onabort();
+  request.readyState = 4;
+  request.status = 0;
+  request.onreadystatechange();
+
+  assert.equal(aborts, 1);
+  assert.equal(errors, 0);
 });

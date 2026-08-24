@@ -3,8 +3,8 @@
  * Isolation strategy:
  * 1. Wrapper class `.yii-debug` on <body>.
  * 2. Namespace prefix `.yii-debug-*` on every component class.
- * 3. Authored rules wrapped in `@layer yii-debug {}` so host CSS (unlayered) wins
- *    by default and nothing bleeds either way.
+ * 3. Component selectors retain enough specificity to survive common host
+ *    resets without leaking outside the debugger wrapper.
  *
  * Theme tokens live in tokens.css (single `light-dark()` declaration per token,
  * shared with the toolbar shadow DOM). Token names preserved for compatibility.
@@ -26,28 +26,6 @@
  */
 
 .yii-debug {
-  /* Layout-level design tokens (scoped so they do not leak). */
-  --yii-debug-space-1: 4px;
-  --yii-debug-space-2: 8px;
-  --yii-debug-space-3: 12px;
-  --yii-debug-space-4: 16px;
-  --yii-debug-space-5: 24px;
-  --yii-debug-space-6: 32px;
-  --yii-debug-radius-sm: 6px;
-  --yii-debug-radius-md: 10px;
-  --yii-debug-radius-lg: 14px;
-  --yii-debug-radius-pill: 999px;
-  --yii-debug-fs-xs: 0.75rem;
-  --yii-debug-fs-sm: 0.8125rem;
-  --yii-debug-fs-base: 0.9375rem;
-  --yii-debug-fs-lg: 1.0625rem;
-  --yii-debug-fs-xl: 1.25rem;
-  --yii-debug-fs-2xl: 1.5rem;
-  --yii-debug-border: 1px solid var(--yii-debug-panel-border);
-  --yii-debug-border-strong: 1px solid var(--yii-debug-panel-border-strong);
-  --yii-debug-shadow-sm: 0 1px 2px rgb(15 23 42 / 6%);
-  --yii-debug-shadow-md: 0 10px 24px rgb(15 23 42 / 8%);
-
   min-height: 100vh;
   margin: 0;
   padding: 0;
@@ -198,12 +176,12 @@
     gap: var(--yii-debug-space-4);
     align-items: start;
 
-    @media (width <= 767px) {
+    @media (width <= 959px) {
       grid-template-columns: 1fr;
     }
   }
 
-  @media (width >= 768px) {
+  @media (width >= 960px) {
     .yii-debug-sidebar {
       position: sticky;
       top: var(--yii-debug-space-4);
@@ -214,6 +192,8 @@
 
   .yii-debug-main {
     min-width: 0;
+    container-name: yii-debug-main;
+    container-type: inline-size;
   }
 
   /**
@@ -226,7 +206,9 @@
     margin-top: var(--yii-debug-space-5);
   }
 
-  .yii-debug-main > .yii-debug-sr-only:first-child + :is(h2, .yii-debug-disclosure) {
+  .yii-debug-main
+    > .yii-debug-sr-only:first-child
+    + :is(h2, .yii-debug-disclosure) {
     margin-top: 0;
   }
 
@@ -352,6 +334,7 @@
     color: var(--yii-debug-panel-text);
     font-family: var(--yii-debug-font-mono);
     font-size: var(--yii-debug-fs-xs);
+    min-height: var(--yii-debug-control-min-size);
     text-decoration: none;
     transition:
       border-color 0.14s ease,
@@ -810,11 +793,7 @@
     background:
       linear-gradient(
         90deg,
-        color-mix(
-          in srgb,
-          var(--yii-debug-panel-primary),
-          transparent 88%
-        ),
+        color-mix(in srgb, var(--yii-debug-panel-primary), transparent 88%),
         transparent 42%
       ),
       var(--yii-debug-panel-code-bg);
@@ -911,7 +890,7 @@
    */
 
   .yii-debug-card {
-    padding: var(--yii-debug-space-4);
+    padding: var(--yii-debug-panel-padding);
     border: var(--yii-debug-border);
     border-radius: var(--yii-debug-radius-lg);
     background: var(--yii-debug-panel-surface);
@@ -1104,22 +1083,22 @@
 
   .yii-debug-badge-success {
     background: var(--yii-debug-success);
-    color: #fff;
+    color: var(--yii-debug-on-success);
   }
 
   .yii-debug-badge-info {
     background: var(--yii-debug-info);
-    color: var(--yii-debug-panel-bg);
+    color: var(--yii-debug-on-info);
   }
 
   .yii-debug-badge-warning {
     background: var(--yii-debug-warning);
-    color: #1c1917;
+    color: var(--yii-debug-on-warning);
   }
 
   .yii-debug-badge-danger {
     background: var(--yii-debug-danger);
-    color: #fff;
+    color: var(--yii-debug-on-danger);
   }
 
   .yii-debug-badge-muted {
@@ -1213,12 +1192,12 @@
   .yii-debug-mail-status,
   .yii-debug-dump-type,
   .yii-debug-badge:is(
-      .yii-debug-status-2xx,
-      .yii-debug-status-3xx,
-      .yii-debug-status-4xx,
-      .yii-debug-status-5xx,
-      .yii-debug-status-none
-    ) {
+    .yii-debug-status-2xx,
+    .yii-debug-status-3xx,
+    .yii-debug-status-4xx,
+    .yii-debug-status-5xx,
+    .yii-debug-status-none
+  ) {
     border: 1px solid
       color-mix(
         in srgb,
@@ -1404,7 +1383,7 @@
 
     tbody td,
     tbody th {
-      padding: 10px 12px;
+      padding: var(--yii-debug-row-padding-block) 12px;
       border-top: 1px solid var(--yii-debug-panel-border);
       vertical-align: top;
       overflow-wrap: anywhere;
@@ -1637,7 +1616,11 @@
     position: absolute;
     inset: auto 0 0;
     height: 32px;
-    background: linear-gradient(to bottom, transparent, var(--yii-debug-panel-surface));
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      var(--yii-debug-panel-surface)
+    );
     pointer-events: none;
   }
 
@@ -1664,6 +1647,25 @@
     font-size: var(--yii-debug-fs-xs);
     font-weight: 600;
     cursor: pointer;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 1.25em;
+      height: 1.25em;
+      margin-right: var(--yii-debug-space-1);
+      border-radius: 50%;
+      background:
+        linear-gradient(currentcolor, currentcolor) center / 8px 2px no-repeat,
+        linear-gradient(currentcolor, currentcolor) center / 2px 8px no-repeat,
+        var(--yii-debug-panel-bg-accent);
+    }
+  }
+
+  .yii-debug-cell-more.is-open .yii-debug-cell-more-toggle::before {
+    background:
+      linear-gradient(currentcolor, currentcolor) center / 8px 2px no-repeat,
+      var(--yii-debug-panel-bg-accent);
   }
 
   .yii-debug-cell-more-toggle:hover,
@@ -1728,12 +1730,13 @@
     display: inline-flex;
   }
 
-  .yii-debug-pager-link {
+  .yii-debug-pager-link,
+  .yii-debug-pager > li > :is(a, span) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    height: 32px;
+    min-width: 40px;
+    min-height: 40px;
     padding: 0 10px;
     border: var(--yii-debug-border);
     border-radius: var(--yii-debug-radius-pill);
@@ -2330,11 +2333,7 @@
   }
 
   .yii-debug-user-status-success {
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 84%
-    );
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 84%);
     color: var(--yii-debug-success);
 
     &::before {
@@ -2345,20 +2344,12 @@
   }
 
   .yii-debug-user-status-danger {
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-danger),
-      transparent 84%
-    );
+    background: color-mix(in srgb, var(--yii-debug-danger), transparent 84%);
     color: var(--yii-debug-danger);
   }
 
   .yii-debug-user-status-warning {
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 84%
-    );
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 84%);
     color: var(--yii-debug-warning);
   }
 
@@ -2683,17 +2674,16 @@
   }
 
   a:is(
-      .yii-debug-grid-summary-stat-2xx,
-      .yii-debug-grid-summary-stat-3xx,
-      .yii-debug-grid-summary-stat-4xx,
-      .yii-debug-grid-summary-stat-5xx
-    ) {
+    .yii-debug-grid-summary-stat-2xx,
+    .yii-debug-grid-summary-stat-3xx,
+    .yii-debug-grid-summary-stat-4xx,
+    .yii-debug-grid-summary-stat-5xx
+  ) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 2px 10px;
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-hue), transparent 65%);
+    border: 1px solid color-mix(in srgb, var(--yii-debug-hue), transparent 65%);
     border-radius: var(--yii-debug-radius-pill);
     background: color-mix(in srgb, var(--yii-debug-hue), transparent 90%);
     color: color-mix(
@@ -2909,11 +2899,7 @@
     padding: var(--yii-debug-space-2) var(--yii-debug-space-3);
     border-left: 3px solid var(--yii-debug-danger);
     border-radius: var(--yii-debug-radius-sm);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-danger),
-      transparent 92%
-    );
+    background: color-mix(in srgb, var(--yii-debug-danger), transparent 92%);
     color: var(--yii-debug-danger);
     font-size: var(--yii-debug-fs-sm);
     font-weight: 600;
@@ -3603,29 +3589,17 @@
 
   .yii-debug-queue-status-queued {
     color: var(--yii-debug-info);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-info),
-      transparent 86%
-    );
+    background: color-mix(in srgb, var(--yii-debug-info), transparent 86%);
   }
 
   .yii-debug-queue-status-done {
     color: var(--yii-debug-success);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 86%
-    );
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 86%);
   }
 
   .yii-debug-queue-status-failed {
     color: var(--yii-debug-danger);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-danger),
-      transparent 86%
-    );
+    background: color-mix(in srgb, var(--yii-debug-danger), transparent 86%);
   }
 
   .yii-debug-queue-driver {
@@ -3645,30 +3619,14 @@
 
   .yii-debug-queue-driver-is-sync {
     color: var(--yii-debug-success);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 92%
-    );
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 70%
-    );
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 92%);
+    border-color: color-mix(in srgb, var(--yii-debug-success), transparent 70%);
   }
 
   .yii-debug-queue-driver-is-async {
     color: var(--yii-debug-warning);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 92%
-    );
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 70%
-    );
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 92%);
+    border-color: color-mix(in srgb, var(--yii-debug-warning), transparent 70%);
   }
 
   .yii-debug-queue-hint {
@@ -3676,11 +3634,7 @@
     padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
     border-radius: var(--yii-debug-radius-md);
     border-left: 3px solid var(--yii-debug-warning);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 94%
-    );
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 94%);
     color: var(--yii-debug-panel-text);
     font-size: var(--yii-debug-fs-sm);
     line-height: 1.5;
@@ -3752,11 +3706,7 @@
     letter-spacing: 0.05em;
     padding: 1px 6px;
     border-radius: 3px;
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 86%
-    );
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 86%);
   }
 
   .yii-debug-queue-tree-value {
@@ -3826,11 +3776,7 @@
     padding: var(--yii-debug-space-3);
     border-radius: var(--yii-debug-radius-sm);
     border-left: 3px solid var(--yii-debug-danger);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-danger),
-      transparent 92%
-    );
+    background: color-mix(in srgb, var(--yii-debug-danger), transparent 92%);
     color: var(--yii-debug-danger);
     font-family: var(--yii-debug-font-mono);
     font-size: var(--yii-debug-fs-xs);
@@ -4229,16 +4175,8 @@
   }
 
   .yii-debug-asset-chip-css {
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-info),
-      transparent 60%
-    );
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-info),
-      transparent 90%
-    );
+    border-color: color-mix(in srgb, var(--yii-debug-info), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-info), transparent 90%);
     color: var(--yii-debug-info);
 
     strong {
@@ -4247,16 +4185,8 @@
   }
 
   .yii-debug-asset-chip-js {
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 60%
-    );
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 90%
-    );
+    border-color: color-mix(in srgb, var(--yii-debug-warning), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 90%);
     color: var(--yii-debug-warning);
 
     strong {
@@ -4265,16 +4195,8 @@
   }
 
   .yii-debug-asset-chip-deps {
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 60%
-    );
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 90%
-    );
+    border-color: color-mix(in srgb, var(--yii-debug-success), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 90%);
     color: var(--yii-debug-success);
 
     strong {
@@ -4348,20 +4270,12 @@
   }
 
   .yii-debug-asset-file-type-css {
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-info),
-      transparent 84%
-    );
+    background: color-mix(in srgb, var(--yii-debug-info), transparent 84%);
     color: var(--yii-debug-info);
   }
 
   .yii-debug-asset-file-type-js {
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 84%
-    );
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 84%);
     color: var(--yii-debug-warning);
   }
 
@@ -4418,11 +4332,7 @@
     border: 1px dashed
       color-mix(in srgb, var(--yii-debug-success), transparent 50%);
     border-radius: var(--yii-debug-radius-md);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 92%
-    );
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 92%);
   }
 
   .yii-debug-asset-depends-label {
@@ -4463,11 +4373,7 @@
     &:hover,
     &:focus-visible {
       border-color: var(--yii-debug-success);
-      background: color-mix(
-        in srgb,
-        var(--yii-debug-success),
-        transparent 86%
-      );
+      background: color-mix(in srgb, var(--yii-debug-success), transparent 86%);
       color: var(--yii-debug-success);
       text-decoration: none;
       transform: translateY(-1px);
@@ -4703,14 +4609,9 @@
     gap: 8px;
     margin-bottom: var(--yii-debug-space-3);
     padding: 8px var(--yii-debug-space-3);
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-info), transparent 60%);
+    border: 1px solid color-mix(in srgb, var(--yii-debug-info), transparent 60%);
     border-radius: var(--yii-debug-radius-md);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-info),
-      transparent 92%
-    );
+    background: color-mix(in srgb, var(--yii-debug-info), transparent 92%);
   }
 
   .yii-debug-active-filters-label {
@@ -4733,8 +4634,7 @@
     align-items: center;
     gap: 4px;
     padding: 2px 6px 2px 8px;
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-info), transparent 50%);
+    border: 1px solid color-mix(in srgb, var(--yii-debug-info), transparent 50%);
     border-radius: var(--yii-debug-radius-pill);
     background: var(--yii-debug-panel-surface);
     color: var(--yii-debug-panel-text);
@@ -4748,11 +4648,7 @@
     &:hover,
     &:focus-visible {
       border-color: var(--yii-debug-danger);
-      background: color-mix(
-        in srgb,
-        var(--yii-debug-danger),
-        transparent 88%
-      );
+      background: color-mix(in srgb, var(--yii-debug-danger), transparent 88%);
       color: var(--yii-debug-danger);
       text-decoration: none;
     }
@@ -4810,11 +4706,7 @@
     &:hover,
     &:focus-visible {
       border-color: var(--yii-debug-danger);
-      background: color-mix(
-        in srgb,
-        var(--yii-debug-danger),
-        transparent 86%
-      );
+      background: color-mix(in srgb, var(--yii-debug-danger), transparent 86%);
       color: var(--yii-debug-danger);
       text-decoration: none;
       transform: translateY(-1px);
@@ -5341,11 +5233,7 @@
   }
 
   .yii-debug-ext-pill.is-on {
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 55%
-    );
+    border-color: color-mix(in srgb, var(--yii-debug-success), transparent 55%);
     background: color-mix(
       in srgb,
       var(--yii-debug-success),
@@ -5636,8 +5524,7 @@
     }
   }
 
-  .yii-debug-phpinfo-toc-group[open]
-    > .yii-debug-phpinfo-toc-group-summary {
+  .yii-debug-phpinfo-toc-group[open] > .yii-debug-phpinfo-toc-group-summary {
     color: var(--yii-debug-panel-text);
 
     &::before {
@@ -6114,11 +6001,7 @@
 
     &[data-variant="success"] {
       color: var(--yii-debug-success);
-      background: color-mix(
-        in srgb,
-        var(--yii-debug-success),
-        transparent 86%
-      );
+      background: color-mix(in srgb, var(--yii-debug-success), transparent 86%);
       border-color: color-mix(
         in srgb,
         var(--yii-debug-success),
@@ -6138,7 +6021,6 @@
    * state is revealed, so the affordance never invites a click it cannot
    * honour. `<summary>` already exposes the state via `aria-expanded`.
    */
-
 
   .yii-debug-phpinfo-overview-token {
     padding: 1px 8px;
@@ -6454,16 +6336,8 @@
   }
 
   .yii-debug-phpinfo-status-pill[data-variant="success"] {
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 65%
-    );
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-success),
-      transparent 88%
-    );
+    border-color: color-mix(in srgb, var(--yii-debug-success), transparent 65%);
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 88%);
     color: var(--yii-debug-success);
   }
 
@@ -6474,16 +6348,8 @@
   }
 
   .yii-debug-phpinfo-redacted {
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 65%
-    );
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-warning),
-      transparent 90%
-    );
+    border-color: color-mix(in srgb, var(--yii-debug-warning), transparent 65%);
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 90%);
     color: color-mix(
       in srgb,
       var(--yii-debug-warning) 72%,
@@ -6510,9 +6376,7 @@
   }
 
   @media (width <= 720px) {
-    .yii-debug-phpinfo-table-section.is-facts
-      .yii-debug-table.is-facts
-      tbody {
+    .yii-debug-phpinfo-table-section.is-facts .yii-debug-table.is-facts tbody {
       grid-template-columns: 1fr;
     }
 
@@ -6529,15 +6393,7 @@
    * -------------------------------------------------------------------
    */
 
-  @media (width <= 767px) {
-    .yii-debug-page {
-      padding: var(--yii-debug-space-2);
-    }
-
-    .yii-debug-card {
-      padding: var(--yii-debug-space-3);
-    }
-
+  @media (width <= 959px) {
     .yii-debug-sidebar {
       min-width: 0;
     }
@@ -6566,6 +6422,16 @@
 
     .yii-debug-nav-link-icon {
       margin-right: var(--yii-debug-space-1);
+    }
+  }
+
+  @media (width <= 767px) {
+    .yii-debug-page {
+      padding: var(--yii-debug-space-2);
+    }
+
+    .yii-debug-card {
+      padding: var(--yii-debug-space-3);
     }
   }
 

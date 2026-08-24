@@ -9,14 +9,16 @@ use PHPForge\Debug\Helper\Vocabulary;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\List\{Li, Ul};
 use UIAwesome\Html\Palpable\A;
-use UIAwesome\Html\Phrasing\Span;
+use UIAwesome\Html\Phrasing\{Span, Strong};
 
 use function array_map;
 use function date;
 use function implode;
 use function in_array;
+use function number_format;
 use function sprintf;
 use function strtoupper;
+use function trim;
 
 /**
  * Renders the typed cells of the queries grid for the DB debug panel.
@@ -50,6 +52,66 @@ final class DbQueryRenderer
     }
 
     /**
+     * Renders an actionable summary linking each potential N+1 group to its first query.
+     *
+     * @param list<NPlusOneFinding> $findings
+     * @param string $context Optional plain-text scope appended to the visible heading and accessible label.
+     */
+    public static function renderNPlusOneSummary(array $findings, string $context = ''): string
+    {
+        if ($findings === []) {
+            return '';
+        }
+
+        $context = trim($context);
+        $context = $context === '' ? '' : " {$context}";
+
+        $items = [];
+
+        foreach ($findings as $finding) {
+            $items[] = Li::tag()->html(
+                A::tag()
+                    ->addDataAttribute('yii-debug-n1-filter', $finding->id())
+                    ->class('yii-debug-db-n1-link')
+                    ->href("#{$finding->id()}")
+                    ->title($finding->representativeQuery)
+                    ->html(
+                        Strong::tag()->content("{$finding->count}×"),
+                        Span::tag()
+                            ->class('yii-debug-db-n1-fingerprint')
+                            ->content($finding->representativeQuery),
+                        Span::tag()->content(number_format($finding->totalDuration, 1) . ' ms'),
+                    ),
+            );
+        }
+
+        return Div::tag()
+            ->addAriaAttribute('label', "Potential N+1 query groups{$context}")
+            ->class('yii-debug-db-n1-summary')
+            ->html(
+                Div::tag()
+                    ->class('yii-debug-db-n1-heading')
+                    ->html(
+                        Strong::tag()->content("Potential N+1 queries{$context}"),
+                        A::tag()
+                            ->addAttribute('hidden', true)
+                            ->addDataAttribute('yii-debug-n1-clear', true)
+                            ->class('yii-debug-db-n1-clear')
+                            ->content('Show all queries')
+                            ->href('#'),
+                    ),
+                Ul::tag()->class('yii-debug-db-n1-list')->html(...$items),
+                Span::tag()
+                    ->addAriaAttribute('atomic', 'true')
+                    ->addAriaAttribute('live', 'polite')
+                    ->addDataAttribute('yii-debug-n1-status', true)
+                    ->class('yii-debug-sr-only'),
+            )
+            ->role('region')
+            ->render();
+    }
+
+    /**
      * Renders the SQL statement column with its optional backtrace list and EXPLAIN toggle.
      *
      * The caller supplies an URL builder (typically `static fn(int $seq) => Url::to(['db-explain', 'seq' => $seq, ...])`)
@@ -65,12 +127,30 @@ final class DbQueryRenderer
         Closure $traceLine,
         bool $hasExplain,
         callable $explainUrlBuilder,
+        NPlusOneFinding|null $nPlusOneFinding = null,
     ): string {
-        $children = [
-            Div::tag()
-                ->class('yii-debug-db-sql')
-                ->html(SqlHighlighter::highlight($row->query)),
-        ];
+        $sql = Div::tag()
+            ->class('yii-debug-db-sql')
+            ->html(SqlHighlighter::highlight($row->query));
+
+        if ($nPlusOneFinding !== null) {
+            $sql = $sql->addDataAttribute('yii-debug-n1-group', $nPlusOneFinding->id());
+
+            if ($row->seq === $nPlusOneFinding->firstSequence) {
+                $sql = $sql->id($nPlusOneFinding->id());
+            }
+        }
+
+        $children = [$sql];
+
+        if ($nPlusOneFinding !== null) {
+            $children[] = A::tag()
+                ->addAriaAttribute('label', "Review {$nPlusOneFinding->count} similar queries")
+                ->addDataAttribute('yii-debug-n1-filter', $nPlusOneFinding->id())
+                ->class('yii-debug-db-n1-row-link')
+                ->content("Potential N+1 · {$nPlusOneFinding->count} similar")
+                ->href("#{$nPlusOneFinding->id()}");
+        }
 
         if ($row->trace !== []) {
             $items = array_map(

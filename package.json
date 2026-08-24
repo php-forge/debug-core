@@ -6,26 +6,43 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "format": "prettier --write 'resources/{src,tests}/**/*.js' 'vite.config.js' 'stryker.config.mjs' 'package.json'",
-    "format:check": "prettier --check 'resources/{src,tests}/**/*.js' 'vite.config.js' 'stryker.config.mjs' 'package.json'",
+    "format": "prettier --write 'resources/{src,tests}/**/*.js' 'e2e/**/*.js' 'tools/**/*.{mjs,json}' 'docs/**/*.md' 'playwright.config.js' 'vite.config.js' 'stryker.config.mjs' 'package.json'",
+    "format:check": "prettier --check 'resources/{src,tests}/**/*.js' 'e2e/**/*.js' 'tools/**/*.{mjs,json}' 'docs/**/*.md' 'playwright.config.js' 'vite.config.js' 'stryker.config.mjs' 'package.json'",
     "lint:css": "stylelint --config .github/linters/.stylelintrc.json --config-basedir . 'resources/src/**/*.css'",
     "lint:css:fix": "stylelint --config .github/linters/.stylelintrc.json --config-basedir . --fix 'resources/src/**/*.css'",
-    "lint:js": "eslint --config .github/linters/eslint.config.mjs resources",
-    "lint:js:fix": "eslint --config .github/linters/eslint.config.mjs --fix resources",
+    "lint:js": "eslint --config .github/linters/eslint.config.mjs resources e2e tools playwright.config.js",
+    "lint:js:fix": "eslint --config .github/linters/eslint.config.mjs --fix resources e2e tools playwright.config.js",
     "test:js": "node --test resources/tests/*.test.js",
-    "test:mutation": "stryker run"
+    "test:mutation": "stryker run",
+    "fixtures:seed": "php tools/seed-debug-fixtures.php",
+    "check:size": "node tools/check-asset-size.mjs",
+    "check:contrast": "node tools/check-token-contrast.mjs",
+    "check:contrast:strict": "node tools/check-token-contrast.mjs --strict",
+    "test:e2e": "playwright test e2e/smoke.spec.js e2e/security.spec.js",
+    "test:e2e:list": "DEBUG_UI_SEED_FIXTURES=0 playwright test --list",
+    "test:a11y": "playwright test e2e/accessibility.spec.js",
+    "test:security": "playwright test e2e/security.spec.js",
+    "test:visual": "playwright test e2e/visual.spec.js",
+    "test:visual:compare": "DEBUG_UI_VISUAL_COMPARE=1 playwright test e2e/visual.spec.js",
+    "test:visual:update": "DEBUG_UI_VISUAL_COMPARE=1 playwright test e2e/visual.spec.js --update-snapshots",
+    "test:perf": "DEBUG_UI_SEED_FIXTURES=0 playwright test e2e/large-data.spec.js --project=desktop-1440",
+    "test:perf:live": "playwright test e2e/live-performance.spec.js --project=desktop-1440",
+    "test:browser": "playwright test e2e/smoke.spec.js e2e/security.spec.js e2e/accessibility.spec.js e2e/visual.spec.js"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@fontsource/ibm-plex-sans": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
+    "@playwright/test": "^1.62.1",
     "@stryker-mutator/core": "^10.0.0",
     "eslint": "^10.8.0",
     "prettier": "^3.9.6",
     "stylelint": "^17.14.1",
     "stylelint-config-standard-scss": "^17.0.0",
     "vite": "^8.2.1"
-  }
+  },
+  "license": "BSD-3-Clause"
 }

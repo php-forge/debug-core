@@ -8,18 +8,22 @@ use InvalidArgumentException;
 use PHPForge\Debug\Helper\SensitiveDataRedactor;
 use SensitiveParameter;
 
-use function array_map;
+use function array_chunk;
+use function array_reverse;
 use function get_object_vars;
 use function http_build_query;
-use function implode;
 use function is_array;
 use function is_object;
 use function parse_str;
-use function preg_quote;
-use function preg_replace_callback;
+use function preg_match_all;
+use function strcspn;
 use function strlen;
 use function strpos;
 use function substr;
+use function substr_replace;
+
+use const PREG_OFFSET_CAPTURE;
+use const PREG_SET_ORDER;
 
 /**
  * Applies the default redaction and size limits before debug data reaches persistent storage.
@@ -27,18 +31,40 @@ use function substr;
 final readonly class CapturePolicy
 {
     /**
+     * @var list<string>
+     */
+    private array $sensitiveKeyPatterns;
+
+    /**
      * @param list<string> $sensitiveKeys Exact, case-insensitive keys to redact recursively.
      * @param int $maxBodyBytes Maximum raw request or response body bytes to retain; must be positive.
+     * @param list<string> $sensitiveKeyPrefixes Literal, case-insensitive key prefixes to redact recursively.
+     * @param list<string>|null $sensitiveKeyPatterns PCRE patterns applied to complete original keys. `null` uses
+     * segment-aware defaults only with the default exact-key list; `[]` explicitly disables pattern matching.
      */
     public function __construct(
         private array $sensitiveKeys = SensitiveDataRedactor::DEFAULT_KEYS,
         private int $maxBodyBytes = 65536,
+        private array $sensitiveKeyPrefixes = [],
+        array|null $sensitiveKeyPatterns = null,
     ) {
         if ($this->maxBodyBytes < 1) {
             throw new InvalidArgumentException(
                 'The maximum body size must be greater than zero.',
             );
         }
+
+        $this->sensitiveKeyPatterns = $sensitiveKeyPatterns
+            ?? ($this->sensitiveKeys === SensitiveDataRedactor::DEFAULT_KEYS
+                ? SensitiveDataRedactor::DEFAULT_PATTERNS
+                : []);
+
+        SensitiveDataRedactor::isSensitiveKey(
+            '',
+            [],
+            $this->sensitiveKeyPrefixes,
+            $this->sensitiveKeyPatterns,
+        );
     }
 
     /**
@@ -46,7 +72,12 @@ final readonly class CapturePolicy
      */
     public function isSensitiveKey(string $key): bool
     {
-        return SensitiveDataRedactor::isSensitiveKey($key, $this->sensitiveKeys);
+        return SensitiveDataRedactor::isSensitiveKey(
+            $key,
+            $this->sensitiveKeys,
+            $this->sensitiveKeyPrefixes,
+            $this->sensitiveKeyPatterns,
+        );
     }
 
     /**
@@ -63,6 +94,8 @@ final readonly class CapturePolicy
         return SensitiveDataRedactor::redact(
             $value,
             $this->sensitiveKeys,
+            $this->sensitiveKeyPrefixes,
+            $this->sensitiveKeyPatterns,
         );
     }
 
@@ -92,23 +125,53 @@ final readonly class CapturePolicy
      */
     public function redactText(#[SensitiveParameter] string $text): string
     {
-        if ($this->sensitiveKeys === []) {
+        if (
+            $this->sensitiveKeys === []
+            && $this->sensitiveKeyPrefixes === []
+            && $this->sensitiveKeyPatterns === []
+        ) {
             return $text;
         }
 
-        $keys = array_map(
-            static fn(string $key): string => preg_quote($key, '~'),
-            $this->sensitiveKeys,
-        );
-        $pattern = '~(?<![[:alnum:]_])(["\']?(?:' . implode('|', $keys) . ')["\']?)(\s*[:=]\s*)[^,;&\r\n]+~i';
+        $matches = [];
 
-        return preg_replace_callback(
-            $pattern,
-            static fn(array $match): string => ($match[1] ?? '')
-                . ($match[2] ?? '')
-                . SensitiveDataRedactor::PLACEHOLDER,
+        preg_match_all(
+            '~(?<![[:alnum:]_])(["\']?)([[:alnum:]_.-]+)\\1\s*[:=]\s*~i',
             $text,
-        ) ?? $text;
+            $matches,
+            PREG_SET_ORDER | PREG_OFFSET_CAPTURE,
+        );
+
+        $candidateKeys = [];
+
+        foreach ($matches as $match) {
+            $candidateKeys[$match[2][0]] = true;
+        }
+
+        $redactedKeys = [];
+
+        foreach (array_chunk($candidateKeys, 5000, true) as $candidateChunk) {
+            $redactedKeys += $this->redact($candidateChunk);
+        }
+
+        foreach (array_reverse($matches) as $match) {
+            $key = $match[2][0];
+
+            if (($redactedKeys[$key] ?? null) !== SensitiveDataRedactor::PLACEHOLDER) {
+                continue;
+            }
+
+            $valueStart = $match[0][1] + strlen($match[0][0]);
+            $valueLength = strcspn($text, ",;&\r\n", $valueStart);
+            $text = substr_replace(
+                $text,
+                SensitiveDataRedactor::PLACEHOLDER,
+                $valueStart,
+                $valueLength,
+            );
+        }
+
+        return $text;
     }
 
     /**

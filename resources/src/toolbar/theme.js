@@ -1,9 +1,5 @@
-import {
-  absoluteUrl,
-  readStorageItem,
-  themeParam,
-  themeStorageKey,
-} from "./state.js";
+import { readStorageItem, themeParam, themeStorageKey } from "./state.js";
+import { normalizeToolbarUrl } from "./url.js";
 
 var hostControlCache;
 
@@ -230,21 +226,17 @@ export function writeThemeCookie(theme) {
 }
 
 export function addThemeToUrl(url, theme) {
-  var parsed = absoluteUrl(url);
+  var normalized = normalizeToolbarUrl(url);
 
-  if (!parsed || !theme || parsed.origin !== window.location.origin) {
-    return url;
+  if (normalized === null) {
+    return null;
   }
 
-  var route = parsed.searchParams.get("r") || "";
-
-  if (
-    parsed.pathname.indexOf("/debug/") === -1 &&
-    route.indexOf("debug/") !== 0 &&
-    route.indexOf("debug%2F") !== 0
-  ) {
-    return url;
+  if (!theme) {
+    return normalized;
   }
+
+  var parsed = new URL(normalized, window.location.href);
 
   parsed.searchParams.set(themeParam, theme);
 

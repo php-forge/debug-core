@@ -79,10 +79,11 @@ final class TimelineRendererTest extends TestCase
             <span class="yii-debug-tl-tick" style='left: 10%;'>1 s</span><span class="yii-debug-tl-tick" style='left: 20%;'>1 s</span><span class="yii-debug-tl-tick" style='left: 30%;'>1.1 s</span>
             </header><div class="yii-debug-tl-rows" role="list">
             <div class="yii-debug-tl-row yii-debug-tl-row-queue" title="job
-            10.000 ms · 0.00 MB" role="listitem">
+            10.000 ms · 0.00 MB" role="listitem" aria-label="job
+            10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
             <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
-            </div><div class="yii-debug-tl-track">
+            </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
             </div>
             </div>
@@ -114,18 +115,20 @@ final class TimelineRendererTest extends TestCase
             <span class="yii-debug-tl-legend-item yii-debug-tl-row-app"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Application</span></span><span class="yii-debug-tl-legend-item yii-debug-tl-row-queue"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Queue</span></span>
             </div><div class="yii-debug-tl-rows" role="list">
             <div class="yii-debug-tl-row yii-debug-tl-row-app" title="app
-            10.000 ms · 0.00 MB" role="listitem">
+            10.000 ms · 0.00 MB" role="listitem" aria-label="app
+            10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
             <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
-            </div><div class="yii-debug-tl-track">
+            </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
             </div>
             </div>
             </div><div class="yii-debug-tl-row yii-debug-tl-row-queue" title="queue
-            10.000 ms · 0.00 MB" role="listitem">
+            10.000 ms · 0.00 MB" role="listitem" aria-label="queue
+            10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
             <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
-            </div><div class="yii-debug-tl-track">
+            </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 10%; width: 10%;'>
             </div>
             </div>
@@ -157,26 +160,28 @@ final class TimelineRendererTest extends TestCase
             <span class="yii-debug-tl-legend-item yii-debug-tl-row-app"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Application</span></span><span class="yii-debug-tl-legend-item yii-debug-tl-row-db"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Database</span></span>
             </div><div class="yii-debug-tl-rows" role="list">
             <div class="yii-debug-tl-row yii-debug-tl-row-app" title="GET /
-            50.000 ms · 0.00 MB" role="listitem">
+            50.000 ms · 0.00 MB" role="listitem" aria-label="GET /
+            50.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
             <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span><span class="yii-debug-tl-bar-duration">50.0 ms</span>
-            </div><div class="yii-debug-tl-track">
+            </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 50%;'>
             </div>
             </div>
             </div><div class="yii-debug-tl-row yii-debug-tl-row-db" title="SELECT 1
-            10.000 ms · 0.00 MB" role="listitem">
+            10.000 ms · 0.00 MB" role="listitem" aria-label="SELECT 1
+            10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 1;'>
             <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yiisoft\Db\Command::query"><span class="yii-debug-muted">Yiisoft\Db\</span><wbr><strong>Command::query</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
-            </div><div class="yii-debug-tl-track">
+            </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 25%; width: 10%;'>
             </div>
             </div>
             </div>
             </div><footer class="yii-debug-tl-memory">
-            <span class="yii-debug-tl-memory-label">Memory</span><div class="yii-debug-tl-memory-track" style='height: 20px;'>
+            <span class="yii-debug-tl-memory-label">Memory</span><div class="yii-debug-tl-memory-track" style='height: 20px;' aria-hidden="true">
             <svg></svg>
-            </div><span class="yii-debug-tl-memory-peak">2.00 MB</span>
+            </div><span class="yii-debug-tl-memory-peak" aria-label="Peak memory 2.00 MB">2.00 MB</span>
             </footer>
             </section>
             HTML,
@@ -204,18 +209,19 @@ final class TimelineRendererTest extends TestCase
             <header class="yii-debug-tl-axis">
             </header><div class="yii-debug-tl-rows" role="list">
             <div class="yii-debug-tl-row yii-debug-tl-row-queue" title="job
-            10.000 ms · 0.00 MB" role="listitem">
+            10.000 ms · 0.00 MB" role="listitem" aria-label="job
+            10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
             <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
-            </div><div class="yii-debug-tl-track">
+            </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
             </div>
             </div>
             </div>
             </div><footer class="yii-debug-tl-memory">
-            <span class="yii-debug-tl-memory-label">Memory</span><div class="yii-debug-tl-memory-track" style='height: 40px;'>
+            <span class="yii-debug-tl-memory-label">Memory</span><div class="yii-debug-tl-memory-track" style='height: 40px;' aria-hidden="true">
             <svg></svg>
-            </div><span class="yii-debug-tl-memory-peak">0.00 MB</span>
+            </div><span class="yii-debug-tl-memory-peak" aria-label="Peak memory 0.00 MB">0.00 MB</span>
             </footer>
             </section>
             HTML,

@@ -128,13 +128,13 @@ final class UserIdentityRendererTest extends TestCase
             <dt>
             Auth Key
             </dt><dd>
-            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Auth Key" data-yii-debug-reveal="true"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">abc</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
+            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Auth Key" aria-pressed="false" data-yii-debug-reveal="true" data-yii-debug-reveal-label="Auth Key"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">abc</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
             </dd>
             </div><div class="yii-debug-user-row">
             <dt>
             Password Hash
             </dt><dd>
-            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Password Hash" data-yii-debug-reveal="true"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">def</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
+            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Password Hash" aria-pressed="false" data-yii-debug-reveal="true" data-yii-debug-reveal-label="Password Hash"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">def</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
             </dd>
             </div>
             </dl>
@@ -364,7 +364,7 @@ final class UserIdentityRendererTest extends TestCase
             <dt>
             Auth Key
             </dt><dd>
-            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Auth Key" data-yii-debug-reveal="true"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">authkey-12345</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
+            <button class="yii-debug-user-reveal" type="button" aria-label="Reveal Auth Key" aria-pressed="false" data-yii-debug-reveal="true" data-yii-debug-reveal-label="Auth Key"><span class="yii-debug-user-mask">••••••••••••</span><span class="yii-debug-user-real">authkey-12345</span><span class="yii-debug-user-reveal-cta" aria-hidden="true"></span></button>
             </dd>
             </div>
             </dl>

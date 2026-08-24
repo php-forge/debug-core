@@ -1,0 +1,114 @@
+{
+    "source": "resources/src/styles/tokens.css",
+    "referenceSurfaces": {
+        "light": "#ffffff",
+        "dark": "#121a15"
+    },
+    "checks": [
+        {
+            "token": "--yii-debug-panel-text",
+            "role": "normal text",
+            "minimum": 4.5
+        },
+        {
+            "token": "--yii-debug-panel-muted",
+            "role": "normal text",
+            "minimum": 4.5
+        },
+        {
+            "token": "--yii-debug-panel-link",
+            "role": "normal text",
+            "minimum": 4.5
+        },
+        {
+            "token": "--yii-debug-panel-link-hover",
+            "role": "normal text",
+            "minimum": 4.5
+        },
+        {
+            "token": "--yii-debug-focus-ring",
+            "role": "focus indicator",
+            "minimum": 3
+        },
+        {
+            "token": "--yii-debug-success",
+            "role": "semantic text",
+            "minimum": 4.5
+        },
+        {
+            "token": "--yii-debug-warning",
+            "role": "semantic text",
+            "minimum": 4.5
+        },
+        {
+            "token": "--yii-debug-danger",
+            "role": "semantic text",
+            "minimum": 4.5
+        },
+        {
+            "token": "--yii-debug-info",
+            "role": "semantic text",
+            "minimum": 4.5
+        },
+        {
+            "token": "--yii-debug-cat-app",
+            "role": "non-text data mark",
+            "minimum": 3
+        },
+        {
+            "token": "--yii-debug-cat-db",
+            "role": "non-text data mark",
+            "minimum": 3
+        },
+        {
+            "token": "--yii-debug-cat-view",
+            "role": "non-text data mark",
+            "minimum": 3
+        },
+        {
+            "token": "--yii-debug-cat-cache",
+            "role": "non-text data mark",
+            "minimum": 3
+        },
+        {
+            "token": "--yii-debug-cat-mail",
+            "role": "non-text data mark",
+            "minimum": 3
+        },
+        {
+            "token": "--yii-debug-cat-queue",
+            "role": "non-text data mark",
+            "minimum": 3
+        }
+    ],
+    "compositions": [
+        {
+            "name": "success badge ink",
+            "foreground": "--yii-debug-on-success",
+            "background": "--yii-debug-success",
+            "role": "normal text on solid badge",
+            "minimum": 4.5
+        },
+        {
+            "name": "warning badge ink",
+            "foreground": "--yii-debug-on-warning",
+            "background": "--yii-debug-warning",
+            "role": "normal text on solid badge",
+            "minimum": 4.5
+        },
+        {
+            "name": "danger badge ink",
+            "foreground": "--yii-debug-on-danger",
+            "background": "--yii-debug-danger",
+            "role": "normal text on solid badge",
+            "minimum": 4.5
+        },
+        {
+            "name": "info badge ink",
+            "foreground": "--yii-debug-on-info",
+            "background": "--yii-debug-info",
+            "role": "normal text on solid badge",
+            "minimum": 4.5
+        }
+    ]
+}

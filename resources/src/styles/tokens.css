@@ -30,6 +30,29 @@
     "Liberation Mono", "Courier New", monospace;
   --yii-debug-font-display: var(--yii-debug-font-mono);
 
+  /* Shared spacing, type scale, shape, and elevation primitives. */
+  --yii-debug-space-1: 4px;
+  --yii-debug-space-2: 8px;
+  --yii-debug-space-3: 12px;
+  --yii-debug-space-4: 16px;
+  --yii-debug-space-5: 24px;
+  --yii-debug-space-6: 32px;
+  --yii-debug-radius-sm: 6px;
+  --yii-debug-radius-md: 10px;
+  --yii-debug-radius-lg: 14px;
+  --yii-debug-radius-pill: 999px;
+  --yii-debug-fs-xs: 0.75rem;
+  --yii-debug-fs-sm: 0.8125rem;
+  --yii-debug-fs-base: 0.9375rem;
+  --yii-debug-fs-lg: 1.0625rem;
+  --yii-debug-fs-xl: 1.25rem;
+  --yii-debug-fs-2xl: 1.5rem;
+  --yii-debug-control-min-size: 36px;
+  --yii-debug-panel-padding: var(--yii-debug-space-5);
+  --yii-debug-row-padding-block: 10px;
+  --yii-debug-duration-fast: 120ms;
+  --yii-debug-duration-normal: 180ms;
+
   /* Surfaces and ink. */
   --yii-debug-panel-bg: light-dark(#f2f5f1, #0c120e);
   --yii-debug-panel-bg-accent: light-dark(
@@ -53,24 +76,35 @@
   --yii-debug-panel-text: light-dark(#16211a, #e4ede6);
   --yii-debug-panel-muted: light-dark(#5c6b60, #8fa396);
   --yii-debug-panel-link: light-dark(#0b6b4a, #4fd39a);
-  --yii-debug-panel-link-hover: light-dark(#0e8a5f, #7fe4b8);
+  --yii-debug-panel-link-hover: light-dark(#0d855b, #7fe4b8);
   --yii-debug-panel-primary: light-dark(#0e7a55, #2fd08c);
   --yii-debug-panel-primary-strong: light-dark(#0a5c40, #17a673);
   --yii-debug-focus-ring: light-dark(#075c40, #7fe4b8);
-  --yii-debug-success: light-dark(#128a50, #34c97e);
-  --yii-debug-warning: light-dark(#b26a00, #e8a33d);
+  --yii-debug-success: light-dark(#0d7d47, #34c97e);
+  --yii-debug-warning: light-dark(#8f5000, #e8a33d);
   --yii-debug-danger: light-dark(#c93838, #f16a6a);
+  --yii-debug-on-success: light-dark(#fff, #0c120e);
+  --yii-debug-on-warning: light-dark(#fff, #1c1917);
+  --yii-debug-on-danger: light-dark(#fff, #1c1917);
 
   /* Base informational accent shared by chips, callouts, and metadata highlights. */
-  --yii-debug-info: light-dark(#2467a8, #5fa8e8);
+  --yii-debug-info: light-dark(#205f9d, #5fa8e8);
+  --yii-debug-on-info: var(--yii-debug-panel-bg);
   --yii-debug-panel-code-bg: light-dark(#ecf1ec, #17211a);
 
   /* Neutral pill fill for metric readouts and verdict-free badges. */
-  --yii-debug-panel-pill: light-dark(rgb(22 33 26 / 6%), rgb(143 163 150 / 18%));
+  --yii-debug-panel-pill: light-dark(
+    rgb(22 33 26 / 6%),
+    rgb(143 163 150 / 18%)
+  );
   --yii-debug-panel-shadow: light-dark(
     0 22px 60px rgb(22 33 26 / 8%),
     0 22px 60px rgb(0 0 0 / 40%)
   );
+  --yii-debug-border: 1px solid var(--yii-debug-panel-border);
+  --yii-debug-border-strong: 1px solid var(--yii-debug-panel-border-strong);
+  --yii-debug-shadow-sm: 0 1px 2px rgb(15 23 42 / 6%);
+  --yii-debug-shadow-md: 0 10px 24px rgb(15 23 42 / 8%);
 
   /* Semantic hue vocabulary — HTTP verbs. */
   --yii-debug-verb-get: light-dark(#0b7285, #4dc4d9);
@@ -128,6 +162,17 @@
   --yii-debug-cat-mail: light-dark(#b23a67, #d95f8f);
   --yii-debug-cat-queue: light-dark(#3f4dbd, #6d7ce6);
   --yii-debug-cat-other: var(--yii-debug-panel-muted);
+}
+
+:root[data-yii-debug-density="compact"] {
+  --yii-debug-space-2: 6px;
+  --yii-debug-space-3: 9px;
+  --yii-debug-space-4: 12px;
+  --yii-debug-space-5: 18px;
+  --yii-debug-space-6: 24px;
+  --yii-debug-control-min-size: 32px;
+  --yii-debug-panel-padding: var(--yii-debug-space-4);
+  --yii-debug-row-padding-block: 7px;
 }
 
 :root[data-yii-debug-theme="light"],

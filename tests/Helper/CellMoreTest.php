@@ -30,7 +30,7 @@ final class CellMoreTest extends TestCase
             <div class="yii-debug-cell-more">
             <div class="yii-debug-cell-more-body">
             content
-            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">[+] Show more</button>
+            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">Show more</button>
             </div>
             HTML,
             CellMore::clamp('content', str_repeat('a', CellMore::THRESHOLD + 1)),
@@ -47,7 +47,7 @@ final class CellMoreTest extends TestCase
             <div class="yii-debug-cell-more">
             <div class="yii-debug-cell-more-body">
             body
-            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">[+] Show more</button>
+            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">Show more</button>
             </div>
             HTML,
             $html,
@@ -64,7 +64,7 @@ final class CellMoreTest extends TestCase
             <div class="yii-debug-cell-more">
             <div class="yii-debug-cell-more-body">
             <div class="yii-debug-db-sql">SELECT 1</div>
-            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">[+] Show more</button>
+            </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">Show more</button>
             </div>
             HTML,
             $html,

@@ -38,6 +38,72 @@ final class CapturePolicyTest extends TestCase
         );
     }
 
+    public function testConstructorRejectsInvalidPatternConfigurationImmediately(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('not a valid PCRE pattern');
+
+        new CapturePolicy(sensitiveKeyPatterns: ['invalid']);
+    }
+
+    public function testPolicyDefaultPatternsAreSegmentAwareAndCanBeDisabled(): void
+    {
+        $defaultPolicy = new CapturePolicy();
+        $exactOnlyPolicy = new CapturePolicy(sensitiveKeyPatterns: []);
+
+        self::assertTrue(
+            $defaultPolicy->isSensitiveKey('MY_APP_PASSWORD'),
+            'Default policy patterns must cover segmented environment credential keys.',
+        );
+        self::assertFalse(
+            $defaultPolicy->isSensitiveKey('tokenizer'),
+            'Default patterns must not redact safe words that merely contain a credential substring.',
+        );
+        self::assertFalse(
+            $exactOnlyPolicy->isSensitiveKey('MY_APP_PASSWORD'),
+            'An explicit empty pattern list must preserve an exact-key-only policy.',
+        );
+        self::assertTrue(
+            $exactOnlyPolicy->isSensitiveKey('password'),
+            'Disabling patterns must retain the configured exact keys.',
+        );
+    }
+
+    public function testPolicySupportsAdditivePrefixesAndPatternsAcrossRepresentations(): void
+    {
+        $policy = new CapturePolicy(
+            sensitiveKeys: [],
+            sensitiveKeyPrefixes: ['private_'],
+            sensitiveKeyPatterns: ['~^credential-\d+$~i'],
+        );
+
+        self::assertSame(
+            [
+                'private_key' => SensitiveDataRedactor::PLACEHOLDER,
+                'credential-42' => SensitiveDataRedactor::PLACEHOLDER,
+                'public_key' => 'visible',
+            ],
+            $policy->redact(
+                [
+                    'private_key' => 'one',
+                    'credential-42' => 'two',
+                    'public_key' => 'visible',
+                ],
+            ),
+            'Policy prefix and pattern rules must apply to decoded value trees.',
+        );
+        self::assertSame(
+            'private_key=[redacted]; credential-42: [redacted]; public_key=visible',
+            $policy->redactText('private_key=one; credential-42: two; public_key=visible'),
+            'Policy prefix and pattern rules must apply to opaque assignment text.',
+        );
+        self::assertSame(
+            '/callback?private_code=%5Bredacted%5D&public=visible',
+            $policy->redactUrl('/callback?private_code=secret&public=visible'),
+            'Policy prefix rules must apply to parsed URL query keys.',
+        );
+    }
+
     public function testPolicySupportsAnEmptySensitiveKeyList(): void
     {
         self::assertSame(
@@ -125,6 +191,23 @@ final class CapturePolicyTest extends TestCase
             ['decoded' => null, 'raw' => str_repeat('a', 65_536) . SensitiveDataRedactor::TRUNCATED],
             (new CapturePolicy())->redactBody(str_repeat('a', 65_537), null),
             'The default body limit must remain exactly 65,536 bytes.',
+        );
+    }
+
+    public function testRedactTextDoesNotExposeLateSecretsAfterManyAssignments(): void
+    {
+        $assignments = [];
+
+        for ($index = 0; $index < 10_001; $index++) {
+            $assignments[] = "safe_{$index}=visible";
+        }
+
+        $assignments[] = 'MY_APP_PASSWORD=late-secret';
+
+        self::assertStringEndsWith(
+            'MY_APP_PASSWORD=[redacted]',
+            (new CapturePolicy())->redactText(implode(';', $assignments)),
+            'Text redaction must not inherit the nested-value node budget and expose a late credential assignment.',
         );
     }
 

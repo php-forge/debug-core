@@ -1,0 +1,302 @@
+/**
+ * Cross-panel interaction primitives.
+ *
+ * These rules stay separate from the panel catalogue in main.css so adapters
+ * can reuse shell, permalink, copy-feedback, comparison, and diagnostic
+ * workflow primitives without growing the monolithic panel stylesheet.
+ */
+
+.yii-debug {
+  .yii-debug-skip-link {
+    position: fixed;
+    top: var(--yii-debug-space-2);
+    left: var(--yii-debug-space-2);
+    z-index: 1000;
+    padding: var(--yii-debug-space-2) var(--yii-debug-space-3);
+    border: 2px solid var(--yii-debug-focus-ring);
+    border-radius: var(--yii-debug-radius-md);
+    background: var(--yii-debug-panel-surface);
+    box-shadow: var(--yii-debug-shadow-md);
+    color: var(--yii-debug-panel-text);
+    font-weight: 700;
+    transform: translateY(calc(-100% - var(--yii-debug-space-4)));
+
+    &:focus-visible {
+      text-decoration: none;
+      transform: translateY(0);
+    }
+  }
+
+  .yii-debug-brand-chip-control {
+    justify-content: center;
+    border: var(--yii-debug-border);
+    background: var(--yii-debug-panel-surface-muted);
+    color: var(--yii-debug-panel-muted);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: color-mix(
+        in srgb,
+        var(--yii-debug-panel-primary),
+        transparent 50%
+      );
+      color: var(--yii-debug-panel-primary-strong);
+      transform: translateY(-1px);
+    }
+  }
+
+  .yii-debug-brand-chip-density[aria-pressed="true"] {
+    border-color: color-mix(
+      in srgb,
+      var(--yii-debug-panel-primary),
+      transparent 45%
+    );
+    background: var(--yii-debug-panel-bg-accent);
+    color: var(--yii-debug-panel-primary-strong);
+  }
+
+  :is(h2, h3).yii-debug-has-permalink {
+    display: flex;
+    align-items: center;
+    gap: var(--yii-debug-space-1);
+    scroll-margin-block-start: var(--yii-debug-space-5);
+  }
+
+  .yii-debug-heading-permalink {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: var(--yii-debug-radius-sm);
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-sm);
+    line-height: 1;
+    opacity: 0;
+    text-decoration: none;
+    transition:
+      color var(--yii-debug-duration-fast) ease,
+      opacity var(--yii-debug-duration-fast) ease,
+      background var(--yii-debug-duration-fast) ease;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--yii-debug-panel-bg-accent);
+      color: var(--yii-debug-panel-primary-strong);
+      opacity: 1;
+      text-decoration: none;
+    }
+  }
+
+  :is(h2, h3).yii-debug-has-permalink:hover > .yii-debug-heading-permalink,
+  :is(h2, h3).yii-debug-has-permalink:focus-within
+    > .yii-debug-heading-permalink,
+  :is(h2, h3).yii-debug-deep-link-target > .yii-debug-heading-permalink {
+    opacity: 1;
+  }
+
+  .yii-debug-deep-link-target {
+    outline: 2px solid var(--yii-debug-focus-ring);
+    outline-offset: 4px;
+  }
+
+  .yii-debug-db-n1-summary {
+    display: grid;
+    gap: var(--yii-debug-space-2);
+    margin-bottom: var(--yii-debug-space-4);
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
+    border: 1px solid
+      color-mix(in srgb, var(--yii-debug-warning), transparent 55%);
+    border-radius: var(--yii-debug-radius-md);
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 92%);
+  }
+
+  .yii-debug-db-n1-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--yii-debug-space-2);
+  }
+
+  .yii-debug-db-n1-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--yii-debug-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .yii-debug-db-n1-link,
+  .yii-debug-db-n1-row-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--yii-debug-space-2);
+    min-height: var(--yii-debug-control-min-size);
+    padding: var(--yii-debug-space-1) var(--yii-debug-space-2);
+    border: 1px solid
+      color-mix(in srgb, var(--yii-debug-warning), transparent 60%);
+    border-radius: var(--yii-debug-radius-pill);
+    background: var(--yii-debug-panel-surface);
+    color: color-mix(
+      in srgb,
+      var(--yii-debug-warning) 72%,
+      var(--yii-debug-panel-text)
+    );
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible,
+    &[aria-current="true"] {
+      background: color-mix(in srgb, var(--yii-debug-warning), transparent 84%);
+      color: var(--yii-debug-panel-text);
+      text-decoration: none;
+    }
+  }
+
+  .yii-debug-db-n1-fingerprint {
+    display: inline-block;
+    overflow: hidden;
+    max-width: min(56ch, 65vw);
+    font-family: var(--yii-debug-font-mono);
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .yii-debug-db-n1-row-link {
+    margin-top: var(--yii-debug-space-3);
+  }
+
+  .yii-debug-grid-db .yii-debug-trace {
+    display: grid;
+    gap: var(--yii-debug-space-1);
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding-block: var(--yii-debug-space-1);
+    }
+  }
+
+  .yii-debug-db-n1-clear[hidden] {
+    display: none;
+  }
+
+  /**
+   * Shared request-comparison primitives. Adapters may compose these with the
+   * existing field, readout, and grid components without a dedicated asset.
+   */
+  .yii-debug-compare-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--yii-debug-space-3);
+    align-items: end;
+    margin-bottom: var(--yii-debug-space-4);
+  }
+
+  .yii-debug-compare-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: var(--yii-debug-space-3);
+    margin-bottom: var(--yii-debug-space-4);
+  }
+
+  .yii-debug-compare-grid {
+    min-width: 42rem;
+  }
+
+  :is(.yii-debug-delta-up, .yii-debug-delta-down, .yii-debug-delta-neutral) {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--yii-debug-space-2);
+    border: var(--yii-debug-border);
+    border-radius: var(--yii-debug-radius-pill);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .yii-debug-delta-up {
+    border-color: color-mix(in srgb, var(--yii-debug-danger), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-danger), transparent 90%);
+    color: var(--yii-debug-danger);
+  }
+
+  .yii-debug-delta-down {
+    border-color: color-mix(in srgb, var(--yii-debug-success), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 90%);
+    color: var(--yii-debug-success);
+  }
+
+  .yii-debug-delta-neutral {
+    background: var(--yii-debug-panel-surface-muted);
+    color: var(--yii-debug-panel-muted);
+  }
+
+  @container yii-debug-main (width <= 560px) {
+    .yii-debug-section-header,
+    .yii-debug-panel-heading {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .yii-debug-filter-input {
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  @media (width <= 767px) {
+    .yii-debug-brand-chip-copy .yii-debug-brand-label {
+      overflow: hidden;
+      max-width: 5.5rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  @media (pointer: coarse) {
+    :is(
+      .yii-debug-btn,
+      .yii-debug-brand-chip,
+      .yii-debug-cell-more-toggle,
+      .yii-debug-dropdown-item,
+      .yii-debug-heading-permalink,
+      .yii-debug-tab-link
+    ) {
+      min-height: 44px;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .yii-debug-card,
+    .yii-debug-brand-bar,
+    .yii-debug-brand-chip,
+    .yii-debug-nav,
+    .yii-debug-table-wrap {
+      border-color: CanvasText;
+      box-shadow: none;
+    }
+
+    .yii-debug-brand-chip-density[aria-pressed="true"],
+    .yii-debug-nav-link.is-active,
+    .yii-debug-tab-link.is-active {
+      border-color: Highlight;
+      background: Highlight;
+      color: HighlightText;
+    }
+
+    :focus-visible {
+      outline-color: Highlight;
+    }
+  }
+}
