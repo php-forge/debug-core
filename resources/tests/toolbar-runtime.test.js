@@ -199,6 +199,7 @@ test("toolbar item links remain focusable without nested interactive elements", 
     ),
     "a",
   );
+  assert.equal(toolbarPanelContainerTag({ url: "/debug" }, location), "a");
   assert.equal(
     toolbarPanelContainerTag({ items: [unlinkedItem] }, location),
     "div",
@@ -217,6 +218,8 @@ test("toolbar item links remain focusable without nested interactive elements", 
 });
 
 test("toolbar native links carry the active theme without changing drawer URLs", () => {
+  var location = "https://example.test/";
+
   assert.equal(
     renderToolbarLinkAttributes(
       "/debug/request?tag=1",
@@ -226,6 +229,19 @@ test("toolbar native links carry the active theme without changing drawer URLs",
     ' href="/debug/request?tag=1&yii_debug_theme=dark" data-debug-url="/debug/request?tag=1"',
   );
   assert.equal(renderToolbarLinkAttributes(null, null, String), "");
+  assert.equal(
+    renderToolbarLinkAttributes(null, "/debug/request", String, location),
+    "",
+  );
+  assert.equal(
+    renderToolbarLinkAttributes(
+      "/debug/request",
+      "javascript:alert(1)",
+      String,
+      location,
+    ),
+    "",
+  );
 });
 
 test("toolbar URL normalization enforces the same-origin HTTP boundary", () => {

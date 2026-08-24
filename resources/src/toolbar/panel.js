@@ -1,6 +1,10 @@
 import { normalizeToolbarUrl } from "./url.js";
 
 function hasToolbarItemLink(items, locationValue) {
+  if (!items) {
+    return false;
+  }
+
   return items.some(function (item) {
     return normalizeToolbarUrl(item.url, locationValue) !== null;
   });
@@ -47,7 +51,7 @@ export function renderToolbarLinkAttributes(
 
 export function toolbarPanelContainerTag(panel, locationValue) {
   return normalizeToolbarUrl(panel.url, locationValue) !== null &&
-    !hasToolbarItemLink(panel.items || [], locationValue)
+    !hasToolbarItemLink(panel.items, locationValue)
     ? "a"
     : "div";
 }
