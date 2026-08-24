@@ -10,7 +10,7 @@ indent_style = space
 indent_size = 4
 trim_trailing_whitespace = true
 
-[*.js]
+[*.{js,mjs}]
 indent_size = 2
 
 [*.scss]
@@ -33,7 +33,7 @@ trim_trailing_whitespace = unset
 charset = unset
 
 [*.md]
-indent_size = 2
+indent_size = unset
 trim_trailing_whitespace = false
 
 [*.php]
