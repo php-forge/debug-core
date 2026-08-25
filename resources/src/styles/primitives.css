@@ -264,6 +264,11 @@
   }
 
   @media (pointer: coarse) {
+    .yii-debug-grid-db .yii-debug-trace a {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
     :is(
       .yii-debug-btn,
       .yii-debug-brand-chip,

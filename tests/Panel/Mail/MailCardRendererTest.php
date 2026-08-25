@@ -9,8 +9,6 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Xepozz\InternalMocker\MockerState;
 
-use function ini_set;
-
 /**
  * Unit tests for {@see MailCardRenderer} covering the typed mail card composition: avatar / headline / meta line,
  * recipient pills, body block, status pill, time line, download link and the optional raw-headers details block.
@@ -97,26 +95,6 @@ final class MailCardRendererTest extends TestCase
             HTML,
             $long,
             'Long Unicode previews must start at the first character and truncate on a character boundary.',
-        );
-    }
-
-    public function testRenderItemDegradesToEmptyMarkupWhenPcreFails(): void
-    {
-        $previous = ini_set('pcre.backtrack_limit', '1');
-
-        try {
-            $html = MailCardRenderer::renderItem(
-                self::makeMessage(),
-                self::makeUrlBuilder(),
-            );
-        } finally {
-            ini_set('pcre.backtrack_limit', (string) $previous);
-        }
-
-        self::assertSame(
-            '',
-            $html,
-            'A PCRE failure must degrade the card to an empty string instead of erroring.',
         );
     }
 
@@ -288,6 +266,39 @@ final class MailCardRendererTest extends TestCase
             HTML,
             MailCardRenderer::renderItem(self::makeMessage(body: ''), self::makeUrlBuilder()),
             'Empty body must omit the preview span.',
+        );
+    }
+
+    public function testRenderItemOmitsBodyPreviewWhenWhitespaceNormalizationFails(): void
+    {
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Panel\\Mail',
+            'preg_replace',
+            ['/\s+/', ' ', 'Test body'],
+            null,
+        );
+
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
+            MailCardRenderer::renderItem(
+                self::makeMessage(),
+                self::makeUrlBuilder(),
+            ),
+            'A PCRE failure must omit the preview without dropping the mail card.',
         );
     }
 

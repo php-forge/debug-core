@@ -12,12 +12,12 @@ use ReflectionClass;
 use Xepozz\InternalMocker\{Mocker, MockerState};
 
 /**
- * Replaces native functions inside the phpinfo and storage namespaces for failure-path tests.
+ * Replaces native functions in selected source namespaces for deterministic failure-path and time-dependent tests.
  */
 final class MockerExtension implements Extension
 {
     /**
-     * Registers subscribers that initialize and reset filesystem function mocks.
+     * Registers subscribers that initialize and reset native function mocks.
      *
      * @param Configuration $configuration PHPUnit configuration.
      * @param Facade $facade PHPUnit extension facade.
@@ -53,7 +53,7 @@ final class MockerExtension implements Extension
     }
 
     /**
-     * Loads native function stubs for the phpinfo and storage namespaces.
+     * Loads native function stubs for selected source namespaces.
      */
     public static function load(): void
     {
@@ -87,12 +87,17 @@ final class MockerExtension implements Extension
             ];
         }
 
-        foreach (['PHPForge\\Debug\\Panel\\Mail', 'PHPForge\\Debug\\Panel\\User'] as $namespace) {
+        foreach (['preg_replace', 'time'] as $name) {
             $mocks[] = [
-                'namespace' => $namespace,
-                'name' => 'time',
+                'namespace' => 'PHPForge\\Debug\\Panel\\Mail',
+                'name' => $name,
             ];
         }
+
+        $mocks[] = [
+            'namespace' => 'PHPForge\\Debug\\Panel\\User',
+            'name' => 'time',
+        ];
 
         (new Mocker(stubPath: __DIR__ . '/mocker-stubs.php'))->load($mocks);
 

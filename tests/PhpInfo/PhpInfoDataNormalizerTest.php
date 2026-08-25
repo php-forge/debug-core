@@ -415,7 +415,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
         <h2>acme</h2>
         <table>
         <tr><td>Vendor</td><td>Acme</td></tr>
-        <tr cla class="x"ss="a h b"><td>Branding</td><td>Custom</td></tr>
+        <tr class="a h b"><td>Branding</td><td>Custom</td></tr>
         <tr><td>Version</td><td>1.2</td></tr>
         </table>
         HTML;
@@ -427,7 +427,7 @@ final class PhpInfoDataNormalizerTest extends TestCase
             <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-acme" data-section="acme"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-acme-heading">acme</h2></header>
             <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">3 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
             <tr class="yii-debug-phpinfo-fact"><td>Vendor</td><td>Acme</td></tr>
-            <tr class="a h b" class="yii-debug-phpinfo-fact"><td>Branding</td><td>Custom</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><td>Branding</td><td>Custom</td></tr>
             <tr class="yii-debug-phpinfo-fact"><td>Version</td><td>1.2</td></tr>
             </table></div></div></section>
             HTML,

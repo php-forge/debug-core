@@ -443,6 +443,25 @@ test("N+1 filter links navigate, scroll, and clear through the document handlers
   window.history = historyStub;
 });
 
+test("an in-flight individual EXPLAIN keeps the batch control as a collapse action", () => {
+  var requestCount = requests.length;
+
+  toggles[0].dispatchEvent(new Event("click"));
+
+  assert.equal(requests.length, requestCount + 1);
+  assert.equal(explainAll.textContent, "Collapse all");
+  assert.equal(explainAll.getAttribute("aria-expanded"), "true");
+  assert.equal(explainAll.getAttribute("aria-busy"), null);
+
+  explainAll.dispatchEvent(new Event("click"));
+
+  assert.equal(requests.length, requestCount + 1);
+  assert.equal(requests[requestCount].aborted, true);
+  assert.equal(containers[0].classList.contains("is-loading"), false);
+  assert.equal(explainAll.textContent, "Explain all");
+  assert.equal(explainAll.getAttribute("aria-expanded"), "false");
+});
+
 test("failed individual EXPLAIN request exposes a retryable alert", () => {
   var requestCount = requests.length;
 

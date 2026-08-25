@@ -21,7 +21,6 @@ use function intdiv;
 use function mb_strlen;
 use function mb_strtoupper;
 use function mb_substr;
-use function preg_replace;
 
 /**
  * Renders the typed mail message card consumed by the Mail panel detail view's `_item` template.

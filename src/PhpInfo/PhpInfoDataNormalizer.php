@@ -791,7 +791,7 @@ final class PhpInfoDataNormalizer
             $tableBody = self::normalizeFactRows($tableBody);
         }
 
-        $skipHeaders = $kind === self::TABLE_KIND_DIRECTIVES || $kind === self::TABLE_KIND_DATA;
+        $skipHeaders = $kind !== self::TABLE_KIND_FACTS;
         $count = $kind === self::TABLE_KIND_NOTE
             ? self::countTableRows($tableBody)
             : self::countRowsWithValues($tableBody, $skipHeaders);

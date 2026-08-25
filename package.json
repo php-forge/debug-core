@@ -12,7 +12,7 @@
     "lint:css:fix": "stylelint --config .github/linters/.stylelintrc.json --config-basedir . --fix 'resources/src/**/*.css'",
     "lint:js": "eslint --config .github/linters/eslint.config.mjs resources e2e tools playwright.config.js",
     "lint:js:fix": "eslint --config .github/linters/eslint.config.mjs --fix resources e2e tools playwright.config.js",
-    "test:js": "node --test --experimental-test-coverage --test-coverage-include='resources/src/**/*.js' --test-coverage-exclude='resources/src/core/debug.js' --test-coverage-exclude='resources/src/toolbar/element.js' --test-coverage-exclude='resources/src/toolbar/index.js' --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 resources/tests/*.test.js",
+    "test:js": "c8 node --test resources/tests/*.test.js",
     "test:mutation": "stryker run",
     "fixtures:seed": "php tools/seed-debug-fixtures.php",
     "check:size": "node tools/check-asset-size.mjs",
@@ -29,6 +29,23 @@
     "test:perf:live": "playwright test e2e/live-performance.spec.js --project=desktop-1440",
     "test:browser": "playwright test e2e/smoke.spec.js e2e/security.spec.js e2e/accessibility.spec.js e2e/visual.spec.js"
   },
+  "c8": {
+    "all": true,
+    "include": [
+      "resources/src/**/*.js"
+    ],
+    "exclude": [
+      "resources/src/core/debug.js",
+      "resources/src/toolbar/element.js",
+      "resources/src/toolbar/index.js"
+    ],
+    "reports-dir": "runtime/coverage-js",
+    "temp-directory": "runtime/coverage-js/tmp",
+    "check-coverage": true,
+    "lines": 100,
+    "branches": 100,
+    "functions": 100
+  },
   "engines": {
     "node": ">=22.12.0"
   },
@@ -38,6 +55,7 @@
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@playwright/test": "^1.62.1",
     "@stryker-mutator/core": "^10.0.0",
+    "c8": "^12.0.0",
     "eslint": "^10.8.0",
     "prettier": "^3.9.6",
     "stylelint": "^17.14.1",
