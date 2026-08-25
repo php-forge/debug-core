@@ -36,6 +36,8 @@ use function sprintf;
  * Represents an arbitrary PHP value as JSON-safe tagged data.
  *
  * Hydration deliberately recreates this value object rather than executable objects, resources, or closures.
+ *
+ * @phpstan-type DebugValueType 'null'|'bool'|'int'|'float'|'special-float'|'string'|'binary'|'array'|'object'|'resource'|'truncated'|'recursion'|'unsupported'
  */
 final readonly class DebugValue implements JsonSerializable
 {
@@ -372,7 +374,6 @@ final readonly class DebugValue implements JsonSerializable
                 value: self::nullableString($payload, 'value', $path),
                 reason: self::string($payload, 'reason', $path),
             ),
-            default => throw HydrationException::at("{$path}.type", 'a known debug-value type'),
         };
     }
 
@@ -728,7 +729,7 @@ final readonly class DebugValue implements JsonSerializable
     /**
      * Returns a decoded tagged-value object matching its type-specific shape.
      *
-     * @param-out string $type Validated tagged-value type.
+     * @param-out DebugValueType $type Validated tagged-value type.
      *
      * @return array<string, mixed> Validated tagged-value fields.
      */
@@ -741,12 +742,24 @@ final readonly class DebugValue implements JsonSerializable
             throw HydrationException::at("{$path}.type", 'a string');
         }
 
-        $type = $rawType;
+        $type = match ($rawType) {
+            'null' => 'null',
+            'bool' => 'bool',
+            'int' => 'int',
+            'float' => 'float',
+            'special-float' => 'special-float',
+            'string' => 'string',
+            'binary' => 'binary',
+            'array' => 'array',
+            'object' => 'object',
+            'resource' => 'resource',
+            'truncated' => 'truncated',
+            'recursion' => 'recursion',
+            'unsupported' => 'unsupported',
+            default => throw HydrationException::at("{$path}.type", 'a known debug-value type'),
+        };
 
-        $shape = self::SHAPES[$type] ?? throw HydrationException::at(
-            "{$path}.type",
-            'a known debug-value type',
-        );
+        $shape = self::SHAPES[$type];
 
         self::validateShape($payload, $shape, $path);
 

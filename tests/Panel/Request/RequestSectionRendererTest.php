@@ -42,12 +42,12 @@ final class RequestSectionRendererTest extends TestCase
             <div class="yii-debug-request-hero-line">
             <span class="yii-debug-request-hero-method yii-debug-verb-get">GET</span><span class="yii-debug-request-hero-url" title="http://example.test/">http://example.test/</span><span class="yii-debug-snapshot-status yii-debug-status-2xx">200</span>
             </div><div class="yii-debug-request-hero-meta">
-            <span>127.0.0.1</span><span>12:34:56</span><span>7.5 ms</span>
+            <span class="yii-debug-request-hero-meta-item"><span class="yii-debug-request-hero-meta-label">IP</span><span class="yii-debug-request-hero-meta-value">127.0.0.1</span></span><span class="yii-debug-request-hero-meta-item"><span class="yii-debug-request-hero-meta-label">Time</span><span class="yii-debug-request-hero-meta-value">12:34:56</span></span><span class="yii-debug-request-hero-meta-item"><span class="yii-debug-request-hero-meta-label">Duration</span><span class="yii-debug-request-hero-meta-value">7.5 ms</span></span>
             </div>
             </header>
             HTML,
             RequestSectionRenderer::renderHero(self::makeHero(ip: '127.0.0.1', time: '12:34:56', durationMs: '7.5 ms')),
-            'Non-empty ip must surface in the meta strip.',
+            'Request metadata must identify the IP address, capture time, and duration.',
         );
     }
 

@@ -201,6 +201,20 @@ final class RequestDataNormalizerTest extends TestCase
         );
     }
 
+    public function testFromPanelDataPrefersCapturedGeneralMethodOverSummary(): void
+    {
+        $view = RequestDataNormalizer::fromPanelData(
+            ['general' => ['method' => 'PATCH']],
+            self::summary(['method' => 'GET']),
+        );
+
+        self::assertSame(
+            'PATCH',
+            $view->hero->method,
+            'Captured method must override the controller summary method.',
+        );
+    }
+
     public function testFromPanelDataPrefersPanelStatusCodeOverSummary(): void
     {
         $view = RequestDataNormalizer::fromPanelData(
@@ -314,6 +328,32 @@ final class RequestDataNormalizerTest extends TestCase
             '12.5 ms',
             $view->hero->durationMs,
             "Duration must format as 'X.X ms'.",
+        );
+    }
+
+    public function testFromPanelDataSurfacesRequestBodyEntries(): void
+    {
+        $view = RequestDataNormalizer::fromPanelData(
+            ['requestBody' => ['payload' => 'value']],
+            null,
+        );
+
+        $sections = $view->tabs[0]->sections ?? [];
+        $bodySection = $sections[count($sections) - 1] ?? null;
+
+        self::assertNotNull(
+            $bodySection,
+            'Parameters tab must end with a section.',
+        );
+        self::assertSame(
+            'Request Body',
+            $bodySection->caption,
+            'The closing section must be the request body.',
+        );
+        self::assertSame(
+            ['payload' => 'value'],
+            $bodySection->entries,
+            'Captured body entries must reach the section.',
         );
     }
 

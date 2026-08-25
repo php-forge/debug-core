@@ -219,6 +219,17 @@ final class UserDataNormalizerTest extends TestCase
         );
     }
 
+    public function testFromIdentityHeroFallsBackToNameWhenUsernameIsMissing(): void
+    {
+        $view = UserDataNormalizer::fromIdentity(['name' => "'Fallback name'"], null);
+
+        self::assertSame(
+            'Fallback name',
+            $view->hero->username,
+            'The name attribute must fill the hero username.',
+        );
+    }
+
     public function testFromIdentityHumanizesTimestampsAcrossEveryRelativeBucket(): void
     {
         self::freezeTime();

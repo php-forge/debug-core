@@ -8,6 +8,7 @@ use Closure;
 use PHPForge\Debug\Storage\{DebugValue, HydrationException};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use RuntimeException;
 use stdClass;
 use Stringable;
@@ -19,6 +20,15 @@ use Stringable;
 #[Group('storage')]
 final class DebugValueTest extends TestCase
 {
+    public function testBinaryDisplayLabelEmbedsTheBase64EncodedBytes(): void
+    {
+        self::assertSame(
+            '(binary: base64 sTE=)',
+            DebugValue::capture("\xB1\x31")->toDisplayValue(),
+            'Label must embed the exact base64 payload.',
+        );
+    }
+
     public function testCaptureFallsBackToTheClassNameWhenStringConversionThrows(): void
     {
         $value = DebugValue::capture(
@@ -465,6 +475,21 @@ final class DebugValueTest extends TestCase
         );
     }
 
+    public function testDiagnosticDisplayLabelFallsBackToTypeAndReasonWhenTheValueIsMissing(): void
+    {
+        self::assertSame(
+            '(truncated: size)',
+            DebugValue::fromArray(['type' => 'truncated', 'value' => null, 'reason' => 'size'])->toDisplayValue(),
+            'A `null` label must fall back to type and reason.',
+        );
+        self::assertSame(
+            '(recursion: object-cycle)',
+            DebugValue::fromArray(['type' => 'recursion', 'value' => '', 'reason' => 'object-cycle'])
+                ->toDisplayValue(),
+            'An empty label must fall back to type and reason.',
+        );
+    }
+
     public function testHydrationAcceptsAnEmptyDecodedObjectBeforeValidatingItsShape(): void
     {
         $this->expectException(HydrationException::class);
@@ -576,6 +601,57 @@ final class DebugValueTest extends TestCase
         );
     }
 
+    public function testSerializedBinaryDataEncodesTheCapturedBytes(): void
+    {
+        self::assertSame(
+            ['type' => 'binary', 'encoding' => 'base64', 'data' => 'sTE='],
+            DebugValue::capture("\xB1\x31")->jsonSerialize(),
+            'Base64 data must encode the captured bytes.',
+        );
+    }
+
+    public function testThrowHydrationExceptionForAListPayloadWhereAnObjectIsRequired(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$': expected an object.",
+        );
+
+        DebugValue::fromArray([1, 2]);
+    }
+
+    public function testThrowHydrationExceptionForAMissingRequiredFieldAlongsideAnUnknownField(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.value': expected a required field.",
+        );
+
+        DebugValue::fromArray(['type' => 'bool', 'extra' => true]);
+    }
+
+    public function testThrowHydrationExceptionForAnEntryFieldOutsideTheEntryShape(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.entries[0].extra': expected a declared field.",
+        );
+
+        DebugValue::fromArray(
+            [
+                'type' => 'array',
+                'entries' => [
+                    [
+                        'keyType' => 'int',
+                        'key' => 0,
+                        'value' => ['type' => 'null'],
+                        'extra' => true,
+                    ],
+                ],
+            ],
+        );
+    }
+
     public function testThrowHydrationExceptionForAnEntryKeyThatDoesNotMatchItsKeyType(): void
     {
         $this->expectException(HydrationException::class);
@@ -597,6 +673,33 @@ final class DebugValueTest extends TestCase
         );
     }
 
+    public function testThrowHydrationExceptionForANonStringTypeField(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.type': expected a string.",
+        );
+
+        DebugValue::fromArray(['type' => 123]);
+    }
+
+    public function testThrowHydrationExceptionForAnUnknownEntryKeyType(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.entries[0].key': expected a key matching keyType.",
+        );
+
+        DebugValue::fromArray(
+            [
+                'type' => 'array',
+                'entries' => [
+                    ['keyType' => 'float', 'key' => 0, 'value' => ['type' => 'null']],
+                ],
+            ],
+        );
+    }
+
     public function testThrowHydrationExceptionForAnUnknownSpecialFloat(): void
     {
         $this->expectException(HydrationException::class);
@@ -607,6 +710,16 @@ final class DebugValueTest extends TestCase
         DebugValue::fromArray(['type' => 'special-float', 'value' => 'NOPE']);
     }
 
+    public function testThrowHydrationExceptionForAnUnknownTaggedType(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.type': expected a known debug-value type.",
+        );
+
+        DebugValue::fromArray(['type' => 'wormhole']);
+    }
+
     public function testThrowHydrationExceptionForAnUnsupportedBinaryEncoding(): void
     {
         $this->expectException(HydrationException::class);
@@ -615,6 +728,50 @@ final class DebugValueTest extends TestCase
         );
 
         DebugValue::fromArray(['type' => 'binary', 'encoding' => 'hex', 'data' => 'ff']);
+    }
+
+    public function testThrowHydrationExceptionForAPayloadWithNonStringKeys(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$': expected an object with string keys.",
+        );
+
+        DebugValue::fromArray(['type' => 'null', 0 => 'unexpected']);
+    }
+
+    public function testThrowHydrationExceptionForAStringKeyTypeWithAnIntegerKey(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.entries[0].key': expected a key matching keyType.",
+        );
+
+        DebugValue::fromArray(
+            [
+                'type' => 'array',
+                'entries' => [
+                    ['keyType' => 'string', 'key' => 0, 'value' => ['type' => 'null']],
+                ],
+            ],
+        );
+    }
+
+    public function testThrowHydrationExceptionForEntriesThatAreNotAList(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.entries': expected a list.",
+        );
+
+        DebugValue::fromArray(
+            [
+                'type' => 'array',
+                'entries' => [
+                    'first' => ['keyType' => 'int', 'key' => 0, 'value' => ['type' => 'null']],
+                ],
+            ],
+        );
     }
 
     public function testThrowHydrationExceptionForEveryInvalidTaggedFieldKind(): void
@@ -737,6 +894,21 @@ final class DebugValueTest extends TestCase
             DebugValue::fromArray(['type' => 'unsupported', 'value' => '*UNKNOWN*', 'reason' => 'fixture'])
                 ->toDisplayValue(),
             'Unsupported-value label must remain visible.',
+        );
+    }
+
+    public function testUnknownInternalTypeTagFallsBackToTheUnsupportedDisplayLabel(): void
+    {
+        $reflection = new ReflectionClass(DebugValue::class);
+
+        $value = $reflection->newInstanceWithoutConstructor();
+
+        $reflection->getConstructor()?->invoke($value, 'wormhole');
+
+        self::assertSame(
+            '(unsupported)',
+            $value->toDisplayValue(),
+            'An unknown internal tag must degrade to the generic label.',
         );
     }
 

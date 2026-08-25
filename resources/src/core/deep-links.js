@@ -1,4 +1,8 @@
-function fragmentId(locationValue) {
+var SKIPPED_HEADING_CONTENT =
+  ".yii-debug-section-count, .yii-debug-badge, .yii-debug-panel-heading-kind, " +
+  '.yii-debug-heading-permalink, [data-yii-debug-count], [aria-hidden="true"]';
+
+export function fragmentId(locationValue) {
   var hash = locationValue && locationValue.hash ? locationValue.hash : "";
 
   try {
@@ -9,38 +13,39 @@ function fragmentId(locationValue) {
 }
 
 export function headingSlug(value) {
+  // The preceding replace collapses separator runs, so at most a single dash
+  // can lead or trail the slug.
   var slug = String(value || "")
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/^-|-$/g, "");
 
   return slug || "section";
 }
 
-export function headingLabel(heading) {
-  var skipped =
-    ".yii-debug-section-count, .yii-debug-badge, .yii-debug-panel-heading-kind, " +
-    '.yii-debug-heading-permalink, [data-yii-debug-count], [aria-hidden="true"]';
-
-  function textFrom(node) {
-    if (node.nodeType === 3) {
-      return node.textContent || "";
-    }
-
-    if (node.nodeType !== 1 || (node.matches && node.matches(skipped))) {
-      return "";
-    }
-
-    return Array.from(node.childNodes || [])
-      .map(textFrom)
-      .join(" ");
+function headingTextFrom(node) {
+  if (node.nodeType === 3) {
+    return node.textContent || "";
   }
 
-  var label = Array.from(heading.childNodes || [])
-    .map(textFrom)
-    .join(" ");
+  if (
+    node.nodeType !== 1 ||
+    (node.matches && node.matches(SKIPPED_HEADING_CONTENT))
+  ) {
+    return "";
+  }
+
+  return node.childNodes
+    ? Array.from(node.childNodes).map(headingTextFrom).join(" ")
+    : "";
+}
+
+export function headingLabel(heading) {
+  var label = heading.childNodes
+    ? Array.from(heading.childNodes).map(headingTextFrom).join(" ")
+    : "";
 
   return (label || heading.textContent || "").replace(/\s+/g, " ").trim();
 }
@@ -48,13 +53,12 @@ export function headingLabel(heading) {
 function availableId(documentValue, base, heading) {
   var candidate = base;
   var suffix = 2;
+  var existing = documentValue.getElementById(candidate);
 
-  while (
-    documentValue.getElementById(candidate) &&
-    documentValue.getElementById(candidate) !== heading
-  ) {
+  while (existing && existing !== heading) {
     candidate = base + "-" + suffix;
     suffix += 1;
+    existing = documentValue.getElementById(candidate);
   }
 
   return candidate;
@@ -67,7 +71,6 @@ export function enhanceSectionPermalinks(root) {
   var headings = root.querySelectorAll(
     "#yii-debug-main h2, #yii-debug-main h3",
   );
-  var enhanced = 0;
 
   for (var i = 0; i < headings.length; i++) {
     var heading = headings[i];
@@ -103,10 +106,7 @@ export function enhanceSectionPermalinks(root) {
     heading.appendChild(link);
     heading.classList.add("yii-debug-has-permalink");
     heading.setAttribute("data-yii-debug-permalink-bound", "true");
-    enhanced += 1;
   }
-
-  return enhanced;
 }
 
 /**

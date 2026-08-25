@@ -269,6 +269,39 @@ final class MailCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderItemOmitsBodyPreviewWhenWhitespaceNormalizationFails(): void
+    {
+        MockerState::addCondition(
+            'PHPForge\\Debug\\Panel\\Mail',
+            'preg_replace',
+            ['/\s+/', ' ', 'Test body'],
+            null,
+        );
+
+        self::assertSame(
+            <<<HTML
+            <article class="yii-debug-mail-card">
+            <header class="yii-debug-mail-card-head">
+            <span class="yii-debug-mail-avatar" style='--mail-hue: 210' aria-hidden="true">?</span><div class="yii-debug-mail-headline">
+            <span class="yii-debug-mail-from">(no sender)</span><h2 class="yii-debug-mail-subject">
+            Test subject
+            </h2>
+            </div><div class="yii-debug-mail-meta">
+            <span class="yii-debug-mail-status yii-debug-mail-status-ok" title="Mailer reported success"><span class="yii-debug-mail-status-dot" aria-hidden="true"></span> Sent</span>
+            </div>
+            </header><div class="yii-debug-mail-body">
+            Test body
+            </div>
+            </article>
+            HTML,
+            MailCardRenderer::renderItem(
+                self::makeMessage(),
+                self::makeUrlBuilder(),
+            ),
+            'A PCRE failure must omit the preview without dropping the mail card.',
+        );
+    }
+
     public function testRenderItemOmitsDownloadLinkWhenFileIsEmpty(): void
     {
         self::assertSame(

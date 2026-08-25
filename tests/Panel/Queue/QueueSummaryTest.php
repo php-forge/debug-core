@@ -117,6 +117,25 @@ final class QueueSummaryTest extends TestCase
         );
     }
 
+    public function testFromRecordsReindexesComponentIdsAfterDroppingDuplicates(): void
+    {
+        $summary = QueueSummary::fromRecords(
+            self::records(
+                [
+                    ['eventType' => 'push', 'componentId' => 'queueEmail'],
+                    ['eventType' => 'push', 'componentId' => 'queueEmail'],
+                    ['eventType' => 'push', 'componentId' => 'queue'],
+                ],
+            ),
+        );
+
+        self::assertSame(
+            ['queueEmail', 'queue'],
+            $summary->componentIds(),
+            "'componentIds' must be a zero-based list after deduplication.",
+        );
+    }
+
     public function testFromRecordsReturnsEmptySummaryForAnEmptyList(): void
     {
         $summary = QueueSummary::fromRecords([]);

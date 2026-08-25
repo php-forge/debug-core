@@ -16,6 +16,29 @@ use RuntimeException;
 #[Group('storage')]
 final class ExceptionSnapshotTest extends TestCase
 {
+    public function testThrowableCapturePreservesTraceFrameFileAndLine(): void
+    {
+        $line = __LINE__ + 3;
+
+        try {
+            $this->throwFromTrace();
+        } catch (RuntimeException $throwable) {
+            $frame = ExceptionSnapshot::fromThrowable($throwable)
+                ->getTrace()[0] ?? self::fail('Expected the throwing method in the captured trace.');
+        }
+
+        self::assertSame(
+            __FILE__,
+            $frame['file'] ?? null,
+            'Frame file must survive capture.',
+        );
+        self::assertSame(
+            $line,
+            $frame['line'] ?? null,
+            'Frame line must survive capture.',
+        );
+    }
+
     public function testThrowableCaptureRedactsMessagesAndOmitsTraceArguments(): void
     {
         $throwable = $this->exceptionContainingSecret('do-not-persist');

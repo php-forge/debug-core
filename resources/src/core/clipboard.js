@@ -1,9 +1,31 @@
+const COPY_FEEDBACK = Object.freeze({
+  error: {
+    button: "Copy failed",
+    label: "Retry copy",
+    status: "Copy failed. Try again.",
+  },
+  success: {
+    button: "Copied",
+    label: "Copied",
+    status: "Copied to clipboard.",
+  },
+  unavailable: {
+    button: "Copy unavailable",
+    label: "Unavailable",
+    status: "Clipboard access is unavailable.",
+  },
+});
+
 var copyStatusSequence = 0;
 
-function appendDescription(control, statusId) {
-  var descriptions = (control.getAttribute("aria-describedby") || "")
+function describedByIds(control) {
+  return (control.getAttribute("aria-describedby") || "")
     .split(/\s+/)
     .filter(Boolean);
+}
+
+function appendDescription(control, statusId) {
+  var descriptions = describedByIds(control);
 
   if (descriptions.indexOf(statusId) === -1) {
     descriptions.push(statusId);
@@ -27,9 +49,7 @@ function createStatus(control) {
 }
 
 function statusFor(control) {
-  var describedBy = (control.getAttribute("aria-describedby") || "")
-    .split(/\s+/)
-    .filter(Boolean);
+  var describedBy = describedByIds(control);
   var documentValue = control.ownerDocument;
 
   for (var i = 0; i < describedBy.length; i++) {
@@ -48,23 +68,7 @@ function statusFor(control) {
 
 function setFeedback(control, status, state) {
   var visibleLabel = control.querySelector("[data-yii-debug-copy-label]");
-  var feedback = {
-    error: {
-      button: "Copy failed",
-      label: "Retry copy",
-      status: "Copy failed. Try again.",
-    },
-    success: {
-      button: "Copied",
-      label: "Copied",
-      status: "Copied to clipboard.",
-    },
-    unavailable: {
-      button: "Copy unavailable",
-      label: "Unavailable",
-      status: "Clipboard access is unavailable.",
-    },
-  }[state];
+  var feedback = COPY_FEEDBACK[state];
 
   control.setAttribute("aria-label", feedback.button);
   control.setAttribute("title", feedback.button);

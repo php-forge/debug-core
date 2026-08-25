@@ -1,3 +1,8 @@
+import { fragmentId } from "./deep-links.js";
+import { dropdownNavigationIndex } from "./dropdown.js";
+
+const TAB_NAVIGATION_KEYS = ["ArrowLeft", "ArrowRight", "Home", "End"];
+
 function closest(element, selector) {
   if (element && element.nodeType !== 1) {
     element = element.parentElement;
@@ -6,25 +11,6 @@ function closest(element, selector) {
   return element && typeof element.closest === "function"
     ? element.closest(selector)
     : null;
-}
-
-function fragmentId(locationValue) {
-  var hash =
-    typeof locationValue === "string"
-      ? new URL(locationValue).hash
-      : locationValue && locationValue.hash
-        ? locationValue.hash
-        : "";
-
-  if (!hash || hash === "#") {
-    return "";
-  }
-
-  try {
-    return decodeURIComponent(hash.slice(1));
-  } catch {
-    return "";
-  }
 }
 
 function controlledPanel(link, root) {
@@ -130,7 +116,7 @@ export function initTabs(root, windowValue) {
 
   function select(link, focus) {
     if (!activateTab(link, root)) {
-      return false;
+      return;
     }
 
     var panelId = link.getAttribute("aria-controls");
@@ -146,8 +132,6 @@ export function initTabs(root, windowValue) {
     if (focus && typeof link.focus === "function") {
       link.focus();
     }
-
-    return true;
   }
 
   root.addEventListener("click", function (event) {
@@ -162,12 +146,13 @@ export function initTabs(root, windowValue) {
   });
 
   root.addEventListener("keydown", function (event) {
+    if (TAB_NAVIGATION_KEYS.indexOf(event.key) === -1) {
+      return;
+    }
+
     var tab = closest(event.target, '[data-yii-debug-toggle="tab"]');
 
-    if (
-      !tab ||
-      ["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(event.key) === -1
-    ) {
+    if (!tab) {
       return;
     }
 
@@ -175,18 +160,12 @@ export function initTabs(root, windowValue) {
     var tabs = tabList
       ? Array.from(tabList.querySelectorAll('[data-yii-debug-toggle="tab"]'))
       : [];
-    var current = tabs.indexOf(tab);
-    var next = current;
-
-    if (event.key === "Home") {
-      next = 0;
-    } else if (event.key === "End") {
-      next = tabs.length - 1;
-    } else if (event.key === "ArrowLeft") {
-      next = (current - 1 + tabs.length) % tabs.length;
-    } else if (event.key === "ArrowRight") {
-      next = (current + 1) % tabs.length;
-    }
+    var next = dropdownNavigationIndex(
+      tabs.length,
+      tabs.indexOf(tab),
+      event.key === "ArrowLeft" ? "ArrowUp" : event.key,
+      false,
+    );
 
     if (tabs[next]) {
       event.preventDefault();

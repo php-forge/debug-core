@@ -15,6 +15,7 @@ use function array_map;
 use function date;
 use function implode;
 use function in_array;
+use function intdiv;
 use function number_format;
 use function sprintf;
 use function strtoupper;
@@ -69,11 +70,12 @@ final class DbQueryRenderer
         $items = [];
 
         foreach ($findings as $finding) {
+            $groupId = $finding->id();
             $items[] = Li::tag()->html(
                 A::tag()
-                    ->addDataAttribute('yii-debug-n1-filter', $finding->id())
+                    ->addDataAttribute('yii-debug-n1-filter', $groupId)
                     ->class('yii-debug-db-n1-link')
-                    ->href("#{$finding->id()}")
+                    ->href("#{$groupId}")
                     ->title($finding->representativeQuery)
                     ->html(
                         Strong::tag()->content("{$finding->count}×"),
@@ -133,23 +135,25 @@ final class DbQueryRenderer
             ->class('yii-debug-db-sql')
             ->html(SqlHighlighter::highlight($row->query));
 
-        if ($nPlusOneFinding !== null) {
-            $sql = $sql->addDataAttribute('yii-debug-n1-group', $nPlusOneFinding->id());
-
-            if ($row->seq === $nPlusOneFinding->firstSequence) {
-                $sql = $sql->id($nPlusOneFinding->id());
-            }
-        }
-
         $children = [$sql];
 
         if ($nPlusOneFinding !== null) {
-            $children[] = A::tag()
-                ->addAriaAttribute('label', "Review {$nPlusOneFinding->count} similar queries")
-                ->addDataAttribute('yii-debug-n1-filter', $nPlusOneFinding->id())
-                ->class('yii-debug-db-n1-row-link')
-                ->content("Potential N+1 · {$nPlusOneFinding->count} similar")
-                ->href("#{$nPlusOneFinding->id()}");
+            $groupId = $nPlusOneFinding->id();
+            $sql = $sql->addDataAttribute('yii-debug-n1-group', $groupId);
+
+            if ($row->seq === $nPlusOneFinding->firstSequence) {
+                $sql = $sql->id($groupId);
+            }
+
+            $children = [
+                $sql,
+                A::tag()
+                    ->addAriaAttribute('label', "Review {$nPlusOneFinding->count} similar queries")
+                    ->addDataAttribute('yii-debug-n1-filter', $groupId)
+                    ->class('yii-debug-db-n1-row-link')
+                    ->content("Potential N+1 · {$nPlusOneFinding->count} similar")
+                    ->href("#{$groupId}"),
+            ];
         }
 
         if ($row->trace !== []) {
@@ -211,11 +215,9 @@ final class DbQueryRenderer
      */
     public static function renderTimeCell(QueryRow $row): string
     {
-        $timeInSeconds = $row->timestamp / 1000;
+        $milliseconds = (int) $row->timestamp;
 
-        $millisecondsDiff = (int) (($timeInSeconds - (int) $timeInSeconds) * 1000);
-
-        return date('H:i:s.', (int) $timeInSeconds) . sprintf('%03d', $millisecondsDiff);
+        return date('H:i:s.', intdiv($milliseconds, 1000)) . sprintf('%03d', $milliseconds % 1000);
     }
 
     /**

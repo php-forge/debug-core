@@ -95,17 +95,9 @@ final class SensitiveDataRedactor
         array $sensitiveKeyPrefixes = [],
         array|null $sensitiveKeyPatterns = null,
     ): bool {
-        $prefixes = self::prefixes($sensitiveKeyPrefixes);
-        $patterns = self::patterns($sensitiveKeys, $sensitiveKeyPatterns);
+        [$keyMap, $prefixes, $patterns] = self::rules($sensitiveKeys, $sensitiveKeyPrefixes, $sensitiveKeyPatterns);
 
-        self::validatePatterns($patterns);
-
-        return self::matches(
-            $key,
-            self::keyMap($sensitiveKeys),
-            $prefixes,
-            $patterns,
-        );
+        return self::matches($key, $keyMap, $prefixes, $patterns);
     }
 
     /**
@@ -129,14 +121,12 @@ final class SensitiveDataRedactor
         array|null $sensitiveKeyPatterns = null,
     ): array {
         $nodes = 0;
-        $prefixes = self::prefixes($sensitiveKeyPrefixes);
-        $patterns = self::patterns($sensitiveKeys, $sensitiveKeyPatterns);
 
-        self::validatePatterns($patterns);
+        [$keyMap, $prefixes, $patterns] = self::rules($sensitiveKeys, $sensitiveKeyPrefixes, $sensitiveKeyPatterns);
 
         return self::walk(
             $value,
-            self::keyMap($sensitiveKeys),
+            $keyMap,
             $prefixes,
             $patterns,
             0,
@@ -219,6 +209,28 @@ final class SensitiveDataRedactor
         }
 
         return array_map(strtolower(...), $prefixes);
+    }
+
+    /**
+     * Normalizes and validates the redaction configuration shared by the public entry points.
+     *
+     * @param list<string> $sensitiveKeys Exact key names to redact.
+     * @param list<string> $sensitiveKeyPrefixes Literal key prefixes to redact case-insensitively.
+     * @param list<string>|null $sensitiveKeyPatterns PCRE patterns applied to complete original keys.
+     *
+     * @return array{array<string, true>, list<string>, list<string>} Normalized key map, prefixes, and patterns.
+     */
+    private static function rules(
+        array $sensitiveKeys,
+        array $sensitiveKeyPrefixes,
+        array|null $sensitiveKeyPatterns,
+    ): array {
+        $prefixes = self::prefixes($sensitiveKeyPrefixes);
+        $patterns = self::patterns($sensitiveKeys, $sensitiveKeyPatterns);
+
+        self::validatePatterns($patterns);
+
+        return [self::keyMap($sensitiveKeys), $prefixes, $patterns];
     }
 
     /**

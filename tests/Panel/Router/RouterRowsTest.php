@@ -92,6 +92,17 @@ final class RouterRowsTest extends TestCase
         );
     }
 
+    public function testRouterRuleRowCollapsesNonStringVerbEntriesToEmpty(): void
+    {
+        $row = RouterRuleRow::from(['verb' => ['GET', 123, 'POST']]);
+
+        self::assertSame(
+            'GET, , POST',
+            $row->verb,
+            'Non-string verb entries must join as empty segments.',
+        );
+    }
+
     public function testRouterRuleRowFallsBackToEmptyStringsOnMissingKeys(): void
     {
         $row = RouterRuleRow::from([]);

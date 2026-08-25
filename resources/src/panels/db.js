@@ -2,6 +2,8 @@ import { ajax, on } from "../core/dom.js";
 
 const EXPLAIN_ALL_SELECTOR =
   ".yii-debug-db-explain-all-toggle, .yii-debug-db-explain-all a";
+const EXPLAIN_OPEN_SELECTOR =
+  ".yii-debug-db-explain.is-open, .yii-debug-db-explain.is-loading";
 const EXPLAIN_ERROR_MESSAGE = "Unable to load the EXPLAIN output. Try again.";
 
 export const EXPLAIN_CONCURRENCY = 3;
@@ -94,11 +96,16 @@ export function applyNPlusOneFilter(root, groupId) {
   var batch = null;
   var batchSequence = 0;
   var pending = [];
-  var queuePaused = false;
   var tasks = new Map();
 
   function containerFor(toggle) {
     return toggle.closest(".yii-debug-db-explain");
+  }
+
+  function explainTextFor(container) {
+    return container
+      ? container.querySelector(".yii-debug-db-explain-text")
+      : null;
   }
 
   function syncExplainAllControls(expanded) {
@@ -109,9 +116,7 @@ export function applyNPlusOneFilter(root, groupId) {
     var isExpanded =
       typeof expanded === "boolean"
         ? expanded
-        : document.querySelectorAll(
-            ".yii-debug-db-explain.is-open, .yii-debug-db-explain.is-loading",
-          ).length > 0;
+        : document.querySelectorAll(EXPLAIN_OPEN_SELECTOR).length > 0;
 
     for (var i = 0; i < controls.length; i++) {
       updateExplainAllControl(controls[i], isExpanded, progress);
@@ -144,22 +149,8 @@ export function applyNPlusOneFilter(root, groupId) {
     if (outcome === "success") {
       task.target.innerHTML = xhr.responseText;
       task.target.dataset.loaded = "1";
-
-      if (
-        task.openRequested &&
-        task.batchId !== null &&
-        batch !== null &&
-        task.batchId === batch.id
-      ) {
-        task.container.classList.add("is-open");
-        task.toggle.setAttribute("aria-expanded", "true");
-      } else if (task.batchId === null && task.openRequested) {
-        task.container.classList.add("is-open");
-        task.toggle.setAttribute("aria-expanded", "true");
-      } else {
-        task.container.classList.remove("is-open");
-        task.toggle.setAttribute("aria-expanded", "false");
-      }
+      task.container.classList.add("is-open");
+      task.toggle.setAttribute("aria-expanded", "true");
     } else if (outcome === "error") {
       task.target.classList.add("is-error");
       task.target.setAttribute("role", "alert");
@@ -176,10 +167,6 @@ export function applyNPlusOneFilter(root, groupId) {
   }
 
   function startTask(task) {
-    if (task.finished || task.cancelled) {
-      return;
-    }
-
     task.container.classList.add("is-requesting");
     active.set(task.toggle, task);
     task.request = ajax(task.toggle.href, {
@@ -196,10 +183,6 @@ export function applyNPlusOneFilter(root, groupId) {
   }
 
   function drainQueue() {
-    if (queuePaused) {
-      return;
-    }
-
     while (active.size < EXPLAIN_CONCURRENCY && pending.length > 0) {
       var task = pending.shift();
 
@@ -213,31 +196,18 @@ export function applyNPlusOneFilter(root, groupId) {
     var existing = tasks.get(toggle);
 
     if (existing) {
-      // An individual click while Explain All is running must not detach the
-      // request from its batch, otherwise batch progress can never complete.
-      if (batchId !== null) {
-        existing.batchId = batchId;
-      }
-      existing.openRequested = true;
-
+      // A repeated click while the request is in flight must not restart it or
+      // detach it from the batch that originally enqueued it.
       return existing;
     }
 
     var container = containerFor(toggle);
-    var target = container
-      ? container.querySelector(".yii-debug-db-explain-text")
-      : null;
-
-    if (!container || !target) {
-      return null;
-    }
-
+    var target = explainTextFor(container);
     var task = {
       batchId: batchId,
       cancelled: false,
       container: container,
       finished: false,
-      openRequested: true,
       request: null,
       target: target,
       toggle: toggle,
@@ -256,10 +226,6 @@ export function applyNPlusOneFilter(root, groupId) {
   }
 
   function abortTask(task) {
-    if (!task || task.finished) {
-      return;
-    }
-
     task.cancelled = true;
 
     if (task.request && typeof task.request.abort === "function") {
@@ -270,12 +236,7 @@ export function applyNPlusOneFilter(root, groupId) {
   }
 
   function collapseAll() {
-    if (batch) {
-      batch.cancelled = true;
-      batch = null;
-    }
-
-    queuePaused = true;
+    batch = null;
     pending = [];
 
     Array.from(tasks.values()).forEach(abortTask);
@@ -284,9 +245,7 @@ export function applyNPlusOneFilter(root, groupId) {
       .querySelectorAll(".yii-debug-db-explain-toggle")
       .forEach(function (toggle) {
         var container = containerFor(toggle);
-        var target = container
-          ? container.querySelector(".yii-debug-db-explain-text")
-          : null;
+        var target = explainTextFor(container);
 
         if (container) {
           container.classList.remove("is-open", "is-loading", "is-requesting");
@@ -297,7 +256,6 @@ export function applyNPlusOneFilter(root, groupId) {
         toggle.setAttribute("aria-expanded", "false");
       });
 
-    queuePaused = false;
     syncExplainAllControls(false);
   }
 
@@ -307,7 +265,6 @@ export function applyNPlusOneFilter(root, groupId) {
     );
 
     batch = {
-      cancelled: false,
       completed: 0,
       id: ++batchSequence,
       total: toggles.length,
@@ -315,9 +272,7 @@ export function applyNPlusOneFilter(root, groupId) {
 
     toggles.forEach(function (toggle) {
       var container = containerFor(toggle);
-      var target = container
-        ? container.querySelector(".yii-debug-db-explain-text")
-        : null;
+      var target = explainTextFor(container);
 
       if (!container || !target) {
         batch.completed += 1;
@@ -350,9 +305,7 @@ export function applyNPlusOneFilter(root, groupId) {
       event.preventDefault();
 
       var container = containerFor(this);
-      var target = container
-        ? container.querySelector(".yii-debug-db-explain-text")
-        : null;
+      var target = explainTextFor(container);
 
       if (!container || !target) {
         return;
@@ -387,9 +340,7 @@ export function applyNPlusOneFilter(root, groupId) {
 
       var anyOpen =
         batch !== null ||
-        document.querySelectorAll(
-          ".yii-debug-db-explain.is-open, .yii-debug-db-explain.is-loading",
-        ).length > 0;
+        document.querySelectorAll(EXPLAIN_OPEN_SELECTOR).length > 0;
 
       if (anyOpen) {
         collapseAll();

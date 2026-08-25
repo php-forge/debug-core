@@ -176,13 +176,12 @@
 
   .yii-debug-grid-db .yii-debug-trace {
     display: grid;
-    gap: var(--yii-debug-space-1);
+    gap: 0;
 
     a {
       display: inline-flex;
       align-items: center;
-      min-height: 32px;
-      padding-block: var(--yii-debug-space-1);
+      min-height: 24px;
     }
   }
 
@@ -265,6 +264,11 @@
   }
 
   @media (pointer: coarse) {
+    .yii-debug-grid-db .yii-debug-trace a {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
     :is(
       .yii-debug-btn,
       .yii-debug-brand-chip,

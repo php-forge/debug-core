@@ -8,8 +8,8 @@ use InvalidArgumentException;
 use PHPForge\Debug\Helper\SensitiveDataRedactor;
 use SensitiveParameter;
 
-use function array_chunk;
 use function array_reverse;
+use function array_shift;
 use function get_object_vars;
 use function http_build_query;
 use function is_array;
@@ -125,14 +125,6 @@ final readonly class CapturePolicy
      */
     public function redactText(#[SensitiveParameter] string $text): string
     {
-        if (
-            $this->sensitiveKeys === []
-            && $this->sensitiveKeyPrefixes === []
-            && $this->sensitiveKeyPatterns === []
-        ) {
-            return $text;
-        }
-
         $matches = [];
 
         preg_match_all(
@@ -142,26 +134,15 @@ final readonly class CapturePolicy
             PREG_SET_ORDER | PREG_OFFSET_CAPTURE,
         );
 
-        $candidateKeys = [];
-
-        foreach ($matches as $match) {
-            $candidateKeys[$match[2][0]] = true;
-        }
-
-        $redactedKeys = [];
-
-        foreach (array_chunk($candidateKeys, 5000, true) as $candidateChunk) {
-            $redactedKeys += $this->redact($candidateChunk);
-        }
-
         foreach (array_reverse($matches) as $match) {
-            $key = $match[2][0];
+            [$assignment, $assignmentOffset] = array_shift($match);
+            [$key] = array_pop($match);
 
-            if (($redactedKeys[$key] ?? null) !== SensitiveDataRedactor::PLACEHOLDER) {
+            if (!$this->isSensitiveKey($key)) {
                 continue;
             }
 
-            $valueStart = $match[0][1] + strlen($match[0][0]);
+            $valueStart = $assignmentOffset + strlen($assignment);
             $valueLength = strcspn($text, ",;&\r\n", $valueStart);
             $text = substr_replace(
                 $text,

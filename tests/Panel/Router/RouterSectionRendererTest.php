@@ -236,6 +236,43 @@ final class RouterSectionRendererTest extends TestCase
         );
     }
 
+    public function testRenderTabsShowsRouteSummaryWhenOnlyTheRouteIsKnown(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <ul class="yii-debug-tabs" role="tablist" aria-label="Router data">
+            <li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link is-active" id="router-tab-0" href="#router-panel-0" role="tab" tabindex="0" aria-controls="router-panel-0" aria-selected="true" data-yii-debug-toggle="tab">Current Route</a>
+            </li><li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link" id="router-tab-1" href="#router-panel-1" role="tab" tabindex="-1" aria-controls="router-panel-1" aria-selected="false" data-yii-debug-toggle="tab">Router Rules</a>
+            </li><li class="yii-debug-tab" role="presentation">
+            <a class="yii-debug-tab-link" id="router-tab-2" href="#router-panel-2" role="tab" tabindex="-1" aria-controls="router-panel-2" aria-selected="false" data-yii-debug-toggle="tab">Action Routes</a>
+            </li>
+            </ul><div class="yii-debug-tab-content">
+            <div class="yii-debug-tab-panel is-active" id="router-panel-0" role="tabpanel" aria-labelledby="router-tab-0">
+            <dl class="yii-debug-router-summary">
+            <dt>
+            Resolved route
+            </dt><dd>
+            <code>site/index</code>
+            </dd>
+            </dl>
+            </div><div class="yii-debug-tab-panel" id="router-panel-1" role="tabpanel" aria-labelledby="router-tab-1" hidden>
+            <h2>
+            No routing rules configured.
+            </h2>
+            </div><div class="yii-debug-tab-panel" id="router-panel-2" role="tabpanel" aria-labelledby="router-tab-2" hidden>
+            <h2>
+            No actions configured.
+            </h2>
+            </div>
+            </div>
+            HTML,
+            RouterSectionRenderer::renderTabs(new RouterCurrentView(route: 'site/index'), [], [], []),
+            'A route without a dispatched action must keep the summary list.',
+        );
+    }
+
     public function testRenderTabsUsesSingularHeadingForOneRuleWithoutMatch(): void
     {
         $current = new RouterCurrentView(

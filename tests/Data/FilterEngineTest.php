@@ -17,6 +17,37 @@ use ReflectionProperty;
 #[Group('filter')]
 final class FilterEngineTest extends TestCase
 {
+    public function testAddConditionComparesScalarRawValuesAsStrings(): void
+    {
+        $engine = new FilterEngine();
+
+        $engine->addCondition('sqlCount', 42);
+
+        self::assertSame(
+            [['sqlCount' => '42']],
+            $engine->filter(
+                [
+                    ['sqlCount' => '42'],
+                    ['sqlCount' => '43'],
+                ],
+            ),
+            'An `int` raw value must match through its string representation.',
+        );
+
+        $engine->addCondition('enabled', false);
+
+        $rows = [
+            ['enabled' => 'yes'],
+            ['enabled' => 'no'],
+        ];
+
+        self::assertSame(
+            $rows,
+            $engine->filter($rows),
+            '`false` must cast to the empty string and register no condition.',
+        );
+    }
+
     public function testAddConditionIgnoresEmptyAndNonScalarValues(): void
     {
         $engine = new FilterEngine();

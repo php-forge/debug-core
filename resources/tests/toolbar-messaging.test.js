@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+var failNextFetch = false;
 var fetchCalls = [];
 var toolbar = {
   getAttribute(name) {
@@ -11,6 +12,12 @@ var toolbar = {
 globalThis.window = {
   fetch(input, init) {
     fetchCalls.push({ input, init });
+
+    if (failNextFetch) {
+      failNextFetch = false;
+
+      return Promise.reject(new Error("network unreachable"));
+    }
 
     return Promise.resolve({
       headers: {
@@ -67,7 +74,7 @@ globalThis.XMLHttpRequest.prototype.getResponseHeader =
     return this.headers[name] || null;
   };
 
-const { requestStack } = await import("../src/toolbar/state.js");
+const { requestStack, toolbars } = await import("../src/toolbar/state.js");
 const { trackRequests } = await import("../src/toolbar/messaging.js");
 
 test("fetch tracking supports URL-bearing request polyfills", async () => {
@@ -210,4 +217,146 @@ test("AJAX tracking rejects unsafe debug profile response links", () => {
   xhr.dispatch("readystatechange");
 
   assert.equal(requestStack[startIndex + 1].profilerUrl, null);
+});
+
+test("request tracking skips toolbar, cross-origin, and skip-listed URLs", async () => {
+  var startIndex = requestStack.length;
+  var originalGetAttribute = toolbar.getAttribute;
+  var originalQuerySelector = document.querySelector;
+
+  document.querySelector = function () {
+    return null;
+  };
+  await window.fetch("/api/no-toolbar");
+  document.querySelector = originalQuerySelector;
+
+  toolbar.getAttribute = function (name) {
+    if (name === "data-url") {
+      return "/debug/default/toolbar?tag=page";
+    }
+
+    return name === "data-skip-urls" ? '["/api/health"]' : null;
+  };
+
+  await window.fetch(undefined).catch(function () {});
+  await window.fetch("https://[bad");
+  await window.fetch("https://attacker.test/api/items");
+  await window.fetch("/debug/default/toolbar?tag=page");
+  await window.fetch("/api/health");
+  await window.fetch(new URL("https://example.test/api/from-url"));
+  await Promise.resolve();
+
+  assert.equal(requestStack.length, startIndex + 1);
+  assert.equal(
+    requestStack[startIndex].url,
+    "https://example.test/api/from-url",
+  );
+  assert.equal(requestStack[startIndex].method, "GET");
+
+  toolbar.getAttribute = originalGetAttribute;
+});
+
+test("ajax notifications drive registered toolbars and follow tagged requests", () => {
+  var followed = [];
+  var received = [];
+
+  toolbars.push({
+    followTag(tag) {
+      followed.push(tag);
+    },
+    getAttribute(name) {
+      return toolbar.getAttribute(name);
+    },
+    setAjaxRequests(stack) {
+      received.push(stack.length);
+    },
+  });
+
+  try {
+    var tagged = new XMLHttpRequest();
+
+    tagged.open("GET", "/api/tagged");
+    tagged.readyState = 4;
+    tagged.status = 200;
+    tagged.headers = { "X-Debug-Tag": "fresh-tag" };
+    tagged.dispatch("readystatechange");
+
+    assert.equal(followed[followed.length - 1], "fresh-tag");
+
+    var untagged = new XMLHttpRequest();
+
+    untagged.open("GET", "/api/untagged");
+    assert.equal(followed[followed.length - 1], "fresh-tag");
+
+    untagged.readyState = 2;
+    untagged.dispatch("readystatechange");
+
+    untagged.readyState = 4;
+    untagged.status = 200;
+    untagged.headers = {};
+    untagged.dispatch("readystatechange");
+
+    assert.equal(followed[followed.length - 1], "fresh-tag");
+    assert.equal(received.length > 0, true);
+  } finally {
+    toolbars.pop();
+  }
+});
+
+test("failed fetch requests surface as errors", async () => {
+  var startIndex = requestStack.length;
+
+  failNextFetch = true;
+  await window.fetch("/api/failing").catch(function () {});
+  await Promise.resolve();
+
+  assert.equal(requestStack[startIndex].loading, false);
+  assert.equal(requestStack[startIndex].error, true);
+});
+
+test("fetch method resolution honors init overrides and request defaults", async () => {
+  var startIndex = requestStack.length;
+
+  await window.fetch("/api/string-init", { method: "PATCH" });
+  await window.fetch("/api/string-empty-init", {});
+  await window.fetch(new URL("https://example.test/api/url-init"), {
+    method: "PUT",
+  });
+  await window.fetch(new Request("https://example.test/api/request-default"));
+  await Promise.resolve();
+
+  assert.equal(requestStack[startIndex].method, "PATCH");
+  assert.equal(requestStack[startIndex + 1].method, "GET");
+  assert.equal(requestStack[startIndex + 2].method, "PUT");
+  assert.equal(requestStack[startIndex + 3].method, "GET");
+});
+
+test("request tracking installs only once", () => {
+  var currentFetch = window.fetch;
+
+  trackRequests();
+
+  assert.equal(window.fetch, currentFetch);
+});
+
+test("the request stack keeps only the most recent hundred requests", async () => {
+  for (var i = 0; i < 105; i++) {
+    var xhr = new XMLHttpRequest();
+
+    xhr.open("GET", "/api/bulk-" + i);
+    xhr.readyState = 4;
+    xhr.status = 200;
+    xhr.headers = {};
+    xhr.dispatch("readystatechange");
+  }
+
+  assert.equal(requestStack.length, 100);
+
+  for (var j = 0; j < 101; j++) {
+    await window.fetch("/api/fetch-bulk-" + j);
+  }
+  await Promise.resolve();
+
+  assert.equal(requestStack.length, 100);
+  assert.equal(requestStack[99].url, "/api/fetch-bulk-100");
 });

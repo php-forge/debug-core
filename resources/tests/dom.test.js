@@ -21,12 +21,22 @@ test("on attaches a handler to each supported element", () => {
   );
   var handler = function () {};
 
+  var single = {
+    addEventListener(event, handler, capture) {
+      bindings.push([event, handler, capture]);
+    },
+  };
+
   on(elements, "click", handler);
   on(null, "click", handler);
+  on([single, {}], "focus", handler);
+  on(single, "keydown", handler);
 
   assert.deepEqual(bindings, [
     ["click", handler, false],
     ["click", handler, false],
+    ["focus", handler, false],
+    ["keydown", handler, false],
   ]);
 });
 
@@ -141,6 +151,57 @@ test("ajax reports a timeout once and uses the default timeout", () => {
   request.onreadystatechange();
 
   assert.equal(errors, 1);
+});
+
+test("ajax settles once and ignores non-final ready states", () => {
+  var request;
+  var events = [];
+
+  globalThis.XMLHttpRequest = function XMLHttpRequest() {
+    request = this;
+  };
+  globalThis.XMLHttpRequest.prototype.open = function () {};
+  globalThis.XMLHttpRequest.prototype.setRequestHeader = function () {};
+  globalThis.XMLHttpRequest.prototype.send = function () {};
+
+  ajax("https://example.test/debug/db-explain", {
+    abort() {
+      events.push("abort");
+    },
+    error() {
+      events.push("error");
+    },
+    success() {
+      events.push("success");
+    },
+  });
+
+  request.readyState = 2;
+  request.onreadystatechange();
+  assert.deepEqual(events, []);
+
+  request.readyState = 4;
+  request.status = 200;
+  request.onreadystatechange();
+  request.onreadystatechange();
+  request.onabort();
+  request.ontimeout();
+
+  assert.deepEqual(events, ["success"]);
+
+  ajax("https://example.test/debug/db-explain");
+  request.readyState = 4;
+  request.status = 204;
+  request.onreadystatechange();
+  request.readyState = 4;
+  request.status = 500;
+
+  ajax("https://example.test/debug/db-explain");
+  request.onreadystatechange();
+  request.onabort();
+  request.ontimeout();
+
+  assert.deepEqual(events, ["success"]);
 });
 
 test("ajax exposes cancellation without reporting it as a request failure", () => {

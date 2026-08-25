@@ -76,6 +76,39 @@ final class QueryRowTest extends TestCase
         );
     }
 
+    public function testFromTimingReindexesKeyedTraceFrames(): void
+    {
+        $row = QueryRow::fromTiming(
+            [
+                'info' => 'SELECT 1',
+                'category' => 'yii\\db\\Command::query',
+                'timestamp' => 1.0,
+                'trace' => [
+                    3 => ['file' => 'a.php'],
+                    9 => ['file' => 'b.php'],
+                ],
+                'level' => 0,
+                'duration' => 0.001,
+                'memory' => 0,
+                'memoryDiff' => 0,
+                'traceHash' => 'hash',
+            ],
+            'SELECT',
+            0,
+            1,
+            null,
+        );
+
+        self::assertSame(
+            [
+                ['file' => 'a.php'],
+                ['file' => 'b.php'],
+            ],
+            $row->trace,
+            'Trace frames must become a zero-based list.',
+        );
+    }
+
     public function testFromTimingScalesToMillisecondsAndKeepsCallerValues(): void
     {
         $row = QueryRow::fromTiming(
