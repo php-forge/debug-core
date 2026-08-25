@@ -9,6 +9,11 @@ use PHPForge\Debug\Panel\Timeline\TimelineGeometry;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+use function restore_error_handler;
+use function set_error_handler;
+
+use const INF;
+
 /**
  * Unit tests for {@see TimelineGeometry} producing adaptive ruler ticks and positioned span rows.
  */
@@ -16,6 +21,23 @@ use PHPUnit\Framework\TestCase;
 #[Group('timeline')]
 final class TimelineGeometryTest extends TestCase
 {
+    public function testRulersKeepOnlyTheOriginForANonFiniteDuration(): void
+    {
+        set_error_handler(static fn(): bool => true);
+
+        try {
+            $ticks = TimelineGeometry::rulers(INF);
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertSame(
+            [0 => 0.0],
+            $ticks,
+            'A non-finite duration must degrade to the origin tick.',
+        );
+    }
+
     public function testRulersUseAdaptiveRoundSteps(): void
     {
         self::assertSame(

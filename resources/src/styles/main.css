@@ -651,6 +651,7 @@
   .yii-debug-request-hero-meta {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 6px var(--yii-debug-space-3);
     margin-top: 6px;
     color: var(--yii-debug-panel-muted);
@@ -660,6 +661,24 @@
     &:empty {
       display: none;
     }
+  }
+
+  .yii-debug-request-hero-meta-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--yii-debug-space-1);
+  }
+
+  .yii-debug-request-hero-meta-label {
+    font-family: var(--yii-debug-font-sans);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .yii-debug-request-hero-meta-value {
+    color: var(--yii-debug-panel-text);
   }
 
   .yii-debug-request-overview-status {

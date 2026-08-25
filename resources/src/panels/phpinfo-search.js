@@ -310,7 +310,7 @@ export function initPhpInfoSearch(root) {
   }
 
   function applyFilter() {
-    var query = normalizePhpInfoQuery(search ? search.value : "");
+    var query = normalizePhpInfoQuery(search.value);
 
     if (!query) {
       endFilter();

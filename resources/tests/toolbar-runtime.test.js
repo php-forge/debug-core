@@ -256,6 +256,17 @@ test("toolbar URL normalization enforces the same-origin HTTP boundary", () => {
     "https://example.test/debug/view",
   );
   assert.equal(
+    normalizeToolbarUrl(
+      "http://example.test/debug/view",
+      "http://example.test/app",
+    ),
+    "http://example.test/debug/view",
+  );
+  assert.equal(
+    normalizeToolbarUrl("/debug/view", "ftp://example.test/app"),
+    null,
+  );
+  assert.equal(
     normalizeToolbarUrl("https://other.test/debug/view", location),
     null,
   );
@@ -307,6 +318,44 @@ test("toolbar link renderers drop unsafe navigation targets", () => {
   );
 });
 
+test("toolbar URL fallbacks cover missing browser locations and bases", () => {
+  assert.equal(normalizeToolbarUrl("relative/view"), null);
+  assert.equal(normalizeToolbarUrl("/debug/view"), "/debug/view");
+  assert.equal(normalizeToolbarUrl("/debug/view", "https://[invalid"), null);
+  assert.equal(
+    normalizeToolbarUrl(
+      "https://:secret@example.test/debug",
+      "https://example.test/",
+    ),
+    null,
+  );
+  assert.equal(normalizeToolbarUrl("   ", "https://example.test/"), null);
+
+  assert.equal(sameToolbarUrl("/debug/a", "/debug/a"), true);
+  assert.equal(sameToolbarUrl("/debug/a", "/debug/b"), false);
+  assert.equal(
+    sameToolbarUrl("javascript:x", "/debug/a", "https://example.test/"),
+    false,
+  );
+
+  globalThis.window = { location: null };
+  assert.equal(normalizeToolbarUrl("/debug/view"), "/debug/view");
+
+  globalThis.window = {
+    location: {
+      href: "",
+      toString() {
+        return "https://example.test/app";
+      },
+    },
+  };
+  assert.equal(
+    normalizeToolbarUrl("https://example.test/debug/view"),
+    "https://example.test/debug/view",
+  );
+  delete globalThis.window;
+});
+
 test("equivalent drawer URLs keep the existing iframe browsing context", () => {
   var location = "https://example.test/app";
 
@@ -322,6 +371,8 @@ test("equivalent drawer URLs keep the existing iframe browsing context", () => {
     sameToolbarUrl("/debug/view?tag=1", "/debug/view?tag=2", location),
     false,
   );
+  assert.equal(sameToolbarUrl("javascript:x", "/null", location), false);
+  assert.equal(sameToolbarUrl("/null", "javascript:x", location), false);
 });
 
 test("toolbar drawer preserves native modified-click navigation", () => {

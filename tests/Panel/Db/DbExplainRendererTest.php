@@ -51,6 +51,55 @@ final class DbExplainRendererTest extends TestCase
         );
     }
 
+    public function testRenderKeyedResultRowsAreReindexedBeforeColumnDetection(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-explain">
+            <h1 class="yii-debug-explain-title">
+            EXPLAIN
+            </h1><pre class="yii-debug-explain-query">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </pre><div class="yii-debug-explain-scroll">
+            <table class="yii-debug-table yii-debug-explain-table">
+            <thead>
+            <tr>
+            <th scope="col">
+            id
+            </th><th scope="col">
+            op
+            </th>
+            </tr>
+            </thead><tbody>
+            <tr>
+            <td>
+            1
+            </td><td>
+            SCAN t
+            </td>
+            </tr><tr>
+            <td>
+            2
+            </td><td>
+            USE INDEX
+            </td>
+            </tr>
+            </tbody>
+            </table>
+            </div>
+            </div>
+            HTML,
+            DbExplainRenderer::render(
+                'SELECT 1',
+                [
+                    3 => ['id' => 1, 'op' => 'SCAN t'],
+                    7 => ['id' => 2, 'op' => 'USE INDEX'],
+                ],
+            ),
+            'Non-list result keys must not leak into column detection.',
+        );
+    }
+
     public function testRenderQueryAndResultTable(): void
     {
         self::assertSame(
@@ -106,6 +155,43 @@ final class DbExplainRendererTest extends TestCase
                 ],
             ),
             'A populated plan must render scalar, null, and escaped non-scalar cells exactly.',
+        );
+    }
+
+    public function testRenderSingleRowPlanDerivesColumnsFromTheFirstRow(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-explain">
+            <h1 class="yii-debug-explain-title">
+            EXPLAIN
+            </h1><pre class="yii-debug-explain-query">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </pre><div class="yii-debug-explain-scroll">
+            <table class="yii-debug-table yii-debug-explain-table">
+            <thead>
+            <tr>
+            <th scope="col">
+            id
+            </th><th scope="col">
+            op
+            </th>
+            </tr>
+            </thead><tbody>
+            <tr>
+            <td>
+            1
+            </td><td>
+            SCAN t
+            </td>
+            </tr>
+            </tbody>
+            </table>
+            </div>
+            </div>
+            HTML,
+            DbExplainRenderer::render('SELECT 1', [['id' => 1, 'op' => 'SCAN t']]),
+            'Header cells must come from the sole result row.',
         );
     }
 }

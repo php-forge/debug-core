@@ -11,6 +11,7 @@ use UIAwesome\Html\Helper\Encode;
 use UIAwesome\Html\Phrasing\Span;
 
 use function date;
+use function intdiv;
 use function sprintf;
 use function str_repeat;
 use function str_starts_with;
@@ -84,15 +85,14 @@ final class ProfileCellRenderer
      */
     public static function renderTimeCell(ProfileRow $row): string
     {
-        $seconds = $row->timestamp / 1000;
+        $milliseconds = (int) $row->timestamp;
 
-        $millis = (int) (($seconds - (int) $seconds) * 1000);
-
-        $suffix = sprintf('%03d', $millis);
+        $seconds = intdiv($milliseconds, 1000);
+        $suffix = sprintf('%03d', $milliseconds % 1000);
 
         return Span::tag()
-            ->title(date('Y-m-d H:i:s.', (int) $seconds) . $suffix)
-            ->content(date('H:i:s.', (int) $seconds) . $suffix)
+            ->title(date('Y-m-d H:i:s.', $seconds) . $suffix)
+            ->content(date('H:i:s.', $seconds) . $suffix)
             ->render();
     }
 

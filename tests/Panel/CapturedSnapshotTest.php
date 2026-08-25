@@ -11,7 +11,7 @@ use PHPForge\Debug\Panel\Log\LogSnapshot;
 use PHPForge\Debug\Panel\Mail\MailSnapshot;
 use PHPForge\Debug\Panel\Queue\QueueSnapshot;
 use PHPForge\Debug\Panel\Request\RequestSnapshot;
-use PHPForge\Debug\Panel\Router\RouterSnapshot;
+use PHPForge\Debug\Panel\Router\{CurrentRouteLogRow, RouterSnapshot};
 use PHPForge\Debug\Storage\HydrationException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -349,6 +349,43 @@ final class CapturedSnapshotTest extends TestCase
             3,
             count($snapshot->entries()),
             'Invalid rows and nested REST duplicates must be skipped without dropping later rules.',
+        );
+    }
+
+    public function testRouterSnapshotKeepsTraceLevelRuleTuplesAsRows(): void
+    {
+        $snapshot = RouterSnapshot::capture(
+            'site/index',
+            [
+                [
+                    [
+                        'rule' => 'app\\rules\\HomeRule',
+                        'parent' => '',
+                        'match' => true,
+                    ],
+                    LogLevel::TRACE,
+                ],
+            ],
+            'site/index',
+        );
+
+        self::assertNull(
+            $snapshot->message,
+            'A non-string trace payload must not become the message.',
+        );
+        self::assertSame(
+            [
+                [
+                    'rule' => 'app\\rules\\HomeRule',
+                    'parent' => '',
+                    'match' => true,
+                ],
+            ],
+            array_map(
+                static fn(CurrentRouteLogRow $row): array => $row->jsonSerialize(),
+                $snapshot->entries(),
+            ),
+            'A rule tuple logged at trace level must still produce a row.',
         );
     }
 

@@ -17,6 +17,37 @@ use PHPUnit\Framework\TestCase;
 #[Group('profile')]
 final class ProfilingSnapshotTest extends TestCase
 {
+    public function testCaptureCompletedKeepsZeroMemoryDiffWhenOnlyEndMemoryIsKnown(): void
+    {
+        $snapshot = ProfilingSnapshot::captureCompleted(
+            0,
+            0.0,
+            [
+                [
+                    'token' => 'block',
+                    'context' => [
+                        'beginTime' => 100.0,
+                        'duration' => 0.01,
+                        'endMemory' => 512,
+                    ],
+                ],
+            ],
+        );
+
+        $entry = $snapshot->entries()[0] ?? self::fail('Expected one profile row.');
+
+        self::assertSame(
+            0,
+            $entry->memoryDiff,
+            'Without both endpoints the diff must stay zero.',
+        );
+        self::assertSame(
+            512,
+            $entry->memory,
+            'End memory must still surface on the row.',
+        );
+    }
+
     public function testCaptureCompletedNormalizesRowsAndSortsMemorySamples(): void
     {
         $snapshot = ProfilingSnapshot::captureCompleted(
@@ -117,6 +148,56 @@ final class ProfilingSnapshotTest extends TestCase
             ],
             $snapshot->jsonSerialize(),
             'Completed profiler messages must preserve timing, nesting, memory, trace, and capture order exactly.',
+        );
+    }
+
+    public function testCaptureCompletedPrefersExplicitMemoryDiffWithoutMemoryEndpoints(): void
+    {
+        $snapshot = ProfilingSnapshot::captureCompleted(
+            0,
+            0.0,
+            [
+                [
+                    'token' => 'block',
+                    'context' => [
+                        'beginTime' => 100.0,
+                        'duration' => 0.01,
+                        'memoryDiff' => 123,
+                    ],
+                ],
+            ],
+        );
+
+        $entry = $snapshot->entries()[0] ?? self::fail('Expected one profile row.');
+
+        self::assertSame(
+            123,
+            $entry->memoryDiff,
+            'The captured diff must win over the endpoint fallback.',
+        );
+    }
+
+    public function testCaptureCompletedSkipsEndSampleWhenEndMemoryIsUnknown(): void
+    {
+        $snapshot = ProfilingSnapshot::captureCompleted(
+            0,
+            0.0,
+            [
+                [
+                    'token' => 'block',
+                    'context' => [
+                        'beginTime' => 1.0,
+                        'duration' => 0.5,
+                        'endTime' => 1.5,
+                    ],
+                ],
+            ],
+        );
+
+        self::assertSame(
+            [],
+            $snapshot->samples(),
+            'An end time without end memory must not produce a sample.',
         );
     }
 

@@ -69,9 +69,11 @@ globalThis.window = {
     },
   },
 };
+var emptyResponse = false;
+
 globalThis.XMLHttpRequest = function XMLHttpRequest() {
   this.readyState = 0;
-  this.responseText = "Identity not found.";
+  this.responseText = emptyResponse ? "" : "Identity not found.";
   this.status = 0;
 };
 globalThis.XMLHttpRequest.prototype.open = function open() {};
@@ -138,4 +140,90 @@ test("focusable rows activate with Enter and Space only", () => {
   assert.equal(rowSpace.prevented, true);
   assert.equal(rowSpace.stopped, true);
   assert.equal(rowArrow.prevented, false);
+});
+
+test("row activation degrades when identity form pieces are missing", () => {
+  sends = 0;
+
+  var lookup = globalThis.document.getElementById;
+
+  globalThis.document.getElementById = function (id) {
+    return id === "debug-userswitch__filter" ? filter : null;
+  };
+
+  var missingForm = event(row, "Enter");
+
+  handlers.keydown(missingForm);
+
+  assert.equal(sends, 0);
+  assert.equal(missingForm.prevented, true);
+  assert.equal(missingForm.stopped, false);
+
+  globalThis.document.getElementById = lookup;
+
+  var textNode = { nodeType: 3, parentElement: cell };
+  var textClick = event(textNode);
+
+  handlers.click(textClick);
+
+  assert.equal(sends, 1);
+  assert.equal(userId.value, "42");
+  assert.equal(textClick.stopped, true);
+});
+
+test("a non-form identity container serializes to an empty payload", () => {
+  sends = 0;
+
+  var lookup = globalThis.document.getElementById;
+  var divForm = {
+    action: "https://example.test/debug/user/set-identity",
+    nodeName: "DIV",
+    querySelector() {
+      return error;
+    },
+  };
+
+  globalThis.document.getElementById = function (id) {
+    if (id === "debug-userswitch__set-identity") {
+      return divForm;
+    }
+
+    return id === "user_id" ? userId : lookup(id);
+  };
+
+  handlers.click(event(cell));
+
+  assert.equal(sends, 1);
+  assert.equal(error.textContent, "Identity not found.");
+
+  globalThis.document.getElementById = lookup;
+});
+
+test("rows outside the filter and empty error responses stay handled", () => {
+  sends = 0;
+
+  var detachedText = event({ nodeType: 3, parentElement: null });
+
+  handlers.click(detachedText);
+  assert.equal(detachedText.stopped, false);
+
+  var foreignRow = { dataset: { key: "7" }, nodeType: 1 };
+  var foreignCell = {
+    nodeType: 1,
+    closest(selector) {
+      return selector === "tbody tr[data-key]" ? foreignRow : null;
+    },
+  };
+  var foreignClick = event(foreignCell);
+
+  handlers.click(foreignClick);
+  assert.equal(foreignClick.stopped, false);
+  assert.equal(sends, 0);
+
+  emptyResponse = true;
+  handlers.click(event(cell));
+  emptyResponse = false;
+
+  assert.equal(sends, 1);
+  assert.equal(error.textContent, "Unable to switch user.");
 });

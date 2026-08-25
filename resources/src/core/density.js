@@ -56,8 +56,7 @@ export function bindDensityToggle(button, root, storage) {
   var density = applyDensity(
     root,
     readStoredDensity(storage) ||
-      normalizeDensity(root && root.getAttribute("data-yii-debug-density")) ||
-      "cozy",
+      (root && root.getAttribute("data-yii-debug-density")),
   );
 
   updateDensityButton(button, density);
@@ -67,9 +66,11 @@ export function bindDensityToggle(button, root, storage) {
   }
 
   button.addEventListener("click", function () {
-    density = applyDensity(root, density === "compact" ? "cozy" : "compact");
-    writeStoredDensity(density, storage);
-    updateDensityButton(button, density);
+    var next = density === "compact" ? "cozy" : "compact";
+
+    density = applyDensity(root, next);
+    writeStoredDensity(next, storage);
+    updateDensityButton(button, next);
   });
 
   return density;

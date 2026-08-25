@@ -18,6 +18,8 @@ globalThis.XMLHttpRequest.prototype.open = function open() {};
 const {
   addThemeToUrl,
   delegateThemeToHost,
+  getComputedTheme,
+  getElementTheme,
   getHostThemeControl,
   getStorageTheme,
   hostHasThemeControl,
@@ -142,4 +144,156 @@ test("host theme control detection stays cached until reset", () => {
 
   assert.equal(delegateThemeToHost("dark", "dark"), true);
   assert.equal(themeControl.clicks, 1);
+});
+
+test("element and computed theme detection walk attributes, classes, and styles", () => {
+  var attrElement = {
+    getAttribute(name) {
+      return name === "data-theme" ? "dark" : null;
+    },
+  };
+  var classElement = {
+    className: "app shell dark",
+    getAttribute() {
+      return null;
+    },
+  };
+  var objectClassElement = {
+    className: {},
+    getAttribute() {
+      return null;
+    },
+  };
+
+  assert.equal(getElementTheme(null), null);
+  assert.equal(getElementTheme(attrElement), "dark");
+  assert.equal(getElementTheme(classElement), "dark");
+  assert.equal(getElementTheme(objectClassElement), null);
+
+  delete window.getComputedStyle;
+  assert.equal(getComputedTheme(), null);
+
+  document.documentElement = { id: "root" };
+  document.body = null;
+  globalThis.getComputedStyle = function () {
+    return { colorScheme: "" };
+  };
+  window.getComputedStyle = globalThis.getComputedStyle;
+  assert.equal(getComputedTheme(), null);
+
+  document.body = { id: "body" };
+  globalThis.getComputedStyle = function (element) {
+    return { colorScheme: element.id === "body" ? "dark" : "" };
+  };
+  window.getComputedStyle = globalThis.getComputedStyle;
+  assert.equal(getComputedTheme(), "dark");
+
+  globalThis.getComputedStyle = function () {
+    return { colorScheme: "light" };
+  };
+  window.getComputedStyle = globalThis.getComputedStyle;
+  assert.equal(getComputedTheme(), "light");
+});
+
+test("storage theme resolution returns the first recognizable key", () => {
+  var storage = window.localStorage;
+
+  window.localStorage = {
+    getItem(key) {
+      return key === "vite-ui-theme" ? "dark" : null;
+    },
+  };
+  globalThis.localStorage = window.localStorage;
+
+  assert.equal(getStorageTheme(), "dark");
+
+  window.localStorage = storage;
+  globalThis.localStorage = storage;
+});
+
+test("host control sweeps skip unrelated or invisible candidates and drop disconnected caches", () => {
+  var unrelated = {
+    dataset: {},
+    getAttribute() {
+      return null;
+    },
+    getClientRects() {
+      return [];
+    },
+    offsetParent: {},
+    textContent: "Save changes",
+  };
+  var invisible = {
+    dataset: { themeToggle: "1" },
+    getAttribute() {
+      return null;
+    },
+    getClientRects() {
+      return [];
+    },
+    offsetParent: null,
+    textContent: "",
+  };
+  var rectsOnly = {
+    dataset: {},
+    getAttribute(name) {
+      return name === "title" ? "Theme" : null;
+    },
+    getClientRects() {
+      return [{}];
+    },
+    isConnected: true,
+    offsetParent: null,
+    textContent: "",
+  };
+
+  document.querySelectorAll = function () {
+    return [unrelated, invisible, rectsOnly];
+  };
+
+  resetHostThemeControlCache();
+  assert.equal(getHostThemeControl(), rectsOnly);
+
+  rectsOnly.isConnected = false;
+  document.querySelectorAll = function () {
+    return [];
+  };
+  assert.equal(getHostThemeControl(), null);
+
+  var clickless = {
+    dataset: {},
+    getAttribute(name) {
+      return name === "aria-label" ? "theme" : null;
+    },
+    getClientRects() {
+      return [{}];
+    },
+    offsetParent: null,
+    textContent: "",
+  };
+
+  document.querySelectorAll = function () {
+    return [clickless];
+  };
+  resetHostThemeControlCache();
+  assert.equal(delegateThemeToHost("dark", "light"), false);
+});
+
+test("theme cookie writes tolerate missing themes and blocked cookies", () => {
+  var originalDocument = globalThis.document;
+
+  assert.equal(writeThemeCookie(null), undefined);
+
+  globalThis.document = {
+    get cookie() {
+      return "";
+    },
+    set cookie(_value) {
+      throw new Error("blocked");
+    },
+  };
+  assert.equal(writeThemeCookie("dark"), undefined);
+  globalThis.document = originalDocument;
+
+  assert.equal(addThemeToUrl("/debug/view", null), "/debug/view");
 });

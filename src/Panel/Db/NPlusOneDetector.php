@@ -55,11 +55,14 @@ final class NPlusOneDetector
                 ];
             }
 
-            $groups[$row->traceHash]['count']++;
-            $groups[$row->traceHash]['duration'] += $row->duration;
-            $groups[$row->traceHash]['first'] = min($groups[$row->traceHash]['first'], $row->seq);
-            $groups[$row->traceHash]['sequences'][] = $row->seq;
+            $group = &$groups[$row->traceHash];
+            $group['count']++;
+            $group['duration'] += $row->duration;
+            $group['first'] = min($group['first'], $row->seq);
+            $group['sequences'][] = $row->seq;
         }
+
+        unset($group);
 
         $findings = [];
 

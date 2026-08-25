@@ -87,8 +87,43 @@ for (var i = 0; i < 5; i++) {
 }
 
 var explainAll = new Element();
+var docMarkerRow = new Element();
+var docMarker = new Element();
+var filterLinks = [new Element(), new Element()];
+var clearLink = new Element();
+var docStatus = new Element();
+var anchorTarget = {
+  scrollIntoView() {
+    this.scrolled = true;
+  },
+};
+var historyPushes = [];
+var historyStub = {
+  pushState(_state, _title, url) {
+    historyPushes.push(url);
+  },
+};
+
+docMarker.setAttribute("data-yii-debug-n1-group", "group-live");
+docMarker.closest = () => docMarkerRow;
+filterLinks[0].setAttribute("data-yii-debug-n1-filter", "group-live");
+
+globalThis.window = {
+  history: historyStub,
+  location: { href: "https://example.test/debug?tab=db" },
+};
 
 globalThis.document = {
+  getElementById(id) {
+    return id === "group-live" ? anchorTarget : null;
+  },
+  querySelector(selector) {
+    if (selector === "[data-yii-debug-n1-clear]") {
+      return clearLink;
+    }
+
+    return selector === "[data-yii-debug-n1-status]" ? docStatus : null;
+  },
   querySelectorAll(selector) {
     if (selector === ".yii-debug-db-explain-toggle") {
       return new NodeList(...toggles);
@@ -112,6 +147,18 @@ globalThis.document = {
             item.classList.contains("is-loading"),
         ),
       );
+    }
+
+    if (selector === "[data-yii-debug-n1-filter]") {
+      return new NodeList(...filterLinks);
+    }
+
+    if (selector === "[data-yii-debug-n1-clear]") {
+      return new NodeList(clearLink);
+    }
+
+    if (selector === "[data-yii-debug-n1-group]") {
+      return new NodeList(docMarker);
     }
 
     return new NodeList();
@@ -304,6 +351,96 @@ test("collapsing an EXPLAIN batch cancels active and queued requests", () => {
   });
   assert.equal(explainAll.textContent, "Explain all");
   assert.equal(explainAll.getAttribute("aria-busy"), null);
+});
+
+test("explain toggles reuse loaded output and explain-all short-circuits loaded plans", () => {
+  var requestCount = requests.length;
+
+  explainAll.dispatchEvent(new Event("click"));
+  assert.equal(requests.length, requestCount + 3);
+  requests.slice(requestCount, requestCount + 3).forEach((request) => {
+    request.respond(200, "<table>plan</table>");
+  });
+  requests.slice(requestCount + 3).forEach((request) => {
+    request.respond(200, "<table>plan</table>");
+  });
+
+  assert.equal(requests.length, requestCount + 5);
+  assert.equal(explainAll.textContent, "Collapse all");
+
+  toggles[0].dispatchEvent(new Event("click"));
+  assert.equal(containers[0].classList.contains("is-open"), false);
+  assert.equal(requests.length, requestCount + 5);
+
+  toggles[0].dispatchEvent(new Event("click"));
+  assert.equal(containers[0].classList.contains("is-open"), true);
+  assert.equal(requests.length, requestCount + 5);
+
+  explainAll.dispatchEvent(new Event("click"));
+  containers.forEach((container) => {
+    assert.equal(container.classList.contains("is-open"), false);
+  });
+
+  explainAll.dispatchEvent(new Event("click"));
+  assert.equal(requests.length, requestCount + 5);
+  assert.equal(explainAll.textContent, "Collapse all");
+  containers.forEach((container) => {
+    assert.equal(container.classList.contains("is-open"), true);
+  });
+
+  explainAll.dispatchEvent(new Event("click"));
+
+  containers[4].querySelector = () => null;
+  toggles[4].dispatchEvent(new Event("click"));
+  assert.equal(requests.length, requestCount + 5);
+
+  toggles[4].closest = () => null;
+  toggles[4].dispatchEvent(new Event("click"));
+  assert.equal(requests.length, requestCount + 5);
+  toggles[4].closest = () => containers[4];
+
+  explainAll.dispatchEvent(new Event("click"));
+  assert.equal(containers[4].classList.contains("is-open"), false);
+  assert.equal(containers[0].classList.contains("is-open"), true);
+  assert.equal(explainAll.textContent, "Collapse all");
+
+  containers[4].querySelector = () => targets[4];
+  explainAll.dispatchEvent(new Event("click"));
+
+  targets.forEach((target) => {
+    delete target.dataset.loaded;
+  });
+});
+
+test("N+1 filter links navigate, scroll, and clear through the document handlers", () => {
+  historyPushes.length = 0;
+
+  filterLinks[0].dispatchEvent(new Event("click"));
+
+  assert.equal(historyPushes.length, 1);
+  assert.match(historyPushes[0], /#group-live$/);
+  assert.equal(anchorTarget.scrolled, true);
+  assert.equal(docStatus.textContent, "Showing 1 potential N+1 queries.");
+  assert.equal(clearLink.hidden, false);
+  assert.equal(filterLinks[0].getAttribute("aria-current"), "true");
+
+  clearLink.dispatchEvent(new Event("click"));
+  assert.equal(docStatus.textContent, "Showing all database queries.");
+  assert.equal(clearLink.hidden, true);
+
+  filterLinks[1].dispatchEvent(new Event("click"));
+  assert.equal(historyPushes.length, 1);
+
+  delete anchorTarget.scrollIntoView;
+  delete anchorTarget.scrolled;
+  filterLinks[0].dispatchEvent(new Event("click"));
+  assert.equal(historyPushes.length, 2);
+  assert.equal(anchorTarget.scrolled, undefined);
+
+  delete window.history;
+  filterLinks[0].dispatchEvent(new Event("click"));
+  assert.equal(historyPushes.length, 2);
+  window.history = historyStub;
 });
 
 test("failed individual EXPLAIN request exposes a retryable alert", () => {

@@ -11,7 +11,6 @@ use function array_key_exists;
 use function array_values;
 use function get_object_vars;
 use function is_float;
-use function is_int;
 use function is_numeric;
 use function is_object;
 use function is_scalar;
@@ -118,11 +117,7 @@ final class FilterEngine
             if ($operator === '>' || $operator === '<' || $operator === '>=') {
                 $expected = $condition['value'];
 
-                if (
-                    !is_float($expected)
-                    || !is_int($candidate) && !is_float($candidate) && !is_string($candidate)
-                    || !is_numeric($candidate)
-                ) {
+                if (!is_float($expected) || !is_numeric($candidate)) {
                     return false;
                 }
 

@@ -9,6 +9,7 @@ use PHPForge\Debug\PhpInfo\{
     PhpInfoDataNormalizer,
     PhpInfoTile,
     PhpInfoTocEntry,
+    PhpInfoToken,
     PhpInfoView,
 };
 use PHPForge\Debug\Tests\Provider\PhpInfoDataNormalizerProvider;
@@ -408,6 +409,33 @@ final class PhpInfoDataNormalizerTest extends TestCase
         );
     }
 
+    public function testFromOutputCountsFactRowsWithHeaderLookalikeClassAttributes(): void
+    {
+        $body = <<<HTML
+        <h2>acme</h2>
+        <table>
+        <tr><td>Vendor</td><td>Acme</td></tr>
+        <tr cla class="x"ss="a h b"><td>Branding</td><td>Custom</td></tr>
+        <tr><td>Version</td><td>1.2</td></tr>
+        </table>
+        HTML;
+
+        $view = PhpInfoDataNormalizer::fromOutput($body, 'x', 'cli', 'Linux', '');
+
+        self::assertSame(
+            <<<HTML
+            <section class="yii-debug-phpinfo-section yii-debug-phpinfo-module" id="phpinfo-acme" data-section="acme"><header class="yii-debug-phpinfo-module-head"><h2 id="phpinfo-acme-heading">acme</h2></header>
+            <div class="yii-debug-table-wrap yii-debug-phpinfo-table-section is-facts"><header class="yii-debug-phpinfo-table-section-head"><span>Module information</span><span class="yii-debug-phpinfo-table-section-count">3 values</span></header><div class="yii-debug-phpinfo-table-scroll"><table aria-label="Module information" class="yii-debug-table is-facts">
+            <tr class="yii-debug-phpinfo-fact"><td>Vendor</td><td>Acme</td></tr>
+            <tr class="a h b" class="yii-debug-phpinfo-fact"><td>Branding</td><td>Custom</td></tr>
+            <tr class="yii-debug-phpinfo-fact"><td>Version</td><td>1.2</td></tr>
+            </table></div></div></section>
+            HTML,
+            $view->modulesHtml,
+            "The value badge must count every fact row, header lookalikes included: '3 values'.",
+        );
+    }
+
     public function testFromOutputDoesNotRedactOrdinaryModuleDirectives(): void
     {
         $body = <<<HTML
@@ -478,6 +506,42 @@ final class PhpInfoDataNormalizerTest extends TestCase
             PhpInfoTile::KIND_TEXT,
             $tile->kind,
             "Token-list candidates with whitespace inside an entry must fall back to 'KIND_TEXT'.",
+        );
+    }
+
+    public function testFromOutputDropsEmptyTokenListEntriesAndReindexesTokens(): void
+    {
+        $body = '<table><tr><td>Registered PHP Streams</td><td>https, ,ftps</td></tr></table>';
+
+        $view = PhpInfoDataNormalizer::fromOutput(
+            $body,
+            'x',
+            'cli',
+            'Linux',
+            '',
+        );
+
+        $tile = $this->findTileByLabel($view, 'Registered PHP Streams');
+
+        self::assertNotNull(
+            $tile,
+            'Registered PHP Streams tile must surface.',
+        );
+        self::assertSame(
+            PhpInfoTile::KIND_TOKEN_LIST,
+            $tile->kind,
+            "Short tokens around a blank entry must classify as 'KIND_TOKEN_LIST'.",
+        );
+        self::assertSame(
+            [
+                0 => ['https', ''],
+                1 => ['ftps', ''],
+            ],
+            array_map(
+                static fn(PhpInfoToken $token): array => [$token->label, $token->title],
+                $tile->tokens,
+            ),
+            'Tokens must be typed DTOs reindexed from zero.',
         );
     }
 
@@ -589,6 +653,53 @@ final class PhpInfoDataNormalizerTest extends TestCase
             ['FTP support', 'FTPS support'],
             array_map(static fn(PhpInfoTile $tile): string => $tile->label, $module->tiles),
             'Only the two-cell rows may become tiles.',
+        );
+    }
+
+    public function testFromOutputIgnoresPosixHomeFallbackWhenPasswordEntryLookupFails(): void
+    {
+        unset($_SERVER['HOME'], $_SERVER['USERPROFILE']);
+
+        putenv('HOME');
+        putenv('USERPROFILE');
+
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'function_exists',
+            ['posix_getpwuid'],
+            true,
+        );
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'function_exists',
+            ['posix_getuid'],
+            true,
+        );
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'posix_getuid',
+            [],
+            1000,
+        );
+        MockerState::addCondition(
+            'PHPForge\Debug\PhpInfo',
+            'posix_getpwuid',
+            [1000],
+            false,
+        );
+
+        $view = PhpInfoDataNormalizer::fromOutput(
+            '<table><tr><td>Loaded Configuration File</td><td>/home/example/php.ini</td></tr></table>',
+            'x',
+            'cli',
+            'Linux',
+            '',
+        );
+
+        self::assertSame(
+            '/home/example/php.ini',
+            $this->findTileByLabel($view, 'Loaded Configuration File')?->displayValue,
+            'A failed password-entry lookup must leave the path unshortened.',
         );
     }
 

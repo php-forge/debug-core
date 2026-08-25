@@ -745,10 +745,12 @@ final class PhpInfoDataNormalizer
                     return sprintf('<tr %s><th colspan="2">%s</th></tr>', $attributes, $content);
                 }
 
-                $value = isset($cells[1]) ? self::decodeCell($cells[1]['body']) : '';
+                $value = self::decodeCell($cells[1]['body'] ?? '');
+
                 $class = mb_strlen($value) > 72
                     ? 'yii-debug-phpinfo-fact yii-debug-phpinfo-fact-wide'
                     : 'yii-debug-phpinfo-fact';
+
                 $attributes = self::addRowClass($row['attributes'], $class);
 
                 return '<tr ' . $attributes . '>' . self::renderFactStatusPills($row['body']) . '</tr>';

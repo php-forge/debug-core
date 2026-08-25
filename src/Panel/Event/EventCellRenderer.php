@@ -8,6 +8,7 @@ use PHPForge\Debug\Helper\Fqcn;
 use UIAwesome\Html\Phrasing\Span;
 
 use function date;
+use function intdiv;
 use function sprintf;
 
 /**
@@ -51,9 +52,8 @@ final class EventCellRenderer
      */
     public static function renderTimeCell(EventRow $row): string
     {
-        $seconds = (int) $row->time;
-        $millis = (int) (($row->time - $seconds) * 1000);
+        $milliseconds = (int) ($row->time * 1000);
 
-        return date('H:i:s.', $seconds) . sprintf('%03d', $millis);
+        return date('H:i:s.', intdiv($milliseconds, 1000)) . sprintf('%03d', $milliseconds % 1000);
     }
 }

@@ -1,4 +1,9 @@
-import { readStorageItem, themeParam, themeStorageKey } from "./state.js";
+import {
+  absoluteUrl,
+  readStorageItem,
+  themeParam,
+  themeStorageKey,
+} from "./state.js";
 import { normalizeToolbarUrl } from "./url.js";
 
 var hostControlCache;
@@ -236,7 +241,7 @@ export function addThemeToUrl(url, theme) {
     return normalized;
   }
 
-  var parsed = new URL(normalized, window.location.href);
+  var parsed = absoluteUrl(normalized);
 
   parsed.searchParams.set(themeParam, theme);
 

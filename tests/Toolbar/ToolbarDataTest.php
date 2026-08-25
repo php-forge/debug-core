@@ -93,6 +93,35 @@ final class ToolbarDataTest extends TestCase
         );
     }
 
+    public function testJsonSerializeOmitsNullPanelUrlAndIcon(): void
+    {
+        $panel = new ToolbarPanel(
+            id: 'logs',
+            title: 'Logs',
+            items: [
+                new ToolbarItem(
+                    value: '3',
+                    status: 'info',
+                ),
+            ],
+        );
+
+        self::assertSame(
+            [
+                'id' => 'logs',
+                'title' => 'Logs',
+                'items' => [
+                    [
+                        'value' => '3',
+                        'status' => 'info',
+                    ],
+                ],
+            ],
+            $panel->jsonSerialize(),
+            'Payload must carry no `null` url or icon keys.',
+        );
+    }
+
     public function testJsonSerializePreservesAllPortableFields(): void
     {
         $item = new ToolbarItem(

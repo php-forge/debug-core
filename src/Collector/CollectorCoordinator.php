@@ -213,14 +213,12 @@ final class CollectorCoordinator
         Throwable $cleanupFailure,
         callable|null $cleanupFailureHandler,
     ): void {
-        if ($cleanupFailureHandler === null) {
-            return;
-        }
-
-        try {
-            $cleanupFailureHandler($cleanupFailure);
-        } catch (Throwable) {
-            // Diagnostic observers must not replace the primary application failure.
+        if ($cleanupFailureHandler !== null) {
+            try {
+                $cleanupFailureHandler($cleanupFailure);
+            } catch (Throwable) {
+                // Diagnostic observers must not replace the primary application failure.
+            }
         }
     }
 }

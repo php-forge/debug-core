@@ -31,18 +31,6 @@ final class MailCardRenderer
     private const int BODY_PREVIEW_LIMIT = 140;
 
     /**
-     * Recipient groups rendered when at least one of the lists is non-empty.
-     *
-     * @var array<string, array{label: string, getter: string}>
-     */
-    private const array RECIPIENT_GROUPS = [
-        'to' => ['label' => 'TO', 'getter' => 'to'],
-        'cc' => ['label' => 'CC', 'getter' => 'cc'],
-        'bcc' => ['label' => 'BCC', 'getter' => 'bcc'],
-        'reply' => ['label' => 'REPLY-TO', 'getter' => 'replyTo'],
-    ];
-
-    /**
      * Renders the full mail message `<article>` element.
      *
      * The caller supplies an URL builder (typically `static fn(string $file) => Url::to(['download-mail', 'file' => $file])`)
@@ -147,24 +135,6 @@ final class MailCardRenderer
         $seed = $local !== '' ? $local : $email;
 
         return mb_strtoupper(mb_substr($seed, 0, 1));
-    }
-
-    /**
-     * Returns the recipient list selected by `$getter` (`'to'`, `'cc'`, `'bcc'`, `'replyTo'`).
-     *
-     * @param string $getter Identifier of the recipient field to read; unknown values yield an empty list.
-     *
-     * @return list<string> Recipient addresses in declaration order.
-     */
-    private static function recipientList(MailMessage $message, string $getter): array
-    {
-        return match ($getter) {
-            'to' => $message->to,
-            'cc' => $message->cc,
-            'bcc' => $message->bcc,
-            'replyTo' => $message->replyTo,
-            default => [],
-        };
     }
 
     /**
@@ -279,8 +249,15 @@ final class MailCardRenderer
     {
         $rows = [];
 
-        foreach (self::RECIPIENT_GROUPS as $key => $group) {
-            $list = self::recipientList($message, $group['getter']);
+        $groups = [
+            'to' => ['label' => 'TO', 'list' => $message->to],
+            'cc' => ['label' => 'CC', 'list' => $message->cc],
+            'bcc' => ['label' => 'BCC', 'list' => $message->bcc],
+            'reply' => ['label' => 'REPLY-TO', 'list' => $message->replyTo],
+        ];
+
+        foreach ($groups as $key => $group) {
+            $list = $group['list'];
 
             if ($list === []) {
                 continue;

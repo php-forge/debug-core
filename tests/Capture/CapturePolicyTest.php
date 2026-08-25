@@ -194,6 +194,65 @@ final class CapturePolicyTest extends TestCase
         );
     }
 
+    public function testRedactTextAppliesPatternRulesWhenPatternsAreTheOnlyConfiguredSource(): void
+    {
+        $policy = new CapturePolicy(sensitiveKeys: [], sensitiveKeyPatterns: ['~^secret-word$~i']);
+
+        self::assertSame(
+            'secret-word=[redacted]; plain-word=visible',
+            $policy->redactText('secret-word=hidden; plain-word=visible'),
+            'A pattern-only rule set must keep assignment redaction active.',
+        );
+    }
+
+    public function testRedactTextAppliesPrefixRulesWhenPrefixesAreTheOnlyConfiguredSource(): void
+    {
+        $policy = new CapturePolicy(sensitiveKeys: [], sensitiveKeyPrefixes: ['private_'], sensitiveKeyPatterns: []);
+
+        self::assertSame(
+            'private_key=[redacted]; public_key=visible',
+            $policy->redactText('private_key=secret; public_key=visible'),
+            'A prefix-only rule set must keep assignment redaction active.',
+        );
+    }
+
+    public function testRedactTextAppliesRedactionWhenEveryRuleSourceIsConfigured(): void
+    {
+        $policy = new CapturePolicy(
+            sensitiveKeys: ['password'],
+            sensitiveKeyPrefixes: ['private_'],
+            sensitiveKeyPatterns: ['~^credential-\d+$~'],
+        );
+
+        self::assertSame(
+            'password=[redacted]; private_token=[redacted]; credential-7: [redacted]; public=visible',
+            $policy->redactText('password=one; private_token=two; credential-7: three; public=visible'),
+            'Exact, prefix, and pattern rules must redact concurrently.',
+        );
+    }
+
+    public function testRedactTextDoesNotExposeAnEarlySecretAheadOfManyLaterAssignments(): void
+    {
+        $assignments = ['password=early-secret'];
+
+        for ($index = 0; $index < 5_001; $index++) {
+            $assignments[] = "safe_{$index}=visible";
+        }
+
+        $redacted = (new CapturePolicy())->redactText(implode(';', $assignments));
+
+        self::assertStringStartsWith(
+            'password=[redacted];safe_0=visible',
+            $redacted,
+            'The first assignment must carry the `[redacted]` marker.',
+        );
+        self::assertStringNotContainsString(
+            'early-secret',
+            $redacted,
+            'The plaintext secret must not survive sanitization.',
+        );
+    }
+
     public function testRedactTextDoesNotExposeLateSecretsAfterManyAssignments(): void
     {
         $assignments = [];
@@ -208,6 +267,17 @@ final class CapturePolicyTest extends TestCase
             'MY_APP_PASSWORD=[redacted]',
             (new CapturePolicy())->redactText(implode(';', $assignments)),
             'Text redaction must not inherit the nested-value node budget and expose a late credential assignment.',
+        );
+    }
+
+    public function testRedactTextPreservesSensitiveLookingAssignmentsWhenNoRuleSourceIsConfigured(): void
+    {
+        $policy = new CapturePolicy(sensitiveKeys: [], sensitiveKeyPrefixes: [], sensitiveKeyPatterns: []);
+
+        self::assertSame(
+            'password=secret; Authorization: Bearer credential',
+            $policy->redactText('password=secret; Authorization: Bearer credential'),
+            'An all-empty rule set must disable assignment redaction.',
         );
     }
 

@@ -35,14 +35,12 @@ final readonly class InstrumentationGuard
         try {
             $observer();
         } catch (Throwable $failure) {
-            if ($this->failureHandler === null) {
-                return;
-            }
-
-            try {
-                ($this->failureHandler)($failure);
-            } catch (Throwable) {
-                // A diagnostic failure handler is itself instrumentation and must remain fail-open.
+            if ($this->failureHandler !== null) {
+                try {
+                    ($this->failureHandler)($failure);
+                } catch (Throwable) {
+                    // A diagnostic failure handler is itself instrumentation and must remain fail-open.
+                }
             }
         }
     }

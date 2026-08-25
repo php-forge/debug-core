@@ -7,6 +7,7 @@ import {
   normalizeTheme,
   preserveThemeInLinks,
   readStoredTheme,
+  readThemeCookie,
   themeToggleLabel,
   writeTheme,
 } from "../src/core/theme.js";
@@ -133,6 +134,16 @@ test("preserveThemeInLinks restamps navigation with the latest theme", () => {
 
   const debugLink = element({ href: "/debug/view?tag=request-1" });
   const externalLink = element({ href: "https://external.test/debug/view" });
+  const hashLink = element({ href: "#top" });
+  const scriptLink = element({ href: "javascript:void(0)" });
+  const emptyLink = element({ href: null });
+  const bareForm = element({});
+  let bareInput = null;
+
+  bareForm.querySelector = () => bareInput;
+  bareForm.appendChild = (input) => {
+    bareInput = input;
+  };
   const getForm = element({ action: "/debug/search", method: "get" });
   const postForm = element({ action: "/debug/update", method: "post" });
   const siteGetForm = element({ action: "/site/search", method: "get" });
@@ -159,8 +170,8 @@ test("preserveThemeInLinks restamps navigation with the latest theme", () => {
 
   document.querySelectorAll = (selector) =>
     selector === "a[href]"
-      ? [debugLink, externalLink]
-      : [getForm, postForm, siteGetForm, externalGetForm];
+      ? [debugLink, externalLink, hashLink, scriptLink, emptyLink]
+      : [getForm, postForm, siteGetForm, externalGetForm, bareForm];
   document.createElement = () => ({});
 
   preserveThemeInLinks("dark");
@@ -190,6 +201,14 @@ test("preserveThemeInLinks restamps navigation with the latest theme", () => {
   assert.equal(themeInput.type, "hidden");
   assert.equal(themeInput.name, "yii_debug_theme");
   assert.equal(themeInput.value, "light");
+  assert.equal(hashLink.getAttribute("href"), "#top");
+  assert.equal(scriptLink.getAttribute("href"), "javascript:void(0)");
+  assert.equal(emptyLink.getAttribute("href"), null);
+  assert.equal(
+    bareForm.getAttribute("action"),
+    "https://example.test/debug/default/view?tag=1&yii_debug_theme=light",
+  );
+  assert.equal(bareInput.value, "light");
 });
 
 test("writeTheme persists the normalized theme", () => {
@@ -199,4 +218,101 @@ test("writeTheme persists the normalized theme", () => {
 
   assert.equal(readStoredTheme(), "dark");
   assert.match(document.cookie, /^yii-debug-toolbar-theme=dark;/);
+});
+
+test("theme cookies parse defensively and invalid writes are ignored", () => {
+  installBrowserGlobals();
+
+  assert.equal(readThemeCookie(), null);
+
+  document.cookie = "other=1; yii-debug-toolbar-theme=dark";
+  assert.equal(readThemeCookie(), "dark");
+
+  document.cookie = "yii-debug-toolbar-theme=%E0%A4%A";
+  assert.equal(readThemeCookie(), null);
+
+  writeTheme("not-a-theme");
+  assert.equal(readStoredTheme(), null);
+});
+
+test("theme reads and writes survive blocked or missing storage backends", () => {
+  installBrowserGlobals();
+
+  const blocked = {
+    getItem() {
+      throw new Error("blocked");
+    },
+    setItem() {
+      throw new Error("blocked");
+    },
+  };
+
+  globalThis.localStorage = blocked;
+  window.localStorage = blocked;
+  assert.equal(readStoredTheme(), null);
+  writeTheme("dark");
+
+  installBrowserGlobals();
+  Object.defineProperty(globalThis.document, "cookie", {
+    get() {
+      return "";
+    },
+    set() {
+      throw new Error("blocked");
+    },
+  });
+  writeTheme("dark");
+  assert.equal(readStoredTheme(), "dark");
+
+  delete window.localStorage;
+  assert.equal(readStoredTheme(), null);
+
+  assert.equal(addThemeToDebugUrl("https://[bad", "dark"), "https://[bad");
+  assert.equal(addThemeToDebugUrl("/debug", "sparkle"), "/debug");
+});
+
+test("theme toggle handles missing icons, callbacks, and repeated toggles", () => {
+  installBrowserGlobals();
+
+  assert.equal(bindThemeToggle(null), undefined);
+
+  const listeners = new Map();
+  const rootValues = new Map();
+  const root = {
+    getAttribute(name) {
+      return rootValues.get(name) ?? null;
+    },
+    setAttribute(name, value) {
+      rootValues.set(name, value);
+    },
+  };
+  const buttonValues = new Map();
+  const button = {
+    addEventListener(type, listener) {
+      listeners.set(type, listener);
+    },
+    getAttribute(name) {
+      return buttonValues.get(name) ?? null;
+    },
+    querySelector() {
+      return null;
+    },
+    setAttribute(name, value) {
+      buttonValues.set(name, value);
+    },
+  };
+
+  document.documentElement = root;
+  document.querySelectorAll = () => [];
+
+  bindThemeToggle(button);
+
+  assert.equal(button.getAttribute("aria-pressed"), "false");
+
+  listeners.get("click")();
+  assert.equal(rootValues.get("data-yii-debug-theme"), "dark");
+  assert.equal(button.getAttribute("aria-pressed"), "true");
+
+  listeners.get("click")();
+  assert.equal(rootValues.get("data-yii-debug-theme"), "light");
 });

@@ -60,6 +60,18 @@ final class JobRecordTest extends TestCase
         );
     }
 
+    public function testFromCaptureAcceptsLiteralTrueIsAsync(): void
+    {
+        self::assertTrue(
+            JobRecord::fromCapture(['isAsync' => true])->isAsync,
+            'Literal `true` must mark the record as async.',
+        );
+        self::assertFalse(
+            JobRecord::fromCapture(['isAsync' => 1])->isAsync,
+            'Truthy non-bool must not mark the record as async.',
+        );
+    }
+
     public function testFromCaptureCoercesNumericStringsToFloatAndInt(): void
     {
         $record = JobRecord::fromCapture(

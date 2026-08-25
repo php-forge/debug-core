@@ -71,6 +71,16 @@ final class PageSizeTest extends TestCase
             'Non-positive values must resolve to the default.',
         );
         self::assertSame(
+            50,
+            PageSize::resolve('0'),
+            'Zero must resolve to the default.',
+        );
+        self::assertSame(
+            50,
+            PageSize::resolve('12abc'),
+            'Partially numeric values must resolve to the default.',
+        );
+        self::assertSame(
             20,
             PageSize::resolve(null, 20),
             'A custom default must be honored.',

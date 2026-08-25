@@ -85,6 +85,21 @@ final class DbQueryRendererTest extends TestCase
             'Scoped summary context must be trimmed and escaped in text and ARIA attributes.',
         );
     }
+
+    public function testRenderNPlusOneSummaryReturnsEmptyStringWithoutFindings(): void
+    {
+        self::assertSame(
+            '',
+            DbQueryRenderer::renderNPlusOneSummary([]),
+            'No findings must produce no markup.',
+        );
+        self::assertSame(
+            '',
+            DbQueryRenderer::renderNPlusOneSummary([], 'on <this> page'),
+            'Context alone must not produce markup.',
+        );
+    }
+
     public function testRenderNPlusOneWorkflowLinksSummaryAndRows(): void
     {
         $finding = new NPlusOneFinding(

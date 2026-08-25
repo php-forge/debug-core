@@ -48,10 +48,18 @@ final class RequestSectionRenderer
 
         $meta = [];
 
-        foreach ([$hero->ip, $hero->time, $hero->durationMs] as $piece) {
-            if ($piece !== '') {
+        foreach (['IP' => $hero->ip, 'Time' => $hero->time, 'Duration' => $hero->durationMs] as $label => $value) {
+            if ($value !== '') {
                 $meta[] = Span::tag()
-                    ->content($piece);
+                    ->class('yii-debug-request-hero-meta-item')
+                    ->html(
+                        Span::tag()
+                            ->class('yii-debug-request-hero-meta-label')
+                            ->content($label),
+                        Span::tag()
+                            ->class('yii-debug-request-hero-meta-value')
+                            ->content($value),
+                    );
             }
         }
 

@@ -2,17 +2,25 @@
 
 /** @type {import("@stryker-mutator/api/core").PartialStrykerOptions} */
 const config = {
+    ignorePatterns: ["/runtime", "/artifacts"],
     mutate: [
+        "resources/src/core/clipboard.js",
+        "resources/src/core/deep-links.js",
+        "resources/src/core/density.js",
+        "resources/src/core/dropdown.js",
+        "resources/src/core/features.js",
+        "resources/src/core/tabs.js",
         "resources/src/toolbar/brand.js",
         "resources/src/toolbar/focus.js",
         "resources/src/toolbar/icons.js",
         "resources/src/toolbar/loading.js",
         "resources/src/toolbar/panel.js",
         "resources/src/toolbar/position.js",
+        "resources/src/toolbar/url.js",
     ],
     testRunner: "command",
     commandRunner: {
-        command: "node --test resources/tests/toolbar-runtime.test.js",
+        command: "node --test resources/tests/*.test.js",
     },
     coverageAnalysis: "off",
     concurrency: 4,

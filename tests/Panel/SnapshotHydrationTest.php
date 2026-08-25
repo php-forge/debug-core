@@ -71,6 +71,17 @@ final class SnapshotHydrationTest extends TestCase
         );
     }
 
+    public function testAssetSnapshotSerializesNullViteManifest(): void
+    {
+        $snapshot = AssetSnapshot::fromArray(['bundles' => [], 'vite' => null], '$.panels.asset');
+
+        self::assertSame(
+            ['bundles' => [], 'vite' => null],
+            $snapshot->jsonSerialize(),
+            'A missing Vite bridge must serialize as `null`.',
+        );
+    }
+
     public function testConfigurationSnapshotRoundTripsDynamicData(): void
     {
         $captured = ConfigSnapshot::capture(['debug' => true, 'aliases' => ['@app' => '/app']]);

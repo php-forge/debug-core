@@ -38,7 +38,9 @@ export function renderToolbarLinkAttributes(
   locationValue,
 ) {
   var drawerUrl = normalizeToolbarUrl(url, locationValue);
-  var linkUrl = normalizeToolbarUrl(nativeUrl || url, locationValue);
+  var linkUrl = nativeUrl
+    ? normalizeToolbarUrl(nativeUrl, locationValue)
+    : drawerUrl;
 
   if (drawerUrl === null || linkUrl === null) {
     return "";

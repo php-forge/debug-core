@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Xepozz\InternalMocker\MockerState;
 
+use function ini_set;
+
 /**
  * Unit tests for {@see MailCardRenderer} covering the typed mail card composition: avatar / headline / meta line,
  * recipient pills, body block, status pill, time line, download link and the optional raw-headers details block.
@@ -95,6 +97,26 @@ final class MailCardRendererTest extends TestCase
             HTML,
             $long,
             'Long Unicode previews must start at the first character and truncate on a character boundary.',
+        );
+    }
+
+    public function testRenderItemDegradesToEmptyMarkupWhenPcreFails(): void
+    {
+        $previous = ini_set('pcre.backtrack_limit', '1');
+
+        try {
+            $html = MailCardRenderer::renderItem(
+                self::makeMessage(),
+                self::makeUrlBuilder(),
+            );
+        } finally {
+            ini_set('pcre.backtrack_limit', (string) $previous);
+        }
+
+        self::assertSame(
+            '',
+            $html,
+            'A PCRE failure must degrade the card to an empty string instead of erroring.',
         );
     }
 
