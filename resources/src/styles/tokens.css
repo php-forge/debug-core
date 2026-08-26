@@ -164,17 +164,6 @@
   --yii-debug-cat-other: var(--yii-debug-panel-muted);
 }
 
-:root[data-yii-debug-density="compact"] {
-  --yii-debug-space-2: 6px;
-  --yii-debug-space-3: 9px;
-  --yii-debug-space-4: 12px;
-  --yii-debug-space-5: 18px;
-  --yii-debug-space-6: 24px;
-  --yii-debug-control-min-size: 32px;
-  --yii-debug-panel-padding: var(--yii-debug-space-4);
-  --yii-debug-row-padding-block: 7px;
-}
-
 :root[data-yii-debug-theme="light"],
 :host([data-theme="light"]) {
   color-scheme: light;

@@ -42,6 +42,12 @@ final class ShellViewTest extends TestCase
             $html,
             'The shell skip-link target must accept programmatic focus.',
         );
+        self::assertStringContainsString('Copy link', $html, 'The shared link-copy action must remain available.');
+        self::assertStringNotContainsString(
+            'yii-debug-density-toggle',
+            $html,
+            'The shell must not render the removed density preference.',
+        );
     }
 
     private static function renderShell(bool $useShell): string

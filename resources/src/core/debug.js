@@ -4,7 +4,6 @@ import "../styles/primitives.css";
 import "./history-cursor.js";
 import { bindCopyControls } from "./clipboard.js";
 import { initSectionPermalinks } from "./deep-links.js";
-import { bindDensityToggle } from "./density.js";
 import { dropdownNavigationIndex } from "./dropdown.js";
 import { loadPanelFeatures } from "./features.js";
 import { initTabs } from "./tabs.js";
@@ -94,22 +93,6 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
           );
         }
       },
-    );
-  }
-
-  function bindDensityToggleButton() {
-    var storage = null;
-
-    try {
-      storage = window.localStorage;
-    } catch {
-      // Sandboxed drawer frames can expose the property but reject access.
-    }
-
-    bindDensityToggle(
-      document.querySelector("[data-yii-debug-density-toggle]"),
-      document.documentElement,
-      storage,
     );
   }
 
@@ -246,7 +229,6 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
 
   preserveThemeInLinks(applyTheme());
   bindThemeToggleButton();
-  bindDensityToggleButton();
   prepareCellMoreControls();
 
   document.addEventListener("click", function (event) {

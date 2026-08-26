@@ -30,3 +30,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix(ui): polish Request/Timeline layout, typography, focus/motion behavior, keyboard switching, and EXPLAIN status announcements.
 - feat(ui): expand the shared debug UI with secure same-origin navigation, configurable sensitive-key redaction, responsive and accessible interactions, persistent drawer and bounded `EXPLAIN` workflows, query grouping, conditional feature loading, and cross-adapter browser quality gates.
 - test: enforce JavaScript coverage gates, extend mutation coverage to new UI modules, and simplify N+1 detection, redaction, rendering, and panels.
+- feat(ui): add framework-neutral Vite snapshots, summary and detail rendering, consistent shell density, and labeled card-contained sidebar groups for adapter-provided extension panels.

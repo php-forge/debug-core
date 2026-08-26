@@ -46,16 +46,6 @@
     }
   }
 
-  .yii-debug-brand-chip-density[aria-pressed="true"] {
-    border-color: color-mix(
-      in srgb,
-      var(--yii-debug-panel-primary),
-      transparent 45%
-    );
-    background: var(--yii-debug-panel-bg-accent);
-    color: var(--yii-debug-panel-primary-strong);
-  }
-
   :is(h2, h3).yii-debug-has-permalink {
     display: flex;
     align-items: center;
@@ -291,7 +281,6 @@
       box-shadow: none;
     }
 
-    .yii-debug-brand-chip-density[aria-pressed="true"],
     .yii-debug-nav-link.is-active,
     .yii-debug-tab-link.is-active {
       border-color: Highlight;

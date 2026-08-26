@@ -939,6 +939,18 @@
     list-style: none;
   }
 
+  .yii-debug-nav-group {
+    margin-top: var(--yii-debug-space-3);
+  }
+
+  .yii-debug-nav-group > .yii-debug-nav {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
   .yii-debug-nav-link {
     display: flex;
     align-items: center;
@@ -2138,6 +2150,16 @@
         transparent 70%
       );
     }
+  }
+
+  .yii-debug-table-vite-overview tbody th {
+    width: 200px;
+    min-width: 160px;
+    max-width: 200px;
+  }
+
+  .yii-debug-vite-component + .yii-debug-vite-component {
+    margin-top: var(--yii-debug-space-6);
   }
 
   /**

@@ -20,5 +20,11 @@ final readonly class SidebarView
          * @var list<SidebarNavItem>
          */
         public array $navItems,
+        /**
+         * Additional labeled navigation groups rendered after {@see $navItems}.
+         *
+         * @var array<string, list<SidebarNavItem>>
+         */
+        public array $navGroups = [],
     ) {}
 }
