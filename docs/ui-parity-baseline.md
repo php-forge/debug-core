@@ -270,8 +270,7 @@ budgets or selecting virtualization thresholds.
 - Modernize shell hierarchy, navigation, page header, metric cards, filters,
   tables, tabs, disclosures, pagination, copy actions, and drawer chrome as
   shared patterns.
-- Preserve information density while adding optional compact/comfortable density
-  only if it is consistent across panels.
+- Preserve one consistent, readable information density across panels.
 - Ensure mobile views expose data through progressive disclosure instead of
   document-level overflow.
 

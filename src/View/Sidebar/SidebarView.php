@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\View\Sidebar;
 
+use InvalidArgumentException;
+
+use function trim;
+
 /**
  * Top-level typed view-model for the debugger sidebar partial.
  */
@@ -20,5 +24,19 @@ final readonly class SidebarView
          * @var list<SidebarNavItem>
          */
         public array $navItems,
-    ) {}
+        /**
+         * Additional labeled navigation groups rendered after {@see $navItems}.
+         *
+         * @var array<string, list<SidebarNavItem>>
+         */
+        public array $navGroups = [],
+    ) {
+        foreach ($navGroups as $label => $_items) {
+            if (trim($label) === '') {
+                throw new InvalidArgumentException(
+                    'Sidebar navigation group labels must not be empty.',
+                );
+            }
+        }
+    }
 }

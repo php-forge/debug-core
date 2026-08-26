@@ -32,7 +32,15 @@ final class SidebarRenderer
             $children[] = self::renderSnapshotSection($view->snapshot);
         }
 
-        $children[] = self::renderPanelNav($view->navItems);
+        $children[] = self::renderPanelNav($view->navItems, 'Debug panels');
+
+        foreach ($view->navGroups as $label => $items) {
+            if ($items === []) {
+                continue;
+            }
+
+            $children[] = self::renderNavGroup($label, $items);
+        }
 
         return Aside::tag()
             ->class('yii-debug-sidebar')
@@ -143,6 +151,24 @@ final class SidebarRenderer
     }
 
     /**
+     * Renders one labeled navigation group after the primary panel menu.
+     *
+     * @param list<SidebarNavItem> $items Navigation entries belonging to the group.
+     */
+    private static function renderNavGroup(string $label, array $items): Section
+    {
+        return Section::tag()
+            ->addAriaAttribute('label', $label)
+            ->class('yii-debug-side-section yii-debug-nav-group')
+            ->html(
+                Header::tag()
+                    ->class('yii-debug-side-section-title')
+                    ->content($label),
+                self::renderPanelNav($items, "{$label} debug panels"),
+            );
+    }
+
+    /**
      * Renders the navigator row (Newest | Newer | Older | Oldest), branching between cursor-mode buttons and
      * navigation-mode anchor links.
      */
@@ -207,7 +233,7 @@ final class SidebarRenderer
      *
      * @return string Rendered `<nav>` markup for the panel navigation.
      */
-    private static function renderPanelNav(array $items): string
+    private static function renderPanelNav(array $items, string $ariaLabel): string
     {
         $menuItems = [];
 
@@ -234,7 +260,7 @@ final class SidebarRenderer
         return Menu::tag()
             ->type('nav')
             ->class('yii-debug-nav yii-debug-nav-iconed')
-            ->addAriaAttribute('label', 'Debug panels')
+            ->addAriaAttribute('label', $ariaLabel)
             ->linkClass('yii-debug-nav-link')
             ->linkActiveClass(['yii-debug-nav-link', 'is-active'])
             ->linkAriaCurrent()

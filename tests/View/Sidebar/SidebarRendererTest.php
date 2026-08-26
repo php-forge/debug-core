@@ -177,6 +177,46 @@ final class SidebarRendererTest extends TestCase
 
     }
 
+    public function testRenderEmitsLabeledNavigationGroupsAfterPrimaryPanels(): void
+    {
+        $view = new SidebarView(
+            snapshot: null,
+            navItems: [
+                new SidebarNavItem('History', '', '/debug/index', 'History', false),
+            ],
+            navGroups: [
+                'Extensions' => [
+                    new SidebarNavItem('Inertia', '', '/debug/view?panel=inertia', 'Inertia', false),
+                    new SidebarNavItem('Vite', '', '/debug/view?panel=vite', 'Vite', true),
+                ],
+            ],
+        );
+
+        $html = SidebarRenderer::render($view);
+
+        self::assertStringContainsString(
+            'class="yii-debug-side-section yii-debug-nav-group"',
+            $html,
+            'A secondary navigation group must use the same card treatment as the request summary.',
+        );
+        self::assertStringContainsString(
+            '<header class="yii-debug-side-section-title">',
+            $html,
+            'A secondary navigation group must render its title inside the card.',
+        );
+        self::assertStringContainsString('Extensions', $html, 'The adapter-provided group label must remain visible.');
+        self::assertStringContainsString(
+            'aria-label="Extensions debug panels"',
+            $html,
+            'The grouped navigation needs a distinct accessible label.',
+        );
+        self::assertLessThan(
+            strpos($html, 'Inertia'),
+            strpos($html, 'History'),
+            'Extension entries must render after the primary panel navigation.',
+        );
+    }
+
     public function testRenderHidesAjaxTagWhenNotAjax(): void
     {
         $view = new SidebarView(snapshot: $this->snapshot(isAjax: false), navItems: []);
@@ -223,6 +263,33 @@ final class SidebarRendererTest extends TestCase
             HTML,
             SidebarRenderer::render($view),
             'Status 0 must surface as an en-dash placeholder.',
+        );
+    }
+
+    public function testRenderSkipsEmptyNavigationGroups(): void
+    {
+        $html = SidebarRenderer::render(
+            new SidebarView(
+                snapshot: null,
+                navItems: [new SidebarNavItem('History', '', '/debug/index', 'History', false)],
+                navGroups: [
+                    'Empty' => [],
+                    'Extensions' => [
+                        new SidebarNavItem('Vite', '', '/debug/view?panel=vite', 'Vite', false),
+                    ],
+                ],
+            ),
+        );
+
+        self::assertStringNotContainsString(
+            'Empty debug panels',
+            $html,
+            'An empty navigation group must not leave an orphaned sidebar title.',
+        );
+        self::assertStringContainsString(
+            'Extensions debug panels',
+            $html,
+            'A later populated group must still render after an empty group is skipped.',
         );
     }
 

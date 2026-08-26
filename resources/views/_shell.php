@@ -91,19 +91,6 @@ if ($useShell) {
         )
         ->title($themeAction)
         ->type('button');
-    $densityChip = Button::tag($chip)
-        ->addAriaAttribute('label', 'Switch to compact density')
-        ->addAriaAttribute('pressed', 'false')
-        ->addDataAttribute('yii-debug-density-toggle', true)
-        ->class('yii-debug-brand-chip-control yii-debug-brand-chip-density')
-        ->html(
-            Span::tag()
-                ->addDataAttribute('yii-debug-density-label', true)
-                ->class('yii-debug-brand-label')
-                ->content('Cozy'),
-        )
-        ->title('Switch to compact density')
-        ->type('button');
     $copyChip = Button::tag($chip)
         ->addAriaAttribute('label', 'Copy debug link')
         ->addDataAttribute('yii-debug-copy-link', true)
@@ -119,7 +106,7 @@ if ($useShell) {
         ->type('button');
     $header = Header::tag()
         ->class('yii-debug-brand-bar')
-        ->html($yiiChip, $phpChip, $memoryChip, $actionChip, $densityChip, $copyChip, $themeChip);
+        ->html($yiiChip, $phpChip, $memoryChip, $actionChip, $copyChip, $themeChip);
     $skipLink = A::tag()
         ->class('yii-debug-skip-link')
         ->content('Skip to debug content')

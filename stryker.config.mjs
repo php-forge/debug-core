@@ -6,7 +6,6 @@ const config = {
     mutate: [
         "resources/src/core/clipboard.js",
         "resources/src/core/deep-links.js",
-        "resources/src/core/density.js",
         "resources/src/core/dropdown.js",
         "resources/src/core/features.js",
         "resources/src/core/tabs.js",
