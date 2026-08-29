@@ -7,13 +7,16 @@ namespace PHPForge\Debug\Panel\Config;
 use Locale;
 use Stringable;
 use UIAwesome\Html\Flow\Div;
-use UIAwesome\Html\Heading\H2;
+use UIAwesome\Html\Heading\{H2, H3};
 use UIAwesome\Html\List\{Dd, Dl, Dt};
 use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\Span;
+use UIAwesome\Html\Root\Header;
 use UIAwesome\Html\Sectioning\{Article, Section};
 
 use function array_map;
+use function count;
+use function explode;
 use function implode;
 use function is_string;
 
@@ -65,10 +68,20 @@ final class ConfigCardRenderer
             return null;
         }
 
-        $items = [];
+        $groups = [];
 
         foreach ($summary->extensions as $name => $version) {
-            $items[] = self::renderPackageItem($name, $version);
+            $parts = explode('/', $name, 2);
+            $vendor = $parts[0];
+            $package = $parts[1] ?? $name;
+
+            $groups[$vendor][$package] = $version;
+        }
+
+        $items = [];
+
+        foreach ($groups as $vendor => $packages) {
+            $items[] = self::renderPackageGroup($vendor, $packages);
         }
 
         return Section::tag()
@@ -79,14 +92,14 @@ final class ConfigCardRenderer
                     ->html(
                         Span::tag()
                             ->class('yii-debug-section-mark')
-                            ->content('>_'),
+                            ->content('::'),
                         ' Installed extensions ',
                         Span::tag()
                             ->class('yii-debug-section-count')
                             ->content((string) $summary->extensionCount()),
                     ),
                 Div::tag()
-                    ->class('yii-debug-packages')
+                    ->class('yii-debug-package-groups')
                     ->html(...$items),
             );
     }
@@ -254,21 +267,51 @@ final class ConfigCardRenderer
     }
 
     /**
-     * Renders one installed-package item with its name and version.
+     * Renders one Composer vendor group as a compact dependency ledger.
+     *
+     * @param array<string, string> $packages
      */
-    private static function renderPackageItem(string $name, string $version): Article
+    private static function renderPackageGroup(string $vendor, array $packages): Article
     {
+        $items = [];
+
+        foreach ($packages as $name => $version) {
+            $items[] = self::renderPackageItem($name, $version);
+        }
+
+        $count = count($packages);
+
         return Article::tag()
-            ->class('yii-debug-package')
+            ->class('yii-debug-package-group')
             ->html(
-                Span::tag()
-                    ->addAriaAttribute('hidden', 'true')
-                    ->class('yii-debug-package-glyph')
-                    ->content('◆'),
-                Span::tag()
+                Header::tag()
+                    ->class('yii-debug-package-group-header')
+                    ->html(
+                        H3::tag()
+                            ->class('yii-debug-package-vendor')
+                            ->content("{$vendor}/"),
+                        Span::tag()
+                            ->class('yii-debug-package-group-count')
+                            ->content("{$count} " . ($count === 1 ? 'package' : 'packages')),
+                    ),
+                Dl::tag()
+                    ->class('yii-debug-package-list')
+                    ->html(...$items),
+            );
+    }
+
+    /**
+     * Renders one package name and version row inside its Composer vendor group.
+     */
+    private static function renderPackageItem(string $name, string $version): Div
+    {
+        return Div::tag()
+            ->class('yii-debug-package-row')
+            ->html(
+                Dt::tag()
                     ->class('yii-debug-package-name')
                     ->content($name),
-                Span::tag()
+                Dd::tag()
                     ->class('yii-debug-package-version')
                     ->content("v{$version}"),
             );

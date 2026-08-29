@@ -5340,71 +5340,93 @@
     }
   }
 
-  /* -- Package manifest (installed extensions) ------------------------ */
+  /* -- Composer namespace ledger (installed extensions) --------------- */
 
-  .yii-debug-packages {
+  .yii-debug-package-groups {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: var(--yii-debug-space-2);
+    gap: var(--yii-debug-space-3);
   }
 
-  .yii-debug-package {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto;
-    gap: 4px var(--yii-debug-space-2);
-    align-items: center;
-    padding: 10px 14px;
+  .yii-debug-package-group {
     border: var(--yii-debug-border);
-    border-left: 3px solid transparent;
     border-radius: var(--yii-debug-radius-md);
     background: var(--yii-debug-panel-surface);
-    transition:
-      border-left-color 0.15s ease,
-      transform 0.15s ease,
-      background 0.15s ease;
+    overflow: hidden;
+  }
 
-    &:hover {
-      border-left-color: var(--yii-debug-panel-primary);
-      background: var(--yii-debug-panel-surface-hover);
-      transform: translateX(2px);
+  .yii-debug-package-group-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--yii-debug-space-3);
+    padding: 9px 12px;
+    border-bottom: var(--yii-debug-border);
+    background: color-mix(
+      in srgb,
+      var(--yii-debug-panel-surface-muted),
+      transparent 18%
+    );
+  }
+
+  .yii-debug-package-vendor {
+    margin: 0;
+    color: var(--yii-debug-panel-primary);
+    font-family: var(--yii-debug-font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .yii-debug-package-group-count {
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .yii-debug-package-list {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, 220px), 1fr)
+    );
+    margin: 0;
+    padding: 0;
+  }
+
+  .yii-debug-package-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--yii-debug-space-2);
+    align-items: baseline;
+    min-width: 0;
+    padding: 7px 11px;
+    border-right: 1px solid
+      color-mix(in srgb, var(--yii-debug-panel-border), transparent 28%);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--yii-debug-panel-border), transparent 28%);
+
+    dt,
+    dd {
+      margin: 0;
+      font-family: var(--yii-debug-font-mono);
+      font-size: 0.6875rem;
+      line-height: 1.35;
     }
   }
 
-  .yii-debug-package-glyph {
-    grid-row: 1 / span 2;
-    color: color-mix(in srgb, var(--yii-debug-panel-primary), transparent 25%);
-    font-size: 0.8125rem;
-    line-height: 1;
-  }
-
   .yii-debug-package-name {
+    min-width: 0;
     color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.8125rem;
     font-weight: 500;
-    line-height: 1.2;
     overflow-wrap: anywhere;
   }
 
   .yii-debug-package-version {
-    justify-self: start;
-    max-width: 100%;
-    padding: 2px 8px;
-    border-radius: var(--yii-debug-radius-sm);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-panel-primary),
-      transparent 85%
-    );
     color: var(--yii-debug-panel-primary);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.625rem;
+    font-variant-numeric: tabular-nums;
     font-weight: 700;
-    letter-spacing: 0.02em;
-    line-height: 1.4;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 

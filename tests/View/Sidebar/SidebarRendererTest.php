@@ -403,26 +403,19 @@ final class SidebarRendererTest extends TestCase
         string $time = '12:34:56',
         string $cursorInitTag = '',
     ): SidebarSnapshot {
-        return new SidebarSnapshot(
-            title: $isCursor ? 'Newest request' : 'Current request',
-            ariaLabel: $isCursor ? 'Newest captured request' : 'Current request',
-            method: 'GET',
-            path: '/index.php',
-            fullUrl: 'http://example.test/index.php',
-            statusCode: $statusCode,
-            statusVariant: $statusCode >= 500 ? '5xx' : '2xx',
-            time: $time,
-            isAjax: $isAjax,
-            isCursor: $isCursor,
-            cursorInitTag: $cursorInitTag,
-            newestUrl: '/debug/view',
-            oldestUrl: '/debug/view?tag=oldest',
-            newerUrl: '',
-            olderUrl: '/debug/view?tag=older',
-            isNewest: true,
-            isOldest: false,
-            hasNewer: false,
-            hasOlder: true,
-        );
+        return SidebarSnapshot::create(
+            $isCursor ? 'Newest request' : 'Current request',
+            $isCursor ? 'Newest captured request' : 'Current request',
+        )
+            ->withRequest('GET', '/index.php', 'http://example.test/index.php', $time, $isAjax)
+            ->withResponse($statusCode, $statusCode >= 500 ? '5xx' : '2xx')
+            ->withCursor($isCursor, $cursorInitTag)
+            ->withNavigationUrls(
+                '/debug/view',
+                '/debug/view?tag=oldest',
+                '',
+                '/debug/view?tag=older',
+            )
+            ->withNavigationState(true, false, false, true);
     }
 }
