@@ -47,6 +47,28 @@ final readonly class RequestSummary implements JsonSerializable
     ) {}
 
     /**
+     * Creates an empty request summary ready for immutable enrichment.
+     */
+    public static function create(string $tag): self
+    {
+        return new self(
+            tag: $tag,
+            url: '',
+            ajax: false,
+            method: '',
+            ip: '',
+            time: 0.0,
+            statusCode: 0,
+            sqlCount: 0,
+            excessiveCallersCount: 0,
+            mailCount: 0,
+            mailFiles: [],
+            processingTime: null,
+            peakMemory: null,
+        );
+    }
+
+    /**
      * Hydrates request metadata from decoded JSON data.
      *
      * @param mixed $data Decoded request metadata.
@@ -130,6 +152,52 @@ final readonly class RequestSummary implements JsonSerializable
     }
 
     /**
+     * Returns a copy with database counters.
+     */
+    public function withDatabase(int $sqlCount, int $excessiveCallersCount = 0): self
+    {
+        return new self(
+            tag: $this->tag,
+            url: $this->url,
+            ajax: $this->ajax,
+            method: $this->method,
+            ip: $this->ip,
+            time: $this->time,
+            statusCode: $this->statusCode,
+            sqlCount: $sqlCount,
+            excessiveCallersCount: $excessiveCallersCount,
+            mailCount: $this->mailCount,
+            mailFiles: $this->mailFiles,
+            processingTime: $this->processingTime,
+            peakMemory: $this->peakMemory,
+        );
+    }
+
+    /**
+     * Returns a copy with captured mail metadata.
+     *
+     * @param list<string> $mailFiles
+     */
+    public function withMail(int $mailCount, array $mailFiles): self
+    {
+        return new self(
+            tag: $this->tag,
+            url: $this->url,
+            ajax: $this->ajax,
+            method: $this->method,
+            ip: $this->ip,
+            time: $this->time,
+            statusCode: $this->statusCode,
+            sqlCount: $this->sqlCount,
+            excessiveCallersCount: $this->excessiveCallersCount,
+            mailCount: $mailCount,
+            mailFiles: $mailFiles,
+            processingTime: $this->processingTime,
+            peakMemory: $this->peakMemory,
+        );
+    }
+
+    /**
      * Returns a copy enriched with processing time and peak memory usage.
      *
      * @param float $processingTime Processing duration in seconds.
@@ -153,6 +221,50 @@ final readonly class RequestSummary implements JsonSerializable
             mailFiles: $this->mailFiles,
             processingTime: $processingTime,
             peakMemory: $peakMemory,
+        );
+    }
+
+    /**
+     * Returns a copy with HTTP request metadata.
+     */
+    public function withRequest(string $url, string $method, string $ip, float $time, bool $ajax = false): self
+    {
+        return new self(
+            tag: $this->tag,
+            url: $url,
+            ajax: $ajax,
+            method: $method,
+            ip: $ip,
+            time: $time,
+            statusCode: $this->statusCode,
+            sqlCount: $this->sqlCount,
+            excessiveCallersCount: $this->excessiveCallersCount,
+            mailCount: $this->mailCount,
+            mailFiles: $this->mailFiles,
+            processingTime: $this->processingTime,
+            peakMemory: $this->peakMemory,
+        );
+    }
+
+    /**
+     * Returns a copy with the HTTP response status.
+     */
+    public function withResponse(int $statusCode): self
+    {
+        return new self(
+            tag: $this->tag,
+            url: $this->url,
+            ajax: $this->ajax,
+            method: $this->method,
+            ip: $this->ip,
+            time: $this->time,
+            statusCode: $statusCode,
+            sqlCount: $this->sqlCount,
+            excessiveCallersCount: $this->excessiveCallersCount,
+            mailCount: $this->mailCount,
+            mailFiles: $this->mailFiles,
+            processingTime: $this->processingTime,
+            peakMemory: $this->peakMemory,
         );
     }
 }

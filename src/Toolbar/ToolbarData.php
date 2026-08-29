@@ -45,6 +45,20 @@ final readonly class ToolbarData implements JsonSerializable
     ) {}
 
     /**
+     * Creates a minimal toolbar payload ready for immutable enrichment.
+     */
+    public static function create(string $tag, string $title): self
+    {
+        return new self(
+            tag: $tag,
+            title: $title,
+            indexUrl: '',
+            configUrl: '',
+            items: [],
+        );
+    }
+
+    /**
      * Returns the complete payload consumed by the toolbar runtime.
      *
      * Usage example:
@@ -103,5 +117,99 @@ final readonly class ToolbarData implements JsonSerializable
             'title' => $this->title,
             'yiiVersion' => $this->yiiVersion,
         ];
+    }
+
+    /**
+     * Returns a copy with brand assets and version labels.
+     */
+    public function withBranding(
+        string|null $logo,
+        string|null $logoFallback,
+        string|null $phpVersion,
+        string|null $yiiVersion,
+    ): self {
+        return new self(
+            tag: $this->tag,
+            title: $this->title,
+            indexUrl: $this->indexUrl,
+            configUrl: $this->configUrl,
+            items: $this->items,
+            position: $this->position,
+            defaultHeight: $this->defaultHeight,
+            iconBaseUrl: $this->iconBaseUrl,
+            logo: $logo,
+            logoFallback: $logoFallback,
+            phpInfoUrl: $this->phpInfoUrl,
+            phpVersion: $phpVersion,
+            yiiVersion: $yiiVersion,
+        );
+    }
+
+    /**
+     * Returns a copy with debugger navigation URLs.
+     */
+    public function withNavigation(string $indexUrl, string $configUrl, string|null $phpInfoUrl): self
+    {
+        return new self(
+            tag: $this->tag,
+            title: $this->title,
+            indexUrl: $indexUrl,
+            configUrl: $configUrl,
+            items: $this->items,
+            position: $this->position,
+            defaultHeight: $this->defaultHeight,
+            iconBaseUrl: $this->iconBaseUrl,
+            logo: $this->logo,
+            logoFallback: $this->logoFallback,
+            phpInfoUrl: $phpInfoUrl,
+            phpVersion: $this->phpVersion,
+            yiiVersion: $this->yiiVersion,
+        );
+    }
+
+    /**
+     * Returns a copy with toolbar panels.
+     *
+     * @param list<ToolbarPanel> $items
+     */
+    public function withPanels(array $items): self
+    {
+        return new self(
+            tag: $this->tag,
+            title: $this->title,
+            indexUrl: $this->indexUrl,
+            configUrl: $this->configUrl,
+            items: $items,
+            position: $this->position,
+            defaultHeight: $this->defaultHeight,
+            iconBaseUrl: $this->iconBaseUrl,
+            logo: $this->logo,
+            logoFallback: $this->logoFallback,
+            phpInfoUrl: $this->phpInfoUrl,
+            phpVersion: $this->phpVersion,
+            yiiVersion: $this->yiiVersion,
+        );
+    }
+
+    /**
+     * Returns a copy with drawer presentation settings.
+     */
+    public function withPresentation(string $position, int $defaultHeight, string $iconBaseUrl = ''): self
+    {
+        return new self(
+            tag: $this->tag,
+            title: $this->title,
+            indexUrl: $this->indexUrl,
+            configUrl: $this->configUrl,
+            items: $this->items,
+            position: $position,
+            defaultHeight: $defaultHeight,
+            iconBaseUrl: $iconBaseUrl,
+            logo: $this->logo,
+            logoFallback: $this->logoFallback,
+            phpInfoUrl: $this->phpInfoUrl,
+            phpVersion: $this->phpVersion,
+            yiiVersion: $this->yiiVersion,
+        );
     }
 }

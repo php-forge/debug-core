@@ -99,9 +99,11 @@ final class ConfigCardRendererTest extends TestCase
         );
     }
 
-    public function testRenderInstalledExtensionsSectionListsEveryPackageWithVersionPrefix(): void
+    public function testRenderInstalledExtensionsSectionGroupsPackagesByComposerVendor(): void
     {
-        $summary = self::makeSummary(extensions: ['acme/foo' => '1.0.0', 'acme/bar' => '2.5.1']);
+        $summary = self::makeSummary(
+            extensions: ['acme/foo' => '1.0.0', 'acme/bar' => '2.5.1', 'vendor/tool' => '4.0.0'],
+        );
 
         $section = ConfigCardRenderer::renderInstalledExtensionsSection($summary);
 
@@ -116,18 +118,48 @@ final class ConfigCardRendererTest extends TestCase
             <<<HTML
             <section class="yii-debug-section">
             <h2 class="yii-debug-section-title">
-            <span class="yii-debug-section-mark">&gt;_</span> Installed extensions <span class="yii-debug-section-count">2</span>
-            </h2><div class="yii-debug-packages">
-            <article class="yii-debug-package">
-            <span class="yii-debug-package-glyph" aria-hidden="true">◆</span><span class="yii-debug-package-name">acme/foo</span><span class="yii-debug-package-version">v1.0.0</span>
-            </article><article class="yii-debug-package">
-            <span class="yii-debug-package-glyph" aria-hidden="true">◆</span><span class="yii-debug-package-name">acme/bar</span><span class="yii-debug-package-version">v2.5.1</span>
+            <span class="yii-debug-section-mark">::</span> Installed extensions <span class="yii-debug-section-count">3</span>
+            </h2><div class="yii-debug-package-groups">
+            <article class="yii-debug-package-group">
+            <header class="yii-debug-package-group-header">
+            <h3 class="yii-debug-package-vendor">
+            acme/
+            </h3><span class="yii-debug-package-group-count">2 packages</span>
+            </header><dl class="yii-debug-package-list">
+            <div class="yii-debug-package-row">
+            <dt class="yii-debug-package-name">
+            foo
+            </dt><dd class="yii-debug-package-version">
+            v1.0.0
+            </dd>
+            </div><div class="yii-debug-package-row">
+            <dt class="yii-debug-package-name">
+            bar
+            </dt><dd class="yii-debug-package-version">
+            v2.5.1
+            </dd>
+            </div>
+            </dl>
+            </article><article class="yii-debug-package-group">
+            <header class="yii-debug-package-group-header">
+            <h3 class="yii-debug-package-vendor">
+            vendor/
+            </h3><span class="yii-debug-package-group-count">1 package</span>
+            </header><dl class="yii-debug-package-list">
+            <div class="yii-debug-package-row">
+            <dt class="yii-debug-package-name">
+            tool
+            </dt><dd class="yii-debug-package-version">
+            v4.0.0
+            </dd>
+            </div>
+            </dl>
             </article>
             </div>
             </section>
             HTML,
             $html,
-            'Section heading must be present.',
+            'Packages must be grouped by vendor with aligned names and versions.',
         );
     }
 

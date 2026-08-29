@@ -16,6 +16,72 @@ use function current;
 #[Group('toolbar')]
 final class ToolbarDataTest extends TestCase
 {
+    public function testCreateAndWithersBuildAnImmutablePayload(): void
+    {
+        $empty = ToolbarData::create('request-1', 'Yii Debugger');
+
+        $data = $empty
+            ->withNavigation('/debug', '/debug/view?tag=request-1', '/debug/php-info')
+            ->withPresentation('top', 42, '/icons/')
+            ->withBranding('/yii.svg', '/yii-fallback.svg', '8.5.9', '3');
+
+        self::assertSame(
+            '',
+            $empty->indexUrl,
+            'The source payload must remain unchanged.',
+        );
+        self::assertSame(
+            '/debug',
+            $data->indexUrl,
+            'Navigation enrichment must set the history URL.',
+        );
+        self::assertSame(
+            '/debug/view?tag=request-1',
+            $data->configUrl,
+            'Navigation enrichment must set the configuration URL.',
+        );
+        self::assertSame(
+            '/debug/php-info',
+            $data->phpInfoUrl,
+            'Navigation enrichment must set the PHP info URL.',
+        );
+        self::assertSame(
+            'top',
+            $data->position,
+            'Presentation enrichment must set the toolbar position.',
+        );
+        self::assertSame(
+            42,
+            $data->defaultHeight,
+            'Presentation enrichment must set the default height.',
+        );
+        self::assertSame(
+            '/icons/',
+            $data->iconBaseUrl,
+            'Presentation enrichment must set the icon base URL.',
+        );
+        self::assertSame(
+            '/yii.svg',
+            $data->logo,
+            'Branding enrichment must set the primary logo.',
+        );
+        self::assertSame(
+            '/yii-fallback.svg',
+            $data->logoFallback,
+            'Branding enrichment must set the fallback logo.',
+        );
+        self::assertSame(
+            '8.5.9',
+            $data->phpVersion,
+            'Branding enrichment must set the PHP version.',
+        );
+        self::assertSame(
+            '3',
+            $data->yiiVersion,
+            'Branding enrichment must set the Yii version.',
+        );
+    }
+
     public function testJsonSerializeBuildsBrowserPayload(): void
     {
         $data = new ToolbarData(

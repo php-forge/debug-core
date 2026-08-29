@@ -14,6 +14,43 @@ use PHPUnit\Framework\TestCase;
 #[Group('storage')]
 final class RequestSummaryTest extends TestCase
 {
+    public function testCreateAndWithersBuildAnImmutableSummary(): void
+    {
+        $empty = RequestSummary::create('tag-1');
+
+        $summary = $empty
+            ->withRequest('https://example.test/', 'GET', '127.0.0.1', 1_700_000_000.0, true)
+            ->withResponse(201)
+            ->withDatabase(3, 1)
+            ->withMail(1, ['message.eml'])
+            ->withProfiling(0.125, 2_097_152);
+
+        self::assertSame(
+            '',
+            $empty->url,
+            'The source summary must remain unchanged.',
+        );
+        self::assertSame(
+            [
+                'tag' => 'tag-1',
+                'url' => 'https://example.test/',
+                'ajax' => true,
+                'method' => 'GET',
+                'ip' => '127.0.0.1',
+                'time' => 1_700_000_000.0,
+                'statusCode' => 201,
+                'sqlCount' => 3,
+                'excessiveCallersCount' => 1,
+                'mailCount' => 1,
+                'mailFiles' => ['message.eml'],
+                'processingTime' => 0.125,
+                'peakMemory' => 2_097_152,
+            ],
+            $summary->jsonSerialize(),
+            'Fluent enrichment must preserve every request-summary field.',
+        );
+    }
+
     public function testJsonPayloadHydratesWithoutScalarCoercion(): void
     {
         $summary = RequestSummary::fromArray($this->payload());
