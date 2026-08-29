@@ -260,4 +260,65 @@ final class ToolbarDataTest extends TestCase
             'Serialized payload must preserve every portable field.',
         );
     }
+
+    public function testWithPanelsReturnsAnImmutableCopy(): void
+    {
+        $sourcePanel = new ToolbarPanel(
+            id: 'request',
+            title: 'Request',
+            items: [],
+        );
+        $replacementPanel = new ToolbarPanel(
+            id: 'logs',
+            title: 'Logs',
+            items: [],
+        );
+        $source = new ToolbarData(
+            tag: 'request-1',
+            title: 'Yii Debugger',
+            indexUrl: '/debug',
+            configUrl: '/debug/view?tag=request-1',
+            items: [$sourcePanel],
+            position: 'top',
+            defaultHeight: 42,
+            iconBaseUrl: '/icons/',
+            logo: '/yii.svg',
+            logoFallback: '/yii-fallback.svg',
+            phpInfoUrl: '/debug/php-info',
+            phpVersion: '8.5.9',
+            yiiVersion: '3',
+        );
+
+        $copy = $source->withPanels([$replacementPanel]);
+
+        self::assertNotSame(
+            $source,
+            $copy,
+            'Panel enrichment must return a new toolbar payload.',
+        );
+        self::assertSame(
+            [$sourcePanel],
+            $source->items,
+            'Panel enrichment must not change the source payload.',
+        );
+        self::assertEquals(
+            new ToolbarData(
+                tag: 'request-1',
+                title: 'Yii Debugger',
+                indexUrl: '/debug',
+                configUrl: '/debug/view?tag=request-1',
+                items: [$replacementPanel],
+                position: 'top',
+                defaultHeight: 42,
+                iconBaseUrl: '/icons/',
+                logo: '/yii.svg',
+                logoFallback: '/yii-fallback.svg',
+                phpInfoUrl: '/debug/php-info',
+                phpVersion: '8.5.9',
+                yiiVersion: '3',
+            ),
+            $copy,
+            'Panel enrichment must replace only the toolbar panels.',
+        );
+    }
 }
