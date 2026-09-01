@@ -92,6 +92,33 @@
     return "other";
   }
 
+  /**
+   * Keep primary Request links aligned with the row represented by the
+   * client-side history cursor. The `auto` variant preserves compatibility
+   * with captures created before the Request panel was available.
+   */
+  function updateRequestLinks(tag) {
+    if (!tag) {
+      return;
+    }
+
+    var links = document.querySelectorAll(
+      '.yii-debug-nav-link[href*="panel=request"], .yii-debug-nav-link[href*="panel=auto"]',
+    );
+
+    for (var li = 0; li < links.length; li++) {
+      var target = new URL(
+        links[li].getAttribute("href"),
+        window.location.href,
+      );
+      target.searchParams.set("tag", tag);
+      links[li].setAttribute(
+        "href",
+        target.pathname + target.search + target.hash,
+      );
+    }
+  }
+
   function update() {
     rows.forEach(function (r, i) {
       r.classList.toggle("is-cursor", i === cursor);
@@ -133,6 +160,8 @@
         (snap.method + " " + (snap.fullUrl || snap.url)).trim(),
       );
     }
+
+    updateRequestLinks(snap.tag);
 
     var newestBtn = section.querySelector('[data-yii-debug-cursor="newest"]');
     var newerBtn = section.querySelector('[data-yii-debug-cursor="newer"]');

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Request;
 
-use PHPForge\Debug\Helper\{Dump, Tabs, Vocabulary};
+use PHPForge\Debug\Helper\{Disclosure, Dump, Tabs, Vocabulary};
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Form\InputSearch;
 use UIAwesome\Html\Heading\H2;
@@ -79,25 +79,21 @@ final class RequestSectionRenderer
     }
 
     /**
-     * Renders a single name/value section as `<header>` + `<table>`, or as an empty-state `<p>` when the section has
-     * no entries.
+     * Renders a single name/value section as `<header>` + `<table>`, or as a collapsed disclosure when the section
+     * has no entries.
      */
     public static function renderSection(RequestSection $section): string
     {
-        $header = self::renderSectionHeader($section);
-
         if ($section->entries === []) {
             $emptyState = P::tag()
                 ->class('yii-debug-table-empty')
                 ->content('No data')
                 ->render();
 
-            return "{$header}{$emptyState}";
+            return Disclosure::render($section->caption, $emptyState);
         }
 
-        $table = self::renderSectionTable($section);
-
-        return "{$header}{$table}";
+        return self::renderSectionHeader($section) . self::renderSectionTable($section);
     }
 
     /**
