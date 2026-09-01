@@ -153,26 +153,6 @@ final class RequestSectionRendererTest extends TestCase
         );
     }
 
-    public function testRenderSectionOmitsFilterInputWhenSectionIsEmpty(): void
-    {
-        $section = new RequestSection(caption: 'Server', entries: [], filterable: true);
-
-        self::assertSame(
-            <<<HTML
-            <header class="yii-debug-section-header">
-            <h2>
-            Server
-            </h2>
-            </header><p class="yii-debug-table-empty">
-            No data
-            </p>
-            HTML,
-            RequestSectionRenderer::renderSection($section),
-            'Empty section must not render the filter input.',
-        );
-
-    }
-
     public function testRenderSectionPicksHtmlSpecialCharsEscapingForRowValues(): void
     {
         $section = new RequestSection(caption: 'Headers', entries: ['X-Custom' => "'quoted' <script>alert(1)</script>"]);
@@ -219,6 +199,28 @@ final class RequestSectionRendererTest extends TestCase
             substr_count(RequestSectionRenderer::renderSection($section), '<td>'),
             'Each entry must produce exactly one body row.',
         );
+    }
+
+    public function testRenderSectionUsesCollapsedDisclosureWhenSectionIsEmpty(): void
+    {
+        $section = new RequestSection(caption: 'Server', entries: [], filterable: true);
+
+        self::assertSame(
+            <<<HTML
+            <details class="yii-debug-disclosure">
+            <summary class="yii-debug-disclosure-summary">
+            <span class="yii-debug-disclosure-title">Server</span><span class="yii-debug-disclosure-hint" aria-hidden="true"><span data-yii-debug-hint="collapsed">click to expand</span><span data-yii-debug-hint="expanded">click to collapse</span></span>
+            </summary><div class="yii-debug-disclosure-body">
+            <p class="yii-debug-table-empty">
+            No data
+            </p>
+            </div>
+            </details>
+            HTML,
+            RequestSectionRenderer::renderSection($section),
+            'Empty section must use the shared collapsed disclosure without a filter input.',
+        );
+
     }
 
     public function testRenderTabsMarksFirstTabActive(): void

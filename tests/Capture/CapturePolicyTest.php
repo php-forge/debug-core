@@ -24,6 +24,7 @@ final class CapturePolicyTest extends TestCase
             'A one-byte body limit must remain valid.',
         );
     }
+
     public function testConstructorRejectsANonPositiveBodyLimit(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -44,6 +45,15 @@ final class CapturePolicyTest extends TestCase
         $this->expectExceptionMessage('not a valid PCRE pattern');
 
         new CapturePolicy(sensitiveKeyPatterns: ['invalid']);
+    }
+
+    public function testMaxBodyBytesReturnsTheConfiguredPersistentLimit(): void
+    {
+        self::assertSame(
+            123,
+            (new CapturePolicy(maxBodyBytes: 123))->maxBodyBytes(),
+            'Adapters must be able to bound stream reads before applying the persistent-body policy.',
+        );
     }
 
     public function testPolicyDefaultPatternsAreSegmentAwareAndCanBeDisabled(): void

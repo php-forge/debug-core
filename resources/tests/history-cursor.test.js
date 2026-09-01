@@ -150,6 +150,23 @@ var card = {
   },
 };
 
+function navLink(href) {
+  return {
+    attributes: { href },
+    getAttribute(name) {
+      return this.attributes[name] ?? null;
+    },
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+  };
+}
+
+var requestLink = navLink(
+  "/debug/view?tag=tag-1&panel=request&yii_debug_theme=dark",
+);
+var automaticLink = navLink("/debug/view?tag=tag-1&panel=auto");
+
 var section = {
   attributes: { "data-yii-debug-cursor-init": "tag-3" },
   getAttribute(name) {
@@ -204,11 +221,22 @@ globalThis.document = {
     return selector === "[data-yii-debug-history-cursor]" ? section : null;
   },
   querySelectorAll(selector) {
-    return selector === "tr[data-yii-debug-tag]" ? rows : [];
+    if (selector === "tr[data-yii-debug-tag]") {
+      return rows;
+    }
+    if (
+      selector ===
+      '.yii-debug-nav-link[href*="panel=request"], .yii-debug-nav-link[href*="panel=auto"]'
+    ) {
+      return [requestLink, automaticLink];
+    }
+
+    return [];
   },
 };
 globalThis.window = {
   innerHeight: 800,
+  location: { href: "https://example.test/debug" },
   scrollY: 100,
   scrollTo(options) {
     scrolls.push(options);
@@ -251,6 +279,14 @@ test("importing the module lands the cursor on the init-tagged row and clamps th
   assert.equal(ajaxField.hidden, true);
   assert.equal(extraField.textContent, "");
   assert.equal(card.attributes.title, "PATCH ::not-a-url::");
+  assert.equal(
+    requestLink.attributes.href,
+    "/debug/view?tag=tag-3&panel=request&yii_debug_theme=dark",
+  );
+  assert.equal(
+    automaticLink.attributes.href,
+    "/debug/view?tag=tag-3&panel=auto",
+  );
 
   assert.equal(newestButton.disabled, false);
   assert.equal(newerButton.disabled, false);
@@ -296,6 +332,7 @@ test("older clicks walk toward the oldest row and refresh every snapshot facet",
   assert.equal(timeField.textContent, "12:00:04");
   assert.equal(timeField.hidden, false);
   assert.equal(card.attributes.title, "DELETE wtf:");
+  assert.equal(requestLink.attributes.href.includes("tag=tag-4"), true);
   assert.equal(scrolls.length, 1);
 
   globalThis.window.innerHeight = 0;
@@ -313,6 +350,11 @@ test("older clicks walk toward the oldest row and refresh every snapshot facet",
   assert.equal(timeField.hidden, true);
   assert.equal(ajaxField.hidden, true);
   assert.equal(card.attributes.title, "");
+  assert.equal(
+    requestLink.attributes.href.includes("tag=tag-4"),
+    true,
+    "A malformed history row must not erase the last valid Request link tag.",
+  );
   assert.deepEqual(scrolls[1], { top: 1050, behavior: "smooth" });
 
   globalThis.window.innerHeight = 800;

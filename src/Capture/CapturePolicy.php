@@ -81,6 +81,14 @@ final readonly class CapturePolicy
     }
 
     /**
+     * Returns the maximum number of body bytes that may reach persistent capture.
+     */
+    public function maxBodyBytes(): int
+    {
+        return $this->maxBodyBytes;
+    }
+
+    /**
      * Redacts sensitive keys throughout a bounded value tree.
      *
      * @template TKey of array-key

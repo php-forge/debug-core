@@ -202,7 +202,8 @@
    * a gap by accident. Separate every section from what precedes it, and let
    * the first one start at the top of the panel.
    */
-  .yii-debug-main > * + :is(h2, .yii-debug-disclosure) {
+  .yii-debug-main > * + :is(h2, .yii-debug-disclosure),
+  .yii-debug-tab-panel > .yii-debug-table-wrap + .yii-debug-disclosure {
     margin-top: var(--yii-debug-space-5);
   }
 

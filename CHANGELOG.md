@@ -32,3 +32,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - test: enforce JavaScript coverage gates, extend mutation coverage to new UI modules, and simplify N+1 detection, redaction, rendering, and panels.
 - feat(ui): add framework-neutral Vite snapshots, summary and detail rendering, consistent shell density, and labeled card-contained sidebar groups for adapter-provided extension panels.
 - refactor(ui): replace the installed-extension tag cloud with a compact Composer namespace ledger.
+- feat(ui): improve Request disclosures, body limits, history navigation, and table spacing.
