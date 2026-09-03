@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
 import { AJAX_TIMEOUT, ajax, on } from "../src/core/dom.js";
 
@@ -197,7 +197,11 @@ test("ajax settles once and ignores non-final ready states", () => {
   request.status = 500;
 
   ajax("https://example.test/debug/db-explain");
+  request.readyState = 4;
+  request.status = 500;
   request.onreadystatechange();
+
+  ajax("https://example.test/debug/db-explain");
   request.onabort();
   request.ontimeout();
 

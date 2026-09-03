@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
 class ClassList {
   constructor() {
@@ -248,6 +248,28 @@ test("N+1 group links filter query rows and expose live progress", () => {
   assert.equal(clear.hidden, true);
 });
 
+test("N+1 filtering tolerates orphan markers and missing optional controls", () => {
+  var orphan = new Element();
+
+  orphan.setAttribute("data-yii-debug-n1-group", "group-orphan");
+  orphan.closest = () => null;
+
+  var root = {
+    querySelector() {
+      return null;
+    },
+    querySelectorAll(selector) {
+      return selector === "[data-yii-debug-n1-group]" ? [orphan] : [];
+    },
+  };
+
+  assert.deepEqual(applyNPlusOneFilter(root, "group-orphan"), {
+    activeGroup: "group-orphan",
+    total: 0,
+    visible: 0,
+  });
+});
+
 test("native explain-all control synchronizes batch state and loading semantics", () => {
   assert.equal(explainAll.textContent, "Explain all");
   assert.equal(explainAll.getAttribute("aria-expanded"), "false");
@@ -327,15 +349,37 @@ test("collapsing an EXPLAIN batch cancels active and queued requests", () => {
   });
 
   var requestCount = requests.length;
+  var originalShift = Array.prototype.shift;
 
-  explainAll.dispatchEvent(new Event("click"));
+  Array.prototype.shift = function () {
+    var task = originalShift.call(this);
+
+    if (task && task.toggle === toggles[0]) {
+      task.cancelled = true;
+    }
+
+    return task;
+  };
+
+  try {
+    explainAll.dispatchEvent(new Event("click"));
+  } finally {
+    Array.prototype.shift = originalShift;
+  }
 
   assert.equal(requests.length, requestCount + 3);
+  assert.equal(requests[requestCount].url, toggles[1].href);
   assert.equal(explainAll.textContent, "Explaining 0/5");
 
   var activeRequests = requests.slice(requestCount);
 
-  explainAll.dispatchEvent(new Event("click"));
+  toggles[4].closest = () => null;
+
+  try {
+    explainAll.dispatchEvent(new Event("click"));
+  } finally {
+    toggles[4].closest = () => containers[4];
+  }
 
   assert.equal(requests.length, requestCount + 3);
   activeRequests.forEach((request) => {

@@ -17,11 +17,10 @@ const config = {
         "resources/src/toolbar/position.js",
         "resources/src/toolbar/url.js",
     ],
-    testRunner: "command",
-    commandRunner: {
-        command: "node --test resources/tests/*.test.js",
+    testRunner: "vitest",
+    vitest: {
+        configFile: "vitest.config.js",
     },
-    coverageAnalysis: "off",
     concurrency: 4,
     reporters: ["clear-text", "progress", "html"],
     thresholds: {
