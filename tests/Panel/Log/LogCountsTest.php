@@ -77,6 +77,37 @@ final class LogCountsTest extends TestCase
         );
     }
 
+    public function testFromRowsIncludesUnknownLevelsOnlyInTotal(): void
+    {
+        $counts = LogCounts::fromRows([self::row(0x999)]);
+
+        self::assertSame(
+            1,
+            $counts->total,
+            'An unknown level must still contribute to the total.',
+        );
+        self::assertSame(
+            0,
+            $counts->errors,
+            'An unknown level must not count as an error.',
+        );
+        self::assertSame(
+            0,
+            $counts->warnings,
+            'An unknown level must not count as a warning.',
+        );
+        self::assertSame(
+            0,
+            $counts->info,
+            'An unknown level must not count as info.',
+        );
+        self::assertSame(
+            0,
+            $counts->trace,
+            'An unknown level must not count as trace.',
+        );
+    }
+
     public function testFromRowsReturnsAllZeroCountsWhenNoRowsWereCaptured(): void
     {
         $counts = LogCounts::fromRows([]);
