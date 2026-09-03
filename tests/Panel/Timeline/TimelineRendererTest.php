@@ -40,7 +40,7 @@ final class TimelineRendererTest extends TestCase
         );
     }
 
-    public function testRenderChartFormatsSecondsAndOmitsSingleCategoryLegend(): void
+    public function testRenderChartFormatsSecondsAndOmitsCategoryLegend(): void
     {
         $rows = TimelineGeometry::spans(
             [
@@ -60,7 +60,7 @@ final class TimelineRendererTest extends TestCase
         self::assertSame(
             0,
             substr_count($html, 'yii-debug-tl-legend-item'),
-            'A single category must not render a redundant legend.',
+            'Timeline must not render a category legend for uniformly styled spans.',
         );
     }
 
@@ -79,10 +79,11 @@ final class TimelineRendererTest extends TestCase
             <span class="yii-debug-tl-tick" style='left: 10%;'>1 s</span><span class="yii-debug-tl-tick" style='left: 20%;'>1 s</span><span class="yii-debug-tl-tick" style='left: 30%;'>1.1 s</span>
             </header><div class="yii-debug-tl-rows" role="list">
             <div class="yii-debug-tl-row yii-debug-tl-row-queue" title="job
-            10.000 ms · 0.00 MB" role="listitem" aria-label="job
+            10.000 ms · 0.00 MB" role="listitem" aria-label="Queue\Job
+            job
             10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name" title="Queue\Job"><strong>Job</strong></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
             </div>
@@ -96,7 +97,37 @@ final class TimelineRendererTest extends TestCase
         );
     }
 
-    public function testRenderChartIncludesNonAdjacentLegendVariants(): void
+    public function testRenderChartKeepsEmptyCategoryFallback(): void
+    {
+        $rows = TimelineGeometry::spans(
+            [new ProfileRow(0.0, 10.0, '', 'job', 0, 0, 0, 0, [])],
+            0.0,
+            100.0,
+        );
+
+        self::assertStringContainsString(
+            '<span class="yii-debug-tl-name"><strong>—</strong></span>',
+            TimelineRenderer::renderChart($rows, []),
+            'A missing category must retain the visible em-dash fallback.',
+        );
+    }
+
+    public function testRenderChartKeepsMalformedNonEmptyCategoryVisible(): void
+    {
+        $rows = TimelineGeometry::spans(
+            [new ProfileRow(0.0, 10.0, '::invoke', 'job', 0, 0, 0, 0, [])],
+            0.0,
+            100.0,
+        );
+
+        self::assertStringContainsString(
+            '<span class="yii-debug-tl-name" title="::invoke"><strong>::invoke</strong></span>',
+            TimelineRenderer::renderChart($rows, []),
+            'A malformed non-empty category must not collapse to a blank visible label.',
+        );
+    }
+
+    public function testRenderChartKeepsVariantMetadataWithoutCategoryLegend(): void
     {
         $rows = TimelineGeometry::spans(
             [
@@ -111,23 +142,23 @@ final class TimelineRendererTest extends TestCase
             <<<HTML
             <section class="yii-debug-tl">
             <header class="yii-debug-tl-axis">
-            </header><div class="yii-debug-tl-legend">
-            <span class="yii-debug-tl-legend-item yii-debug-tl-row-app"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Application</span></span><span class="yii-debug-tl-legend-item yii-debug-tl-row-queue"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Queue</span></span>
-            </div><div class="yii-debug-tl-rows" role="list">
+            </header><div class="yii-debug-tl-rows" role="list">
             <div class="yii-debug-tl-row yii-debug-tl-row-app" title="app
-            10.000 ms · 0.00 MB" role="listitem" aria-label="app
+            10.000 ms · 0.00 MB" role="listitem" aria-label="Yii3\Application::handle
+            app
             10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name" title="Yii3\Application::handle"><strong>Application</strong></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
             </div>
             </div>
             </div><div class="yii-debug-tl-row yii-debug-tl-row-queue" title="queue
-            10.000 ms · 0.00 MB" role="listitem" aria-label="queue
+            10.000 ms · 0.00 MB" role="listitem" aria-label="Queue\Job
+            queue
             10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name" title="Queue\Job"><strong>Job</strong></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 10%; width: 10%;'>
             </div>
@@ -137,9 +168,10 @@ final class TimelineRendererTest extends TestCase
             </section>
             HTML,
             TimelineRenderer::renderChart($rows, []),
-            'Legend traversal must retain variants separated by absent canonical categories.',
+            'Rows must retain variant metadata without rendering a misleading same-color category legend.',
         );
     }
+
     public function testRenderChartProducesExactSharedMarkup(): void
     {
         $rows = TimelineGeometry::spans(
@@ -156,23 +188,23 @@ final class TimelineRendererTest extends TestCase
             <section class="yii-debug-tl">
             <header class="yii-debug-tl-axis">
             <span class="yii-debug-tl-tick" style='left: 0%;'>0 ms</span><span class="yii-debug-tl-tick" style='left: 50%;'>50 ms</span>
-            </header><div class="yii-debug-tl-legend">
-            <span class="yii-debug-tl-legend-item yii-debug-tl-row-app"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Application</span></span><span class="yii-debug-tl-legend-item yii-debug-tl-row-db"><span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-legend-label">Database</span></span>
-            </div><div class="yii-debug-tl-rows" role="list">
+            </header><div class="yii-debug-tl-rows" role="list">
             <div class="yii-debug-tl-row yii-debug-tl-row-app" title="GET /
-            50.000 ms · 0.00 MB" role="listitem" aria-label="GET /
+            50.000 ms · 0.00 MB" role="listitem" aria-label="Yii3\Application::handle
+            GET /
             50.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yii3\Application::handle"><span class="yii-debug-muted">Yii3\</span><wbr><strong>Application::handle</strong></span></span><span class="yii-debug-tl-bar-duration">50.0 ms</span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name" title="Yii3\Application::handle"><strong>Application</strong></span><span class="yii-debug-tl-bar-duration">50.0 ms</span>
             </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 50%;'>
             </div>
             </div>
             </div><div class="yii-debug-tl-row yii-debug-tl-row-db" title="SELECT 1
-            10.000 ms · 0.00 MB" role="listitem" aria-label="SELECT 1
+            10.000 ms · 0.00 MB" role="listitem" aria-label="Yiisoft\Db\Command::query
+            SELECT 1
             10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 1;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Yiisoft\Db\Command::query"><span class="yii-debug-muted">Yiisoft\Db\</span><wbr><strong>Command::query</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name" title="Yiisoft\Db\Command::query"><strong>Command</strong></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 25%; width: 10%;'>
             </div>
@@ -186,12 +218,59 @@ final class TimelineRendererTest extends TestCase
             </section>
             HTML,
             TimelineRenderer::renderChart($rows, [0 => 0.0, 50 => 50.0], '<svg></svg>', 2_097_152, 20),
-            'Axis, legend, nested rows, bars, and memory footer must render exactly.',
+            'Axis, nested rows, bars, and memory footer must render exactly.',
         );
         self::assertSame(
             '',
             TimelineRenderer::renderChart([], []),
             'A chart without spans must stay empty.',
+        );
+    }
+
+    public function testRenderChartShowsOnlyShortClassNameWithFullCategoryMetadata(): void
+    {
+        $category = 'App\\Web\\Workbench\\HomeAction::__invoke';
+
+        $rows = TimelineGeometry::spans(
+            [new ProfileRow(0.0, 10.0, $category, 'GET /user/index', 0, 0, 0, 0, [])],
+            0.0,
+            100.0,
+        );
+
+        $html = TimelineRenderer::renderChart($rows, []);
+
+        self::assertStringContainsString(
+            '<span class="yii-debug-tl-name" title="App\\Web\\Workbench\\HomeAction::__invoke">'
+            . '<strong>HomeAction</strong></span>',
+            $html,
+            'Timeline label must show only the short class while its title preserves the full category and method.',
+        );
+        self::assertStringContainsString(
+            "aria-label=\"App\\Web\\Workbench\\HomeAction::__invoke\nGET /user/index\n10.000 ms · 0.00 MB\"",
+            $html,
+            'The row accessible name must preserve the full category when its profiling info differs.',
+        );
+        self::assertStringNotContainsString(
+            '<wbr>',
+            $html,
+            'A short Timeline label must not contain a word-break opportunity.',
+        );
+    }
+
+    public function testRenderChartUsesCategoryOnceWhenItAlreadyHeadsAccessibleLabel(): void
+    {
+        $category = 'Queue\\Job::run';
+
+        $rows = TimelineGeometry::spans(
+            [new ProfileRow(0.0, 10.0, $category, '', 0, 0, 0, 0, [])],
+            0.0,
+            100.0,
+        );
+
+        self::assertStringContainsString(
+            "aria-label=\"Queue\\Job::run\n10.000 ms · 0.00 MB\"",
+            TimelineRenderer::renderChart($rows, []),
+            'Accessible label must not duplicate a category already used as its tooltip heading.',
         );
     }
 
@@ -209,10 +288,11 @@ final class TimelineRendererTest extends TestCase
             <header class="yii-debug-tl-axis">
             </header><div class="yii-debug-tl-rows" role="list">
             <div class="yii-debug-tl-row yii-debug-tl-row-queue" title="job
-            10.000 ms · 0.00 MB" role="listitem" aria-label="job
+            10.000 ms · 0.00 MB" role="listitem" aria-label="Queue\Job
+            job
             10.000 ms · 0.00 MB">
             <div class="yii-debug-tl-label" style='--depth: 0;'>
-            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name"><span title="Queue\Job"><span class="yii-debug-muted">Queue\</span><wbr><strong>Job</strong></span></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
+            <span class="yii-debug-tl-dot" aria-hidden="true"></span><span class="yii-debug-tl-name" title="Queue\Job"><strong>Job</strong></span><span class="yii-debug-tl-bar-duration">10.0 ms</span>
             </div><div class="yii-debug-tl-track" aria-hidden="true">
             <div class="yii-debug-tl-bar" style='left: 0%; width: 10%;'>
             </div>

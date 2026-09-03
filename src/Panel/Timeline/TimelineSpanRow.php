@@ -123,8 +123,8 @@ final readonly class TimelineSpanRow
     /**
      * Maps the span category to its domain variant from the fixed timeline vocabulary.
      *
-     * Categories the matcher does not recognize fall back to `other`, so unknown providers render in the neutral
-     * track styling.
+     * Categories the matcher does not recognize fall back to `other`, retaining their domain classification as
+     * metadata while the shared renderer presents every span with the same visual treatment.
      */
     private static function variantOf(string $category): string
     {

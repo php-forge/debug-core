@@ -33,3 +33,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat(ui): add framework-neutral Vite snapshots, summary and detail rendering, consistent shell density, and labeled card-contained sidebar groups for adapter-provided extension panels.
 - refactor(ui): replace the installed-extension tag cloud with a compact Composer namespace ledger.
 - feat(ui): improve Request disclosures, body limits, history navigation, and table spacing.
+- fix(ui): show short class names with full hover titles, standardize Timeline dots and bars on one blue token, and remove the redundant category legend.
