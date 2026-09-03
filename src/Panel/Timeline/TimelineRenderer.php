@@ -12,27 +12,17 @@ use UIAwesome\Html\Phrasing\{Em, Label, Span, Strong};
 use UIAwesome\Html\Root\{Footer, Header};
 use UIAwesome\Html\Sectioning\Section;
 
-use function count;
-use function in_array;
+use function explode;
 use function number_format;
 use function rtrim;
 use function sprintf;
+use function str_starts_with;
 
 /**
  * Renders the shared Timeline summary, filters, empty hint, and positioned span chart.
  */
 final class TimelineRenderer
 {
-    private const array LEGEND_LABELS = [
-        'app' => 'Application',
-        'db' => 'Database',
-        'view' => 'View',
-        'cache' => 'Cache',
-        'mail' => 'Mail',
-        'queue' => 'Queue',
-        'other' => 'Other',
-    ];
-
     /**
      * Renders the complete timeline chart from prepared spans and ruler offsets.
      *
@@ -52,7 +42,6 @@ final class TimelineRenderer
 
         $children = [
             self::renderAxis($rulers),
-            ...self::renderLegend($rows),
             self::renderRows($rows),
         ];
 
@@ -185,6 +174,15 @@ final class TimelineRenderer
             ->render();
     }
 
+    private static function accessibleRowLabel(TimelineSpanRow $row): string
+    {
+        if ($row->category === '' || str_starts_with($row->tooltip, $row->category . "\n")) {
+            return $row->tooltip;
+        }
+
+        return "{$row->category}\n{$row->tooltip}";
+    }
+
     private static function formatTickLabel(int $milliseconds): string
     {
         if ($milliseconds < 1000) {
@@ -213,47 +211,6 @@ final class TimelineRenderer
         return Header::tag()->class('yii-debug-tl-axis')->html(...$ticks);
     }
 
-    /**
-     * @param list<TimelineSpanRow> $rows Positioned timeline spans.
-     *
-     * @return list<Div> Legend container, or an empty list for a single category.
-     */
-    private static function renderLegend(array $rows): array
-    {
-        $present = [];
-
-        foreach ($rows as $row) {
-            if (!in_array($row->variant, $present, true)) {
-                $present[] = $row->variant;
-            }
-        }
-
-        if (count($present) < 2) {
-            return [];
-        }
-
-        $items = [];
-
-        foreach (self::LEGEND_LABELS as $variant => $label) {
-            if (!in_array($variant, $present, true)) {
-                continue;
-            }
-
-            $items[] = Span::tag()
-                ->class("yii-debug-tl-legend-item yii-debug-tl-row-{$variant}")
-                ->html(
-                    Span::tag()
-                        ->class('yii-debug-tl-dot')
-                        ->addAttribute('aria-hidden', 'true'),
-                    Span::tag()
-                        ->class('yii-debug-tl-legend-label')
-                        ->content($label),
-                );
-        }
-
-        return [Div::tag()->class('yii-debug-tl-legend')->html(...$items)];
-    }
-
     private static function renderMemoryFooter(string $svg, int $memory, int $height): Footer
     {
         return Footer::tag()
@@ -277,7 +234,7 @@ final class TimelineRenderer
     private static function renderRow(TimelineSpanRow $row): Div
     {
         return Div::tag()
-            ->addAriaAttribute('label', $row->tooltip)
+            ->addAriaAttribute('label', self::accessibleRowLabel($row))
             ->addAttribute('role', 'listitem')
             ->class("yii-debug-tl-row yii-debug-tl-row-{$row->variant}")
             ->html(
@@ -290,7 +247,8 @@ final class TimelineRenderer
                             ->addAttribute('aria-hidden', 'true'),
                         Span::tag()
                             ->class('yii-debug-tl-name')
-                            ->html(Fqcn::renderLabel($row->category)),
+                            ->html(Strong::tag()->content(self::shortCategoryName($row->category)))
+                            ->title($row->category),
                         Span::tag()
                             ->class('yii-debug-tl-bar-duration')
                             ->content(sprintf('%.1f ms', $row->duration)),
@@ -327,5 +285,16 @@ final class TimelineRenderer
             ->class('yii-debug-tl-rows')
             ->addAttribute('role', 'list')
             ->html(...$rendered);
+    }
+
+    private static function shortCategoryName(string $category): string
+    {
+        if ($category === '') {
+            return '—';
+        }
+
+        $shortName = Fqcn::shortName(explode('::', $category, 2)[0]);
+
+        return $shortName === '' ? $category : $shortName;
     }
 }
