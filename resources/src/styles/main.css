@@ -2032,7 +2032,7 @@
    * -------------------------------------------------------------------
    * Panel-specific helpers.
    * -------------------------------------------------------------------
-   * "Since previous" navigation buttons in Log panel.
+   * Inter-message delta navigation buttons in the Log panel.
    */
   .yii-debug-since-previous {
     display: inline-flex;
@@ -2683,6 +2683,22 @@
     color: var(--yii-debug-panel-muted);
   }
 
+  .yii-debug-grid-summary-stat-warn {
+    --yii-debug-hue: var(--yii-debug-level-warning);
+  }
+
+  .yii-debug-grid-summary-stat-danger {
+    --yii-debug-hue: var(--yii-debug-level-error);
+  }
+
+  .yii-debug-grid-summary-stat-info {
+    --yii-debug-hue: var(--yii-debug-level-info);
+  }
+
+  .yii-debug-grid-summary-stat-trace {
+    --yii-debug-hue: var(--yii-debug-level-trace);
+  }
+
   .yii-debug-grid-summary-stat-warn strong {
     color: var(--yii-debug-warning);
   }
@@ -2692,12 +2708,9 @@
   }
 
   /**
-   * Pill variant — the History status buckets are clickable filters
-   * (`<a>` elements) named by their vocabulary status class. Each bucket
-   * pill wears the tinted formula on its `--yii-debug-hue`. Inline spans
-   * (`<span class="yii-debug-grid-summary-stat-…">`) — used by panels
-   * like Log/DB for warning/error counts — are left alone and only get
-   * the colored `<strong>` from the rules above.
+   * Pill variant — History status buckets and Log level counters can be
+   * clickable filters (`<a>` elements). Each anchor wears the tinted formula
+   * for its `--yii-debug-hue`; inline summary spans remain plain metrics.
    */
   .yii-debug-grid-summary-stat-2xx {
     --yii-debug-hue: var(--yii-debug-status-2xx);
@@ -2716,6 +2729,10 @@
   }
 
   a:is(
+    .yii-debug-grid-summary-stat-danger,
+    .yii-debug-grid-summary-stat-warn,
+    .yii-debug-grid-summary-stat-info,
+    .yii-debug-grid-summary-stat-trace,
     .yii-debug-grid-summary-stat-2xx,
     .yii-debug-grid-summary-stat-3xx,
     .yii-debug-grid-summary-stat-4xx,
