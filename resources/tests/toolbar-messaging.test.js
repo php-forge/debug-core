@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
 var failNextFetch = false;
 var fetchCalls = [];
@@ -237,6 +237,13 @@ test("request tracking skips toolbar, cross-origin, and skip-listed URLs", async
 
     return name === "data-skip-urls" ? '["/api/health"]' : null;
   };
+
+  var skippedXhr = new XMLHttpRequest();
+
+  skippedXhr.open("GET", "/debug/default/toolbar?tag=page");
+  assert.equal(skippedXhr.readyState, 1);
+  assert.equal(skippedXhr.listeners.has("readystatechange"), false);
+  assert.equal(requestStack.length, startIndex);
 
   await window.fetch(undefined).catch(function () {});
   await window.fetch("https://[bad");

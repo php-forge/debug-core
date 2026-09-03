@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
 import { renderPhpBrand, renderYiiBrand } from "../src/toolbar/brand.js";
 import { builtinIconUrl } from "../src/toolbar/icons.js";
