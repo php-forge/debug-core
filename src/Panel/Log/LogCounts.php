@@ -30,6 +30,10 @@ final readonly class LogCounts
          * Number of messages at `LogLevel::INFO`.
          */
         public int $info,
+        /**
+         * Number of messages at `LogLevel::TRACE`.
+         */
+        public int $trace = 0,
     ) {}
 
     /**
@@ -42,17 +46,25 @@ final readonly class LogCounts
         $errors = 0;
         $warnings = 0;
         $info = 0;
+        $trace = 0;
 
         foreach ($rows as $row) {
             match ($row->level) {
                 LogLevel::ERROR => $errors++,
                 LogLevel::WARNING => $warnings++,
                 LogLevel::INFO => $info++,
+                LogLevel::TRACE => $trace++,
                 default => null,
             };
         }
 
-        return new self(count($rows), $errors, $warnings, $info);
+        return new self(
+            count($rows),
+            $errors,
+            $warnings,
+            $info,
+            $trace,
+        );
     }
 
     /**
@@ -69,6 +81,14 @@ final readonly class LogCounts
     public function hasInfo(): bool
     {
         return $this->info > 0;
+    }
+
+    /**
+     * Returns whether at least one `trace`-level message was captured.
+     */
+    public function hasTrace(): bool
+    {
+        return $this->trace > 0;
     }
 
     /**

@@ -48,11 +48,16 @@ final class LogCountsTest extends TestCase
             $counts->info,
             'One row is at info level.',
         );
+        self::assertSame(
+            1,
+            $counts->trace,
+            'One row is at trace level.',
+        );
     }
 
     public function testFromRowsExposesHasFlagsForNonZeroCounts(): void
     {
-        $counts = LogCounts::fromRows([self::row(LogLevel::ERROR)]);
+        $counts = LogCounts::fromRows([self::row(LogLevel::ERROR), self::row(LogLevel::TRACE)]);
 
         self::assertTrue(
             $counts->hasErrors(),
@@ -65,6 +70,10 @@ final class LogCountsTest extends TestCase
         self::assertFalse(
             $counts->hasInfo(),
             'No info entry was captured.',
+        );
+        self::assertTrue(
+            $counts->hasTrace(),
+            'A captured trace must raise the flag.',
         );
     }
 
@@ -88,6 +97,26 @@ final class LogCountsTest extends TestCase
         self::assertFalse(
             $counts->hasInfo(),
             'Empty capture must report no info entries.',
+        );
+        self::assertFalse(
+            $counts->hasTrace(),
+            'Empty capture must report no trace entries.',
+        );
+    }
+
+    public function testTraceCountDefaultsToZeroForBackwardCompatibleConstruction(): void
+    {
+        $counts = new LogCounts(
+            total: 1,
+            errors: 0,
+            warnings: 0,
+            info: 1,
+        );
+
+        self::assertSame(
+            0,
+            $counts->trace,
+            'Existing construction without an explicit trace count must remain valid.',
         );
     }
 
