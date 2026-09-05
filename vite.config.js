@@ -13,7 +13,11 @@ export default defineConfig({
     {
       name: "refresh-directory-publication-key",
       apply: "build",
-      async closeBundle() {
+      async closeBundle(error) {
+        if (error) {
+          return;
+        }
+
         // Yii2 keys published directories by their root mtime, while Vite only
         // rewrites nested dist files. Refresh the root after a successful build.
         var now = new Date();

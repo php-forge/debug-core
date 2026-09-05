@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 
+import { renderToolbarItemIdentifier } from "../src/toolbar/panel.js";
+
 function createStorage() {
   var items = new Map();
 
@@ -148,6 +150,31 @@ test("escapeHtml encodes markup-significant characters", () => {
     "&lt;a href=&quot;x&quot;&gt;&amp;&#039;&lt;/a&gt;",
   );
   assert.equal(escapeHtml(200), "200");
+});
+
+test("toolbar metric identifiers use real HTML-attribute escaping", () => {
+  for (const [id, encoded] of [
+    ["route&name", "route&amp;name"],
+    ["route<name", "route&lt;name"],
+    ["route>name", "route&gt;name"],
+    ['route"name', "route&quot;name"],
+    ["route'name", "route&#039;name"],
+    ["&<>\"'", "&amp;&lt;&gt;&quot;&#039;"],
+  ]) {
+    assert.equal(
+      renderToolbarItemIdentifier({ id }, escapeHtml),
+      ' data-item-id="' + encoded + '"',
+      "Metric identifiers must escape every HTML-significant character.",
+    );
+  }
+
+  for (const item of [null, {}, { id: "" }, { id: 42 }]) {
+    assert.equal(
+      renderToolbarItemIdentifier(item, escapeHtml),
+      "",
+      "Unavailable or non-string identifiers must not create an attribute.",
+    );
+  }
 });
 
 test("escapeHtml renders null and undefined as empty strings", () => {
