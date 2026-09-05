@@ -99,3 +99,39 @@ supports `ArrowUp`, `ArrowDown`, `Home`, and `End` on its resize separator.
 ## License
 
 The package is released under the BSD-3-Clause license. See `LICENSE`.
+
+## Fluent toolbar models
+
+`ToolbarItem::create($value)` and `ToolbarPanel::create($id, $title)` start immutable configuration chains.
+Their existing constructors and public readonly properties remain supported, including named arguments.
+
+```php
+use PHPForge\Debug\Toolbar\{ToolbarItem, ToolbarPanel};
+
+$item = ToolbarItem::create('200')
+    ->withId('status')
+    ->withLabel('Status')
+    ->withStatus('success')
+    ->withTitle('Status code: 200 OK');
+$panel = ToolbarPanel::create('request', 'Request')
+    ->withIcon('request')
+    ->withUrl('/debug/view?tag=request-1&panel=request')
+    ->withItems([$item]);
+```
+
+Items offer `withId()`, `withLabel()`, `withIcon()`, `withStatus()`, `withTitle()`, and `withUrl()`.
+Panels offer `withIcon()`, `withUrl()`, and `withItems()`. Every method returns a new instance and preserves all other
+fields. Nullable options accept `null` to remove the field from JSON; `''` and `'0'` remain present. `withItems()` replaces
+rather than appends metrics, preserves their order, and accepts `[]` to clear them. The default item status remains
+`default`; the default panel metric list remains empty. Serialization and escaping responsibilities are unchanged.
+
+## Structural payload comparison
+
+`PHPForge\Debug\Comparison\PayloadDifference::between($baseline, $target)` returns an immutable result with four integer
+properties: `added`, `removed`, `changed`, and `unchanged`. Arguments are captured payload arrays, or `null` for absence.
+An empty array is a captured leaf, not absence. Nested `null`, `false`, integer zero, float zero, and string zero remain
+distinct. Leaf paths escape `~` and `/`; list positions matter, while map insertion order does not affect the counts.
+
+The comparison fingerprints typed leaves temporarily and retains only counts in its result. It does not alter or redact
+the source payloads. Adapters retain responsibility for capture/failure precedence, state-only changes, panel ordering,
+labels, and metric presentation. See the [architecture review](docs/architecture-review.md) for boundaries and follow-up work.

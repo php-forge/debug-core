@@ -30,6 +30,14 @@ final readonly class ToolbarPanel implements JsonSerializable
     ) {}
 
     /**
+     * Creates a panel with no metrics or optional navigation.
+     */
+    public static function create(string $id, string $title): self
+    {
+        return new self($id, $title);
+    }
+
+    /**
      * Returns the panel payload consumed by the toolbar runtime.
      *
      * @return array{
@@ -55,6 +63,50 @@ final readonly class ToolbarPanel implements JsonSerializable
                 ),
             ],
             static fn(mixed $value): bool => $value !== null,
+        );
+    }
+
+    /**
+     * Returns a copy with the specified icon.
+     */
+    public function withIcon(string|null $icon): self
+    {
+        return new self(
+            id: $this->id,
+            title: $this->title,
+            url: $this->url,
+            icon: $icon,
+            items: $this->items,
+        );
+    }
+
+    /**
+     * Returns a copy with the replacement metric list.
+     *
+     * @param list<ToolbarItem> $items Panel metrics in display order; `[]` removes all metrics.
+     */
+    public function withItems(array $items): self
+    {
+        return new self(
+            id: $this->id,
+            title: $this->title,
+            url: $this->url,
+            icon: $this->icon,
+            items: $items,
+        );
+    }
+
+    /**
+     * Returns a copy with the specified URL.
+     */
+    public function withUrl(string|null $url): self
+    {
+        return new self(
+            id: $this->id,
+            title: $this->title,
+            url: $url,
+            icon: $this->icon,
+            items: $this->items,
         );
     }
 }
