@@ -37,3 +37,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - test: migrate JavaScript unit and mutation tests to Vitest with isolated workers, V8 coverage, per-test mutation analysis, and supported Node.js release ranges.
 - feat(ui): expose captured trace totals and style clickable Log severity counters as filter pills alongside History status shortcuts.
 - refactor(ui): unify Request, Server, Session, Input, routing, and tabs with collapsible filters, focus states, and refreshed assets.
+- feat(api): centralize typed structural payload differences and add immutable fluent toolbar item and panel construction while preserving diagnostic values, constructors, and serialized payloads.
