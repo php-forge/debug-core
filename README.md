@@ -133,8 +133,26 @@ An empty array is a captured leaf, not absence. Nested `null`, `false`, integer 
 distinct. Leaf paths escape `~` and `/`; list positions matter, while map insertion order does not affect the counts.
 
 The comparison fingerprints typed leaves temporarily and retains only counts in its result. It does not alter or redact
-the source payloads. Adapters retain responsibility for capture/failure precedence, state-only changes, panel ordering,
-and labels. See the [architecture review](docs/architecture-review.md) for boundaries and follow-up work.
+the source payloads. `PanelComparison` combines these counts with capture states and ordered panel identities.
+See the [architecture review](docs/architecture-review.md) for boundaries and follow-up work.
+
+## Panel comparison
+
+`PHPForge\Debug\Comparison\PanelComparison::between($baseline, $target, $panelLabels)` accepts two `DebugSnapshot`
+instances and an optional map of labels in display order. It returns an ordered list of immutable results exposing
+`id`, `label`, `baselineState`, `targetState`, `added`, `removed`, `changed`, and `unchanged`.
+
+Only IDs observed in either snapshot's payloads or failures are included, once each. Observed IDs with configured labels
+come first in configuration order; remaining IDs use PHP's existing regular ascending sort and their ID as the label.
+Unknown configured IDs do not create rows, and an explicitly empty label remains empty.
+
+Failure envelopes take precedence even when a payload exists for the same ID. States remain `Failed`, `Captured`, and
+`Not captured`; captured empty arrays are not absence. Structural counts come from `PayloadDifference` unchanged.
+If states differ but `added + removed + changed` is zero, `changed` becomes one; `unchanged` is preserved. A transition
+with structural differences does not add another change. The result retains no diagnostic values and applies no redaction.
+
+Yii2 and Yii3 map these results into their existing public `HistoryPanelComparison` models. Yii3 retains
+`HistoryPanelStates` and `HistoryPanelDifferenceCounts`; neither adapter exposes Core results in place of its public models.
 
 ## Request-summary metric comparison
 
@@ -156,8 +174,9 @@ floating-point results, not rounded display values or an epsilon: a displayed ze
 
 ### Coordinated publication
 
-Publish the Core revision containing `SummaryMetricComparison` before either adapter revision that consumes it.
+Publish the Core revision containing `SummaryMetricComparison` and `PanelComparison` before either adapter revision
+that consumes it.
 Both adapters currently require `php-forge/debug-core` at `^0.1@dev`; this constraint alone does not ensure that an
-installed or locked development revision includes the new class. Update and verify consuming application locks together.
+installed or locked development revision includes these classes. Update and verify consuming application locks together.
 Local adapter installations linked to this workspace verify integration but do not validate older published artifacts.
 No adapter constructor, property, getter, return type, template, asset, or persisted representation changes.
