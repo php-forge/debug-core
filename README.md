@@ -134,4 +134,30 @@ distinct. Leaf paths escape `~` and `/`; list positions matter, while map insert
 
 The comparison fingerprints typed leaves temporarily and retains only counts in its result. It does not alter or redact
 the source payloads. Adapters retain responsibility for capture/failure precedence, state-only changes, panel ordering,
-labels, and metric presentation. See the [architecture review](docs/architecture-review.md) for boundaries and follow-up work.
+and labels. See the [architecture review](docs/architecture-review.md) for boundaries and follow-up work.
+
+## Request-summary metric comparison
+
+`PHPForge\Debug\Comparison\SummaryMetricComparison::between($baseline, $target)` accepts two `RequestSummary`
+instances and returns an ordered list of immutable comparisons. Each result exposes `label`, `baseline`, `target`,
+`delta`, `trend`, and nullable `panelId`. Adapters map these fields into their own public models; no framework dependency,
+capture policy, payload comparison, or snapshot mutation is involved.
+
+The canonical order is Status, Method, AJAX, Duration, Peak memory, SQL queries, Mail messages, and Excessive DB callers.
+Duration uses milliseconds and memory uses bytes divided by 1,048,576 with the existing `MB` label. Both use two decimal
+places; counters use none. Decimal points, comma grouping, signs, one-decimal percentages, and related panel IDs remain
+identical to the original adapters.
+
+Missing profiling values remain `Not captured`; one missing side produces `Not comparable` with a neutral trend.
+Two missing values produce `No change`. Status zero means `Not captured`, AJAX `false` means `No`, and an empty method
+remains an empty string. Captured numeric zero is never treated as missing, and zero baselines omit percentages.
+Deltas subtract the scaled values before formatting, while percentages use the original values. Comparisons use exact
+floating-point results, not rounded display values or an epsilon: a displayed zero delta may still have a direction.
+
+### Coordinated publication
+
+Publish the Core revision containing `SummaryMetricComparison` before either adapter revision that consumes it.
+Both adapters currently require `php-forge/debug-core` at `^0.1@dev`; this constraint alone does not ensure that an
+installed or locked development revision includes the new class. Update and verify consuming application locks together.
+Local adapter installations linked to this workspace verify integration but do not validate older published artifacts.
+No adapter constructor, property, getter, return type, template, asset, or persisted representation changes.
