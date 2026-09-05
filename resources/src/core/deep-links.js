@@ -135,7 +135,10 @@ export function revealDeepLink(root, locationValue, scroll) {
       : null;
   }
 
-  target.classList.add("yii-debug-deep-link-target");
+  // Tabs already indicate selection; highlighting the whole panel looks like stuck focus.
+  if (!target.getAttribute || target.getAttribute("role") !== "tabpanel") {
+    target.classList.add("yii-debug-deep-link-target");
+  }
 
   if (scroll && typeof target.scrollIntoView === "function") {
     target.scrollIntoView({ block: "start" });

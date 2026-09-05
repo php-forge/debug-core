@@ -36,3 +36,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix(ui): show short class names with full hover titles, standardize Timeline dots and bars on one blue token, and remove the redundant category legend.
 - test: migrate JavaScript unit and mutation tests to Vitest with isolated workers, V8 coverage, per-test mutation analysis, and supported Node.js release ranges.
 - feat(ui): expose captured trace totals and style clickable Log severity counters as filter pills alongside History status shortcuts.
+- refactor(ui): unify Request, Server, Session, Input, routing, and tabs with collapsible filters, focus states, and refreshed assets.

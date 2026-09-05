@@ -5,8 +5,8 @@
     },
     "files": {
         "css/debug.min.css": {
-            "maxBytes": 155500,
-            "maxGzipBytes": 19000
+            "maxBytes": 165000,
+            "maxGzipBytes": 20000
         },
         "fonts/ibm-plex-sans-latin-400-normal.woff2": {
             "maxBytes": 23800,

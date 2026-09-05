@@ -83,16 +83,11 @@ final class RequestDataNormalizer
             }
         }
 
-        return new RequestHero(
-            method: $method,
-            url: $url,
-            statusCode: $statusCode,
-            statusVariant: self::statusVariant($statusCode),
-            ip: $ip,
-            time: $time,
-            durationMs: $durationMs,
-            flags: $flags,
-        );
+        return RequestHero::create(method: $method, url: $url)
+            ->withStatus($statusCode, self::statusVariant($statusCode))
+            ->withIp($ip)
+            ->withTiming($time, $durationMs)
+            ->withFlags($flags);
     }
 
     /**
@@ -108,14 +103,15 @@ final class RequestDataNormalizer
     private static function buildTabs(array $data): array
     {
         $tabs = [
-            new RequestTab(label: 'Parameters', sections: self::parameterSections($data)),
-            new RequestTab(label: 'Headers', sections: self::headerSections($data)),
+            new RequestTab(label: 'Parameters', sections: self::parameterSections($data), id: 'parameters'),
+            new RequestTab(label: 'Headers', sections: self::headerSections($data), id: 'headers'),
         ];
 
         if (array_key_exists('SESSION', $data) && array_key_exists('flashes', $data)) {
             $tabs[] = new RequestTab(
                 label: 'Session',
                 sections: self::sessionSections($data),
+                id: 'session',
             );
         }
 
@@ -127,8 +123,10 @@ final class RequestDataNormalizer
                         caption: 'Server',
                         entries: self::asEntries($data['SERVER']),
                         filterable: true,
+                        id: 'server',
                     ),
                 ],
+                id: 'server',
             );
         }
 
@@ -149,11 +147,13 @@ final class RequestDataNormalizer
                 caption: 'Request Headers',
                 entries: self::asEntries($data['requestHeaders'] ?? []),
                 filterable: true,
+                id: 'request-headers',
             ),
             new RequestSection(
                 caption: 'Response Headers',
                 entries: self::asEntries($data['responseHeaders'] ?? []),
                 filterable: true,
+                id: 'response-headers',
             ),
         ];
     }
@@ -175,6 +175,7 @@ final class RequestDataNormalizer
                     'Action' => $data['action'] ?? null,
                     'Parameters' => $data['actionParams'] ?? null,
                 ],
+                id: 'routing',
             ),
         ];
 
@@ -182,6 +183,8 @@ final class RequestDataNormalizer
             $sections[] = new RequestSection(
                 caption: 'Get',
                 entries: self::asEntries($data['GET']),
+                filterable: true,
+                id: 'get',
             );
         }
 
@@ -189,6 +192,8 @@ final class RequestDataNormalizer
             $sections[] = new RequestSection(
                 caption: 'Post',
                 entries: self::asEntries($data['POST']),
+                filterable: true,
+                id: 'post',
             );
         }
 
@@ -196,6 +201,8 @@ final class RequestDataNormalizer
             $sections[] = new RequestSection(
                 caption: 'Files',
                 entries: self::asEntries($data['FILES']),
+                filterable: true,
+                id: 'files',
             );
         }
 
@@ -203,12 +210,16 @@ final class RequestDataNormalizer
             $sections[] = new RequestSection(
                 caption: 'Cookies',
                 entries: self::asEntries($data['COOKIE']),
+                filterable: true,
+                id: 'cookies',
             );
         }
 
         $sections[] = new RequestSection(
             caption: 'Request Body',
             entries: self::asEntries($data['requestBody'] ?? []),
+            filterable: true,
+            id: 'request-body',
         );
 
         return $sections;
@@ -228,10 +239,13 @@ final class RequestDataNormalizer
                 caption: 'Session',
                 entries: self::asEntries($data['SESSION'] ?? []),
                 filterable: true,
+                id: 'session',
             ),
             new RequestSection(
                 caption: 'Flashes',
                 entries: self::asEntries($data['flashes'] ?? []),
+                filterable: true,
+                id: 'flashes',
             ),
         ];
     }

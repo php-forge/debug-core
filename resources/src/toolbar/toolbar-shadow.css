@@ -308,6 +308,24 @@
   text-decoration: none;
 }
 
+/* Request identity can be long; keep its status sibling visible. */
+.metric[data-item-id="route"] {
+  flex: 1 1 auto;
+  max-width: 20ch;
+}
+
+.metric[data-item-id="route"] .metric-value {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric[data-item-id="status"] {
+  flex: none;
+}
+
 .metric[data-debug-url] {
   cursor: pointer;
 }

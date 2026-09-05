@@ -26,8 +26,15 @@ final class DisclosureTest extends TestCase
             $hint,
             'Hint must stay outside the accessibility tree.',
         );
+    }
 
-
+    public function testRenderCanOpenTheDisclosureInitially(): void
+    {
+        self::assertStringStartsWith(
+            '<details class="yii-debug-disclosure" open>',
+            Disclosure::render('Payload', 'Body', true),
+            'Callers must be able to reveal useful disclosure content by default.',
+        );
     }
 
     public function testRenderEncodesTitleAndKeepsBodyMarkup(): void

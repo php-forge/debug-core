@@ -39,6 +39,7 @@ import {
 import { renderPhpBrand, renderYiiBrand } from "./brand.js";
 import {
   renderAjaxProfileLink,
+  renderToolbarItemIdentifier,
   renderToolbarLinkAttributes,
   shouldOpenToolbarDrawer,
 } from "./panel.js";
@@ -916,6 +917,7 @@ YiiDebugToolbar.prototype.renderPanel = function (panel) {
     );
     var itemElement = itemUrl === "" ? "span" : "a";
     var itemTitle = item.title ? ' title="' + escapeHtml(item.title) + '"' : "";
+    var itemIdentifier = renderToolbarItemIdentifier(item, escapeHtml);
     var metricClass =
       normalizedItemUrl && sameUrl(normalizedItemUrl, this.activeUrl)
         ? " metric-active"
@@ -927,6 +929,7 @@ YiiDebugToolbar.prototype.renderPanel = function (panel) {
       ' class="metric' +
       metricClass +
       '"' +
+      itemIdentifier +
       itemUrl +
       itemTitle +
       ">";

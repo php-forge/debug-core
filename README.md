@@ -50,6 +50,35 @@ Current adapters:
 - `yii2-extensions/debug`
 - `yii3/debug`
 
+## Request view models
+
+Request models keep only identity data in their constructors and `::create()` factories. Use the factories to start
+fluent chains without wrapping `new` in parentheses. Optional metadata is configured with `with...` methods
+that return independent copies; retain the returned object or chain the calls. Read values through `get...` methods
+and use `RouteInventoryView::isLive()` for inventory provenance.
+
+```php
+use PHPForge\Debug\Panel\Request\RequestHero;
+use PHPForge\Debug\Panel\Request\Routing\{CurrentRouteView, RouteDefinition, RouteInventoryView};
+
+$definition = RouteDefinition::create('orders', '/orders/{id}')
+    ->withMethods(['GET'])
+    ->withAction('App\\OrderAction');
+$current = CurrentRouteView::create('orders')
+    ->withDefinition($definition)
+    ->withParameters(['id' => 42]);
+$inventory = RouteInventoryView::create([$definition])
+    ->withSource('Captured configuration')
+    ->withLive(false);
+$hero = RequestHero::create('GET', '/orders/42')
+    ->withStatus(200, '2xx')
+    ->withTiming('12:00:00', '3.5 ms');
+```
+
+Migration: optional constructor arguments and public properties on these four models have been replaced by the
+immutable methods and getters. `RouteDefinition::fromArray()` and `toArray()` retain the existing capture schema,
+including the distinction between unavailable middleware metadata (`null`) and no middleware (`[]`).
+
 ## Frontend development
 
 The complete frontend source lives in `resources/src`. Vite produces the full-page stylesheet and runtime together

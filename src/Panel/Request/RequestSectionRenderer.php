@@ -23,32 +23,61 @@ use const ENT_SUBSTITUTE;
 final class RequestSectionRenderer
 {
     /**
+     * Renders a Request section inside the shared disclosure, opening populated sections and keeping empty ones
+     * collapsed by default. Filters remain inside the expandable body and continue targeting the section table.
+     */
+    public static function renderDisclosureSection(RequestSection $section): string
+    {
+        if ($section->entries === []) {
+            $content = P::tag()
+                ->class('yii-debug-table-empty')
+                ->content('No data')
+                ->render();
+        } else {
+            $content = '';
+
+            $filter = self::renderFilter($section);
+
+            if ($filter !== null) {
+                $content .= Div::tag()
+                    ->class('yii-debug-mini-toolbar')
+                    ->html($filter)
+                    ->render();
+            }
+
+            $content .= self::renderSectionTable($section);
+        }
+
+        return Disclosure::render($section->caption, $content, $section->entries !== []);
+    }
+
+    /**
      * Renders the hero header: method pill, URL, status pill, and the `ip` / `time` / `durationMs` / flags meta strip.
      */
     public static function renderHero(RequestHero $hero): string
     {
         $line = [];
 
-        if ($hero->method !== '') {
+        if ($hero->getMethod() !== '') {
             $line[] = Span::tag()
-                ->class('yii-debug-request-hero-method yii-debug-verb-' . Vocabulary::verb($hero->method))
-                ->content($hero->method);
+                ->class('yii-debug-request-hero-method yii-debug-verb-' . Vocabulary::verb($hero->getMethod()))
+                ->content($hero->getMethod());
         }
 
         $line[] = Span::tag()
             ->class('yii-debug-request-hero-url')
-            ->title($hero->url)
-            ->content($hero->url);
+            ->title($hero->getUrl())
+            ->content($hero->getUrl());
 
-        if ($hero->statusCode > 0) {
+        if ($hero->getStatusCode() > 0) {
             $line[] = Span::tag()
-                ->class("yii-debug-snapshot-status yii-debug-status-{$hero->statusVariant}")
-                ->content((string) $hero->statusCode);
+                ->class("yii-debug-snapshot-status yii-debug-status-{$hero->getStatusVariant()}")
+                ->content((string) $hero->getStatusCode());
         }
 
         $meta = [];
 
-        foreach (['IP' => $hero->ip, 'Time' => $hero->time, 'Duration' => $hero->durationMs] as $label => $value) {
+        foreach (['IP' => $hero->getIp(), 'Time' => $hero->getTime(), 'Duration' => $hero->getDurationMs()] as $label => $value) {
             if ($value !== '') {
                 $meta[] = Span::tag()
                     ->class('yii-debug-request-hero-meta-item')
@@ -63,7 +92,7 @@ final class RequestSectionRenderer
             }
         }
 
-        foreach ($hero->flags as $flag) {
+        foreach ($hero->getFlags() as $flag) {
             $meta[] = Span::tag()
                 ->class('yii-debug-snapshot-tag')
                 ->content($flag);
@@ -85,12 +114,7 @@ final class RequestSectionRenderer
     public static function renderSection(RequestSection $section): string
     {
         if ($section->entries === []) {
-            $emptyState = P::tag()
-                ->class('yii-debug-table-empty')
-                ->content('No data')
-                ->render();
-
-            return Disclosure::render($section->caption, $emptyState);
+            return self::renderDisclosureSection($section);
         }
 
         return self::renderSectionHeader($section) . self::renderSectionTable($section);
@@ -119,6 +143,19 @@ final class RequestSectionRenderer
         return Tabs::render('request', 'Request data', $items);
     }
 
+    private static function renderFilter(RequestSection $section): InputSearch|null
+    {
+        if ($section->filterable === false) {
+            return null;
+        }
+
+        return InputSearch::tag()
+            ->addAriaAttribute('label', "Filter {$section->caption}")
+            ->addDataAttribute('yii-debug-filter', true)
+            ->class('yii-debug-filter-input')
+            ->placeholder('Filter…');
+    }
+
     /**
      * Renders one row of the section table: name in the `<th>`, value dumped via {@see Dump::asString()} in the
      * `<td>` with `htmlspecialchars` (`ENT_QUOTES | ENT_SUBSTITUTE`) escaping, so invalid byte sequences degrade to
@@ -144,14 +181,16 @@ final class RequestSectionRenderer
      */
     private static function renderSectionHeader(RequestSection $section): string
     {
-        $children = [H2::tag()->content($section->caption)];
+        $children = [
+            H2::tag()
+                ->class('yii-debug-request-section-title')
+                ->content($section->caption),
+        ];
 
-        if ($section->filterable && $section->entries !== []) {
-            $children[] = InputSearch::tag()
-                ->addAriaAttribute('label', "Filter {$section->caption}")
-                ->addDataAttribute('yii-debug-filter', true)
-                ->class('yii-debug-filter-input')
-                ->placeholder('Filter…');
+        $filter = self::renderFilter($section);
+
+        if ($filter !== null) {
+            $children[] = $filter;
         }
 
         return Header::tag()

@@ -16,6 +16,47 @@ use PHPUnit\Framework\TestCase;
 #[Group('request')]
 final class RequestSectionRendererTest extends TestCase
 {
+    public function testRenderDisclosureSectionKeepsPopulatedFilterInsideOpenBody(): void
+    {
+        $section = new RequestSection(caption: 'Server', entries: ['HTTP_HOST' => 'localhost'], filterable: true);
+
+        self::assertSame(
+            <<<HTML
+            <details class="yii-debug-disclosure" open>
+            <summary class="yii-debug-disclosure-summary">
+            <span class="yii-debug-disclosure-title">Server</span><span class="yii-debug-disclosure-hint" aria-hidden="true"><span data-yii-debug-hint="collapsed">click to expand</span><span data-yii-debug-hint="expanded">click to collapse</span></span>
+            </summary><div class="yii-debug-disclosure-body">
+            <div class="yii-debug-mini-toolbar">
+            <input class="yii-debug-filter-input" type="search" aria-label="Filter Server" data-yii-debug-filter="true" placeholder="Filter…">
+            </div><div class="yii-debug-table-wrap" data-yii-debug-filter-target="true">
+            <table class="yii-debug-table yii-debug-table-mono" style='table-layout: fixed;'>
+            <thead>
+            <tr>
+            <th scope="col">
+            Name
+            </th><th scope="col">
+            Value
+            </th>
+            </tr>
+            </thead><tbody>
+            <tr>
+            <th scope="row">
+            HTTP_HOST
+            </th><td>
+            &#039;localhost&#039;
+            </td>
+            </tr>
+            </tbody>
+            </table>
+            </div>
+            </div>
+            </details>
+            HTML,
+            RequestSectionRenderer::renderDisclosureSection($section),
+            'A populated filterable Input section must start open with its filter inside the disclosure body.',
+        );
+    }
+
     public function testRenderHeroEmitsFlagChipsForEachActiveFlag(): void
     {
         self::assertSame(
@@ -123,7 +164,7 @@ final class RequestSectionRendererTest extends TestCase
         self::assertSame(
             <<<HTML
             <header class="yii-debug-section-header">
-            <h2>
+            <h2 class="yii-debug-request-section-title">
             Server
             </h2><input class="yii-debug-filter-input" type="search" aria-label="Filter Server" data-yii-debug-filter="true" placeholder="Filter…">
             </header><div class="yii-debug-table-wrap" data-yii-debug-filter-target="true">
@@ -160,7 +201,7 @@ final class RequestSectionRendererTest extends TestCase
         self::assertSame(
             <<<HTML
             <header class="yii-debug-section-header">
-            <h2>
+            <h2 class="yii-debug-request-section-title">
             Headers
             </h2>
             </header><div class="yii-debug-table-wrap">
@@ -223,6 +264,19 @@ final class RequestSectionRendererTest extends TestCase
 
     }
 
+    public function testRenderSectionUsesDisclosureTitleTreatmentWhenPopulated(): void
+    {
+        $html = RequestSectionRenderer::renderSection(
+            new RequestSection(caption: 'Get', entries: ['page' => 1]),
+        );
+
+        self::assertMatchesRegularExpression(
+            '~<h2 class="yii-debug-request-section-title">\s*Get\s*</h2>~',
+            $html,
+            'Populated Request headings must use the same visual treatment hook as collapsed disclosure labels.',
+        );
+    }
+
     public function testRenderTabsMarksFirstTabActive(): void
     {
         $tabs = [
@@ -270,7 +324,7 @@ final class RequestSectionRendererTest extends TestCase
             </ul><div class="yii-debug-tab-content">
             <div class="yii-debug-tab-panel is-active" id="request-panel-0" role="tabpanel" aria-labelledby="request-tab-0">
             <header class="yii-debug-section-header">
-            <h2>
+            <h2 class="yii-debug-request-section-title">
             Query parameters
             </h2>
             </header><div class="yii-debug-table-wrap">
@@ -294,7 +348,7 @@ final class RequestSectionRendererTest extends TestCase
             </tbody>
             </table>
             </div><header class="yii-debug-section-header">
-            <h2>
+            <h2 class="yii-debug-request-section-title">
             Body parameters
             </h2>
             </header><div class="yii-debug-table-wrap">
@@ -377,15 +431,10 @@ final class RequestSectionRendererTest extends TestCase
         string $durationMs = '',
         array $flags = [],
     ): RequestHero {
-        return new RequestHero(
-            method: $method,
-            url: $url,
-            statusCode: $statusCode,
-            statusVariant: $statusVariant,
-            ip: $ip,
-            time: $time,
-            durationMs: $durationMs,
-            flags: $flags,
-        );
+        return RequestHero::create(method: $method, url: $url)
+            ->withStatus($statusCode, $statusVariant)
+            ->withIp($ip)
+            ->withTiming($time, $durationMs)
+            ->withFlags($flags);
     }
 }

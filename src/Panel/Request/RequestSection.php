@@ -28,5 +28,9 @@ final readonly class RequestSection
          * target, so the developer can narrow long tables (Session, Server, Headers).
          */
         public bool $filterable = false,
+        /**
+         * Stable semantic identifier used when a composed Request view needs to move or omit this section.
+         */
+        public string $id = '',
     ) {}
 }

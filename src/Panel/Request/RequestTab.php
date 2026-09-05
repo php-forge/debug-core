@@ -18,5 +18,10 @@ final readonly class RequestTab
          * @var list<RequestSection> Sections rendered when this tab is active, in display order.
          */
         public array $sections,
+        /**
+         * Stable semantic identifier used to compose the shared Request view without coupling adapters to translated
+         * presentation labels.
+         */
+        public string $id = '',
     ) {}
 }

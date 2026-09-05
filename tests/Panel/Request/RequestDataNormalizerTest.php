@@ -33,8 +33,55 @@ final class RequestDataNormalizerTest extends TestCase
 
         self::assertSame(
             ['AJAX', 'Flash', 'HTTPS'],
-            $view->hero->flags,
+            $view->hero->getFlags(),
             'Active flags must surface in declaration order.',
+        );
+    }
+
+    public function testFromPanelDataAssignsStableSemanticTabAndSectionIdentifiers(): void
+    {
+        $view = RequestDataNormalizer::fromPanelData(
+            [
+                'GET' => [],
+                'POST' => [],
+                'FILES' => [],
+                'COOKIE' => [],
+                'SESSION' => [],
+                'flashes' => [],
+                'SERVER' => [],
+            ],
+            null,
+        );
+
+        self::assertSame(
+            ['parameters', 'headers', 'session', 'server'],
+            array_map(static fn($tab): string => $tab->id, $view->tabs),
+            'Request tabs must expose semantic IDs independent of their display labels.',
+        );
+        self::assertSame(
+            [
+                'routing',
+                'get',
+                'post',
+                'files',
+                'cookies',
+                'request-body',
+                'request-headers',
+                'response-headers',
+                'session',
+                'flashes',
+                'server',
+            ],
+            array_merge(
+                ...array_map(
+                    static fn($tab): array => array_map(
+                        static fn($section): string => $section->id,
+                        $tab->sections,
+                    ),
+                    $view->tabs,
+                ),
+            ),
+            'Every normalized Request section must expose its stable semantic ID.',
         );
     }
 
@@ -47,7 +94,7 @@ final class RequestDataNormalizerTest extends TestCase
 
         self::assertSame(
             404,
-            $view->hero->statusCode,
+            $view->hero->getStatusCode(),
             'Numeric-string statusCode must coerce to int.',
         );
     }
@@ -124,22 +171,22 @@ final class RequestDataNormalizerTest extends TestCase
 
         self::assertSame(
             '',
-            $view->hero->method,
+            $view->hero->getMethod(),
             'Non-array data must yield an empty hero method.',
         );
         self::assertSame(
             0,
-            $view->hero->statusCode,
+            $view->hero->getStatusCode(),
             'Non-array data must yield a zero status code.'
         );
         self::assertSame(
             [],
-            $view->hero->flags,
+            $view->hero->getFlags(),
             'Non-array data must yield zero flags.',
         );
         self::assertSame(
             '',
-            $view->hero->time,
+            $view->hero->getTime(),
             'Missing capture time must not render the Unix epoch.',
         );
         self::assertCount(
@@ -159,7 +206,7 @@ final class RequestDataNormalizerTest extends TestCase
 
             self::assertSame(
                 $expected,
-                $view->hero->statusVariant,
+                $view->hero->getStatusVariant(),
                 "Status {$code} must map to the {$expected} variant.",
             );
         }
@@ -210,7 +257,7 @@ final class RequestDataNormalizerTest extends TestCase
 
         self::assertSame(
             'PATCH',
-            $view->hero->method,
+            $view->hero->getMethod(),
             'Captured method must override the controller summary method.',
         );
     }
@@ -224,7 +271,7 @@ final class RequestDataNormalizerTest extends TestCase
 
         self::assertSame(
             201,
-            $view->hero->statusCode,
+            $view->hero->getStatusCode(),
             'Panel data must override the controller summary status.',
         );
     }
@@ -255,7 +302,7 @@ final class RequestDataNormalizerTest extends TestCase
                     'Session',
                     [
                         ['Session', ['user' => 1], true],
-                        ['Flashes', ['notice' => 'Saved'], false],
+                        ['Flashes', ['notice' => 'Saved'], true],
                     ],
                 ],
                 ['Server', [['Server', ['HTTP_HOST' => 'localhost'], true]]],
@@ -316,17 +363,17 @@ final class RequestDataNormalizerTest extends TestCase
 
         self::assertSame(
             '127.0.0.1',
-            $view->hero->ip,
+            $view->hero->getIp(),
             'Summary ip must surface on the hero meta strip.',
         );
         self::assertMatchesRegularExpression(
             '/^\d{2}:\d{2}:\d{2}$/',
-            $view->hero->time,
+            $view->hero->getTime(),
             "Time must format as 'HH:MM:SS'.",
         );
         self::assertSame(
             '12.5 ms',
-            $view->hero->durationMs,
+            $view->hero->getDurationMs(),
             "Duration must format as 'X.X ms'.",
         );
     }
@@ -373,7 +420,7 @@ final class RequestDataNormalizerTest extends TestCase
 
         self::assertSame(
             ['HTTPS'],
-            $view->hero->flags,
+            $view->hero->getFlags(),
             "Only literal 'true' must enable a flag; truthy non-bools count as inactive.",
         );
     }
@@ -387,12 +434,12 @@ final class RequestDataNormalizerTest extends TestCase
 
         self::assertSame(
             '',
-            $view->hero->time,
+            $view->hero->getTime(),
             'A zero capture timestamp must not render the Unix epoch.',
         );
         self::assertSame(
             '1000.0 ms',
-            $view->hero->durationMs,
+            $view->hero->getDurationMs(),
             'One second must convert to exactly one thousand milliseconds.',
         );
     }

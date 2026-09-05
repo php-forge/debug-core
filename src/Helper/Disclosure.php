@@ -41,12 +41,14 @@ final class Disclosure
      *
      * @param string $title Section heading shown in the summary.
      * @param string $body Rendered HTML revealed when the section expands.
+     * @param bool $open Whether the section is expanded initially.
      *
      * @return string Collapsible section markup.
      */
-    public static function render(string $title, string $body): string
+    public static function render(string $title, string $body, bool $open = false): string
     {
         return Details::tag()
+            ->open($open)
             ->class('yii-debug-disclosure')
             ->html(
                 Summary::tag()
