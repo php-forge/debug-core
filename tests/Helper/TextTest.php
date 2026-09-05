@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Helper;
 
 use PHPForge\Debug\Helper\Text;
-use PHPUnit\Framework\Attributes\Group;
+use PHPForge\Debug\Tests\Provider\UrlPathProvider;
+use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see Text} covering identifier separators and Unicode case conversion.
+ * Unit tests for {@see Text} covering identifiers, Unicode case conversion, and captured URL display.
  */
 #[Group('helpers')]
 final class TextTest extends TestCase
@@ -37,6 +38,15 @@ final class TextTest extends TestCase
             '',
             Text::camel2id(''),
             'Empty input must remain empty.',
+        );
+    }
+    #[DataProviderExternal(UrlPathProvider::class, 'paths')]
+    public function testUrlToPathPreservesCapturedDisplay(string $url, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            Text::urlToPath($url),
+            'Captured URL display must match both adapters exactly.',
         );
     }
 }
