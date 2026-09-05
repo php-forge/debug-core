@@ -264,7 +264,9 @@
       .yii-debug-brand-chip,
       .yii-debug-cell-more-toggle,
       .yii-debug-dropdown-item,
+      .yii-debug-filter-input,
       .yii-debug-heading-permalink,
+      .yii-debug-server-group-summary,
       .yii-debug-tab-link
     ) {
       min-height: 44px;

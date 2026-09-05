@@ -51,6 +51,14 @@ export function renderToolbarLinkAttributes(
   );
 }
 
+export function renderToolbarItemIdentifier(item, escape) {
+  if (!item || typeof item.id !== "string" || item.id === "") {
+    return "";
+  }
+
+  return ' data-item-id="' + escape(item.id) + '"';
+}
+
 export function toolbarPanelContainerTag(panel, locationValue) {
   return normalizeToolbarUrl(panel.url, locationValue) !== null &&
     !hasToolbarItemLink(panel.items, locationValue)

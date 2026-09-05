@@ -20,6 +20,7 @@ import {
 } from "../src/toolbar/loading.js";
 import {
   renderAjaxProfileLink,
+  renderToolbarItemIdentifier,
   renderToolbarLinkAttributes,
   shouldOpenToolbarDrawer,
   toolbarItemTag,
@@ -215,6 +216,20 @@ test("toolbar item links remain focusable without nested interactive elements", 
     toolbarItemTag({ url: "javascript:alert(1)" }, location),
     "span",
   );
+});
+
+test("toolbar metric identifiers are escaped and omitted when unavailable", () => {
+  var escape = function (value) {
+    return value.replaceAll('"', "&quot;");
+  };
+
+  assert.equal(
+    renderToolbarItemIdentifier({ id: 'route"name' }, escape),
+    ' data-item-id="route&quot;name"',
+  );
+  assert.equal(renderToolbarItemIdentifier({}, escape), "");
+  assert.equal(renderToolbarItemIdentifier({ id: "" }, escape), "");
+  assert.equal(renderToolbarItemIdentifier(null, escape), "");
 });
 
 test("toolbar native links carry the active theme without changing drawer URLs", () => {

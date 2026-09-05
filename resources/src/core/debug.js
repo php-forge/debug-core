@@ -6,6 +6,11 @@ import { bindCopyControls } from "./clipboard.js";
 import { initSectionPermalinks } from "./deep-links.js";
 import { dropdownNavigationIndex } from "./dropdown.js";
 import { loadPanelFeatures } from "./features.js";
+import {
+  applyLiveFilter,
+  findLiveFilterTarget,
+  LIVE_FILTER_ANCHOR_SELECTOR,
+} from "./live-filter.js";
 import { initTabs } from "./tabs.js";
 import {
   bindThemeToggle,
@@ -158,29 +163,18 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
   }
 
   function updateLiveFilter(input) {
-    var anchor = input.closest("header, .yii-debug-section-header") || input;
-    var target = anchor.nextElementSibling;
-
-    while (target && !target.matches("[data-yii-debug-filter-target]")) {
-      target = target.nextElementSibling;
-    }
+    var target = findLiveFilterTarget(input);
 
     if (!target) {
       return;
     }
 
-    var rows = target.querySelectorAll("tbody tr");
-    var query = input.value.trim().toLowerCase();
-    var visible = 0;
+    var anchor =
+      input.closest(LIVE_FILTER_ANCHOR_SELECTOR) ||
+      input.parentElement ||
+      input;
 
-    for (var i = 0; i < rows.length; i++) {
-      var row = rows[i];
-      var matched =
-        query === "" || row.textContent.toLowerCase().indexOf(query) !== -1;
-
-      row.hidden = !matched;
-      visible += matched ? 1 : 0;
-    }
+    var result = applyLiveFilter(target, input.value);
 
     var status = anchor.querySelector("[data-yii-debug-filter-status]");
 
@@ -207,7 +201,8 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
       }
     }
 
-    status.textContent = visible + " of " + rows.length + " rows shown.";
+    status.textContent =
+      result.visible + " of " + result.total + " " + result.unit + " shown.";
   }
 
   function hideDropdowns(except) {
@@ -417,10 +412,9 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
     window.location.href = url.toString();
   });
 
-  // Live filter for tabular sections marked with [data-yii-debug-filter].
-  // The input filters its sibling [data-yii-debug-filter-target] table rows by
-  // case-insensitive substring against the row's text content. Hiding rows
-  // client-side is cheap and avoids round-trips for >100-header request panels.
+  // Live filter for tabular and grouped diagnostic sections.
+  // The input filters its associated target rows by a case-insensitive
+  // substring. Hiding rows client-side avoids a round-trip for dense panels.
   document.addEventListener("input", function (event) {
     var input = event.target;
 

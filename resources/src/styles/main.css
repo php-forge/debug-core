@@ -697,7 +697,7 @@
 
   .yii-debug-request-overview-metrics {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
     margin: 0;
     border-block: var(--yii-debug-border);
     background: var(--yii-debug-panel-surface-muted);
@@ -721,14 +721,12 @@
     }
 
     dd {
-      overflow: hidden;
       margin: 0;
       color: var(--yii-debug-panel-text);
       font-family: var(--yii-debug-font-mono);
       font-size: var(--yii-debug-fs-sm);
       font-weight: 600;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: anywhere;
     }
   }
 
@@ -780,6 +778,628 @@
     letter-spacing: 0.07em;
     line-height: 1.4;
     text-transform: uppercase;
+  }
+
+  /**
+   * Composed Request + routing view. The request overview remains one
+   * continuous execution rail; routing metadata and failures extend that rail
+   * instead of introducing another stack of nested cards.
+   */
+  .yii-debug-request-routing-error {
+    margin: 0;
+    border-width: 1px 0 0 4px;
+    border-radius: 0;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .yii-debug-request-tabs {
+    min-width: 0;
+
+    > .yii-debug-tabs {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .yii-debug-tab {
+      flex: none;
+    }
+
+    .yii-debug-empty-state {
+      padding: var(--yii-debug-space-4);
+
+      h2 {
+        margin: 0;
+        font-size: var(--yii-debug-fs-base);
+      }
+    }
+  }
+
+  /**
+   * Request diagnostic ledgers. Headers read as an HTTP exchange rather than
+   * two unrelated tables; server variables read as one grouped execution
+   * record. Both keep the captured keys and values as the primary visual ink.
+   */
+  .yii-debug-diagnostic-shell {
+    overflow: hidden;
+    border: var(--yii-debug-border);
+    border-radius: var(--yii-debug-radius-lg);
+    background: var(--yii-debug-panel-surface);
+    box-shadow: var(--yii-debug-shadow-sm);
+  }
+
+  .yii-debug-diagnostic-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--yii-debug-space-4);
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
+    border-bottom: var(--yii-debug-border);
+    background: var(--yii-debug-panel-surface-muted);
+  }
+
+  .yii-debug-diagnostic-heading-copy {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--yii-debug-space-2) var(--yii-debug-space-3);
+
+    h2 {
+      margin: 0;
+      font-size: var(--yii-debug-fs-lg);
+    }
+  }
+
+  .yii-debug-diagnostic-counts {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--yii-debug-space-2);
+  }
+
+  .yii-debug-diagnostic-count,
+  .yii-debug-diagnostic-total,
+  .yii-debug-header-lane-count,
+  .yii-debug-server-group-count {
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .yii-debug-diagnostic-count {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--yii-debug-space-1);
+  }
+
+  .yii-debug-diagnostic-count + .yii-debug-diagnostic-count::before {
+    width: 1px;
+    height: 12px;
+    margin-inline-end: var(--yii-debug-space-1);
+    background: var(--yii-debug-panel-border-strong);
+    content: "";
+  }
+
+  .yii-debug-diagnostic-count-value {
+    color: var(--yii-debug-panel-text);
+    font-weight: 700;
+  }
+
+  .yii-debug-diagnostic-filter {
+    width: min(280px, 42%);
+    max-width: none;
+    background: var(--yii-debug-panel-surface);
+  }
+
+  .yii-debug-header-lanes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .yii-debug-header-lane {
+    position: relative;
+    min-width: 0;
+  }
+
+  .yii-debug-header-lane + .yii-debug-header-lane {
+    border-inline-start: 2px solid
+      color-mix(
+        in srgb,
+        var(--yii-debug-panel-primary) 36%,
+        var(--yii-debug-panel-border)
+      );
+
+    &::before {
+      position: absolute;
+      z-index: 1;
+      top: 25px;
+      inset-inline-start: -5px;
+      width: 8px;
+      height: 8px;
+      border: 2px solid var(--yii-debug-panel-surface);
+      border-radius: var(--yii-debug-radius-pill);
+      background: var(--yii-debug-panel-primary);
+      content: "";
+    }
+  }
+
+  .yii-debug-header-lane-header {
+    display: flex;
+    min-height: 58px;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--yii-debug-space-3);
+    padding: 10px var(--yii-debug-space-4);
+    border-bottom: var(--yii-debug-border);
+
+    h3 {
+      margin: 1px 0 0;
+      font-size: var(--yii-debug-fs-base);
+    }
+  }
+
+  .yii-debug-header-direction {
+    display: block;
+    color: var(--yii-debug-panel-primary-strong);
+    font-family: var(--yii-debug-font-mono);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .yii-debug-diagnostic-ledger {
+    margin: 0;
+  }
+
+  .yii-debug-diagnostic-row {
+    display: grid;
+    grid-template-columns: minmax(132px, 0.72fr) minmax(0, 1.28fr);
+    align-items: start;
+    border-top: 1px solid
+      color-mix(in srgb, var(--yii-debug-panel-border) 58%, transparent);
+
+    &:first-child {
+      border-top: 0;
+    }
+
+    &:hover {
+      background: var(--yii-debug-panel-surface-hover);
+    }
+
+    dt,
+    dd {
+      min-width: 0;
+      padding: 10px var(--yii-debug-space-4);
+      font-family: var(--yii-debug-font-mono);
+      font-size: var(--yii-debug-fs-sm);
+      line-height: 1.5;
+    }
+
+    dt {
+      overflow: hidden;
+      color: var(--yii-debug-panel-muted);
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    dd {
+      margin: 0;
+      border-inline-start: 1px solid
+        color-mix(in srgb, var(--yii-debug-panel-border) 45%, transparent);
+      color: var(--yii-debug-panel-text);
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+  }
+
+  .yii-debug-header-ledger .yii-debug-diagnostic-row:nth-child(even),
+  .yii-debug-server-ledger .yii-debug-diagnostic-row:nth-child(even) {
+    background: color-mix(
+      in srgb,
+      var(--yii-debug-panel-surface-muted),
+      transparent 72%
+    );
+
+    &:hover {
+      background: var(--yii-debug-panel-surface-hover);
+    }
+  }
+
+  .yii-debug-diagnostic-values {
+    display: grid;
+    gap: 6px;
+  }
+
+  .yii-debug-diagnostic-value-count {
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-sans);
+    font-size: 0.6875rem;
+  }
+
+  .yii-debug-diagnostic-value-list {
+    display: grid;
+    gap: var(--yii-debug-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li + li {
+      padding-top: var(--yii-debug-space-1);
+      border-top: 1px dashed var(--yii-debug-panel-border);
+    }
+  }
+
+  .yii-debug-diagnostic-empty-value,
+  .yii-debug-diagnostic-lane-empty,
+  .yii-debug-diagnostic-empty-state,
+  .yii-debug-diagnostic-filter-empty {
+    color: var(--yii-debug-panel-muted);
+    font-style: italic;
+  }
+
+  .yii-debug-diagnostic-lane-empty,
+  .yii-debug-diagnostic-empty-state,
+  .yii-debug-diagnostic-filter-empty {
+    margin: 0;
+    padding: var(--yii-debug-space-4);
+  }
+
+  .yii-debug-diagnostic-filter-empty {
+    border-top: var(--yii-debug-border);
+    text-align: center;
+  }
+
+  .yii-debug-server-group-body > .yii-debug-mini-toolbar {
+    justify-content: flex-end;
+    margin: 0;
+    padding: var(--yii-debug-space-2) var(--yii-debug-space-4);
+    border-bottom: var(--yii-debug-border);
+
+    .yii-debug-filter-input {
+      max-width: 100%;
+    }
+  }
+
+  .yii-debug-server-additional + .yii-debug-server-group,
+  .yii-debug-server-group + .yii-debug-server-group {
+    border-top: var(--yii-debug-border);
+  }
+
+  .yii-debug-server-group-summary {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--yii-debug-space-3);
+    padding: 9px var(--yii-debug-space-4);
+    border-bottom: var(--yii-debug-border);
+    background: var(--yii-debug-panel-surface-muted);
+
+    .yii-debug-server-group-title {
+      margin: 0;
+      font-size: var(--yii-debug-fs-sm);
+      font-weight: 700;
+    }
+  }
+
+  .yii-debug-server-group-summary {
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--yii-debug-panel-surface-hover);
+    }
+  }
+
+  .yii-debug-server-group-identity {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--yii-debug-space-2);
+  }
+
+  .yii-debug-server-group:not([open]) > .yii-debug-server-group-summary {
+    border-bottom: 0;
+  }
+
+  .yii-debug-server-group-summary .yii-debug-disclosure-hint {
+    margin-inline-start: auto;
+  }
+
+  .yii-debug-diagnostic-row[hidden],
+  .yii-debug-header-lane[hidden],
+  .yii-debug-server-group[hidden],
+  .yii-debug-diagnostic-filter-empty[hidden] {
+    display: none;
+  }
+
+  @container yii-debug-main (width <= 900px) {
+    .yii-debug-header-lanes {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .yii-debug-header-lane + .yii-debug-header-lane {
+      border-top: 2px solid
+        color-mix(
+          in srgb,
+          var(--yii-debug-panel-primary) 36%,
+          var(--yii-debug-panel-border)
+        );
+      border-inline-start: 0;
+
+      &::before {
+        top: -5px;
+        inset-inline-start: var(--yii-debug-space-4);
+      }
+    }
+  }
+
+  @container yii-debug-main (width <= 560px) {
+    .yii-debug-diagnostic-header {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .yii-debug-diagnostic-filter {
+      width: 100%;
+    }
+
+    .yii-debug-diagnostic-row {
+      grid-template-columns: minmax(0, 1fr);
+
+      dt {
+        padding-bottom: var(--yii-debug-space-1);
+      }
+
+      dd {
+        padding-top: 0;
+        border-inline-start: 0;
+      }
+    }
+  }
+
+  .yii-debug-route-inventory-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--yii-debug-space-3);
+    margin-bottom: var(--yii-debug-space-2);
+  }
+
+  .yii-debug-route-inventory-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--yii-debug-space-2);
+
+    h2 {
+      margin: 0;
+      font-size: var(--yii-debug-fs-lg);
+    }
+  }
+
+  .yii-debug-route-inventory-count {
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .yii-debug-route-inventory-context {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--yii-debug-space-3);
+    margin-bottom: var(--yii-debug-space-3);
+  }
+
+  .yii-debug-route-inventory-provenance {
+    margin: 0;
+    color: var(--yii-debug-panel-muted);
+    font-size: var(--yii-debug-fs-xs);
+  }
+
+  .yii-debug-route-inventory-badges,
+  .yii-debug-route-methods {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--yii-debug-space-1);
+  }
+
+  .yii-debug-route-inventory-error {
+    margin-bottom: var(--yii-debug-space-3);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .yii-debug-route-ledger {
+    overflow: hidden;
+    border: var(--yii-debug-border);
+    border-radius: var(--yii-debug-radius-md);
+    container: routes / inline-size;
+  }
+
+  .yii-debug-route-columns,
+  .yii-debug-route-summary {
+    display: grid;
+    grid-template-columns: 24px 88px minmax(0, 1fr) minmax(0, 1fr) 132px;
+    align-items: center;
+    gap: var(--yii-debug-space-3);
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
+  }
+
+  .yii-debug-route-columns {
+    background: var(--yii-debug-panel-surface-muted);
+    color: var(--yii-debug-panel-muted);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 600;
+  }
+
+  .yii-debug-route-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    > li {
+      border-top: var(--yii-debug-border);
+    }
+
+    > [data-yii-debug-route-match="true"] {
+      box-shadow: inset 3px 0 0 var(--yii-debug-success);
+    }
+  }
+
+  .yii-debug-route-summary {
+    min-height: 56px;
+    cursor: pointer;
+    list-style: none;
+
+    &:hover {
+      background: var(--yii-debug-panel-surface-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--yii-debug-focus-ring);
+      outline-offset: -3px;
+    }
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    .yii-debug-disclosure-hint {
+      font-size: 0.625rem;
+      text-align: right;
+    }
+  }
+
+  .yii-debug-route-order {
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .yii-debug-route-method {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 1px 7px;
+    border-radius: var(--yii-debug-radius-pill);
+    font-family: var(--yii-debug-font-mono);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .yii-debug-route-methods-any {
+    color: var(--yii-debug-panel-muted);
+    font-size: var(--yii-debug-fs-xs);
+  }
+
+  .yii-debug-route-pattern,
+  .yii-debug-route-identity {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    font-size: var(--yii-debug-fs-xs);
+
+    code {
+      white-space: normal;
+    }
+  }
+
+  .yii-debug-route-pattern,
+  .yii-debug-route-identity code {
+    padding: 0;
+    background: transparent;
+  }
+
+  .yii-debug-route-identity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--yii-debug-space-2);
+  }
+
+  .yii-debug-route-metadata {
+    margin: 0;
+    padding: var(--yii-debug-space-4);
+    border-top: var(--yii-debug-border);
+    background: var(--yii-debug-panel-surface);
+    font-size: var(--yii-debug-fs-sm);
+
+    > div {
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr);
+      gap: var(--yii-debug-space-4);
+    }
+
+    > div + div {
+      margin-top: var(--yii-debug-space-3);
+    }
+
+    dt {
+      color: var(--yii-debug-panel-muted);
+    }
+
+    dd {
+      min-width: 0;
+      margin: 0;
+      overflow-wrap: anywhere;
+      font-family: var(--yii-debug-font-mono);
+    }
+  }
+
+  @container routes (width < 640px) {
+    .yii-debug-route-columns {
+      display: none;
+    }
+
+    .yii-debug-route-summary {
+      grid-template-columns: 24px 72px minmax(0, 1fr);
+      gap: var(--yii-debug-space-2);
+    }
+
+    .yii-debug-route-identity {
+      grid-column: 3;
+    }
+
+    .yii-debug-route-summary .yii-debug-disclosure-hint {
+      grid-column: 3;
+      text-align: left;
+    }
+
+    .yii-debug-route-metadata > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--yii-debug-space-1);
+    }
+  }
+
+  .yii-debug-route-resolution {
+    margin-top: var(--yii-debug-space-4);
+  }
+
+  .yii-debug-route-resolution-message {
+    margin: 0 0 var(--yii-debug-space-3);
+    color: var(--yii-debug-panel-muted);
+    font-size: var(--yii-debug-fs-sm);
+  }
+
+  .yii-debug-route-trace {
+    min-width: 560px;
   }
 
   .yii-debug-panel-heading {
@@ -847,11 +1467,22 @@
     }
 
     .yii-debug-request-overview-meta-item {
-      width: 100%;
+      max-width: 100%;
     }
 
     .yii-debug-panel-heading {
       align-items: flex-start;
+    }
+
+    .yii-debug-route-inventory-header,
+    .yii-debug-route-inventory-context {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .yii-debug-route-filter {
+      width: 100%;
+      max-width: none;
     }
   }
 
@@ -1218,6 +1849,7 @@
    * a soft border, and a near-transparent wash of the same hue.
    */
   .yii-debug-request-hero-method,
+  .yii-debug-route-method,
   .yii-debug-snapshot-status,
   .yii-debug-level-chip,
   .yii-debug-db-type,
@@ -1572,8 +2204,9 @@
     }
   }
 
-  /* Accent label shared with the Config panel section headings. */
-  .yii-debug-disclosure-title {
+  /* Shared accent label for collapsed and populated Request sections. */
+  .yii-debug-disclosure-title,
+  .yii-debug-request-section-title {
     color: var(--yii-debug-panel-primary-strong);
     font-family: var(--yii-debug-font-mono);
     font-size: var(--yii-debug-fs-xs);

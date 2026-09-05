@@ -352,3 +352,38 @@ test("deep-link reveal opens disclosures and marks only the active target", () =
   assert.deepEqual(target.scrollOptions, { block: "start" });
   assert.equal(revealDeepLink(root, { hash: "#missing" }, true), null);
 });
+
+test("tab fragments restore without a persistent panel highlight", () => {
+  for (var role of ["tabpanel", null]) {
+    var classes = new Set();
+    var oldClasses = new Set(["yii-debug-deep-link-target"]);
+    var target = {
+      classList: { add: (name) => classes.add(name) },
+      getAttribute(name) {
+        assert.equal(name, "role");
+
+        return role;
+      },
+      scrollIntoView(options) {
+        this.scrollOptions = options;
+      },
+    };
+    var root = {
+      getElementById: () => target,
+      querySelectorAll: () => [
+        { classList: { remove: (name) => oldClasses.delete(name) } },
+      ],
+    };
+
+    assert.equal(
+      revealDeepLink(root, { hash: "#request-panel-4" }, true),
+      target,
+    );
+    assert.equal(
+      classes.has("yii-debug-deep-link-target"),
+      role !== "tabpanel",
+    );
+    assert.equal(oldClasses.size, 0);
+    assert.deepEqual(target.scrollOptions, { block: "start" });
+  }
+});

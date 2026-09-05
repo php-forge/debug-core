@@ -1,12 +1,27 @@
 import { defineConfig } from "vite";
+import { utimes } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const assetRoot = resolve(here, "resources/assets");
 
 export default defineConfig({
   root: here,
   base: "",
+  plugins: [
+    {
+      name: "refresh-directory-publication-key",
+      apply: "build",
+      async closeBundle() {
+        // Yii2 keys published directories by their root mtime, while Vite only
+        // rewrites nested dist files. Refresh the root after a successful build.
+        var now = new Date();
+
+        await utimes(assetRoot, now, now);
+      },
+    },
+  ],
   build: {
     outDir: "resources/assets/dist",
     emptyOutDir: true,
