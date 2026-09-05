@@ -33,7 +33,7 @@ final class Text
     /**
      * Strips the authority from a captured URL for display, retaining its path, non-empty query, and fragment.
      *
-     * Unparseable URLs pass through unchanged. This is a display conversion, not URL validation or HTML escaping;
+     * Unparsable URLs pass through unchanged. This is a display conversion, not URL validation or HTML escaping;
      * callers must retain the original diagnostic URL and escape the result at the rendering boundary.
      */
     public static function urlToPath(string $url): string
