@@ -237,7 +237,6 @@ final class EventInspectorRendererTest extends TestCase
             'Legacy static events must explain the missing source.',
         );
         self::assertStringContainsString(
-        self::assertStringContainsString(
             'Not captured (context capture is opt-in)',
             $html,
             'Legacy rows must not imply captured context.',
