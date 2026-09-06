@@ -9,7 +9,7 @@ use PHPForge\Debug\Tests\Panel\Event\EventInspectorRendererTest;
 use function str_repeat;
 
 /**
- * Provides capture states, preview boundaries, and group values and limits for {@see EventInspectorRendererTest}.
+ * Provides capture states, context values, table widths, and group values and limits for {@see EventInspectorRendererTest}.
  */
 final class EventInspectorRendererProvider
 {
@@ -45,6 +45,16 @@ final class EventInspectorRendererProvider
     }
 
     /**
+     * @return iterable<string, array{string}>
+     */
+    public static function contextValues(): iterable
+    {
+        yield 'long value' => [str_repeat('a', 200)];
+        yield 'multibyte value' => [str_repeat('a', 149) . "\u{20AC}tail"];
+        yield 'short value' => ['short'];
+    }
+
+    /**
      * @return iterable<string, array{int, int}>
      */
     public static function groupLimits(): iterable
@@ -67,25 +77,22 @@ final class EventInspectorRendererProvider
     }
 
     /**
-     * @return iterable<string, array{string, string}>
+     * @return iterable<string, array{int, string, string}>
      */
-    public static function previews(): iterable
+    public static function observationTimes(): iterable
     {
-        yield '161 bytes' => [
-            str_repeat('a', 154),
-            'Value: ' . str_repeat('a', 150) . '...',
-        ];
-        yield 'exactly 160 bytes' => [
-            str_repeat('a', 153),
-            'Value: ' . str_repeat('a', 153),
-        ];
-        yield 'multibyte boundary' => [
-            str_repeat('a', 149) . "\u{20AC}tail",
-            'Value: ' . str_repeat('a', 149) . '...',
-        ];
-        yield 'short value' => [
-            'short',
-            'Value: short',
-        ];
+        yield 'backward wall clock' => [3, '-125.000 ms', '-250.000 ms gap'];
+        yield 'first observation' => [0, '+0.000 ms', 'First observation'];
+        yield 'later observation' => [1, '+125.000 ms', '+125.000 ms gap'];
+        yield 'same timestamp' => [2, '+125.000 ms', '+0.000 ms gap'];
+    }
+
+    /**
+     * @return iterable<string, array{int<1, 1000>}>
+     */
+    public static function tableColumns(): iterable
+    {
+        yield 'Yii2 columns' => [6];
+        yield 'Yii3 columns' => [4];
     }
 }

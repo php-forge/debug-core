@@ -5469,23 +5469,14 @@
   }
 
   /**
-   * Event FQCNs already wrap mid-word through the inherited
-   * `overflow-wrap: anywhere`; releasing the GridView minimum width lets
-   * narrow viewports shrink the grid so long class names wrap in place
-   * instead of pushing the whole table sideways. Under the mobile
-   * breakpoint every cell row densifies to the History rhythm — header
-   * and filter cells included, since the single-word column titles bind
-   * four of the five column minimums — so the nowrap timestamp column
-   * fits beside classic desktop scrollbars without residual horizontal
-   * scroll. Wrapping stays untouched.
+   * Event rows keep the shared table rhythm; the wrapper keeps every filter
+   * and diagnostic column reachable on narrow viewports.
    */
   .yii-debug-grid-event .yii-debug-table {
-    min-width: 0;
-
     @media (width <= 767px) {
       thead th,
       thead td,
-      tbody td,
+      tbody tr:not(.yii-debug-event-detail-row) td,
       tbody th,
       tfoot td {
         padding: 8px 10px;

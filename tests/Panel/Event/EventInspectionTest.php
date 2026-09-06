@@ -152,11 +152,11 @@ final class EventInspectionTest extends TestCase
         );
     }
 
-    public function testEnrichmentPreservesLegacyRowsAndSnapshots(): void
+    public function testEnrichmentPreservesOriginalRowsAndSnapshots(): void
     {
         $row = self::row(100.0);
 
-        $legacy = $row->jsonSerialize();
+        $original = $row->jsonSerialize();
 
         $inspection = (new EventInspection())
             ->withContext(['View file' => '/views/site.php'], 'captured')
@@ -171,9 +171,9 @@ final class EventInspectionTest extends TestCase
             'Enrichment must not mutate the original row.',
         );
         self::assertSame(
-            $legacy,
+            $original,
             $row->jsonSerialize(),
-            'Legacy serialization must not add diagnostic fields.',
+            'Unenriched row serialization must not add diagnostic fields.',
         );
         self::assertEquals(
             $snapshot,
@@ -449,18 +449,18 @@ final class EventInspectionTest extends TestCase
                 ->withTrace(['<source>'], 'captured'),
         );
 
-        $html = EventInspectorRenderer::render(
-            [$row],
+        $html = EventInspectorRenderer::renderControls(
             [$row],
             static fn(string $attribute, string $value): string => '/debug?filter=' . urlencode($value),
             'name',
             'Events stopped by instance handlers may be absent',
-        );
+        ) . EventInspectorRenderer::renderEventCell($row, new EventSequence([$row]))
+            . EventInspectorRenderer::renderDetailRow($row, new EventSequence([$row]), 6);
 
         self::assertStringContainsString(
-            'Execution flow',
+            'Open an event for diagnostics.',
             $html,
-            'The shared inspector must render its visible heading.',
+            'The shared table must explain its diagnostic disclosures.',
         );
         self::assertStringContainsString(
             'id="event-1"',
@@ -483,14 +483,14 @@ final class EventInspectionTest extends TestCase
             'Yii2 capture limitations must be explicit.',
         );
         self::assertStringContainsString(
-            'Listeners / outcome',
+            'Listeners, their durations, and final propagation results are not captured.',
             $html,
             'Unknown listener results must not masquerade as success.',
         );
         self::assertStringContainsString(
-            'Not captured',
+            'Existing snapshots cannot recover missing data.',
             $html,
-            'Unavailable diagnostics must be distinguished from zero values.',
+            'Unavailable diagnostics must not imply recoverable capture data.',
         );
     }
 
@@ -507,13 +507,14 @@ final class EventInspectionTest extends TestCase
             ->withInspection((new EventInspection())
             ->withLifecycle(1, 'leave', 0, 1.25));
 
-        $html = EventInspectorRenderer::render(
+        $html = EventInspectorRenderer::renderControls(
             [$start, $end],
-            [$start],
             null,
             'class',
             'Direct calls to other dispatchers are not captured',
-        );
+        ) . EventInspectorRenderer::renderEventCell($start, new EventSequence([$start, $end]))
+            . EventInspectorRenderer::renderTimeCell($start, new EventSequence([$start, $end]))
+            . EventInspectorRenderer::renderDetailRow($start, new EventSequence([$start, $end]), 4);
 
         self::assertStringContainsString(
             '250.000 ms inclusive interval',

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Panel\Event;
 
-use PHPForge\Debug\Panel\Event\{EventInspection, EventInspectorRenderer, EventRow};
+use PHPForge\Debug\Panel\Event\{EventInspection, EventInspectorRenderer, EventRow, EventSequence};
 use PHPForge\Debug\Tests\Provider\EventInspectorRendererProvider;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
@@ -13,11 +13,113 @@ use function str_repeat;
 use function substr_count;
 
 /**
- * Tests legacy diagnostics, bounded previews, grouped filters, and unmatched lifecycle presentation.
+ * Tests full-width diagnostics, non-duplicated context, grouped filters, and lifecycle presentation.
  */
 #[Group('event')]
 final class EventInspectorRendererTest extends TestCase
 {
+    public function testControlsDoNotRenderASecondEventList(): void
+    {
+        $row = new EventRow(10.0, 'event', 'Event', '0', 'Worker');
+
+        $html = EventInspectorRenderer::renderControls([$row], null, 'name', '<coverage>');
+
+        self::assertStringNotContainsString(
+            '<table',
+            $html,
+            'Controls must not duplicate the adapter table.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-event-item',
+            $html,
+            'Controls must not render captured rows.',
+        );
+        self::assertStringContainsString(
+            '&lt;coverage&gt;',
+            $html,
+            'Adapter capture guidance must be escaped.',
+        );
+        self::assertStringContainsString(
+            'regardless of sorting or filtering',
+            $html,
+            'Controls must explain original chronology.',
+        );
+    }
+
+    /**
+     * @param int<1, 1000> $columns
+     */
+    #[DataProviderExternal(EventInspectorRendererProvider::class, 'tableColumns')]
+    public function testDetailRowSpansTheTableWithoutRepeatingRowFields(int $columns): void
+    {
+        $row = new EventRow(10.0, 'observed-event', 'App\\ObservedEvent', '1', 'App\\EventSender');
+        $sequence = new EventSequence([$row]);
+
+        $cell = EventInspectorRenderer::renderEventCell($row, $sequence);
+        $detail = EventInspectorRenderer::renderDetailRow($row, $sequence, $columns);
+
+        self::assertStringContainsString(
+            'aria-controls="event-1-detail"',
+            $cell,
+            'The summary must identify its diagnostic region.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-event-detail"',
+            $cell,
+            'Diagnostics must not be constrained to the event column.',
+        );
+        self::assertStringContainsString(
+            'class="yii-debug-event-detail-row"',
+            $detail,
+            'Diagnostics must have a companion table row.',
+        );
+        self::assertStringContainsString(
+            "colspan=\"{$columns}\"",
+            $detail,
+            'Diagnostics must span every adapter column.',
+        );
+        self::assertStringContainsString(
+            'id="event-1-detail"',
+            $detail,
+            'The diagnostic region must match the summary control.',
+        );
+        self::assertStringContainsString(
+            'role="region"',
+            $detail,
+            'The named diagnostic region must expose an accessible role.',
+        );
+        self::assertStringNotContainsString(
+            'observed-event',
+            $detail,
+            'Diagnostics must not repeat the event name.',
+        );
+        self::assertStringNotContainsString(
+            'App\\ObservedEvent',
+            $detail,
+            'Diagnostics must not repeat the event class.',
+        );
+        self::assertStringNotContainsString(
+            'App\\EventSender',
+            $detail,
+            'Diagnostics must not repeat the sender.',
+        );
+        self::assertStringNotContainsString(
+            'Observed at',
+            $detail,
+            'Diagnostics must not repeat the timestamp.',
+        );
+        self::assertStringNotContainsString(
+            'Static',
+            $detail,
+            'Diagnostics must not repeat the static flag.',
+        );
+        self::assertStringContainsString(
+            'href="#event-1"',
+            $detail,
+            'Each event must retain its permalink.',
+        );
+    }
+
     #[DataProviderExternal(EventInspectorRendererProvider::class, 'captureStates')]
     public function testRenderExplainsCaptureStates(
         string $contextStatus,
@@ -32,7 +134,10 @@ final class EventInspectorRendererTest extends TestCase
                     ->withTrace([], $traceStatus),
             );
 
-        $html = EventInspectorRenderer::render([$row], [$row], null, 'name', 'Coverage');
+        $sequence = new EventSequence([$row]);
+
+        $html = EventInspectorRenderer::renderEventCell($row, $sequence)
+            . EventInspectorRenderer::renderDetailRow($row, $sequence, 6);
 
         self::assertStringContainsString(
             $expectedContext,
@@ -45,9 +150,9 @@ final class EventInspectorRendererTest extends TestCase
             'Trace availability must reflect its captured state.',
         );
         self::assertStringNotContainsString(
-            'yii-debug-event-preview',
+            'yii-debug-event-metadata',
             $html,
-            'Empty context must not produce a preview.',
+            'Empty context must not produce an empty definition list.',
         );
         self::assertStringNotContainsString(
             '<pre>',
@@ -61,16 +166,19 @@ final class EventInspectorRendererTest extends TestCase
         $row = (new EventRow(10.0, 'App\\AfterMiddleware', 'App\\AfterMiddleware', '0', 'App\\Worker'))
             ->withInspection((new EventInspection())->withLifecycle(null, 'leave', 9, 10.0));
 
-        $html = EventInspectorRenderer::render([$row], [$row], null, 'class', 'Coverage');
+        $sequence = new EventSequence([$row]);
+
+        $html = EventInspectorRenderer::renderEventCell($row, $sequence)
+            . EventInspectorRenderer::renderDetailRow($row, $sequence, 6);
 
         self::assertStringContainsString(
-            '<span class="yii-debug-event-name"><strong title="App\Worker">Worker</strong></span>',
+            '<strong>AfterMiddleware</strong>',
             $html,
-            'Lifecycle summaries must identify the middleware while retaining its fully qualified title.',
+            'Lifecycle summaries must retain the event name rather than replacing it with the source.',
         );
         self::assertStringContainsString(
-            '<span class="yii-debug-event-source yii-debug-muted">'
-                . str_repeat(' ', 16) . 'AfterMiddleware / nesting level 9</span>',
+            '<span class="yii-debug-event-phase yii-debug-muted">'
+                . str_repeat(' ', 16) . 'leave / nesting level 9</span>',
             $html,
             'Visible indentation must be capped while preserving the actual nesting depth.',
         );
@@ -101,13 +209,12 @@ final class EventInspectorRendererTest extends TestCase
 
         $filters = [];
 
-        $html = EventInspectorRenderer::render(
+        $html = EventInspectorRenderer::renderControls(
             $rows,
-            [],
             static function (string $attribute, string $value) use (&$filters): string {
                 $filters[] = [$attribute, $value];
 
-                return '/debug?group=' . $attribute;
+                return "/debug?group={$attribute}";
             },
             'class',
             'Coverage',
@@ -168,7 +275,7 @@ final class EventInspectorRendererTest extends TestCase
     {
         $row = new EventRow(10.0, '', '', '1', '');
 
-        $html = EventInspectorRenderer::render([$row], [], null, 'name', 'Coverage');
+        $html = EventInspectorRenderer::renderControls([$row], null, 'name', 'Coverage');
 
         self::assertStringNotContainsString(
             'class="yii-debug-event-group"',
@@ -187,36 +294,33 @@ final class EventInspectorRendererTest extends TestCase
         );
     }
 
-    #[DataProviderExternal(EventInspectorRendererProvider::class, 'previews')]
-    public function testRenderPreservesFullContextWhenBoundingPreview(string $value, string $expectedPreview): void
+    #[DataProviderExternal(EventInspectorRendererProvider::class, 'contextValues')]
+    public function testRenderPreservesContextWithoutRepeatingIt(string $value): void
     {
         $row = (new EventRow(10.0, 'event', 'Event', '0', 'Worker'))
             ->withInspection(
                 (new EventInspection())
                     ->withContext(['Value' => $value, 'Other' => 'Second field'], 'captured'),
             );
+        $sequence = new EventSequence([$row]);
 
-        $html = EventInspectorRenderer::render([$row], [$row], null, 'name', 'Coverage');
+        $cell = EventInspectorRenderer::renderEventCell($row, $sequence);
+        $detail = EventInspectorRenderer::renderDetailRow($row, $sequence, 6);
 
-        self::assertStringContainsString(
-            '<span class="yii-debug-event-preview">' . $expectedPreview . '</span>',
-            $html,
-            'The preview must use only the first field, respect its byte budget, and avoid splitting UTF-8 characters.',
+        self::assertStringNotContainsString(
+            $value,
+            $cell,
+            'The event summary must not duplicate captured context.',
         );
         self::assertSame(
             1,
-            substr_count($html, 'class="yii-debug-event-preview"'),
-            'A second context field must not produce another preview.',
-        );
-        self::assertStringContainsString(
-            "<dd>\n{$value}\n</dd>",
-            $html,
-            'The disclosure must preserve the complete captured value.',
+            substr_count($detail, $value),
+            'The detail must preserve each complete context value once.',
         );
         self::assertStringContainsString(
             "<dd>\nSecond field\n</dd>",
-            $html,
-            'Preview selection must not discard other context fields.',
+            $detail,
+            'All selected context fields must remain inspectable.',
         );
     }
 
@@ -240,9 +344,8 @@ final class EventInspectorRendererTest extends TestCase
             return "/debug?{$attribute}={$value}";
         };
 
-        $html = EventInspectorRenderer::render(
+        $html = EventInspectorRenderer::renderControls(
             [$row, $row],
-            [],
             $withFilter ? $filterUrl : null,
             $eventAttribute,
             'Coverage',
@@ -282,7 +385,10 @@ final class EventInspectorRendererTest extends TestCase
     {
         $row = new EventRow(10.0, 'App\\Started', 'App\\Started', '1', '');
 
-        $html = EventInspectorRenderer::render([$row], [$row], null, 'class', 'Coverage');
+        $sequence = new EventSequence([$row]);
+
+        $html = EventInspectorRenderer::renderEventCell($row, $sequence)
+            . EventInspectorRenderer::renderDetailRow($row, $sequence, 6);
 
         self::assertStringContainsString(
             '<span class="yii-debug-event-name"><span title="App\Started"><span class="yii-debug-muted">App\</span><wbr><strong>Started</strong></span></span>',
@@ -290,29 +396,60 @@ final class EventInspectorRendererTest extends TestCase
             'Class-based event names must use the shared two-tone label inside the event summary.',
         );
         self::assertStringContainsString(
-            'Source not captured',
-            $html,
-            'Legacy static events must explain the missing source.',
-        );
-        self::assertStringContainsString(
             'Not captured (context capture is opt-in)',
             $html,
-            'Legacy rows must not imply captured context.',
+            'Rows without optional diagnostics must not imply captured context.',
         );
         self::assertStringContainsString(
             'Not captured (source trace capture is opt-in)',
             $html,
-            'Legacy rows must not imply captured traces.',
+            'Rows without optional diagnostics must not imply captured traces.',
         );
         self::assertSame(
             1,
-            substr_count($html, 'class="yii-debug-event-group"'),
+            substr_count(EventInspectorRenderer::renderControls([$row], null, 'class', 'Coverage'), 'class="yii-debug-event-group"'),
             'An empty source must not create a second group chip.',
         );
         self::assertStringNotContainsString(
-            'yii-debug-event-preview',
+            'yii-debug-event-metadata',
             $html,
-            'Legacy rows must not manufacture context previews.',
+            'Rows without optional diagnostics must not manufacture context fields.',
+        );
+    }
+
+    #[DataProviderExternal(EventInspectorRendererProvider::class, 'observationTimes')]
+    public function testTimeCellUsesOriginalObservations(int $index, string $offset, string $gap): void
+    {
+        $rows = [
+            new EventRow(10.0, 'first', 'Event', '0', 'Worker'),
+            new EventRow(10.125, 'second', 'Event', '0', 'Worker'),
+            new EventRow(10.125, 'third', 'Event', '0', 'Worker'),
+            new EventRow(9.875, 'fourth', 'Event', '0', 'Worker'),
+        ];
+
+        $row = $rows[$index] ?? self::fail('The provider must select an existing observation.');
+
+        $html = EventInspectorRenderer::renderTimeCell($row, new EventSequence($rows));
+
+        self::assertStringContainsString(
+            $offset,
+            $html,
+            'Time offsets must use the first original observation.',
+        );
+        self::assertStringContainsString(
+            $gap,
+            $html,
+            'Gaps must use the previous original observation, including zero and negative values.',
+        );
+        self::assertStringNotContainsString(
+            'inclusive interval',
+            $html,
+            'Observation gaps must not imply measured execution intervals.',
+        );
+        self::assertStringContainsString(
+            'title="Observed at ',
+            $html,
+            'The wall-clock timestamp must remain available.',
         );
     }
 }

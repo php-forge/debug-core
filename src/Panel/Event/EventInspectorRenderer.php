@@ -6,145 +6,74 @@ namespace PHPForge\Debug\Panel\Event;
 
 use Closure;
 use PHPForge\Debug\Helper\Fqcn;
+use PHPForge\Debug\Panel\PanelMessage;
 use UIAwesome\Html\Flow\{Div, P, Pre};
-use UIAwesome\Html\Heading\H2;
 use UIAwesome\Html\Interactive\{Details, Summary};
 use UIAwesome\Html\List\{Dd, Dl, Dt};
 use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\{Span, Strong};
+use UIAwesome\Html\Table\{Td, Tr};
 
 use function array_slice;
 use function arsort;
 use function count;
 use function implode;
-use function mb_strcut;
 use function min;
 use function sprintf;
 use function str_repeat;
-use function strlen;
 
 /**
- * Shared execution inspector with truthful timing, native disclosures, and adapter-owned filter URLs.
+ * Shared event-table diagnostics with truthful timing, native disclosures, and adapter-owned filter URLs.
  */
 final class EventInspectorRenderer
 {
     /**
+     * Renders whole-capture shortcuts and capture guidance without repeating event rows.
+     *
      * @param list<EventRow> $allRows Complete capture, in observation order.
-     * @param list<EventRow> $visibleRows Current filtered, sorted page.
-     * @param (Closure(string, string): string)|null $filterUrl Builds a filter URL for an attribute and value.
+     * @param (Closure(string, string): string)|null $filterUrl Builds an adapter-owned filter URL.
      */
-    public static function render(
+    public static function renderControls(
         array $allRows,
-        array $visibleRows,
         Closure|null $filterUrl,
         string $eventAttribute,
         string $coverage,
     ): string {
-        $sequence = new EventSequence($allRows);
-
-        $items = [];
-
-        foreach ($visibleRows as $row) {
-            $items[] = self::event($row, $sequence);
-        }
-
         return Div::tag()
-            ->class('yii-debug-event-inspector')
+            ->class('yii-debug-event-controls')
             ->html(
-                Div::tag()
-                    ->class('yii-debug-section-header')
-                    ->html(
-                        H2::tag()->content('Execution flow'),
-                        Span::tag()
-                            ->class('yii-debug-muted')
-                            ->content('Open an event to inspect its context'),
-                    ),
                 P::tag()
                     ->class('yii-debug-muted')
-                    ->content('Offsets are relative to the first captured event. Gaps are not listener durations.'),
-                self::groups($allRows, $filterUrl, $eventAttribute, 'By event (whole capture)'),
+                    ->content(PanelMessage::EVENT_INSPECTION_GUIDANCE),
                 Details::tag()
-                    ->class('yii-debug-event-coverage yii-debug-muted')
+                    ->class('yii-debug-event-coverage')
                     ->html(
-                        Summary::tag()->content('Group by source'),
-                        self::groups($allRows, $filterUrl, 'senderClass', 'By source (whole capture)'),
+                        Summary::tag()->content(PanelMessage::GROUP_FILTERS),
+                        self::groups($allRows, $filterUrl, $eventAttribute, PanelMessage::EVENT_GROUP_BY_EVENT),
+                        self::groups($allRows, $filterUrl, 'senderClass', PanelMessage::EVENT_GROUP_BY_SOURCE),
                     ),
-                Div::tag()
-                    ->class('yii-debug-event-flow')
-                    ->html(...$items),
                 Details::tag()
                     ->class('yii-debug-event-coverage yii-debug-muted')
                     ->html(
-                        Summary::tag()->content('Capture coverage and privacy'),
+                        Summary::tag()->content(PanelMessage::EVENT_CAPTURE_COVERAGE),
                         P::tag()->content($coverage),
-                        P::tag()->content(
-                            'Enable captureContext and set traceLimit (1-16) on the development Events collector to capture selected context and argument-free source traces. '
-                            . 'Existing snapshots cannot recover missing data. '
-                            . 'Listeners, their durations, and final propagation results are not captured.',
-                        ),
-                        P::tag()->content(
-                            'Paired lifecycle intervals include nested work and dispatch overhead. A leave marker does not prove success.',
-                        ),
+                        P::tag()->content(PanelMessage::EVENT_CAPTURE_GUIDANCE),
+                        P::tag()->content(PanelMessage::EVENT_TIMING_GUIDANCE),
                     ),
             )
             ->render();
     }
 
-    private static function event(EventRow $row, EventSequence $sequence): Details
+    /**
+     * Renders a full-width diagnostic row controlled by the preceding event disclosure.
+     *
+     * @param int<1, 1000> $columns Number of visible columns in the adapter table.
+     */
+    public static function renderDetailRow(EventRow $row, EventSequence $sequence, int $columns): string
     {
         $inspection = $row->inspection();
         $index = $sequence->index($row);
-        $interval = $sequence->interval($row);
-        $gap = $sequence->gap($row);
         $phase = $inspection?->getPhase() ?? '';
-
-        $name = $row->name === $row->class
-            ? Fqcn::renderLabel($row->class)
-            : Strong::tag()->content($row->name)->render();
-
-        $sourceLabel = $row->senderClass === '' ? 'Source not captured' : $row->senderClass;
-
-        if ($phase !== '' && $row->senderClass !== '') {
-            $name = Strong::tag()->title($row->senderClass)->content(Fqcn::shortName($row->senderClass))->render();
-            $sourceLabel = Fqcn::shortName($row->class) . ' / nesting level ' . ($inspection?->getDepth() ?? 0);
-        }
-
-        $preview = '';
-
-        foreach ($inspection?->getContext() ?? [] as $key => $value) {
-            $preview = "{$key}: {$value}";
-
-            $preview = strlen($preview) > 160
-                ? mb_strcut($preview, 0, 157) . '...'
-                : $preview;
-
-            break;
-        }
-
-        $timing = $interval === null
-            ? ($gap === null ? 'First observation' : sprintf('%+.3f ms gap', $gap))
-            : sprintf('%.3f ms inclusive interval', $interval);
-
-        $metadata = [
-            Dt::tag()->content('Observed at'),
-            Dd::tag()->content(EventCellRenderer::renderTimeCell($row)),
-            Dt::tag()->content('Event class'),
-            Dd::tag()->content($row->class),
-            Dt::tag()->content('Source'),
-            Dd::tag()->content($row->senderClass === '' ? 'Not captured' : $row->senderClass),
-            Dt::tag()->content('Listeners / outcome'),
-            Dd::tag()->content('Not captured'),
-        ];
-
-        if ($phase !== '') {
-            $metadata[] = Dt::tag()->content('Lifecycle correlation');
-            $metadata[] = Dd::tag()->content(
-                $inspection?->getPairId() === null
-                    ? 'No matching entry captured'
-                    : "Scope #{$inspection->getPairId()} / {$phase}",
-            );
-        }
-
         $trace = $inspection?->getTrace() ?? [];
 
         $context = [];
@@ -155,89 +84,140 @@ final class EventInspectorRenderer
         }
 
         $contextStatus = match ($inspection?->getContextStatus()) {
-            'captured' => 'Selected context at observation time',
-            'unsupported' => 'No context extractor for this event type',
-            'failed' => 'Context capture failed',
-            default => 'Not captured (context capture is opt-in)',
+            'captured' => PanelMessage::EVENT_CONTEXT_CAPTURED,
+            'unsupported' => PanelMessage::EVENT_CONTEXT_UNSUPPORTED,
+            'failed' => PanelMessage::EVENT_CONTEXT_FAILED,
+            default => PanelMessage::EVENT_CONTEXT_NOT_CAPTURED,
         };
         $traceStatus = match ($inspection?->getTraceStatus()) {
-            'captured' => 'Argument-free source trace',
-            'failed' => 'Source trace capture failed',
-            default => 'Not captured (source trace capture is opt-in)',
+            'captured' => PanelMessage::EVENT_TRACE_CAPTURED,
+            'failed' => PanelMessage::EVENT_TRACE_FAILED,
+            default => PanelMessage::EVENT_TRACE_NOT_CAPTURED,
         };
+
+        return Tr::tag()
+            ->class('yii-debug-event-detail-row')
+            ->html(
+                Td::tag()
+                    ->colspan($columns)
+                    ->html(
+                        Div::tag()
+                            ->id("event-{$index}-detail")
+                            ->class('yii-debug-event-detail')
+                            ->role('region')
+                            ->addAriaAttribute('label', "Diagnostics for event #{$index}")
+                            ->html(
+                                Div::tag()->class('yii-debug-event-context')
+                                    ->html(
+                                        Strong::tag()->content(PanelMessage::CONTEXT),
+                                        P::tag()->content($contextStatus),
+                                        ...$context === []
+                                            ? []
+                                            : [
+                                                Dl::tag()
+                                                ->class('yii-debug-event-metadata')
+                                                ->html(...$context),
+                                            ],
+                                    ),
+                                Div::tag()
+                                    ->class('yii-debug-event-trace')
+                                    ->html(
+                                        Strong::tag()->content(PanelMessage::SOURCE_TRACE),
+                                        P::tag()->content($traceStatus),
+                                        ...$trace === [] ? [] : [Pre::tag()->content(implode("\n", $trace))],
+                                    ),
+                                Div::tag()
+                                    ->class('yii-debug-event-detail-footer')
+                                    ->html(
+                                        A::tag()
+                                            ->class('yii-debug-event-permalink')
+                                            ->href("#event-{$index}")
+                                            ->content("Link to event #{$index}"),
+                                        ...$phase === '' ? [] : [
+                                            Span::tag()
+                                                ->class('yii-debug-muted')
+                                                ->content(
+                                                    $inspection?->getPairId() === null
+                                                    ? PanelMessage::EVENT_UNMATCHED_ENTRY
+                                                    : "Lifecycle correlation: scope #{$inspection->getPairId()}",
+                                                ),
+                                        ],
+                                    ),
+                            ),
+                    ),
+            )
+            ->render();
+    }
+
+    /**
+     * Renders a native diagnostic disclosure inside the adapter's event column.
+     */
+    public static function renderEventCell(EventRow $row, EventSequence $sequence): string
+    {
+        $inspection = $row->inspection();
+        $index = $sequence->index($row);
+        $phase = $inspection?->getPhase() ?? '';
+
+        $name = $row->name === $row->class
+            ? Fqcn::renderLabel($row->class)
+            : Strong::tag()->content($row->name)->render();
 
         return Details::tag()
             ->id("event-{$index}")
             ->class('yii-debug-event-item')
             ->html(
                 Summary::tag()
+                    ->addAriaAttribute('controls', "event-{$index}-detail")
                     ->html(
-                        Span::tag()
-                            ->class('yii-debug-event-time yii-debug-cell-mono')
-                            ->content(sprintf('%+.3f ms', $sequence->elapsed($row))),
                         Span::tag()
                             ->class('yii-debug-event-identity yii-debug-cell-mono')
                             ->html(
                                 Span::tag()
                                     ->class('yii-debug-event-name')
                                     ->html($name),
-                                Span::tag()
-                                    ->class('yii-debug-event-source yii-debug-muted')
-                                    ->content(
-                                        str_repeat('  ', min(8, $inspection?->getDepth() ?? 0)) . $sourceLabel,
+                                ...$phase === '' ? [] : [
+                                    Span::tag()->class('yii-debug-event-phase yii-debug-muted')->content(
+                                        str_repeat('  ', min(8, $inspection?->getDepth() ?? 0))
+                                        . $phase . ' / nesting level ' . ($inspection?->getDepth() ?? 0),
                                     ),
-                                ...$preview === ''
-                                    ? []
-                                    : [
-                                        Span::tag()
-                                            ->class('yii-debug-event-preview')
-                                            ->content($preview),
-                                    ],
-                            ),
-                        Span::tag()
-                            ->class('yii-debug-event-timing yii-debug-muted')
-                            ->html(
-                                Span::tag()
-                                    ->class('yii-debug-cell-mono')
-                                    ->content($phase === '' ? "#{$index}" : $phase),
-                                Span::tag()->content($timing),
+                                ],
                             ),
                     ),
-                Div::tag()
-                    ->class('yii-debug-event-detail')
-                    ->html(
-                        A::tag()
-                            ->class('yii-debug-event-permalink')
-                            ->href("#event-{$index}")
-                            ->content("Link to event #{$index}"),
-                        Dl::tag()
-                            ->class('yii-debug-event-metadata')
-                            ->html(...$metadata),
-                        Div::tag()
-                            ->class('yii-debug-event-context')
-                            ->html(
-                                Strong::tag()->content('Context'),
-                                P::tag()->content($contextStatus),
-                                Dl::tag()
-                                    ->class('yii-debug-event-metadata')
-                                    ->html(...$context),
-                            ),
-                        Div::tag()
-                            ->class('yii-debug-event-trace')
-                            ->html(
-                                Strong::tag()->content('Source trace'),
-                                P::tag()->content($traceStatus),
-                                ...$trace === [] ? [] : [Pre::tag()->content(implode("\n", $trace))],
-                            ),
-                    ),
-            );
+            )
+            ->render();
+    }
+
+    /**
+     * Renders an original-capture offset and an explicitly labeled gap or inclusive interval.
+     */
+    public static function renderTimeCell(EventRow $row, EventSequence $sequence): string
+    {
+        $interval = $sequence->interval($row);
+        $gap = $sequence->gap($row);
+
+        $timing = $interval === null
+            ? ($gap === null ? PanelMessage::EVENT_FIRST_OBSERVATION : sprintf('%+.3f ms gap', $gap))
+            : sprintf('%.3f ms inclusive interval', $interval);
+
+        return Div::tag()
+            ->class('yii-debug-event-clock')
+            ->html(
+                Span::tag()
+                    ->class('yii-debug-event-time yii-debug-cell-mono')
+                    ->title('Observed at ' . EventCellRenderer::renderTimeCell($row))
+                    ->content(sprintf('%+.3f ms', $sequence->elapsed($row))),
+                Span::tag()
+                    ->class('yii-debug-event-timing yii-debug-muted')
+                    ->content($timing),
+            )
+            ->render();
     }
 
     /**
      * @param list<EventRow> $rows
      * @param (Closure(string, string): string)|null $filterUrl
      */
-    private static function groups(array $rows, Closure|null $filterUrl, string $attribute, string $label): Div
+    private static function groups(array $rows, Closure|null $filterUrl, string $attribute, PanelMessage $label): Div
     {
         $groups = [];
 
@@ -265,16 +245,16 @@ final class EventInspectorRenderer
             // PHP converts integer-string array keys to integers.
             $name = "{$name}";
 
-            $label = Fqcn::renderLabel($name) . Span::tag()->content((string) $total)->render();
+            $groupLabel = Fqcn::renderLabel($name) . Span::tag()->content((string) $total)->render();
 
             $items[] = $filterUrl === null
                 ? Span::tag()
                     ->class('yii-debug-event-group')
-                    ->html($label)
+                    ->html($groupLabel)
                 : A::tag()
                     ->class('yii-debug-event-group')
                     ->href($filterUrl($attribute, $name))
-                    ->html($label);
+                    ->html($groupLabel);
         }
 
         if (count($groups) > 8) {

@@ -181,23 +181,35 @@ installed or locked development revision includes these classes. Update and veri
 Local adapter installations linked to this workspace verify integration but do not validate older published artifacts.
 No adapter constructor, property, getter, return type, template, asset, or persisted representation changes.
 
-### Event execution inspection
+### Event table and diagnostics
 
-The shared Events inspector preserves original observation identities, offsets from the first captured event, and
-previous-observation gaps across filtering, sorting, and pagination. Event/source groups are whole-capture counts;
-adapter query filters still use their existing substring semantics. The original table remains available in a native
-disclosure with its column filters. Native event disclosures work without JavaScript.
+Events uses one filterable, sortable table with native diagnostic controls in the event column. Original observation
+numbers, offsets from the first captured event, and previous-observation gaps remain stable across filtering, sorting,
+and pagination. Event/source shortcuts show whole-capture counts and retain the adapter's substring filter semantics.
 
-`EventRow::withInspection()` creates an enriched copy while keeping its existing constructor and public readonly
-properties unchanged. `EventInspection` adds optional bounded scalar context, argument-free source locations,
-explicit capture states, and request-local lifecycle correlation. Rows without inspection keep their existing JSON
-shape; enriched rows add an `inspection` field. New readers can still load older rows. Upgrade the core and adapters
-together before reading enriched rows: older strict readers reject the additional field.
+`EventInspectorRenderer::renderControls()` renders group shortcuts and capture guidance. Adapters reuse one
+`EventSequence` for the complete capture and call `renderTimeCell()` and `renderEventCell()` for each visible row.
+Append `renderDetailRow()` immediately after each event row, passing the table's column count. The native disclosure
+reveals context and source trace across the table width, side by side on larger screens and stacked on narrow screens.
+Diagnostics do not repeat the timestamp, event name, class, source, or static flag already available in the table.
+There is no standalone execution-flow renderer or secondary event table.
 
-Construct `EventInspection` without arguments and add optional groups through immutable methods. Each method returns
-a new instance and preserves the other groups; read values through getters such as `getContext()` and `getPairId()`.
-This replaces the initial development-only constructor arguments and public properties while preserving the serialized
-`inspection` structure.
+`PanelMessage` centralizes static presentation text, starting with Events. Shared labels have unprefixed case names;
+event-specific guidance and capture-state descriptions use `EVENT_`. Pass cases directly to `content()` without
+`->value`; `ui-awesome/html-mixin ^0.8.1` normalizes the enum value before HTML encoding. Captured values, filter keys,
+and dynamic text remain outside the catalog. The rendered wording and snapshot format are unchanged.
+
+```php
+use PHPForge\Debug\Panel\PanelMessage;
+use UIAwesome\Html\Flow\P;
+
+echo P::tag()->content(PanelMessage::EVENT_CAPTURE_GUIDANCE)->render();
+```
+
+`EventRow::withInspection()` creates an enriched copy without changing the captured row. `EventInspection` supplies
+optional bounded scalar context, argument-free source locations, capture states, and request-local lifecycle correlation.
+Rows without diagnostics omit `inspection` from JSON; enriched rows include it. Construct `EventInspection` without
+arguments, configure optional groups through immutable methods, and read values through getters.
 
 ```php
 use PHPForge\Debug\Panel\Event\EventInspection;
