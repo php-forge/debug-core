@@ -9,7 +9,7 @@ use PHPForge\Debug\Tests\Panel\Event\EventInspectorRendererTest;
 use function str_repeat;
 
 /**
- * Provides capture states, preview boundaries, and group limits for {@see EventInspectorRendererTest}.
+ * Provides capture states, preview boundaries, and group values and limits for {@see EventInspectorRendererTest}.
  */
 final class EventInspectorRendererProvider
 {
@@ -51,6 +51,19 @@ final class EventInspectorRendererProvider
     {
         yield 'exactly eight groups' => [8, 0];
         yield 'two overflow groups' => [10, 2];
+    }
+
+    /**
+     * @return iterable<string, array{string, string, bool}>
+     */
+    public static function numericGroupKeys(): iterable
+    {
+        foreach (['name', 'class', 'senderClass'] as $attribute) {
+            foreach (['0', '123', '-123', '0123'] as $value) {
+                yield "{$attribute} {$value} without filters" => [$attribute, $value, false];
+                yield "{$attribute} {$value} with filters" => [$attribute, $value, true];
+            }
+        }
     }
 
     /**

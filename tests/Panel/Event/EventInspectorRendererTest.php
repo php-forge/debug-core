@@ -220,6 +220,64 @@ final class EventInspectorRendererTest extends TestCase
         );
     }
 
+    #[DataProviderExternal(EventInspectorRendererProvider::class, 'numericGroupKeys')]
+    public function testRenderPreservesNumericGroupKeys(string $attribute, string $value, bool $withFilter): void
+    {
+        $row = new EventRow(
+            10.0,
+            $attribute === 'name' ? $value : 'event',
+            $attribute === 'class' ? $value : 'Event',
+            '0',
+            $attribute === 'senderClass' ? $value : 'Worker',
+        );
+
+        $eventAttribute = $attribute === 'class' ? 'class' : 'name';
+        $filters = [];
+
+        $filterUrl = static function (string $attribute, string $value) use (&$filters): string {
+            $filters[] = [$attribute, $value];
+
+            return "/debug?{$attribute}={$value}";
+        };
+
+        $html = EventInspectorRenderer::render(
+            [$row, $row],
+            [],
+            $withFilter ? $filterUrl : null,
+            $eventAttribute,
+            'Coverage',
+        );
+
+        self::assertStringContainsString(
+            "<span title=\"{$value}\"><strong>{$value}</strong></span><span>2</span>",
+            $html,
+            'Numeric group labels must retain their original string representation and complete capture count.',
+        );
+        self::assertSame(
+            2,
+            substr_count($html, 'class="yii-debug-event-group"'),
+            'Repeated observations must share one event group and one source group.',
+        );
+        self::assertSame(
+            $withFilter
+                ? [
+                    [$eventAttribute, $eventAttribute === 'class' ? $row->class : $row->name],
+                    ['senderClass', $row->senderClass],
+                ]
+                : [],
+            $filters,
+            'Filter callbacks must receive the original group values as strings.',
+        );
+
+        if ($withFilter) {
+            self::assertStringContainsString(
+                "href=\"/debug?{$attribute}={$value}\"",
+                $html,
+                'Numeric group links must retain their filter attribute and value.',
+            );
+        }
+    }
+
     public function testRenderUsesEventClassAsNameWithoutInspection(): void
     {
         $row = new EventRow(10.0, 'App\\Started', 'App\\Started', '1', '');

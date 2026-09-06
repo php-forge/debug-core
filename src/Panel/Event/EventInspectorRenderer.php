@@ -262,7 +262,11 @@ final class EventInspectorRenderer
         ];
 
         foreach (array_slice($groups, 0, 8, true) as $name => $total) {
+            // PHP converts integer-string array keys to integers.
+            $name = "{$name}";
+
             $label = Fqcn::renderLabel($name) . Span::tag()->content((string) $total)->render();
+
             $items[] = $filterUrl === null
                 ? Span::tag()
                     ->class('yii-debug-event-group')
