@@ -190,12 +190,14 @@ disclosure with its column filters. Native event disclosures work without JavaSc
 
 `EventRow::withInspection()` creates an enriched copy while keeping its existing constructor and public readonly
 properties unchanged. `EventInspection` adds optional bounded scalar context, argument-free source locations,
-explicit capture states, and request-local lifecycle correlation. Older rows serialize without the optional field and
-remain readable. Upgrade the core and adapters together: older readers reject undeclared diagnostic fields.
+explicit capture states, and request-local lifecycle correlation. Rows without inspection keep their existing JSON
+shape; enriched rows add an `inspection` field. New readers can still load older rows. Upgrade the core and adapters
+together before reading enriched rows: older strict readers reject the additional field.
 
 Construct `EventInspection` without arguments and add optional groups through immutable methods. Each method returns
 a new instance and preserves the other groups; read values through getters such as `getContext()` and `getPairId()`.
-This replaces the initial development-only constructor arguments and public properties without changing JSON payloads.
+This replaces the initial development-only constructor arguments and public properties while preserving the serialized
+`inspection` structure.
 
 ```php
 use PHPForge\Debug\Panel\Event\EventInspection;
