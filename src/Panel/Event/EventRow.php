@@ -6,36 +6,42 @@ namespace PHPForge\Debug\Panel\Event;
 
 use PHPForge\Debug\Storage\{PanelRow, Payload};
 
+use function array_key_exists;
 use function count;
 
 /**
  * Typed event row recorded by the wildcard listener and persisted in that form.
  */
-final readonly class EventRow implements PanelRow
+final class EventRow implements PanelRow
 {
+    /**
+     * Optional diagnostics are assigned only on enriched copies; captured rows remain immutable.
+     */
+    private EventInspection|null $inspection = null;
+
     public function __construct(
         /**
          * Capture timestamp in seconds since the Unix epoch.
          */
-        public float $time,
+        public readonly float $time,
         /**
          * Event name (for example, `EVENT_AFTER_REQUEST`).
          */
-        public string $name,
+        public readonly string $name,
         /**
          * Fully qualified class name of the event object.
          */
-        public string $class,
+        public readonly string $class,
         /**
          * `'1'` when the event was triggered statically (no sender), `'0'` otherwise.
          *
          * Stored as a string so the value round-trips through the search model's `boolean` rule.
          */
-        public string $isStatic,
+        public readonly string $isStatic,
         /**
          * Fully qualified class name of the sender, or `''` when the event was triggered statically.
          */
-        public string $senderClass,
+        public readonly string $senderClass,
     ) {}
 
     /**
@@ -67,15 +73,25 @@ final readonly class EventRow implements PanelRow
                     'isStatic',
                     'senderClass',
                 ],
+                ['inspection'],
             );
 
-        return new self(
+        $row = new self(
             time: $payload->number('time'),
             name: $payload->string('name'),
             class: $payload->string('class'),
             isStatic: $payload->string('isStatic'),
             senderClass: $payload->string('senderClass'),
         );
+
+        return array_key_exists('inspection', $payload->all())
+            ? $row->withInspection(EventInspection::fromArray($payload->raw('inspection'), "{$path}.inspection"))
+            : $row;
+    }
+
+    public function inspection(): EventInspection|null
+    {
+        return $this->inspection;
     }
 
     /**
@@ -89,6 +105,7 @@ final readonly class EventRow implements PanelRow
             'class' => $this->class,
             'isStatic' => $this->isStatic,
             'senderClass' => $this->senderClass,
+            ...isset($this->inspection) ? ['inspection' => $this->inspection->jsonSerialize()] : [],
         ];
     }
 
@@ -108,5 +125,16 @@ final readonly class EventRow implements PanelRow
         }
 
         return $static;
+    }
+
+    /**
+     * Returns an enriched copy without changing the constructor or the original captured row.
+     */
+    public function withInspection(EventInspection $inspection): self
+    {
+        $clone = clone $this;
+        $clone->inspection = $inspection;
+
+        return $clone;
     }
 }

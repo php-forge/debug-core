@@ -180,3 +180,40 @@ Both adapters currently require `php-forge/debug-core` at `^0.1@dev`; this const
 installed or locked development revision includes these classes. Update and verify consuming application locks together.
 Local adapter installations linked to this workspace verify integration but do not validate older published artifacts.
 No adapter constructor, property, getter, return type, template, asset, or persisted representation changes.
+
+### Event execution inspection
+
+The shared Events inspector preserves original observation identities, offsets from the first captured event, and
+previous-observation gaps across filtering, sorting, and pagination. Event/source groups are whole-capture counts;
+adapter query filters still use their existing substring semantics. The original table remains available in a native
+disclosure with its column filters. Native event disclosures work without JavaScript.
+
+`EventRow::withInspection()` creates an enriched copy while keeping its existing constructor and public readonly
+properties unchanged. `EventInspection` adds optional bounded scalar context, argument-free source locations,
+explicit capture states, and request-local lifecycle correlation. Older rows serialize without the optional field and
+remain readable. Upgrade the core and adapters together: older readers reject undeclared diagnostic fields.
+
+Construct `EventInspection` without arguments and add optional groups through immutable methods. Each method returns
+a new instance and preserves the other groups; read values through getters such as `getContext()` and `getPairId()`.
+This replaces the initial development-only constructor arguments and public properties without changing JSON payloads.
+
+```php
+use PHPForge\Debug\Panel\Event\EventInspection;
+
+$inspection = (new EventInspection())
+    ->withContext(['View file' => '/views/site.php'], 'captured')
+    ->withTrace(['/app/action.php:42'], 'captured')
+    ->withLifecycle(1, 'enter', 0, 10.25);
+```
+
+Omit groups that are not captured. Context and trace methods require an explicit capture state; lifecycle metadata
+must describe an actual observation rather than an inferred pair. Capture bounds and hydration validation are unchanged.
+
+Lifecycle intervals are shown only for one explicitly correlated entry/leave pair with a consistent source, depth,
+and monotonic clock. They include nested work and dispatch overhead; they are not listener or exclusive middleware
+durations. Missing or ambiguous observations remain unavailable, never zero or successful. Context and trace capture
+are adapter opt-ins; listener execution and final propagation results are not captured. See each adapter's Events
+configuration for its capture coverage and selected fields.
+
+Run `npm run test:events` against the configured local applications for keyboard, filter, responsive layout, and
+light/dark accessibility checks on fresh captures. These checks do not require seeded history fixtures.
