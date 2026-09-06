@@ -1,0 +1,135 @@
+/* Event diagnostics extend the shared table without duplicating captured rows. */
+.yii-debug .yii-debug-event-controls {
+  margin-block: var(--yii-debug-space-4);
+  font-size: var(--yii-debug-fs-xs);
+}
+
+.yii-debug .yii-debug-event-groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--yii-debug-space-2);
+  margin-block: var(--yii-debug-space-4);
+}
+
+.yii-debug .yii-debug-event-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--yii-debug-space-2);
+  min-height: var(--yii-debug-control-min-size);
+  padding: var(--yii-debug-space-1) var(--yii-debug-space-2);
+  border: var(--yii-debug-border);
+  border-radius: var(--yii-debug-radius-pill);
+  background: var(--yii-debug-panel-surface-muted);
+  overflow-wrap: anywhere;
+}
+
+.yii-debug .yii-debug-event-item > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.yii-debug .yii-debug-event-item > summary:focus-visible {
+  outline: 2px solid var(--yii-debug-panel-primary);
+  outline-offset: 4px;
+  border-radius: var(--yii-debug-radius-sm);
+}
+
+.yii-debug :is(.yii-debug-event-clock, .yii-debug-event-identity) {
+  display: grid;
+  gap: var(--yii-debug-space-1);
+}
+
+.yii-debug .yii-debug-event-clock {
+  min-width: 105px;
+}
+
+.yii-debug .yii-debug-event-time {
+  white-space: nowrap;
+  color: var(--yii-debug-panel-primary);
+}
+
+.yii-debug .yii-debug-event-identity {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.yii-debug .yii-debug-event-name::before {
+  content: "+ ";
+  color: var(--yii-debug-panel-primary);
+}
+
+.yii-debug .yii-debug-event-item[open] .yii-debug-event-name::before {
+  content: "− ";
+}
+
+.yii-debug .yii-debug-event-timing {
+  font-size: var(--yii-debug-fs-xs);
+}
+
+.yii-debug .yii-debug-event-detail-row {
+  display: none;
+}
+
+.yii-debug .yii-debug-table tr:has(.yii-debug-event-item[open]) + .yii-debug-event-detail-row {
+  display: table-row;
+}
+
+.yii-debug .yii-debug-table .yii-debug-event-detail-row > td {
+  padding: 0;
+}
+
+.yii-debug .yii-debug-event-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--yii-debug-space-4);
+  padding: var(--yii-debug-space-4);
+  background: var(--yii-debug-panel-surface-muted);
+  white-space: normal;
+}
+
+.yii-debug .yii-debug-event-detail > div {
+  min-width: 0;
+}
+
+.yii-debug .yii-debug-event-detail-footer {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: var(--yii-debug-space-2) var(--yii-debug-space-4);
+}
+
+.yii-debug .yii-debug-event-metadata {
+  display: grid;
+  grid-template-columns: minmax(75px, 0.4fr) minmax(0, 1fr);
+  gap: var(--yii-debug-space-2) var(--yii-debug-space-3);
+}
+
+.yii-debug .yii-debug-event-metadata dt {
+  color: var(--yii-debug-panel-muted);
+}
+
+.yii-debug .yii-debug-event-metadata dd {
+  margin: 0;
+}
+
+.yii-debug .yii-debug-event-trace pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.yii-debug :is(.yii-debug-event-context, .yii-debug-event-trace) > :last-child {
+  margin-bottom: 0;
+}
+
+@media (width < 768px) {
+  .yii-debug .yii-debug-event-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.yii-debug .yii-debug-event-coverage > summary {
+  min-height: var(--yii-debug-control-min-size);
+  padding-block: var(--yii-debug-space-2);
+  cursor: pointer;
+}

@@ -180,3 +180,54 @@ Both adapters currently require `php-forge/debug-core` at `^0.1@dev`; this const
 installed or locked development revision includes these classes. Update and verify consuming application locks together.
 Local adapter installations linked to this workspace verify integration but do not validate older published artifacts.
 No adapter constructor, property, getter, return type, template, asset, or persisted representation changes.
+
+### Event table and diagnostics
+
+Events uses one filterable, sortable table with native diagnostic controls in the event column. Original observation
+numbers, offsets from the first captured event, and previous-observation gaps remain stable across filtering, sorting,
+and pagination. Event/source shortcuts show whole-capture counts and retain the adapter's substring filter semantics.
+
+`EventInspectorRenderer::renderControls()` renders group shortcuts and capture guidance. Adapters reuse one
+`EventSequence` for the complete capture and call `renderTimeCell()` and `renderEventCell()` for each visible row.
+Append `renderDetailRow()` immediately after each event row, passing the table's column count. The native disclosure
+reveals context and source trace across the table width, side by side on larger screens and stacked on narrow screens.
+Diagnostics do not repeat the timestamp, event name, class, source, or static flag already available in the table.
+There is no standalone execution-flow renderer or secondary event table.
+
+`PanelMessage` centralizes static presentation text, starting with Events. Shared labels have unprefixed case names;
+event-specific guidance and capture-state descriptions use `EVENT_`. Pass cases directly to `content()` without
+`->value`; `ui-awesome/html-mixin ^0.8.1` normalizes the enum value before HTML encoding. Captured values, filter keys,
+and dynamic text remain outside the catalog. The rendered wording and snapshot format are unchanged.
+
+```php
+use PHPForge\Debug\Panel\PanelMessage;
+use UIAwesome\Html\Flow\P;
+
+echo P::tag()->content(PanelMessage::EVENT_CAPTURE_GUIDANCE)->render();
+```
+
+`EventRow::withInspection()` creates an enriched copy without changing the captured row. `EventInspection` supplies
+optional bounded scalar context, argument-free source locations, capture states, and request-local lifecycle correlation.
+Rows without diagnostics omit `inspection` from JSON; enriched rows include it. Construct `EventInspection` without
+arguments, configure optional groups through immutable methods, and read values through getters.
+
+```php
+use PHPForge\Debug\Panel\Event\EventInspection;
+
+$inspection = (new EventInspection())
+    ->withContext(['View file' => '/views/site.php'], 'captured')
+    ->withTrace(['/app/action.php:42'], 'captured')
+    ->withLifecycle(1, 'enter', 0, 10.25);
+```
+
+Omit groups that are not captured. Context and trace methods require an explicit capture state; lifecycle metadata
+must describe an actual observation rather than an inferred pair. Capture bounds and hydration validation are unchanged.
+
+Lifecycle intervals are shown only for one explicitly correlated entry/leave pair with a consistent source, depth,
+and monotonic clock. They include nested work and dispatch overhead; they are not listener or exclusive middleware
+durations. Missing or ambiguous observations remain unavailable, never zero or successful. Context and trace capture
+are adapter opt-ins; listener execution and final propagation results are not captured. See each adapter's Events
+configuration for its capture coverage and selected fields.
+
+Run `npm run test:events` against the configured local applications for keyboard, filter, responsive layout, and
+light/dark accessibility checks on fresh captures. These checks do not require seeded history fixtures.

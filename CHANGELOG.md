@@ -41,3 +41,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat(api): centralize request-summary metric calculations and formatting in `SummaryMetricComparison`, preserving history labels, order, units, rounding, percentages, trends, and panel links.
 - feat(api): add framework-neutral `PanelComparison` for ordered panel IDs, failure precedence, capture states, and combined structural/state counts without changing adapter output or diagnostic values.
 - refactor: share captured URL-to-path display conversion through `Text::urlToPath()` while retaining original diagnostic URLs and adapter-owned presentation models.
+- feat(events): add the shared execution inspector, stable chronology, grouped filters, bounded optional context and traces, and explicit lifecycle correlation.
