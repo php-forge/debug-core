@@ -11,7 +11,7 @@ use function array_map;
 /**
  * Canonical Dump panel snapshot holding the captured rows in their typed form.
  *
- * @phpstan-import-type LogMessage from \PHPForge\Debug\Panel\Log\LogSnapshot
+ * @phpstan-import-type LogTuple from \PHPForge\Debug\Panel\Log\LogSnapshot
  */
 final readonly class DumpSnapshot implements PanelSnapshot
 {
@@ -23,7 +23,7 @@ final readonly class DumpSnapshot implements PanelSnapshot
     /**
      * Converts canonical logger tuples into typed rows.
      *
-     * @param list<LogMessage> $messages Logger tuples in capture order.
+     * @param list<LogTuple> $messages Logger tuples in capture order.
      */
     public static function capture(array $messages): self
     {

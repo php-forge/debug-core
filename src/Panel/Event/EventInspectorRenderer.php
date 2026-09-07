@@ -44,32 +44,32 @@ final class EventInspectorRenderer
             ->html(
                 P::tag()
                     ->class('yii-debug-muted')
-                    ->content(PanelMessage::EVENT_INSPECTION_GUIDANCE),
+                    ->content(EventMessage::INSPECTION_GUIDANCE),
                 Details::tag()
                     ->class('yii-debug-event-coverage')
                     ->html(
                         Summary::tag()->content(PanelMessage::GROUP_FILTERS),
-                        self::groups($allRows, $filterUrl, $eventAttribute, PanelMessage::EVENT_GROUP_BY_EVENT),
-                        self::groups($allRows, $filterUrl, 'senderClass', PanelMessage::EVENT_GROUP_BY_SOURCE),
+                        self::groups($allRows, $filterUrl, $eventAttribute, EventMessage::GROUP_BY_EVENT),
+                        self::groups($allRows, $filterUrl, 'senderClass', EventMessage::GROUP_BY_SOURCE),
                     ),
                 Details::tag()
                     ->class('yii-debug-event-coverage yii-debug-muted')
                     ->html(
-                        Summary::tag()->content(PanelMessage::EVENT_CAPTURE_COVERAGE),
+                        Summary::tag()->content(EventMessage::CAPTURE_COVERAGE),
                         P::tag()->content($coverage),
-                        P::tag()->content(PanelMessage::EVENT_CAPTURE_GUIDANCE),
-                        P::tag()->content(PanelMessage::EVENT_TIMING_GUIDANCE),
+                        P::tag()->content(EventMessage::CAPTURE_GUIDANCE),
+                        P::tag()->content(EventMessage::TIMING_GUIDANCE),
                     ),
             )
             ->render();
     }
 
     /**
-     * Renders a full-width diagnostic row controlled by the preceding event disclosure.
+     * Renders the diagnostic disclosure content of one event without the table row wrapper.
      *
-     * @param int<1, 1000> $columns Number of visible columns in the adapter table.
+     * {@see renderDetailRow()} wraps this content in a full-width table row.
      */
-    public static function renderDetailRow(EventRow $row, EventSequence $sequence, int $columns): string
+    public static function renderDetailCell(EventRow $row, EventSequence $sequence): string
     {
         $inspection = $row->inspection();
         $index = $sequence->index($row);
@@ -84,67 +84,76 @@ final class EventInspectorRenderer
         }
 
         $contextStatus = match ($inspection?->getContextStatus()) {
-            'captured' => PanelMessage::EVENT_CONTEXT_CAPTURED,
-            'unsupported' => PanelMessage::EVENT_CONTEXT_UNSUPPORTED,
-            'failed' => PanelMessage::EVENT_CONTEXT_FAILED,
-            default => PanelMessage::EVENT_CONTEXT_NOT_CAPTURED,
+            'captured' => EventMessage::CONTEXT_CAPTURED,
+            'unsupported' => EventMessage::CONTEXT_UNSUPPORTED,
+            'failed' => EventMessage::CONTEXT_FAILED,
+            default => EventMessage::CONTEXT_NOT_CAPTURED,
         };
         $traceStatus = match ($inspection?->getTraceStatus()) {
-            'captured' => PanelMessage::EVENT_TRACE_CAPTURED,
-            'failed' => PanelMessage::EVENT_TRACE_FAILED,
-            default => PanelMessage::EVENT_TRACE_NOT_CAPTURED,
+            'captured' => EventMessage::TRACE_CAPTURED,
+            'failed' => EventMessage::TRACE_FAILED,
+            default => EventMessage::TRACE_NOT_CAPTURED,
         };
 
+        return Div::tag()
+            ->id("event-{$index}-detail")
+            ->class('yii-debug-event-detail')
+            ->role('region')
+            ->addAriaAttribute('label', "Diagnostics for event #{$index}")
+            ->html(
+                Div::tag()->class('yii-debug-event-context')
+                    ->html(
+                        Strong::tag()->content(PanelMessage::CONTEXT),
+                        P::tag()->content($contextStatus),
+                        ...$context === []
+                            ? []
+                            : [
+                                Dl::tag()
+                                ->class('yii-debug-event-metadata')
+                                ->html(...$context),
+                            ],
+                    ),
+                Div::tag()
+                    ->class('yii-debug-event-trace')
+                    ->html(
+                        Strong::tag()->content(PanelMessage::SOURCE_TRACE),
+                        P::tag()->content($traceStatus),
+                        ...$trace === [] ? [] : [Pre::tag()->content(implode("\n", $trace))],
+                    ),
+                Div::tag()
+                    ->class('yii-debug-event-detail-footer')
+                    ->html(
+                        A::tag()
+                            ->class('yii-debug-event-permalink')
+                            ->href("#event-{$index}")
+                            ->content("Link to event #{$index}"),
+                        ...$phase === '' ? [] : [
+                            Span::tag()
+                                ->class('yii-debug-muted')
+                                ->content(
+                                    $inspection?->getPairId() === null
+                                    ? EventMessage::UNMATCHED_ENTRY
+                                    : "Lifecycle correlation: scope #{$inspection->getPairId()}",
+                                ),
+                        ],
+                    ),
+            )
+            ->render();
+    }
+
+    /**
+     * Renders a full-width diagnostic row controlled by the preceding event disclosure.
+     *
+     * @param int<1, 1000> $columns Number of visible columns in the adapter table.
+     */
+    public static function renderDetailRow(EventRow $row, EventSequence $sequence, int $columns): string
+    {
         return Tr::tag()
             ->class('yii-debug-event-detail-row')
             ->html(
                 Td::tag()
                     ->colspan($columns)
-                    ->html(
-                        Div::tag()
-                            ->id("event-{$index}-detail")
-                            ->class('yii-debug-event-detail')
-                            ->role('region')
-                            ->addAriaAttribute('label', "Diagnostics for event #{$index}")
-                            ->html(
-                                Div::tag()->class('yii-debug-event-context')
-                                    ->html(
-                                        Strong::tag()->content(PanelMessage::CONTEXT),
-                                        P::tag()->content($contextStatus),
-                                        ...$context === []
-                                            ? []
-                                            : [
-                                                Dl::tag()
-                                                ->class('yii-debug-event-metadata')
-                                                ->html(...$context),
-                                            ],
-                                    ),
-                                Div::tag()
-                                    ->class('yii-debug-event-trace')
-                                    ->html(
-                                        Strong::tag()->content(PanelMessage::SOURCE_TRACE),
-                                        P::tag()->content($traceStatus),
-                                        ...$trace === [] ? [] : [Pre::tag()->content(implode("\n", $trace))],
-                                    ),
-                                Div::tag()
-                                    ->class('yii-debug-event-detail-footer')
-                                    ->html(
-                                        A::tag()
-                                            ->class('yii-debug-event-permalink')
-                                            ->href("#event-{$index}")
-                                            ->content("Link to event #{$index}"),
-                                        ...$phase === '' ? [] : [
-                                            Span::tag()
-                                                ->class('yii-debug-muted')
-                                                ->content(
-                                                    $inspection?->getPairId() === null
-                                                    ? PanelMessage::EVENT_UNMATCHED_ENTRY
-                                                    : "Lifecycle correlation: scope #{$inspection->getPairId()}",
-                                                ),
-                                        ],
-                                    ),
-                            ),
-                    ),
+                    ->html(self::renderDetailCell($row, $sequence)),
             )
             ->render();
     }
@@ -196,7 +205,7 @@ final class EventInspectorRenderer
         $gap = $sequence->gap($row);
 
         $timing = $interval === null
-            ? ($gap === null ? PanelMessage::EVENT_FIRST_OBSERVATION : sprintf('%+.3f ms gap', $gap))
+            ? ($gap === null ? EventMessage::FIRST_OBSERVATION : sprintf('%+.3f ms gap', $gap))
             : sprintf('%.3f ms inclusive interval', $interval);
 
         return Div::tag()
@@ -217,7 +226,7 @@ final class EventInspectorRenderer
      * @param list<EventRow> $rows
      * @param (Closure(string, string): string)|null $filterUrl
      */
-    private static function groups(array $rows, Closure|null $filterUrl, string $attribute, PanelMessage $label): Div
+    private static function groups(array $rows, Closure|null $filterUrl, string $attribute, EventMessage $label): Div
     {
         $groups = [];
 

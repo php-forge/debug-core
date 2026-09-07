@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use function count;
+use function gettype;
+use function is_array;
+use function is_bool;
+use function is_float;
+use function is_int;
+use function is_string;
 use function rtrim;
 use function sprintf;
+use function strlen;
 
 /**
- * Formats numeric values for display in debug-panel views and toolbar chips.
+ * Formats values and type labels for display in debug-panel views and toolbar chips.
  */
 final class Format
 {
@@ -41,5 +49,25 @@ final class Format
         $rendered = rtrim($rendered, '.');
 
         return "{$rendered}%";
+    }
+
+    /**
+     * Returns the display label of a value's type, with the element count for arrays and the byte length for strings.
+     *
+     * @param mixed $value JSON-safe value to describe.
+     *
+     * @return string Type label such as `array(3)`, `string(16)`, `int`, `float`, `bool`, or `null`.
+     */
+    public static function typeOf(mixed $value): string
+    {
+        return match (true) {
+            is_array($value) => 'array(' . count($value) . ')',
+            is_string($value) => 'string(' . strlen($value) . ')',
+            is_int($value) => 'int',
+            is_float($value) => 'float',
+            is_bool($value) => 'bool',
+            $value === null => 'null',
+            default => gettype($value),
+        };
     }
 }

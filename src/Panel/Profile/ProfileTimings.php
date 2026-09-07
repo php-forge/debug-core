@@ -13,7 +13,7 @@ use function ksort;
 /**
  * Pairs profile begin/end log tuples into per-block timings.
  *
- * @phpstan-import-type LogMessage from \PHPForge\Debug\Panel\Log\LogSnapshot
+ * @phpstan-import-type LogTuple from \PHPForge\Debug\Panel\Log\LogSnapshot
  * @phpstan-type ProfileTiming array{
  *   info: string,
  *   category: string,
@@ -33,14 +33,14 @@ final class ProfileTimings
      * Each tuple is `[token, level, category, timestamp, traces, memory]`; a begin marker is matched with the next end
      * marker carrying the same token, producing one timing entry ordered by the begin position.
      *
-     * @param list<LogMessage> $messages Profile log tuples in capture order.
+     * @param list<LogTuple> $messages Profile log tuples in capture order.
      *
      * @return list<ProfileTiming> Timings ordered by their begin marker.
      */
     public static function calculate(array $messages): array
     {
         $timings = [];
-        /** @var array<array-key, list<array{message: LogMessage, index: int, level: int}>> $stack */
+        /** @var array<array-key, list<array{message: LogTuple, index: int, level: int}>> $stack */
         $stack = [];
         $nestedLevel = 0;
 
