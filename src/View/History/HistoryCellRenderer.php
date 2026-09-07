@@ -39,6 +39,7 @@ final class HistoryCellRenderer
         $base['data-yii-debug-status'] = (string) $row->statusCode;
         $base['data-yii-debug-time'] = $row->timeCompact;
         $base['data-yii-debug-ajax'] = $row->ajax ? '1' : '';
+        $base['data-yii-debug-memory'] = $row->peakMemory === null ? '' : Format::bytesToMb($row->peakMemory);
 
         return $base;
     }

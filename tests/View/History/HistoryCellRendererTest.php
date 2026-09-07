@@ -73,6 +73,23 @@ final class HistoryCellRendererTest extends TestCase
         );
     }
 
+    public function testCursorMemoryPreservesUnavailableValues(): void
+    {
+        $captured = HistoryCellRenderer::buildRowAttributes(self::row(['peakMemory' => 7 * 1024 * 1024]), false);
+        $missing = HistoryCellRenderer::buildRowAttributes(self::row(['peakMemory' => null]), false);
+
+        self::assertSame(
+            '7.00 MB',
+            $captured['data-yii-debug-memory'] ?? null,
+            'Cursor metadata must expose captured memory.',
+        );
+        self::assertSame(
+            '',
+            $missing['data-yii-debug-memory'] ?? null,
+            'Unavailable memory must not become a fabricated zero.',
+        );
+    }
+
     public function testRenderAjaxCellMapsBoolToYesOrNo(): void
     {
         self::assertSame(

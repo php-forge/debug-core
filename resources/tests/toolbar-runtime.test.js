@@ -38,6 +38,9 @@ function focusable(attributes = {}) {
     focused: false,
     focus() {
       this.focused = true;
+      if (this.root) {
+        this.root.activeElement = this;
+      }
     },
     getAttribute(name) {
       return this.attributes[name] ?? null;
@@ -411,6 +414,10 @@ test("drawer focus enters the close control and returns to its trigger", () => {
     },
   };
 
+  close.root = root;
+  first.root = root;
+  second.root = root;
+
   assert.equal(focusToolbarElement(root, ".close-drawer"), true);
   assert.equal(close.focused, true);
   assert.equal(focusToolbarTrigger(root, "/debug/log"), true);
@@ -689,4 +696,22 @@ test("renderPhpBrand links available PHP info", () => {
     ),
     '<a class="brand-link brand-link-php" href="/debug/php-info" target="_blank" rel="noopener" title="PHP 8.5.9 — open phpinfo in a new tab"><span class="icon"></span><span class="brand-version">8.5.9</span></a>',
   );
+});
+
+test("drawer focus skips hidden duplicate AJAX links and non-focusable triggers", () => {
+  var visible = focusable({ "data-debug-url": "/debug/request" });
+  var hidden = focusable({ "data-debug-url": "/debug/request" });
+  var nonFocusable = { getAttribute: () => "/debug/request" };
+  var root = {
+    activeElement: null,
+    querySelectorAll: () => [nonFocusable, hidden, visible],
+    querySelector: () => hidden,
+  };
+  visible.root = root;
+
+  assert.equal(focusToolbarTrigger(root, "/debug/request"), true);
+  assert.equal(root.activeElement, visible);
+  assert.equal(focusToolbarElement(root, ".hidden"), false);
+  root.querySelectorAll = () => [hidden];
+  assert.equal(focusToolbarTrigger(root, "/debug/request"), false);
 });

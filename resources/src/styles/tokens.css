@@ -78,6 +78,8 @@
   --yii-debug-panel-link: light-dark(#0b6b4a, #4fd39a);
   --yii-debug-panel-link-hover: light-dark(#0d855b, #7fe4b8);
   --yii-debug-panel-primary: light-dark(#0e7a55, #2fd08c);
+  --yii-debug-primary-bg: linear-gradient(135deg, var(--yii-debug-panel-primary-strong), var(--yii-debug-panel-primary));
+  --yii-debug-on-primary: light-dark(#fff, #06281b);
   --yii-debug-panel-primary-strong: light-dark(#0a5c40, #17a673);
   --yii-debug-focus-ring: light-dark(#075c40, #7fe4b8);
   --yii-debug-success: light-dark(#0d7d47, #34c97e);
