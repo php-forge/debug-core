@@ -79,11 +79,10 @@ final class PageSize
      * Renders the page-size selector for the `per-page` value found in the query parameters.
      *
      * @param array<array-key, mixed> $queryParams Query parameters already normalized by the panel.
-     * @param string $name Query parameter holding the requested page size.
      */
-    public static function selectorFor(array $queryParams, string $name = 'per-page'): string
+    public static function selectorFor(array $queryParams): string
     {
-        return self::selectorHtml(self::current(QueryInput::scalar($queryParams, $name)));
+        return self::selectorHtml(self::current(QueryInput::scalar($queryParams, 'per-page')));
     }
 
     /**

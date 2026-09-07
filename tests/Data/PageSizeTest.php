@@ -111,11 +111,6 @@ final class PageSizeTest extends TestCase
             PageSize::selectorFor([]),
             'A missing parameter must fall back to the default selector.',
         );
-        self::assertSame(
-            PageSize::selectorHtml(PageSize::current('10')),
-            PageSize::selectorFor(['rows' => '10'], 'rows'),
-            'A custom parameter name must be honored.',
-        );
     }
 
     public function testSelectorHtmlMarksTheCurrentOptionSelected(): void
