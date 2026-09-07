@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Db;
 
 use InvalidArgumentException;
+use PHPForge\Debug\Exception\Message;
 
 use function min;
 use function strtoupper;
@@ -23,7 +24,9 @@ final class NPlusOneDetector
     public static function detect(array $rows, int $threshold = 3): array
     {
         if ($threshold < 2) {
-            throw new InvalidArgumentException('The N+1 threshold must be at least two.');
+            throw new InvalidArgumentException(
+                Message::N_PLUS_ONE_THRESHOLD_INVALID->getMessage(),
+            );
         }
 
         /**

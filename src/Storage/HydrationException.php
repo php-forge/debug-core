@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Storage;
 
+use PHPForge\Debug\Exception\Message;
 use RuntimeException;
 
 /**
@@ -22,7 +23,7 @@ final class HydrationException extends RuntimeException
     public static function at(string $path, string $expected): self
     {
         return new self(
-            "Invalid debug snapshot value at '{$path}': expected {$expected}.",
+            Message::SNAPSHOT_VALUE_INVALID->getMessage($path, $expected),
         );
     }
 }

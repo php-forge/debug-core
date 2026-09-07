@@ -314,11 +314,12 @@ final class EventInspectionTest extends TestCase
             ->withLifecycle(1, 'enter', 2, 10.25);
 
         $payload = $original->jsonSerialize();
-        $copy = $update($original);
+
+        $clone = $update($original);
 
         self::assertNotSame(
             $original,
-            $copy,
+            $clone,
             'Replacing an optional group must return a new instance.',
         );
         self::assertSame(
@@ -328,12 +329,12 @@ final class EventInspectionTest extends TestCase
         );
         self::assertSame(
             [...$payload, ...$changes],
-            $copy->jsonSerialize(),
+            $clone->jsonSerialize(),
             'Only the selected group may change.',
         );
         self::assertEquals(
-            $copy,
-            EventInspection::fromArray($copy->jsonSerialize(), '$.inspection'),
+            $clone,
+            EventInspection::fromArray($clone->jsonSerialize(), '$.inspection'),
             'Replacement options must round-trip.',
         );
     }

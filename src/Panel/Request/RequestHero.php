@@ -78,35 +78,35 @@ final class RequestHero
      */
     public function withFlags(array $flags): self
     {
-        $copy = clone $this;
-        $copy->flags = $flags;
+        $clone = clone $this;
+        $clone->flags = $flags;
 
-        return $copy;
+        return $clone;
     }
 
     public function withIp(string $ip): self
     {
-        $copy = clone $this;
-        $copy->ip = $ip;
+        $clone = clone $this;
+        $clone->ip = $ip;
 
-        return $copy;
+        return $clone;
     }
 
     public function withStatus(int $statusCode, string $statusVariant): self
     {
-        $copy = clone $this;
-        $copy->statusCode = $statusCode;
-        $copy->statusVariant = $statusVariant;
+        $clone = clone $this;
+        $clone->statusCode = $statusCode;
+        $clone->statusVariant = $statusVariant;
 
-        return $copy;
+        return $clone;
     }
 
     public function withTiming(string $time, string $durationMs): self
     {
-        $copy = clone $this;
-        $copy->time = $time;
-        $copy->durationMs = $durationMs;
+        $clone = clone $this;
+        $clone->time = $time;
+        $clone->durationMs = $durationMs;
 
-        return $copy;
+        return $clone;
     }
 }

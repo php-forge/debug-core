@@ -289,11 +289,11 @@ final class ToolbarDataTest extends TestCase
             yiiVersion: '3',
         );
 
-        $copy = $source->withPanels([$replacementPanel]);
+        $clone = $source->withPanels([$replacementPanel]);
 
         self::assertNotSame(
             $source,
-            $copy,
+            $clone,
             'Panel enrichment must return a new toolbar payload.',
         );
         self::assertSame(
@@ -317,7 +317,7 @@ final class ToolbarDataTest extends TestCase
                 phpVersion: '8.5.9',
                 yiiVersion: '3',
             ),
-            $copy,
+            $clone,
             'Panel enrichment must replace only the toolbar panels.',
         );
     }

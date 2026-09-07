@@ -69,33 +69,33 @@ final class RouteInventoryView
      */
     public function withBadges(array $badges): self
     {
-        $copy = clone $this;
-        $copy->badges = $badges;
+        $clone = clone $this;
+        $clone->badges = $badges;
 
-        return $copy;
+        return $clone;
     }
 
     public function withError(string|null $error): self
     {
-        $copy = clone $this;
-        $copy->error = $error;
+        $clone = clone $this;
+        $clone->error = $error;
 
-        return $copy;
+        return $clone;
     }
 
     public function withLive(bool $live): self
     {
-        $copy = clone $this;
-        $copy->live = $live;
+        $clone = clone $this;
+        $clone->live = $live;
 
-        return $copy;
+        return $clone;
     }
 
     public function withSource(string $source): self
     {
-        $copy = clone $this;
-        $copy->source = $source;
+        $clone = clone $this;
+        $clone->source = $source;
 
-        return $copy;
+        return $clone;
     }
 }

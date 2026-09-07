@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Helper;
 
 use InvalidArgumentException;
+use PHPForge\Debug\Exception\Message;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\List\{Li, Ul};
 use UIAwesome\Html\Palpable\A;
@@ -26,7 +27,7 @@ final class Tabs
     {
         if ($tabs !== [] && !array_key_exists($activeIndex, $tabs)) {
             throw new InvalidArgumentException(
-                'The active tab index must identify a supplied tab.',
+                Message::ACTIVE_TAB_INDEX_INVALID->getMessage(),
             );
         }
 

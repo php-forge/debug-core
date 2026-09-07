@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Storage;
 
 use JsonException;
+use PHPForge\Debug\Exception\Message;
 use Throwable;
 
 use function array_key_exists;
@@ -72,7 +73,7 @@ final class SnapshotStore
                 foreach ($files === false ? [] : $files as $file) {
                     if (is_file($file) && !@unlink($file)) {
                         throw new StorageException(
-                            "Unable to remove debug data file: {$file}",
+                            Message::DATA_FILE_REMOVE_FAILED->getMessage($file),
                         );
                     }
                 }
@@ -101,7 +102,9 @@ final class SnapshotStore
     {
         if (!is_dir($this->path)) {
             $error = is_file($this->path)
-                ? new StorageException("Debug data path is not a directory: {$this->path}")
+                ? new StorageException(
+                    Message::DATA_PATH_NOT_DIRECTORY->getMessage($this->path),
+                )
                 : null;
 
             return new ManifestReadResult([], $error);
@@ -126,13 +129,13 @@ final class SnapshotStore
 
             if ($raw === false) {
                 throw new StorageException(
-                    "Unable to read debug manifest: {$file}",
+                    Message::MANIFEST_READ_FAILED->getMessage($file),
                 );
             }
 
             if ($raw === '') {
                 throw new StorageException(
-                    "Debug manifest is empty: {$file}",
+                    Message::MANIFEST_EMPTY->getMessage($file),
                 );
             }
 
@@ -143,7 +146,7 @@ final class SnapshotStore
             $error = $failure instanceof StorageException
                 ? $failure
                 : new StorageException(
-                    'Unable to read debug manifest.',
+                    Message::MANIFEST_READ_ERROR->getMessage(),
                     0,
                     $failure,
                 );
@@ -176,13 +179,18 @@ final class SnapshotStore
     public function readSnapshotResult(string $tag): SnapshotReadResult
     {
         if (!self::isValidTag($tag)) {
-            return new SnapshotReadResult(null, new StorageException("Invalid debug snapshot tag: {$tag}"));
+            return new SnapshotReadResult(
+                null,
+                new StorageException(
+                    Message::SNAPSHOT_TAG_INVALID->getMessage($tag),
+                ),
+            );
         }
 
         if (!is_dir($this->path)) {
             $error = is_file($this->path)
                 ? new StorageException(
-                    "Debug data path is not a directory: {$this->path}",
+                    Message::DATA_PATH_NOT_DIRECTORY->getMessage($this->path),
                 )
                 : null;
 
@@ -208,13 +216,13 @@ final class SnapshotStore
 
             if ($raw === false) {
                 throw new StorageException(
-                    "Unable to read debug snapshot: {$file}",
+                    Message::SNAPSHOT_READ_FAILED->getMessage($file),
                 );
             }
 
             if ($raw === '') {
                 throw new StorageException(
-                    "Debug snapshot is empty: {$file}",
+                    Message::SNAPSHOT_EMPTY->getMessage($file),
                 );
             }
 
@@ -222,7 +230,7 @@ final class SnapshotStore
 
             if ($snapshot->summary->tag !== $tag) {
                 throw new StorageException(
-                    "Debug snapshot tag does not match its filename: {$file}",
+                    Message::SNAPSHOT_TAG_MISMATCH->getMessage($file),
                 );
             }
 
@@ -231,7 +239,7 @@ final class SnapshotStore
             $error = $failure instanceof StorageException
                 ? $failure
                 : new StorageException(
-                    "Unable to read debug snapshot: {$tag}",
+                    Message::SNAPSHOT_READ_FAILED->getMessage($tag),
                     0,
                     $failure,
                 );
@@ -350,7 +358,7 @@ final class SnapshotStore
 
         if ($lock === false) {
             throw new StorageException(
-                "Unable to open debug data lock file: {$lockFile}",
+                Message::LOCK_FILE_OPEN_FAILED->getMessage($lockFile),
             );
         }
 
@@ -358,7 +366,7 @@ final class SnapshotStore
             fclose($lock);
 
             throw new StorageException(
-                "Unable to acquire debug data lock: {$lockFile}",
+                Message::LOCK_ACQUIRE_FAILED->getMessage($lockFile),
             );
         }
 
@@ -374,7 +382,7 @@ final class SnapshotStore
     {
         if ($historySize < 0) {
             throw new StorageException(
-                "Invalid debug history size: {$historySize}",
+                Message::HISTORY_SIZE_INVALID->getMessage($historySize),
             );
         }
     }
@@ -391,7 +399,7 @@ final class SnapshotStore
 
         if ($temporary === false) {
             throw new StorageException(
-                "Unable to write temporary debug data file for: {$file}",
+                Message::TEMPORARY_FILE_WRITE_FAILED->getMessage($file),
             );
         }
 
@@ -399,7 +407,7 @@ final class SnapshotStore
             @unlink($temporary);
 
             throw new StorageException(
-                "Unable to write temporary debug data file for: {$file}",
+                Message::TEMPORARY_FILE_WRITE_FAILED->getMessage($file),
             );
         }
 
@@ -408,7 +416,7 @@ final class SnapshotStore
                 @unlink($temporary);
 
                 throw new StorageException(
-                    "Unable to apply debug data file mode for: {$file}",
+                    Message::DATA_FILE_MODE_FAILED->getMessage($file),
                 );
             }
         }
@@ -417,7 +425,7 @@ final class SnapshotStore
             @unlink($temporary);
 
             throw new StorageException(
-                "Unable to replace debug data file: {$file}",
+                Message::DATA_FILE_REPLACE_FAILED->getMessage($file),
             );
         }
     }
@@ -504,13 +512,13 @@ final class SnapshotStore
 
         if (!is_dir($this->path)) {
             throw new StorageException(
-                "Unable to create debug data directory: {$this->path}",
+                Message::DATA_DIRECTORY_CREATE_FAILED->getMessage($this->path),
             );
         }
 
         if ($created && !@chmod($this->path, $this->dirMode)) {
             throw new StorageException(
-                "Unable to apply debug data directory mode: {$this->path}",
+                Message::DATA_DIRECTORY_MODE_FAILED->getMessage($this->path),
             );
         }
     }
@@ -551,7 +559,7 @@ final class SnapshotStore
 
         if ($contents === false) {
             throw new StorageException(
-                "Unable to read debug data file: {$file}",
+                Message::DATA_FILE_READ_FAILED->getMessage($file),
             );
         }
 
@@ -575,7 +583,7 @@ final class SnapshotStore
 
         if ($raw === false) {
             throw new StorageException(
-                "Unable to read debug manifest: {$file}",
+                Message::MANIFEST_READ_FAILED->getMessage($file),
             );
         }
 
@@ -657,7 +665,7 @@ final class SnapshotStore
             $transaction = self::decode($raw);
         } catch (JsonException $exception) {
             throw new StorageException(
-                "Invalid debug storage transaction journal: {$file}",
+                Message::TRANSACTION_JOURNAL_INVALID->getMessage($file),
                 0,
                 $exception,
             );
@@ -674,7 +682,7 @@ final class SnapshotStore
             || $transaction['snapshotBefore'] !== null && !is_string($transaction['snapshotBefore'])
             || $transaction['manifestBefore'] !== null && !is_string($transaction['manifestBefore'])
         ) {
-            throw new StorageException("Invalid debug storage transaction journal: {$file}");
+            throw new StorageException(Message::TRANSACTION_JOURNAL_INVALID->getMessage($file));
         }
 
         if ($transaction['state'] === 'committed') {
@@ -684,7 +692,9 @@ final class SnapshotStore
         }
 
         if ($transaction['state'] !== 'prepared') {
-            throw new StorageException("Invalid debug storage transaction journal: {$file}");
+            throw new StorageException(
+                Message::TRANSACTION_JOURNAL_INVALID->getMessage($file),
+            );
         }
 
         $snapshotFile = $this->snapshotFile($transaction['tag']);
@@ -733,7 +743,7 @@ final class SnapshotStore
     {
         if (is_file($file) && !@unlink($file)) {
             throw new StorageException(
-                "Unable to roll back debug data file: {$file}",
+                Message::DATA_FILE_ROLLBACK_FAILED->getMessage($file),
             );
         }
     }
@@ -749,7 +759,7 @@ final class SnapshotStore
     {
         if (!self::isValidTag($tag)) {
             throw new StorageException(
-                "Invalid debug snapshot tag: {$tag}",
+                Message::SNAPSHOT_TAG_INVALID->getMessage($tag),
             );
         }
 

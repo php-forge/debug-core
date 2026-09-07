@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Db;
 
 use PHPForge\Debug\Helper\Dump;
+use PHPForge\Debug\Panel\PanelTitle;
 use UIAwesome\Html\Flow\{Div, P, Pre};
 use UIAwesome\Html\Heading\H1;
 use UIAwesome\Html\Phrasing\Em;
@@ -50,7 +51,7 @@ final class DbExplainRenderer
         $children = [
             H1::tag()
                 ->class('yii-debug-explain-title')
-                ->content('EXPLAIN'),
+                ->content(PanelTitle::EXPLAIN),
         ];
 
         if ($query !== '') {
