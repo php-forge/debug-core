@@ -1614,15 +1614,11 @@
 
     &.is-active,
     &[aria-current="page"] {
-      background: linear-gradient(
-        135deg,
-        var(--yii-debug-panel-primary-strong),
-        var(--yii-debug-panel-primary)
-      );
-      color: #fff;
+      background: var(--yii-debug-primary-bg);
+      color: var(--yii-debug-on-primary);
 
       &::after {
-        color: rgb(255 255 255 / 85%);
+        color: inherit;
       }
     }
   }
@@ -1686,21 +1682,12 @@
 
   .yii-debug-btn-primary {
     border-color: transparent;
-    background: linear-gradient(
-      135deg,
-      var(--yii-debug-panel-primary-strong),
-      var(--yii-debug-panel-primary)
-    );
-    color: #fff;
+    background: var(--yii-debug-primary-bg);
+    color: var(--yii-debug-on-primary);
 
-    &:hover,
-    &:focus {
-      background: linear-gradient(
-        135deg,
-        var(--yii-debug-panel-primary-strong),
-        var(--yii-debug-panel-primary-strong)
-      );
-      color: #fff;
+    &:is(:hover, :focus) {
+      background: var(--yii-debug-panel-primary-strong);
+      color: var(--yii-debug-on-primary);
     }
   }
 
@@ -2431,12 +2418,8 @@
 
   .yii-debug-pager-item.is-active .yii-debug-pager-link {
     border-color: transparent;
-    background: linear-gradient(
-      135deg,
-      var(--yii-debug-panel-primary-strong),
-      var(--yii-debug-panel-primary)
-    );
-    color: #fff;
+    background: var(--yii-debug-primary-bg);
+    color: var(--yii-debug-on-primary);
     cursor: default;
   }
 

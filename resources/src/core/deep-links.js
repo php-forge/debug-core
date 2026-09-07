@@ -135,8 +135,11 @@ export function revealDeepLink(root, locationValue, scroll) {
       : null;
   }
 
-  // Tabs already indicate selection; highlighting the whole panel looks like stuck focus.
-  if (!target.getAttribute || target.getAttribute("role") !== "tabpanel") {
+  // Selected tabs and expanded events already expose their state without a persistent focus-like outline.
+  var isTabPanel = target.getAttribute && target.getAttribute("role") === "tabpanel";
+  var isEvent = target.matches && target.matches("details.yii-debug-event-item");
+
+  if (!isTabPanel && !isEvent) {
     target.classList.add("yii-debug-deep-link-target");
   }
 

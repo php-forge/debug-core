@@ -387,3 +387,27 @@ test("tab fragments restore without a persistent panel highlight", () => {
     assert.deepEqual(target.scrollOptions, { block: "start" });
   }
 });
+
+test("event fragments reopen diagnostics on load without a persistent focus-like outline", () => {
+  var classes = new Set();
+  var target = {
+    open: false,
+    parentElement: null,
+    classList: { add: (name) => classes.add(name) },
+    getAttribute: () => null,
+    matches: (selector) => selector === "details.yii-debug-event-item",
+    closest: () => target,
+    scrollIntoView(options) { this.scrollOptions = options; },
+    focus() { assert.fail("Restoring an event fragment must not move keyboard focus."); },
+  };
+  var root = {
+    getElementById: () => target,
+    querySelectorAll: () => [],
+  };
+
+  revealDeepLink(root, { hash: "#event-1" }, true);
+
+  assert.equal(target.open, true);
+  assert.equal(classes.has("yii-debug-deep-link-target"), false);
+  assert.deepEqual(target.scrollOptions, { block: "start" });
+});

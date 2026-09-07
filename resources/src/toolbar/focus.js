@@ -5,13 +5,13 @@ export function focusToolbarElement(root, selector) {
 
   var element = root.querySelector(selector);
 
-  if (!element || typeof element.focus !== "function") {
+  if (typeof element?.focus !== "function") {
     return false;
   }
 
   element.focus();
 
-  return true;
+  return root.activeElement === element;
 }
 
 export function focusToolbarTrigger(root, url) {
@@ -23,9 +23,11 @@ export function focusToolbarTrigger(root, url) {
 
   for (var i = 0; i < triggers.length; i++) {
     if (triggers[i].getAttribute("data-debug-url") === url) {
-      triggers[i].focus();
+      triggers[i].focus?.();
 
-      return true;
+      if (root.activeElement === triggers[i]) {
+        return true;
+      }
     }
   }
 

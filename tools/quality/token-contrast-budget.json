@@ -109,6 +109,20 @@
             "background": "--yii-debug-info",
             "role": "normal text on solid badge",
             "minimum": 4.5
+        },
+        {
+            "name": "primary gradient start ink",
+            "foreground": "--yii-debug-on-primary",
+            "background": "--yii-debug-panel-primary-strong",
+            "role": "normal text on active navigation and primary actions",
+            "minimum": 4.5
+        },
+        {
+            "name": "primary gradient end ink",
+            "foreground": "--yii-debug-on-primary",
+            "background": "--yii-debug-panel-primary",
+            "role": "normal text on active navigation and primary actions",
+            "minimum": 4.5
         }
     ]
 }
