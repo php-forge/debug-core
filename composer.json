@@ -57,7 +57,7 @@
         },
         "scaffold": {
             "allowed-packages": [
-                "php-forge/baseline",
+                "php-forge/baseline-frontend",
                 "php-forge/coding-standard"
             ]
         }
