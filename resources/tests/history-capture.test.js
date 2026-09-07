@@ -5,8 +5,13 @@ import { updateHistoryCapture } from "../src/core/history-capture.js";
 function link(href) {
   return {
     href,
-    getAttribute() { return this.href; },
-    setAttribute(name, value) { assert.equal(name, "href"); this.href = value; },
+    getAttribute() {
+      return this.href;
+    },
+    setAttribute(name, value) {
+      assert.equal(name, "href");
+      this.href = value;
+    },
   };
 }
 
@@ -16,7 +21,9 @@ function shell() {
     querySelector(selector) {
       return selector === ".yii-debug-brand-chip-mem" ? this.chip : null;
     },
-    insertBefore(chip) { this.chip = chip; },
+    insertBefore(chip) {
+      this.chip = chip;
+    },
   };
   return {
     header,
@@ -29,13 +36,21 @@ function shell() {
       link("https://external.test/?tag=latest"),
     ],
     querySelector: () => header,
-    querySelectorAll() { return this.links; },
+    querySelectorAll() {
+      return this.links;
+    },
     createElement() {
       return {
         children: [],
-        append(...nodes) { this.children.push(...nodes); },
-        querySelector() { return this.children[1]; },
-        remove() { header.chip = null; },
+        append(...nodes) {
+          this.children.push(...nodes);
+        },
+        querySelector() {
+          return this.children[1];
+        },
+        remove() {
+          header.chip = null;
+        },
       };
     },
   };
@@ -43,10 +58,17 @@ function shell() {
 
 test("cursor updates every capture link and memory without changing History or external links", () => {
   var root = shell();
-  updateHistoryCapture(root, { tag: "older", memory: "6.00 MB" }, "https://example.test/debug");
+  updateHistoryCapture(
+    root,
+    { tag: "older", memory: "6.00 MB" },
+    "https://example.test/debug",
+  );
 
   for (var item of root.links.slice(0, 4)) {
-    assert.equal(new URL(item.href, "https://example.test").searchParams.get("tag"), "older");
+    assert.equal(
+      new URL(item.href, "https://example.test").searchParams.get("tag"),
+      "older",
+    );
   }
   assert.ok(root.links[1].href.includes("panel=event&yii_debug_theme=dark"));
   assert.equal(root.links[4].href, "/debug");
@@ -55,7 +77,11 @@ test("cursor updates every capture link and memory without changing History or e
   assert.equal(root.header.chip.children[0].textContent, "Memory");
 
   var existingChip = root.header.chip;
-  updateHistoryCapture(root, { tag: "other", memory: "2.00 MB" }, "https://example.test/debug");
+  updateHistoryCapture(
+    root,
+    { tag: "other", memory: "2.00 MB" },
+    "https://example.test/debug",
+  );
   assert.equal(root.header.chip, existingChip);
   assert.equal(root.header.chip.children[1].textContent, "2.00 MB");
 });

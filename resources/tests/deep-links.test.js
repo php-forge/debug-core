@@ -397,8 +397,12 @@ test("event fragments reopen diagnostics on load without a persistent focus-like
     getAttribute: () => null,
     matches: (selector) => selector === "details.yii-debug-event-item",
     closest: () => target,
-    scrollIntoView(options) { this.scrollOptions = options; },
-    focus() { assert.fail("Restoring an event fragment must not move keyboard focus."); },
+    scrollIntoView(options) {
+      this.scrollOptions = options;
+    },
+    focus() {
+      assert.fail("Restoring an event fragment must not move keyboard focus.");
+    },
   };
   var root = {
     getElementById: () => target,

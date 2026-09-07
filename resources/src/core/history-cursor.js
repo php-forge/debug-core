@@ -137,7 +137,11 @@ import { updateHistoryCapture } from "./history-capture.js";
       );
     }
 
-    updateHistoryCapture(document, snap, window.location && window.location.href);
+    updateHistoryCapture(
+      document,
+      snap,
+      window.location && window.location.href,
+    );
 
     var newestBtn = section.querySelector('[data-yii-debug-cursor="newest"]');
     var newerBtn = section.querySelector('[data-yii-debug-cursor="newer"]');

@@ -5,16 +5,22 @@ export function updateHistoryCapture(root, snapshot, locationValue) {
   }
 
   var links = root.querySelectorAll(
-    '.yii-debug-nav-link[href], a.yii-debug-brand-chip-config[href]',
+    ".yii-debug-nav-link[href], a.yii-debug-brand-chip-config[href]",
   );
 
   for (var i = 0; i < links.length; i++) {
     var target = new URL(links[i].getAttribute("href"), locationValue);
-    if (target.origin !== new URL(locationValue).origin || !target.searchParams.has("tag")) {
+    if (
+      target.origin !== new URL(locationValue).origin ||
+      !target.searchParams.has("tag")
+    ) {
       continue;
     }
     target.searchParams.set("tag", snapshot.tag);
-    links[i].setAttribute("href", target.pathname + target.search + target.hash);
+    links[i].setAttribute(
+      "href",
+      target.pathname + target.search + target.hash,
+    );
   }
 
   var header = root.querySelector(".yii-debug-brand-bar");
@@ -39,7 +45,10 @@ export function updateHistoryCapture(root, snapshot, locationValue) {
     var value = root.createElement("span");
     value.className = "yii-debug-brand-value";
     chip.append(label, value);
-    header.insertBefore(chip, header.querySelector(".yii-debug-brand-chip-config"));
+    header.insertBefore(
+      chip,
+      header.querySelector(".yii-debug-brand-chip-config"),
+    );
   }
   chip.querySelector(".yii-debug-brand-value").textContent = snapshot.memory;
 }

@@ -226,7 +226,7 @@ globalThis.document = {
     }
     if (
       selector ===
-      '.yii-debug-nav-link[href], a.yii-debug-brand-chip-config[href]'
+      ".yii-debug-nav-link[href], a.yii-debug-brand-chip-config[href]"
     ) {
       return [requestLink, automaticLink];
     }
