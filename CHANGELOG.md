@@ -43,3 +43,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - refactor: share captured URL-to-path display conversion through `Text::urlToPath()` while retaining original diagnostic URLs and adapter-owned presentation models.
 - feat(events): add the shared execution inspector, stable chronology, grouped filters, bounded optional context and traces, and explicit lifecycle correlation.
 - refactor: centralize exception messages and panel titles in typed enums while preserving diagnostics, labels, and configurable names.
+- refactor: use shared `PanelIcon` enum values for built-in panel SVG keys.
