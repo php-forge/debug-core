@@ -7,6 +7,7 @@ namespace PHPForge\Debug\Tests\Panel;
 use PHPForge\Debug\Helper\Icon;
 use PHPForge\Debug\Panel\PanelIcon;
 use PHPUnit\Framework\TestCase;
+
 use function count;
 
 /**
