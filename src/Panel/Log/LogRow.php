@@ -9,7 +9,7 @@ use PHPForge\Debug\Storage\{PanelRow, Payload};
 /**
  * Typed log row narrowed once from the Yii logger tuple and persisted in that form.
  *
- * @phpstan-import-type LogMessage from LogSnapshot
+ * @phpstan-import-type LogTuple from LogSnapshot
  */
 final readonly class LogRow implements PanelRow
 {
@@ -97,7 +97,7 @@ final readonly class LogRow implements PanelRow
     /**
      * Converts one canonical logger tuple into a typed row.
      *
-     * @param LogMessage $message Logger tuple `[message, level, category, timestamp, traces, memory]`.
+     * @param LogTuple $message Logger tuple `[message, level, category, timestamp, traces, memory]`.
      * @param int $id One-based row id assigned in capture order.
      * @param float $timeOfPrevious Timestamp of the previous row in seconds; this row's own timestamp for the first.
      * @param int|null $idOfPrevious Row id preceding this one, or `null` for the first row.

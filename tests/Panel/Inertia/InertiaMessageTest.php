@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace PHPForge\Debug\Tests\Panel;
+namespace PHPForge\Debug\Tests\Panel\Inertia;
 
-use PHPForge\Debug\Panel\PanelMessage;
-use PHPForge\Debug\Tests\Provider\PanelMessageProvider;
+use PHPForge\Debug\Panel\Inertia\InertiaMessage;
+use PHPForge\Debug\Tests\Provider\InertiaMessageProvider;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 use UIAwesome\Html\Flow\P;
@@ -15,19 +15,20 @@ use function array_column;
 use function iterator_to_array;
 
 /**
- * Tests the panel text catalog and direct enum content without changing rendering or escaping.
+ * Tests the {@see InertiaMessage} text catalog and direct enum content without changing rendering or escaping.
  */
 #[Group('panel')]
-final class PanelMessageTest extends TestCase
+#[Group('inertia')]
+final class InertiaMessageTest extends TestCase
 {
     public function testCapturedValuesRemainEscapedAlongsideMessages(): void
     {
         $html = P::tag()
-            ->content(PanelMessage::CONTEXT, ': <script>&')
+            ->content(InertiaMessage::EMPTY_HEADLINE, ': <script>&')
             ->render();
 
         self::assertSame(
-            "<p>\nContext: &lt;script&gt;&amp;\n</p>",
+            "<p>\nNo Inertia page in this request: &lt;script&gt;&amp;\n</p>",
             $html,
             'Enum content must not bypass encoding for adjacent captured values.',
         );
@@ -36,14 +37,14 @@ final class PanelMessageTest extends TestCase
     public function testProviderCoversTheCompleteCatalog(): void
     {
         self::assertEqualsCanonicalizing(
-            PanelMessage::cases(),
-            array_column(iterator_to_array(PanelMessageProvider::messages()), 0),
+            InertiaMessage::cases(),
+            array_column(iterator_to_array(InertiaMessageProvider::messages()), 0),
             'Every catalog case must have an explicit wording and rendering regression test.',
         );
     }
 
-    #[DataProviderExternal(PanelMessageProvider::class, 'messages')]
-    public function testRendersMessageDirectlyAsContent(PanelMessage $message, string $expected): void
+    #[DataProviderExternal(InertiaMessageProvider::class, 'messages')]
+    public function testRendersMessageDirectlyAsContent(InertiaMessage $message, string $expected): void
     {
         $paragraph = P::tag();
 

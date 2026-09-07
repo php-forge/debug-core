@@ -76,6 +76,16 @@ final class PageSize
     }
 
     /**
+     * Renders the page-size selector for the `per-page` value found in the query parameters.
+     *
+     * @param array<array-key, mixed> $queryParams Query parameters already normalized by the panel.
+     */
+    public static function selectorFor(array $queryParams): string
+    {
+        return self::selectorHtml(self::current(QueryInput::scalar($queryParams, 'per-page')));
+    }
+
+    /**
      * Renders the inline page-size selector shown in the grid summary header.
      *
      * @param string $current Currently selected raw value (one of {@see OPTIONS} for a highlighted option).

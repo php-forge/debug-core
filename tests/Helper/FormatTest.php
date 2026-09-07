@@ -7,9 +7,11 @@ namespace PHPForge\Debug\Tests\Helper;
 use PHPForge\Debug\Helper\Format;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
- * Unit tests for {@see Format} covering the megabyte readout and the trimmed CSS percentage formatter.
+ * Unit tests for {@see Format} covering the megabyte readout, the trimmed CSS percentage formatter, and the value
+ * type labels.
  */
 #[Group('helpers')]
 #[Group('format')]
@@ -47,5 +49,54 @@ final class FormatTest extends TestCase
                 "Value '{$value}' must format as '{$expected}'.",
             );
         }
+    }
+
+    public function testTypeOfLabelsScalarsArraysStringsAndNull(): void
+    {
+        self::assertSame(
+            'array(3)',
+            Format::typeOf([1, 2, 3]),
+            'Arrays must report their element count.',
+        );
+        self::assertSame(
+            'array(0)',
+            Format::typeOf([]),
+            'Empty arrays must report a zero count.',
+        );
+        self::assertSame(
+            'string(16)',
+            Format::typeOf('Test application'),
+            'Strings must report their byte length.',
+        );
+        self::assertSame(
+            'string(0)',
+            Format::typeOf(''),
+            'Empty strings must report a zero length.',
+        );
+        self::assertSame(
+            'int',
+            Format::typeOf(42),
+            "Integers must be labeled 'int'."
+        );
+        self::assertSame(
+            'float',
+            Format::typeOf(1.5),
+            "Floats must be labeled 'float'.",
+        );
+        self::assertSame(
+            'bool',
+            Format::typeOf(true),
+            "Booleans must be labeled 'bool'."
+        );
+        self::assertSame(
+            'null',
+            Format::typeOf(null),
+            "'null' must be labeled 'null'."
+        );
+        self::assertSame(
+            'object',
+            Format::typeOf(new stdClass()),
+            'Unlisted types must fall back to the native type name.',
+        );
     }
 }

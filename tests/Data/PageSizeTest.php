@@ -99,6 +99,20 @@ final class PageSizeTest extends TestCase
         );
     }
 
+    public function testSelectorForReadsThePageSizeFromTheQuery(): void
+    {
+        self::assertSame(
+            PageSize::selectorHtml(PageSize::current('25')),
+            PageSize::selectorFor(['per-page' => '25']),
+            'The query value must drive the selected option.',
+        );
+        self::assertSame(
+            PageSize::selectorHtml(PageSize::current(null)),
+            PageSize::selectorFor([]),
+            'A missing parameter must fall back to the default selector.',
+        );
+    }
+
     public function testSelectorHtmlMarksTheCurrentOptionSelected(): void
     {
         self::assertSame(

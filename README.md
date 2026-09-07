@@ -189,21 +189,25 @@ and pagination. Event/source shortcuts show whole-capture counts and retain the 
 
 `EventInspectorRenderer::renderControls()` renders group shortcuts and capture guidance. Adapters reuse one
 `EventSequence` for the complete capture and call `renderTimeCell()` and `renderEventCell()` for each visible row.
-Append `renderDetailRow()` immediately after each event row, passing the table's column count. The native disclosure
-reveals context and source trace across the table width, side by side on larger screens and stacked on narrow screens.
-Diagnostics do not repeat the timestamp, event name, class, source, or static flag already available in the table.
-There is no standalone execution-flow renderer or secondary event table.
+Append `renderDetailRow()` immediately after each event row, passing the table's column count. Adapters that build
+their own rows, for example through a grid widget's after-row callback, call `renderDetailCell()` to obtain the
+disclosure content without the row wrapper. The native disclosure reveals context and source trace across the table
+width, side by side on larger screens and stacked on narrow screens. Diagnostics do not repeat the timestamp, event
+name, class, source, or static flag already available in the table. There is no standalone execution-flow renderer or
+secondary event table.
 
-`PanelMessage` centralizes static presentation text, starting with Events. Shared labels have unprefixed case names;
-event-specific guidance and capture-state descriptions use `EVENT_`. Pass cases directly to `content()` without
-`->value`; `ui-awesome/html-mixin ^0.8.1` normalizes the enum value before HTML encoding. Captured values, filter keys,
-and dynamic text remain outside the catalog. The rendered wording and snapshot format are unchanged.
+`PanelMessage` holds only the labels shared by every panel (`CONTEXT`, `GROUP_FILTERS`, `SOURCE_TRACE`). Each panel
+owns its texts in an enum next to its code (`Panel\Event\EventMessage`, `Panel\Log\LogMessage`,
+`Panel\Profile\ProfileMessage`, `Panel\Inertia\InertiaMessage`) with unprefixed case names. Pass cases directly to
+`content()` without `->value`; `ui-awesome/html-mixin ^0.8.1` normalizes the enum value before HTML encoding. Captured
+values, filter keys, and dynamic text remain outside the catalogs. The rendered wording and snapshot format are
+unchanged.
 
 ```php
-use PHPForge\Debug\Panel\PanelMessage;
+use PHPForge\Debug\Panel\Event\EventMessage;
 use UIAwesome\Html\Flow\P;
 
-echo P::tag()->content(PanelMessage::EVENT_CAPTURE_GUIDANCE)->render();
+echo P::tag()->content(EventMessage::CAPTURE_GUIDANCE)->render();
 ```
 
 `EventRow::withInspection()` creates an enriched copy without changing the captured row. `EventInspection` supplies

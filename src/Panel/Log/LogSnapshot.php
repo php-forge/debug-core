@@ -13,7 +13,7 @@ use function count;
  * Canonical Log panel snapshot holding the captured rows in their typed form.
  *
  * @phpstan-type TraceFrame array<string, mixed>
- * @phpstan-type LogMessage array{
+ * @phpstan-type LogTuple array{
  *   0: string,
  *   1: int,
  *   2: string,
@@ -32,7 +32,7 @@ final readonly class LogSnapshot implements PanelSnapshot
     /**
      * Converts canonical logger tuples into typed rows, deriving the previous/next links and the inter-row deltas.
      *
-     * @param list<LogMessage> $messages Logger tuples in capture order.
+     * @param list<LogTuple> $messages Logger tuples in capture order.
      */
     public static function capture(array $messages): self
     {

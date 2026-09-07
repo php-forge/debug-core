@@ -18,7 +18,7 @@ use function usort;
  * Canonical profiling snapshot holding the request metrics, the resolved profile blocks, and the memory samples that
  * feed the timeline chart.
  *
- * @phpstan-import-type LogMessage from \PHPForge\Debug\Panel\Log\LogSnapshot
+ * @phpstan-import-type LogTuple from \PHPForge\Debug\Panel\Log\LogSnapshot
  */
 final readonly class ProfilingSnapshot implements PanelSnapshot
 {
@@ -36,7 +36,7 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
     /**
      * Resolves the logger's begin/end pairs into typed blocks and collects the per-message memory samples.
      *
-     * @param list<LogMessage> $messages Profile tuples in capture order.
+     * @param list<LogTuple> $messages Profile tuples in capture order.
      */
     public static function capture(int $memory, float $time, array $messages): self
     {
