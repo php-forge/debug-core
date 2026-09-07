@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Collector;
 
 use InvalidArgumentException;
+use PHPForge\Debug\Exception\Message;
 use PHPForge\Debug\Storage\{DebugSnapshot, PanelFailure, RequestSummary};
 use Throwable;
 
@@ -37,11 +38,15 @@ final class CollectorCoordinator
             $id = $collector->id();
 
             if (trim($id) === '') {
-                throw new InvalidArgumentException('Debug collector ID must not be empty.');
+                throw new InvalidArgumentException(
+                    Message::COLLECTOR_ID_EMPTY->getMessage(),
+                );
             }
 
             if (isset($this->collectors[$id])) {
-                throw new InvalidArgumentException("Duplicate debug collector ID: {$id}.");
+                throw new InvalidArgumentException(
+                    Message::COLLECTOR_ID_DUPLICATE->getMessage($id),
+                );
             }
 
             $this->collectors[$id] = $collector;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\View\Sidebar;
 
 use InvalidArgumentException;
+use PHPForge\Debug\Exception\Message;
 
 use function trim;
 
@@ -34,7 +35,7 @@ final readonly class SidebarView
         foreach ($navGroups as $label => $_items) {
             if (trim($label) === '') {
                 throw new InvalidArgumentException(
-                    'Sidebar navigation group labels must not be empty.',
+                    Message::SIDEBAR_GROUP_LABEL_EMPTY->getMessage(),
                 );
             }
         }

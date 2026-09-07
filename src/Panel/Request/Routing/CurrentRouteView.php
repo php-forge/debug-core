@@ -79,34 +79,34 @@ final class CurrentRouteView
 
     public function withAction(string|null $action): self
     {
-        $copy = clone $this;
-        $copy->action = $action;
+        $clone = clone $this;
+        $clone->action = $action;
 
-        return $copy;
+        return $clone;
     }
 
     public function withDefinition(RouteDefinition|null $definition): self
     {
-        $copy = clone $this;
-        $copy->definition = $definition;
+        $clone = clone $this;
+        $clone->definition = $definition;
 
-        return $copy;
+        return $clone;
     }
 
     public function withError(string|null $error): self
     {
-        $copy = clone $this;
-        $copy->error = $error;
+        $clone = clone $this;
+        $clone->error = $error;
 
-        return $copy;
+        return $clone;
     }
 
     public function withMessage(string|null $message): self
     {
-        $copy = clone $this;
-        $copy->message = $message;
+        $clone = clone $this;
+        $clone->message = $message;
 
-        return $copy;
+        return $clone;
     }
 
     /**
@@ -114,10 +114,10 @@ final class CurrentRouteView
      */
     public function withParameters(array $parameters): self
     {
-        $copy = clone $this;
-        $copy->parameters = $parameters;
+        $clone = clone $this;
+        $clone->parameters = $parameters;
 
-        return $copy;
+        return $clone;
     }
 
     /**
@@ -125,9 +125,9 @@ final class CurrentRouteView
      */
     public function withTrace(array $trace): self
     {
-        $copy = clone $this;
-        $copy->trace = $trace;
+        $clone = clone $this;
+        $clone->trace = $trace;
 
-        return $copy;
+        return $clone;
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Request\Routing;
 
 use InvalidArgumentException;
+use PHPForge\Debug\Exception\Message;
 
 use function array_diff;
 use function array_is_list;
@@ -200,10 +201,10 @@ final class RouteDefinition
 
     public function withAction(string|null $action): self
     {
-        $copy = clone $this;
-        $copy->action = $action;
+        $clone = clone $this;
+        $clone->action = $action;
 
-        return $copy;
+        return $clone;
     }
 
     /**
@@ -211,10 +212,10 @@ final class RouteDefinition
      */
     public function withHosts(array $hosts): self
     {
-        $copy = clone $this;
-        $copy->hosts = $hosts;
+        $clone = clone $this;
+        $clone->hosts = $hosts;
 
-        return $copy;
+        return $clone;
     }
 
     /**
@@ -222,10 +223,10 @@ final class RouteDefinition
      */
     public function withMethods(array $methods): self
     {
-        $copy = clone $this;
-        $copy->methods = $methods;
+        $clone = clone $this;
+        $clone->methods = $methods;
 
-        return $copy;
+        return $clone;
     }
 
     /**
@@ -233,42 +234,42 @@ final class RouteDefinition
      */
     public function withMiddlewares(array|null $middlewares): self
     {
-        $copy = clone $this;
-        $copy->middlewares = $middlewares;
+        $clone = clone $this;
+        $clone->middlewares = $middlewares;
 
-        return $copy;
+        return $clone;
     }
 
     public function withMode(string|null $mode): self
     {
-        $copy = clone $this;
-        $copy->mode = $mode;
+        $clone = clone $this;
+        $clone->mode = $mode;
 
-        return $copy;
+        return $clone;
     }
 
     public function withSuffix(string|null $suffix): self
     {
-        $copy = clone $this;
-        $copy->suffix = $suffix;
+        $clone = clone $this;
+        $clone->suffix = $suffix;
 
-        return $copy;
+        return $clone;
     }
 
     public function withTarget(string|null $target): self
     {
-        $copy = clone $this;
-        $copy->target = $target;
+        $clone = clone $this;
+        $clone->target = $target;
 
-        return $copy;
+        return $clone;
     }
 
     public function withType(string|null $type): self
     {
-        $copy = clone $this;
-        $copy->type = $type;
+        $clone = clone $this;
+        $clone->type = $type;
 
-        return $copy;
+        return $clone;
     }
 
     private static function expectedFor(string $key): string
@@ -285,7 +286,7 @@ final class RouteDefinition
     private static function invalid(string $key, string $expected): InvalidArgumentException
     {
         return new InvalidArgumentException(
-            "Route definition key '{$key}' must be {$expected}.",
+            Message::ROUTE_DEFINITION_INVALID->getMessage($key, $expected),
         );
     }
 

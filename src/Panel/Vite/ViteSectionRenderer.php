@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Vite;
 
 use PHPForge\Debug\Helper\EmptyState;
+use PHPForge\Debug\Panel\PanelTitle;
 use Stringable;
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Heading\{H1, H2};
@@ -217,7 +218,7 @@ final class ViteSectionRenderer
 
         return H1::tag()
             ->class('yii-debug-sr-only')
-            ->content('Vite')
+            ->content(PanelTitle::VITE)
             ->render()
             . Header::tag()
                 ->class('yii-debug-grid-summary')

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Helper;
 
 use InvalidArgumentException;
+use PHPForge\Debug\Exception\Message;
 use SensitiveParameter;
 
 use function array_fill_keys;
@@ -14,7 +15,6 @@ use function is_array;
 use function is_object;
 use function is_string;
 use function preg_match;
-use function sprintf;
 use function str_starts_with;
 use function strtolower;
 
@@ -204,7 +204,9 @@ final class SensitiveDataRedactor
     {
         foreach ($prefixes as $prefix) {
             if ($prefix === '') {
-                throw new InvalidArgumentException('Sensitive key prefixes must not be empty.');
+                throw new InvalidArgumentException(
+                    Message::SENSITIVE_KEY_PREFIX_EMPTY->getMessage(),
+                );
             }
         }
 
@@ -243,7 +245,7 @@ final class SensitiveDataRedactor
         foreach ($patterns as $pattern) {
             if ($pattern === '' || @preg_match($pattern, '') === false) {
                 throw new InvalidArgumentException(
-                    sprintf('Sensitive key pattern "%s" is not a valid PCRE pattern.', $pattern),
+                    Message::SENSITIVE_KEY_PATTERN_INVALID->getMessage($pattern),
                 );
             }
         }

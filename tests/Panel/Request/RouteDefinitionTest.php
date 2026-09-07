@@ -73,10 +73,10 @@ final class RouteDefinitionTest extends TestCase
                 $definition->withSuffix('.json'),
                 $definition->withMode('BOTH'),
                 $definition->withType('rule'),
-            ] as $copy) {
+            ] as $clone) {
             self::assertNotSame(
                 $definition,
-                $copy,
+                $clone,
                 'Every route option must return a separate definition.',
             );
         }

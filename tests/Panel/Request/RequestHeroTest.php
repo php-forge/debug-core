@@ -74,10 +74,10 @@ final class RequestHeroTest extends TestCase
             $hero->withIp('127.0.0.1'),
             $hero->withTiming('12:00:00', '3.5 ms'),
             $hero->withFlags(['AJAX']),
-        ] as $copy) {
+        ] as $clone) {
             self::assertNotSame(
                 $hero,
-                $copy,
+                $clone,
                 'Each optional change must return a separate Request identity object.',
             );
         }

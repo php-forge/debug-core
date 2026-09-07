@@ -107,11 +107,11 @@ final class EventRowTest extends TestCase
         $inspection = (new EventInspection())
             ->withContext(['Action ID' => 'save'], 'captured');
 
-        $copy = $row->withInspection($inspection);
+        $clone = $row->withInspection($inspection);
 
         self::assertNotSame(
             $row,
-            $copy,
+            $clone,
             'Enrichment must return a new row.',
         );
         self::assertNull(
@@ -125,12 +125,12 @@ final class EventRowTest extends TestCase
         );
         self::assertSame(
             $inspection,
-            $copy->inspection(),
+            $clone->inspection(),
             'The copy must retain the supplied immutable diagnostics.',
         );
         self::assertSame(
             [...$payload, 'inspection' => $inspection->jsonSerialize()],
-            $copy->jsonSerialize(),
+            $clone->jsonSerialize(),
             'Enrichment must preserve every captured field and add only the inspection payload.',
         );
     }

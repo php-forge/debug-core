@@ -161,10 +161,10 @@ final class RequestRoutingViewModelsTest extends TestCase
             $current->withMessage('Matched.'),
             $current->withTrace([$trace]),
             $current->withError('Captured failure.'),
-        ] as $copy) {
+        ] as $clone) {
             self::assertNotSame(
                 $current,
-                $copy,
+                $clone,
                 'Every current-route option must return a separate diagnostics object.',
             );
         }
@@ -272,10 +272,10 @@ final class RequestRoutingViewModelsTest extends TestCase
                 $inventory->withSource('Captured configuration'),
                 $inventory->withLive(false),
                 $inventory->withError('Inventory failure.'),
-            ] as $copy) {
+            ] as $clone) {
             self::assertNotSame(
                 $inventory,
-                $copy,
+                $clone,
                 'Every inventory option must return a separate inventory.',
             );
         }

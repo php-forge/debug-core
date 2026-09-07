@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Capture;
 
 use InvalidArgumentException;
+use PHPForge\Debug\Exception\Message;
 use PHPForge\Debug\Helper\SensitiveDataRedactor;
 use SensitiveParameter;
 
@@ -50,7 +51,7 @@ final readonly class CapturePolicy
     ) {
         if ($this->maxBodyBytes < 1) {
             throw new InvalidArgumentException(
-                'The maximum body size must be greater than zero.',
+                Message::BODY_SIZE_INVALID->getMessage(),
             );
         }
 

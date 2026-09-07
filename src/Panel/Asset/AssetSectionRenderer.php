@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Asset;
 
 use PHPForge\Debug\Helper\Icon;
+use PHPForge\Debug\Panel\PanelTitle;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Heading\H1;
 use UIAwesome\Html\List\{Li, Ol};
@@ -49,7 +50,7 @@ final class AssetSectionRenderer
 
         return H1::tag()
             ->class('yii-debug-sr-only')
-            ->content('Asset Bundles')
+            ->content(PanelTitle::ASSETS)
             ->render()
             . Header::tag()
                 ->class('yii-debug-asset-stats')
