@@ -45,9 +45,7 @@ final readonly class LogSnapshot implements PanelSnapshot
 
         foreach ($messages as $index => $message) {
             $id = $index + 1;
-
             $timestamp = $message[3];
-
             $previousTime ??= $timestamp;
 
             $entries[] = LogRow::fromLoggerTuple(
@@ -75,16 +73,11 @@ final readonly class LogSnapshot implements PanelSnapshot
 
     public static function fromArray(mixed $data, string $path): self
     {
-        $payload = Payload::object($data, $path)
-            ->shape(['entries']);
-
-        $entries = [];
-
-        foreach ($payload->list('entries') as $index => $entry) {
-            $entries[] = LogRow::fromArray($entry, "{$path}.entries[{$index}]");
-        }
-
-        return new self($entries);
+        return new self(
+            Payload::object($data, $path)
+                ->shape(['entries'])
+                ->mapList('entries', LogRow::fromArray(...)),
+        );
     }
 
     /**

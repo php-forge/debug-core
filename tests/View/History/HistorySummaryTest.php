@@ -247,20 +247,8 @@ final class HistorySummaryTest extends TestCase
 
     private function summary(int $statusCode): RequestSummary
     {
-        return new RequestSummary(
-            tag: 'tag-' . $statusCode,
-            url: 'https://example.test',
-            ajax: false,
-            method: 'GET',
-            ip: '127.0.0.1',
-            time: 1_700_000_000.0,
-            statusCode: $statusCode,
-            sqlCount: 0,
-            excessiveCallersCount: 0,
-            mailCount: 0,
-            mailFiles: [],
-            processingTime: null,
-            peakMemory: null,
-        );
+        return RequestSummary::create('tag-' . $statusCode)
+            ->withRequest('https://example.test', 'GET', '127.0.0.1', 1_700_000_000.0)
+            ->withResponse($statusCode);
     }
 }

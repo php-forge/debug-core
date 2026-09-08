@@ -4,67 +4,72 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Toolbar;
 
+use PHPForge\Debug\Tests\Provider\ToolbarPanelProvider;
 use PHPForge\Debug\Toolbar\{ToolbarItem, ToolbarPanel};
-use PHPUnit\Framework\Attributes\{DataProvider, Group};
+use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
 use function get_object_vars;
 
 /**
  * Unit tests for fluent toolbar panel construction and immutable navigation and metric lists.
+ *
+ * {@see ToolbarPanelProvider} for test case data providers.
  */
 #[Group('toolbar')]
 final class ToolbarPanelTest extends TestCase
 {
-    /**
-     * @return iterable<string, array{string|null}>
-     */
-    public static function nullableValues(): iterable
+    public function testCreateLeavesNavigationAndMetricsUnset(): void
     {
-        yield 'clear' => [null];
-        yield 'empty' => [''];
-        yield 'unchanged icon' => ['request'];
-        yield 'unchanged url' => ['/debug'];
-        yield 'zero' => ['0'];
-    }
-
-    public function testCreateMatchesConstructorDefaults(): void
-    {
-        self::assertEquals(
-            new ToolbarPanel('request', 'Request'),
-            ToolbarPanel::create('request', 'Request'),
-            'Factory defaults must match the constructor.',
+        self::assertSame(
+            [
+                'id' => 'request',
+                'title' => 'Request',
+                'url' => null,
+                'icon' => null,
+                'items' => [],
+            ],
+            get_object_vars(ToolbarPanel::create('request', 'Request')),
+            'Only the identity must be set; navigation and metrics must stay empty.',
         );
     }
 
-    public function testFluentConstructionMatchesLegacyPayload(): void
+    public function testFluentConstructionSerializesEveryField(): void
     {
-        $items = [new ToolbarItem('0'), new ToolbarItem('')];
-
         $panel = ToolbarPanel::create('request', 'Request')
-            ->withItems($items)
+            ->withItems([ToolbarItem::create('0'), ToolbarItem::create('')])
             ->withIcon('request')
             ->withUrl('/debug?tag=0&panel=request');
 
         self::assertSame(
-            (new ToolbarPanel('request', 'Request', '/debug?tag=0&panel=request', 'request', $items))
-                ->jsonSerialize(),
+            [
+                'id' => 'request',
+                'title' => 'Request',
+                'url' => '/debug?tag=0&panel=request',
+                'icon' => 'request',
+                'items' => [
+                    ['value' => '0', 'status' => 'default'],
+                    ['value' => '', 'status' => 'default'],
+                ],
+            ],
             $panel->jsonSerialize(),
-            'Fluent construction must preserve serialized fields and metric order.',
+            'Serialized field order and metric order must be preserved.',
         );
     }
 
     public function testWithItemsReplacesRatherThanAppendsAndAllowsClearing(): void
     {
-        $first = new ToolbarItem('first');
-        $second = new ToolbarItem('second');
-        $original = new ToolbarPanel('request', 'Request', '/debug', 'request', [$first]);
+        $first = ToolbarItem::create('first');
+        $second = ToolbarItem::create('second');
+
+        $original = self::sample([$first]);
 
         $items = [$second, $first];
+
         $modified = $original->withItems($items);
         $cleared = $modified->withItems([]);
 
-        $items[] = new ToolbarItem('later');
+        $items[] = ToolbarItem::create('later');
 
         self::assertNotSame(
             $original,
@@ -87,16 +92,16 @@ final class ToolbarPanelTest extends TestCase
             'The replacement list must retain its own order.',
         );
         self::assertSame(
-            (new ToolbarPanel('request', 'Request', '/debug', 'request'))->jsonSerialize(),
+            self::sample()->jsonSerialize(),
             $cleared->jsonSerialize(),
             'Clearing metrics must retain navigation and serialize an empty list.',
         );
     }
 
-    #[DataProvider('nullableValues')]
+    #[DataProviderExternal(ToolbarPanelProvider::class, 'nullableValues')]
     public function testWithNavigationPreservesOriginalAndOtherFields(string|null $value): void
     {
-        $original = new ToolbarPanel('request', 'Request', '/debug', 'request', [new ToolbarItem('0')]);
+        $original = self::sample([ToolbarItem::create('0')]);
 
         $before = get_object_vars($original);
 
@@ -136,5 +141,18 @@ final class ToolbarPanelTest extends TestCase
                 );
             }
         }
+    }
+
+    /**
+     * Returns a navigable panel carrying the given metrics.
+     *
+     * @param list<ToolbarItem> $items Panel metrics.
+     */
+    private static function sample(array $items = []): ToolbarPanel
+    {
+        return ToolbarPanel::create('request', 'Request')
+            ->withUrl('/debug')
+            ->withIcon('request')
+            ->withItems($items);
     }
 }

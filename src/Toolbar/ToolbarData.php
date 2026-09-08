@@ -61,12 +61,6 @@ final readonly class ToolbarData implements JsonSerializable
     /**
      * Returns the complete payload consumed by the toolbar runtime.
      *
-     * Usage example:
-     *
-     * ```php
-     * $payload = $toolbarData->jsonSerialize();
-     * ```
-     *
      * @return array{
      *     configUrl: string,
      *     defaultHeight: int,

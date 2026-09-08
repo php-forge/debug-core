@@ -22,7 +22,7 @@ final readonly class ToolbarItem implements JsonSerializable
      * @param string|null $url Debug page URL or `null` when the metric is not navigable.
      * @param string|null $id Stable semantic metric identifier or `null` for presentation-only metrics.
      */
-    public function __construct(
+    private function __construct(
         public string $value,
         public string|null $label = null,
         public string|null $icon = null,

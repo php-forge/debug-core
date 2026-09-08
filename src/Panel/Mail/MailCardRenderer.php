@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Mail;
 
-use PHPForge\Debug\Helper\{Avatar, Icon};
+use PHPForge\Debug\Helper\{Avatar, Format, Icon};
 use UIAwesome\Html\Flow\{Div, Pre};
 use UIAwesome\Html\Heading\H2;
 use UIAwesome\Html\Helper\Encode;
@@ -17,9 +17,7 @@ use UIAwesome\Html\Sectioning\Article;
 use function array_map;
 use function date;
 use function explode;
-use function intdiv;
 use function mb_strlen;
-use function mb_strtoupper;
 use function mb_substr;
 
 /**
@@ -27,6 +25,9 @@ use function mb_substr;
  */
 final class MailCardRenderer
 {
+    /**
+     * Maximum number of characters shown in the body preview.
+     */
     private const int BODY_PREVIEW_LIMIT = 140;
 
     /**
@@ -75,39 +76,16 @@ final class MailCardRenderer
     /**
      * Formats a Unix timestamp into `[relative, absolute]` strings for the meta time line.
      *
-     * The relative form returns `'just now'` for under a minute, `'X min ago'` / `'X h ago'` / `'X d ago'` for the
-     * matching thresholds, and falls back to the absolute form past 30 days.
+     * The relative form follows the shared age scale ({@see Format::relativeTime()}) and falls back to the absolute
+     * form past 30 days.
      *
      * @return array{0: string, 1: string} Relative label and absolute label, in that order.
      */
     private static function formatTime(int $unix): array
     {
         $absolute = date('M j, Y · H:i:s', $unix);
-        $diff = time() - $unix;
 
-        if ($diff < 60) {
-            return ['just now', $absolute];
-        }
-
-        if ($diff < 3600) {
-            $minutes = intdiv($diff, 60);
-
-            return ["{$minutes} min ago", $absolute];
-        }
-
-        if ($diff < 86400) {
-            $hours = intdiv($diff, 3600);
-
-            return ["{$hours} h ago", $absolute];
-        }
-
-        if ($diff < 2592000) {
-            $days = intdiv($diff, 86400);
-
-            return ["{$days} d ago", $absolute];
-        }
-
-        return [$absolute, $absolute];
+        return [Format::relativeTime(time() - $unix, $absolute), $absolute];
     }
 
     /**
@@ -125,15 +103,9 @@ final class MailCardRenderer
      */
     private static function initialsFor(string $email): string
     {
-        if ($email === '') {
-            return '?';
-        }
-
         $local = explode('@', $email)[0];
 
-        $seed = $local !== '' ? $local : $email;
-
-        return mb_strtoupper(mb_substr($seed, 0, 1));
+        return Avatar::initial($local !== '' ? $local : $email);
     }
 
     /**
@@ -277,7 +249,9 @@ final class MailCardRenderer
                         ->addDataAttribute('role', $key)
                         ->class('yii-debug-mail-recipient-label')
                         ->content($group['label']),
-                    Span::tag()->class('yii-debug-mail-recipient-pills')->html(...$pills),
+                    Span::tag()
+                        ->class('yii-debug-mail-recipient-pills')
+                        ->html(...$pills),
                 );
         }
 
@@ -301,7 +275,9 @@ final class MailCardRenderer
             ->class("yii-debug-mail-status yii-debug-mail-status-{$variant}")
             ->title($tooltip)
             ->html(
-                Span::tag()->addAriaAttribute('hidden', 'true')->class('yii-debug-mail-status-dot'),
+                Span::tag()
+                    ->addAriaAttribute('hidden', 'true')
+                    ->class('yii-debug-mail-status-dot'),
                 " {$encodedLabel}",
             );
     }
@@ -318,7 +294,9 @@ final class MailCardRenderer
                 ->class('yii-debug-mail-tech-icon')
                 ->addAriaAttribute('hidden', 'true')
                 ->html(Icon::render('code')),
-            Span::tag()->class('yii-debug-mail-tech-label')->content('Raw headers'),
+            Span::tag()
+                ->class('yii-debug-mail-tech-label')
+                ->content('Raw headers'),
         ];
 
         if ($message->charset !== '') {
@@ -337,7 +315,9 @@ final class MailCardRenderer
             ->class('yii-debug-mail-tech')
             ->html(
                 Summary::tag()->html(...$summaryChildren),
-                Pre::tag()->class('yii-debug-mail-headers')->content($message->headers),
+                Pre::tag()
+                    ->class('yii-debug-mail-headers')
+                    ->content($message->headers),
             );
     }
 }

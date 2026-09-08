@@ -4,23 +4,50 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use function abs;
 use function count;
+use function date;
 use function gettype;
+use function intdiv;
 use function is_array;
 use function is_bool;
 use function is_float;
 use function is_int;
 use function is_string;
+use function number_format;
 use function rtrim;
 use function sprintf;
 use function strlen;
 
 /**
- * Formats values and type labels for display in debug-panel views and toolbar chips.
+ * Formats values, timestamps, and type labels for display in debug-panel views and toolbar chips.
  */
 final class Format
 {
+    /**
+     * Bytes in one mebibyte, the unit of the `bytesToMb()` readout.
+     */
     private const int BYTES_PER_MB = 1024 * 1024;
+    /**
+     * Milliseconds in one second, used to scale second-based durations.
+     */
+    private const int MILLISECONDS_PER_SECOND = 1000;
+    /**
+     * Relative-time threshold: ages of one day or more render as `X d ago`.
+     */
+    private const int SECONDS_PER_DAY = 86400;
+    /**
+     * Relative-time threshold: ages of one hour or more render as `X h ago`.
+     */
+    private const int SECONDS_PER_HOUR = 3600;
+    /**
+     * Relative-time threshold: ages of one minute or more render as `X min ago`.
+     */
+    private const int SECONDS_PER_MINUTE = 60;
+    /**
+     * Relative-time upper bound: ages of 30 days or more fall back to the absolute label.
+     */
+    private const int SECONDS_PER_MONTH = 2592000;
 
     /**
      * Returns a `N.NN MB` string for the given byte count, rounded to the requested precision.
@@ -49,6 +76,60 @@ final class Format
         $rendered = rtrim($rendered, '.');
 
         return "{$rendered}%";
+    }
+
+    /**
+     * Returns a `N ms` readout for the given duration in seconds, grouped in thousands.
+     *
+     * @param float $seconds Duration in seconds.
+     * @param int $decimals Number of decimal places.
+     *
+     * @return string Millisecond readout.
+     */
+    public static function milliseconds(float $seconds, int $decimals = 0): string
+    {
+        return number_format($seconds * self::MILLISECONDS_PER_SECOND, $decimals) . ' ms';
+    }
+
+    /**
+     * Returns a coarse age label for the given elapsed seconds: `just now` under a minute, then `X min ago`, `X h ago`,
+     * and `X d ago`. Ages of 30 days or more fall back to `$fallback`.
+     *
+     * The caller supplies the elapsed seconds so the clock source stays at the call site.
+     *
+     * @param int $elapsedSeconds Age in seconds, typically `time() - $capturedAt`.
+     * @param string $fallback Absolute label used past the 30-day threshold.
+     *
+     * @return string Age label, or `$fallback` when the age reaches 30 days.
+     */
+    public static function relativeTime(int $elapsedSeconds, string $fallback): string
+    {
+        return match (true) {
+            $elapsedSeconds < self::SECONDS_PER_MINUTE => 'just now',
+            $elapsedSeconds < self::SECONDS_PER_HOUR => intdiv($elapsedSeconds, self::SECONDS_PER_MINUTE) . ' min ago',
+            $elapsedSeconds < self::SECONDS_PER_DAY => intdiv($elapsedSeconds, self::SECONDS_PER_HOUR) . ' h ago',
+            $elapsedSeconds < self::SECONDS_PER_MONTH => intdiv($elapsedSeconds, self::SECONDS_PER_DAY) . ' d ago',
+            default => $fallback,
+        };
+    }
+
+    /**
+     * Returns the wall-clock readout of the given epoch milliseconds, suffixed with the millisecond fraction
+     * (`H:i:s.mmm`).
+     *
+     * The fraction is rendered as an absolute value, so the `.mmm` segment always spans three digits.
+     *
+     * @param int $epochMilliseconds Unix timestamp in milliseconds.
+     * @param string $format `date()` format for the second-precision part, without the fraction separator.
+     *
+     * @return string Formatted timestamp followed by `.mmm`.
+     */
+    public static function timeOfDay(int $epochMilliseconds, string $format = 'H:i:s'): string
+    {
+        $seconds = intdiv($epochMilliseconds, self::MILLISECONDS_PER_SECOND);
+        $fraction = abs($epochMilliseconds % self::MILLISECONDS_PER_SECOND);
+
+        return date("{$format}.", $seconds) . sprintf('%03d', $fraction);
     }
 
     /**

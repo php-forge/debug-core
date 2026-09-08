@@ -6,20 +6,16 @@ namespace PHPForge\Debug\Tests\Panel\Log;
 
 use PHPForge\Debug\Panel\Log\LogMessage;
 use PHPForge\Debug\Tests\Provider\LogMessageProvider;
+use PHPForge\Debug\Tests\Support\MessageCatalogTestCase;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
-use PHPUnit\Framework\TestCase;
 use UIAwesome\Html\Flow\P;
-use UIAwesome\Html\Helper\Encode;
-
-use function array_column;
-use function iterator_to_array;
 
 /**
  * Tests the {@see LogMessage} text catalog and direct enum content without changing rendering or escaping.
  */
 #[Group('panel')]
 #[Group('log')]
-final class LogMessageTest extends TestCase
+final class LogMessageTest extends MessageCatalogTestCase
 {
     public function testCapturedValuesRemainEscapedAlongsideMessages(): void
     {
@@ -34,41 +30,28 @@ final class LogMessageTest extends TestCase
         );
     }
 
-    public function testProviderCoversTheCompleteCatalog(): void
-    {
-        self::assertEqualsCanonicalizing(
-            LogMessage::cases(),
-            array_column(iterator_to_array(LogMessageProvider::messages()), 0),
-            'Every catalog case must have an explicit wording and rendering regression test.',
-        );
-    }
-
     #[DataProviderExternal(LogMessageProvider::class, 'messages')]
     public function testRendersMessageDirectlyAsContent(LogMessage $message, string $expected): void
     {
-        $paragraph = P::tag();
-
-        $rendered = $paragraph->content($message);
-
-        self::assertSame(
+        self::assertRendersAsContent(
+            $message,
             $expected,
-            $message->value,
-            'The catalog must preserve the existing panel wording.',
         );
-        self::assertSame(
-            "<p>\n" . Encode::content($expected) . "\n</p>",
-            $rendered->render(),
-            'Content must accept the enum case without extracting its value.',
-        );
-        self::assertNotSame(
-            $paragraph,
-            $rendered,
-            'Enum content must preserve immutable tag construction.',
-        );
-        self::assertSame(
-            '',
-            $paragraph->getContent(),
-            'Rendering a message must not mutate the original tag.',
-        );
+    }
+
+    /**
+     * @return list<LogMessage> Cases of the catalog under test.
+     */
+    protected function catalogCases(): array
+    {
+        return LogMessage::cases();
+    }
+
+    /**
+     * @return iterable<string, array{LogMessage, string}> Provider rows that drive the rendering test.
+     */
+    protected function catalogProvider(): iterable
+    {
+        return LogMessageProvider::messages();
     }
 }

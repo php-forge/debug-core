@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\User;
 
-use function is_int;
-use function is_string;
+use PHPForge\Debug\Helper\Coerce;
 
 /**
  * Represents one RBAC item row (role or permission) in the User panel detail view.
@@ -45,12 +44,12 @@ final readonly class UserRbacRow
         $updatedAt = $row['updatedAt'] ?? null;
 
         return new self(
-            name: is_string($name) ? $name : '',
-            description: is_string($description) ? $description : '',
-            ruleName: is_string($ruleName) ? $ruleName : '',
-            data: is_string($data) ? $data : '',
-            createdAt: is_int($createdAt) ? $createdAt : (is_numeric($createdAt) ? (int) $createdAt : null),
-            updatedAt: is_int($updatedAt) ? $updatedAt : (is_numeric($updatedAt) ? (int) $updatedAt : null),
+            name: Coerce::string($name),
+            description: Coerce::string($description),
+            ruleName: Coerce::string($ruleName),
+            data: Coerce::string($data),
+            createdAt: Coerce::intOrNull($createdAt),
+            updatedAt: Coerce::intOrNull($updatedAt),
         );
     }
 }

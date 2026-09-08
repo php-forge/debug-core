@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Data;
 
 use function is_array;
+use function is_finite;
 use function is_float;
 use function is_int;
+use function is_numeric;
 use function is_string;
 
 /**
@@ -47,6 +49,25 @@ final class QueryInput
         }
 
         return $filters;
+    }
+
+    /**
+     * Returns a submitted lower bound as a finite, non-negative number, or `null` when the value is unusable.
+     *
+     * Empty, non-numeric, negative, and overflowing values are rejected, so callers can clear the stored filter
+     * whenever `null` comes back.
+     *
+     * @param string $value Raw submitted bound.
+     */
+    public static function minimumBound(string $value): float|null
+    {
+        if (!is_numeric($value)) {
+            return null;
+        }
+
+        $bound = (float) $value;
+
+        return is_finite($bound) && $bound >= 0.0 ? $bound : null;
     }
 
     /**

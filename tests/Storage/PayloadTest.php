@@ -23,6 +23,29 @@ final class PayloadTest extends TestCase
         );
     }
 
+    public function testMapListPassesEachElementWithItsIndexedPath(): void
+    {
+        self::assertSame(
+            [
+                ['$.entries[0]', 'a'],
+                ['$.entries[1]', 'b'],
+            ],
+            Payload::object(['entries' => ['a', 'b']])->mapList(
+                'entries',
+                static fn(mixed $element, string $path): array => [$path, $element],
+            ),
+            'Each element must carry its indexed path.',
+        );
+    }
+
+    public function testNullableBoolReturnsNull(): void
+    {
+        self::assertNull(
+            Payload::object(['modulePreload' => null])->nullableBool('modulePreload'),
+            'A nullable boolean must preserve null.',
+        );
+    }
+
     public function testNullableNumberReturnsIntegerInputAsFloat(): void
     {
         self::assertSame(
@@ -136,6 +159,16 @@ final class PayloadTest extends TestCase
         );
 
         Payload::object(['name' => 42])->string('name');
+    }
+
+    public function testThrowHydrationExceptionForANullableBooleanCarryingAnInteger(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.modulePreload': expected a boolean or null.",
+        );
+
+        Payload::object(['modulePreload' => 1])->nullableBool('modulePreload');
     }
 
     public function testThrowHydrationExceptionForANullableIntegerCarryingAString(): void

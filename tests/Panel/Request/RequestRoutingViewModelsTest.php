@@ -27,12 +27,14 @@ final class RequestRoutingViewModelsTest extends TestCase
 {
     public function testConstructorsStayCompactAndModelStateIsPrivate(): void
     {
-        foreach ([
-            RequestHero::class => 2,
-            RouteDefinition::class => 2,
-            CurrentRouteView::class => 1,
-            RouteInventoryView::class => 1,
-        ] as $class => $count) {
+        foreach (
+            [
+                RequestHero::class => 2,
+                RouteDefinition::class => 2,
+                CurrentRouteView::class => 1,
+                RouteInventoryView::class => 1,
+            ] as $class => $count
+        ) {
             $reflection = new ReflectionClass($class);
 
             self::assertSame(
@@ -58,7 +60,9 @@ final class RequestRoutingViewModelsTest extends TestCase
     public function testCurrentRouteDefaultsRepresentUnavailableDiagnostics(): void
     {
         $current = CurrentRouteView::create();
+
         $trace = new RouteTraceRow('fallback');
+
         $inventory = RouteInventoryView::create([]);
 
         self::assertEquals(
@@ -76,16 +80,19 @@ final class RequestRoutingViewModelsTest extends TestCase
             $trace->matched,
             'A trace row must remain unmatched until an adapter reports a match.',
         );
-        self::assertTrue(
-            $inventory->isLive(),
-            'Route inventories must describe live configuration by default.',
+        self::assertEquals(
+            RouteInventoryView::create([]),
+            $inventory->withBadges([])->withSource('Current application configuration')->withError(null),
+            'Inventory defaults must remain explicit and deterministic.',
         );
     }
 
     public function testCurrentRouteFluentOptionsCanResetWithoutChangingTheOriginal(): void
     {
         $definition = RouteDefinition::create('orders', '/orders');
+
         $trace = new RouteTraceRow('/orders');
+
         $current = CurrentRouteView::create('orders')
             ->withAction('OrderAction')
             ->withParameters(['id' => 7])
@@ -93,6 +100,7 @@ final class RequestRoutingViewModelsTest extends TestCase
             ->withMessage('Matched.')
             ->withTrace([$trace])
             ->withError('Captured failure.');
+
         $reset = $current
             ->withAction(null)
             ->withParameters([])
@@ -100,9 +108,13 @@ final class RequestRoutingViewModelsTest extends TestCase
             ->withMessage(null)
             ->withTrace([])
             ->withError(null);
+
         $parameters = $current->getParameters();
+
         $parameters['id'] = 8;
+
         $rows = $current->getTrace();
+
         $rows[] = new RouteTraceRow('fallback');
 
         self::assertSame(
@@ -154,14 +166,16 @@ final class RequestRoutingViewModelsTest extends TestCase
 
         $trace = new RouteTraceRow('/orders');
 
-        foreach ([
-            $current->withAction('OrderAction'),
-            $current->withParameters(['id' => 7]),
-            $current->withDefinition($definition),
-            $current->withMessage('Matched.'),
-            $current->withTrace([$trace]),
-            $current->withError('Captured failure.'),
-        ] as $clone) {
+        foreach (
+            [
+                $current->withAction('OrderAction'),
+                $current->withParameters(['id' => 7]),
+                $current->withDefinition($definition),
+                $current->withMessage('Matched.'),
+                $current->withTrace([$trace]),
+                $current->withError('Captured failure.'),
+            ] as $clone
+        ) {
             self::assertNotSame(
                 $current,
                 $clone,
@@ -186,7 +200,8 @@ final class RequestRoutingViewModelsTest extends TestCase
                 [new RouteDefinition(), RouteDefinition::create()],
                 [new RouteDefinition('orders', '/orders'), RouteDefinition::create(name: 'orders', pattern: '/orders')],
                 [new RouteInventoryView([]), RouteInventoryView::create(routes: [])],
-            ] as [$constructed, $created]) {
+            ] as [$constructed, $created]
+        ) {
             self::assertEquals(
                 $constructed,
                 $created,
@@ -211,12 +226,11 @@ final class RequestRoutingViewModelsTest extends TestCase
         $inventory = RouteInventoryView::create($routes)
             ->withBadges($badges)
             ->withSource('Captured configuration')
-            ->withLive(false)
             ->withError('Inventory failure.');
+
         $reset = $inventory
             ->withBadges([])
             ->withSource('Current application configuration')
-            ->withLive(true)
             ->withError(null);
 
         $routes[] = RouteDefinition::create('other', '/other');
@@ -245,10 +259,6 @@ final class RequestRoutingViewModelsTest extends TestCase
             $inventory->getSource(),
             'Later options must preserve provenance.',
         );
-        self::assertFalse(
-            $inventory->isLive(),
-            'A non-live inventory must preserve its explicit false value.',
-        );
         self::assertSame(
             'Inventory failure.',
             $inventory->getError(),
@@ -270,9 +280,9 @@ final class RequestRoutingViewModelsTest extends TestCase
             [
                 $inventory->withBadges([new RouteBadge('Pretty URLs enabled')]),
                 $inventory->withSource('Captured configuration'),
-                $inventory->withLive(false),
                 $inventory->withError('Inventory failure.'),
-            ] as $clone) {
+            ] as $clone
+        ) {
             self::assertNotSame(
                 $inventory,
                 $clone,
@@ -302,9 +312,7 @@ final class RequestRoutingViewModelsTest extends TestCase
             ->withDefinition($definition)
             ->withMessage('Matched home.')
             ->withTrace([$trace]);
-        $inventory = RouteInventoryView::create(routes: [$definition])
-            ->withBadges([$badge])
-            ->withLive(false);
+        $inventory = RouteInventoryView::create(routes: [$definition])->withBadges([$badge]);
 
         $view = new RequestRoutingView($current, $inventory);
 

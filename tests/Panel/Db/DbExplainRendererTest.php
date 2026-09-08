@@ -100,6 +100,43 @@ final class DbExplainRendererTest extends TestCase
         );
     }
 
+    public function testRenderNumericColumnKeysAsTextHeadings(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-explain">
+            <h1 class="yii-debug-explain-title">
+            EXPLAIN
+            </h1><pre class="yii-debug-explain-query">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </pre><div class="yii-debug-explain-scroll">
+            <table class="yii-debug-table yii-debug-explain-table">
+            <thead>
+            <tr>
+            <th scope="col">
+            0
+            </th><th scope="col">
+            1
+            </th>
+            </tr>
+            </thead><tbody>
+            <tr>
+            <td>
+            seq
+            </td><td>
+            detail
+            </td>
+            </tr>
+            </tbody>
+            </table>
+            </div>
+            </div>
+            HTML,
+            DbExplainRenderer::render('SELECT 1', [[0 => 'seq', 1 => 'detail']]),
+            'Positional driver columns must survive as text headings.',
+        );
+    }
+
     public function testRenderQueryAndResultTable(): void
     {
         self::assertSame(

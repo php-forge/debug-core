@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Panel\Queue;
 
-use PHPForge\Debug\Panel\Queue\{JobRecord, QueueCardRenderer, QueueSummary};
+use PHPForge\Debug\Panel\Queue\{QueueCardRenderer, QueueSummary};
+use PHPForge\Debug\Tests\Support\JobRecordFixture;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -20,9 +21,9 @@ final class QueueCardRendererTest extends TestCase
     {
         $summary = new QueueSummary(
             [
-                self::makeRecord(driverName: 'AMQP', isAsync: true),
-                self::makeRecord(driverName: 'Redis', isAsync: true),
-                self::makeRecord(driverName: 'AMQP', isAsync: true),
+                JobRecordFixture::create(driverName: 'AMQP', isAsync: true),
+                JobRecordFixture::create(driverName: 'Redis', isAsync: true),
+                JobRecordFixture::create(driverName: 'AMQP', isAsync: true),
             ],
         );
         $hint = QueueCardRenderer::renderAsyncHint($summary);
@@ -47,9 +48,7 @@ final class QueueCardRendererTest extends TestCase
 
     public function testRenderAsyncHintReturnsNullWhenAllRecordsAreSync(): void
     {
-        $summary = new QueueSummary(
-            [self::makeRecord(driverName: 'Sync', isAsync: false)],
-        );
+        $summary = new QueueSummary([JobRecordFixture::create(driverName: 'Sync', isAsync: false)]);
 
         self::assertNull(
             QueueCardRenderer::renderAsyncHint($summary),
@@ -60,10 +59,10 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemDriverPillUsesTheDriverClassOrFallbackTooltip(): void
     {
         $known = QueueCardRenderer::renderItem(
-            self::makeRecord(driverName: 'Redis', driverClass: 'yii\\queue\\redis\\Queue'),
+            JobRecordFixture::create(driverName: 'Redis', driverClass: 'yii\\queue\\redis\\Queue'),
         )->render();
         $unknown = QueueCardRenderer::renderItem(
-            self::makeRecord(driverName: 'Custom', driverClass: ''),
+            JobRecordFixture::create(driverName: 'Custom', driverClass: ''),
         )->render();
 
         self::assertSame(
@@ -104,7 +103,7 @@ final class QueueCardRendererTest extends TestCase
 
     public function testRenderItemEmitsCardWithClassAndStatusPill(): void
     {
-        $record = self::makeRecord(jobClass: 'app\\jobs\\HelloJob', eventType: 'push');
+        $record = JobRecordFixture::create(jobClass: 'app\\jobs\\HelloJob', eventType: 'push');
 
         self::assertSame(
             <<<HTML
@@ -141,7 +140,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(eventType: 'error'))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(eventType: 'error'))->render(),
             "Error event must use the 'failed' status variant.",
         );
     }
@@ -162,7 +161,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(eventType: 'exec'))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(eventType: 'exec'))->render(),
             "Exec event must use the 'done' status variant.",
         );
 
@@ -184,7 +183,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(componentId: 'queueEmail'))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(componentId: 'queueEmail'))->render(),
             'Component meta item must be hidden the sidebar/tab strip surfaces it instead.',
         );
     }
@@ -205,7 +204,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(driverName: ''))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(driverName: ''))->render(),
             'Empty driver name must hide the driver pill.',
         );
     }
@@ -226,7 +225,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord())->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create())->render(),
             'No optional fields must omit the meta strip.',
         );
     }
@@ -247,16 +246,16 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(payloadFields: []))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(payloadFields: []))->render(),
             'Empty payload fields must omit the block.',
         );
     }
 
     public function testRenderItemRendersAvatarHueDeterministicallyFromJobClass(): void
     {
-        $first = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\Hello'))->render();
-        $second = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\Hello'))->render();
-        $third = QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\World'))->render();
+        $first = QueueCardRenderer::renderItem(JobRecordFixture::create(jobClass: 'app\\jobs\\Hello'))->render();
+        $second = QueueCardRenderer::renderItem(JobRecordFixture::create(jobClass: 'app\\jobs\\Hello'))->render();
+        $third = QueueCardRenderer::renderItem(JobRecordFixture::create(jobClass: 'app\\jobs\\World'))->render();
 
         self::assertSame(
             self::extractHue($first),
@@ -273,7 +272,7 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemRendersCollapsibleBlockForNestedObjects(): void
     {
         $html = QueueCardRenderer::renderItem(
-            self::makeRecord(
+            JobRecordFixture::create(
                 payloadFields: [
                     'inner' => [
                         '__class' => 'app\\models\\Inner',
@@ -317,7 +316,7 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemRendersCollapsibleBlockForRegularArray(): void
     {
         $html = QueueCardRenderer::renderItem(
-            self::makeRecord(
+            JobRecordFixture::create(
                 payloadFields: [
                     'items' => [
                         'a',
@@ -379,7 +378,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(driverName: 'AMQP', isAsync: true))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(driverName: 'AMQP', isAsync: true))->render(),
             "Async driver must use the 'is-async' modifier.",
         );
     }
@@ -387,14 +386,10 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemRendersErrorBlockOnlyWhenErrorMessagePresent(): void
     {
         $withError = QueueCardRenderer::renderItem(
-            self::makeRecord(
-                eventType: 'error',
-                error: 'Boom: something failed',
-            ),
+            JobRecordFixture::create(eventType: 'error', error: 'Boom: something failed'),
         )->render();
 
-        $withoutError = QueueCardRenderer::renderItem(self::makeRecord())
-            ->render();
+        $withoutError = QueueCardRenderer::renderItem(JobRecordFixture::create())->render();
 
         self::assertSame(
             <<<HTML
@@ -450,7 +445,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(jobClass: ''))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(jobClass: ''))->render(),
             "Empty class name must fall back to hue '210'.",
         );
     }
@@ -458,7 +453,7 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemRendersMetaItemsWhenOptionalFieldsPresent(): void
     {
         $html = QueueCardRenderer::renderItem(
-            self::makeRecord(
+            JobRecordFixture::create(
                 jobId: 'msg-7',
                 ttr: 30,
                 delay: 5,
@@ -492,7 +487,7 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemRendersPayloadTreeWhenFieldsPresent(): void
     {
         $html = QueueCardRenderer::renderItem(
-            self::makeRecord(
+            JobRecordFixture::create(
                 payloadFields: [
                     'message' => 'first',
                     'priority' => 5,
@@ -546,7 +541,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(driverName: 'Sync', isAsync: false))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(driverName: 'Sync', isAsync: false))->render(),
             "Sync driver must use the 'is-sync' modifier.",
         );
     }
@@ -554,7 +549,7 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemRendersTruncatedMarkerInCollapsibleBlocks(): void
     {
         $html = QueueCardRenderer::renderItem(
-            self::makeRecord(
+            JobRecordFixture::create(
                 payloadFields: [
                     'items' => [
                         'a',
@@ -598,7 +593,7 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemRendersTypeLabelsForEachScalarKind(): void
     {
         $html = QueueCardRenderer::renderItem(
-            self::makeRecord(
+            JobRecordFixture::create(
                 payloadFields: [
                     'msg' => 'x',
                     'count' => 10,
@@ -655,7 +650,7 @@ final class QueueCardRendererTest extends TestCase
     public function testRenderItemRendersUnsupportedRowForNonRenderableValues(): void
     {
         $html = QueueCardRenderer::renderItem(
-            self::makeRecord(
+            JobRecordFixture::create(
                 payloadFields: [
                     'handle' => fopen('php://memory', 'rb'),
                 ],
@@ -705,7 +700,7 @@ final class QueueCardRendererTest extends TestCase
             </div>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(jobId: 'msg-1', delay: 0))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(jobId: 'msg-1', delay: 0))->render(),
             'Zero delay must be hidden only positive delays render.',
         );
     }
@@ -734,7 +729,7 @@ final class QueueCardRendererTest extends TestCase
             </div>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $longValue]))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(payloadFields: ['data' => $longValue]))->render(),
             'Long strings must be truncated with an ellipsis.',
         );
 
@@ -765,7 +760,7 @@ final class QueueCardRendererTest extends TestCase
             </div>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $exactValue]))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(payloadFields: ['data' => $exactValue]))->render(),
             'Exactly 80 characters must not truncate.',
         );
         self::assertSame(
@@ -788,7 +783,7 @@ final class QueueCardRendererTest extends TestCase
             </div>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(payloadFields: ['data' => $longValue]))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(payloadFields: ['data' => $longValue]))->render(),
             'Long Unicode strings must preserve the first 80 characters.',
         );
     }
@@ -809,7 +804,7 @@ final class QueueCardRendererTest extends TestCase
             </header>
             </article>
             HTML,
-            QueueCardRenderer::renderItem(self::makeRecord(jobClass: 'app\\jobs\\éclairJob'))->render(),
+            QueueCardRenderer::renderItem(JobRecordFixture::create(jobClass: 'app\\jobs\\éclairJob'))->render(),
             'Avatar initial must be one complete Unicode character.',
         );
     }
@@ -824,44 +819,5 @@ final class QueueCardRendererTest extends TestCase
         }
 
         self::fail('No avatar hue found in rendered HTML.');
-    }
-
-    /**
-     * @param array<string, mixed> $payloadFields
-     */
-    private static function makeRecord(
-        string $eventType = 'push',
-        string $componentId = 'queue',
-        string $driverName = 'Sync',
-        string $driverClass = 'yii\\queue\\sync\\Queue',
-        bool $isAsync = false,
-        string $jobClass = 'app\\jobs\\HelloJob',
-        array $payloadFields = [],
-        float $time = 0.0,
-        string $jobId = '',
-        int|null $ttr = null,
-        int|null $delay = null,
-        int|null $priority = null,
-        int|null $attempt = null,
-        float|null $duration = null,
-        string $error = '',
-    ): JobRecord {
-        return new JobRecord(
-            eventType: $eventType,
-            componentId: $componentId,
-            driverName: $driverName,
-            driverClass: $driverClass,
-            isAsync: $isAsync,
-            jobClass: $jobClass,
-            payloadFields: $payloadFields,
-            time: $time,
-            jobId: $jobId,
-            ttr: $ttr,
-            delay: $delay,
-            priority: $priority,
-            attempt: $attempt,
-            duration: $duration,
-            error: $error,
-        );
     }
 }

@@ -84,6 +84,14 @@ final readonly class SummaryMetricComparison
         ];
     }
 
+    /**
+     * Returns whether the metric changed between the baseline and the target.
+     */
+    public function hasDifference(): bool
+    {
+        return $this->delta !== 'No change';
+    }
+
     private static function formatNumber(float|int $value, string $unit, int $precision): string
     {
         $formatted = number_format($value, $precision, '.', ',');

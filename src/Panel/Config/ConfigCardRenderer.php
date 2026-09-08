@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Config;
 
 use Locale;
+use PHPForge\Debug\Helper\ExtensionPill;
 use Stringable;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Heading\{H2, H3};
@@ -249,21 +250,7 @@ final class ConfigCardRenderer
      */
     private static function renderExtensionPill(string $name, bool $enabled): Span
     {
-        $variant = $enabled ? 'is-on' : 'is-off';
-
-        return Span::tag()
-            ->class("yii-debug-ext-pill {$variant}")
-            ->html(
-                Span::tag()
-                    ->addAriaAttribute('hidden', 'true')
-                    ->class('yii-debug-ext-pill-dot'),
-                Span::tag()
-                    ->class('yii-debug-ext-pill-label')
-                    ->content($name),
-                Span::tag()
-                    ->class('yii-debug-ext-pill-state')
-                    ->content($enabled ? 'on' : 'off'),
-            );
+        return ExtensionPill::render($name, $enabled ? 'on' : 'off', $enabled);
     }
 
     /**

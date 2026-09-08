@@ -22,22 +22,18 @@ final class RequestToolbarItemFactory
         $items = [];
 
         if ($route !== '') {
-            $items[] = new ToolbarItem(
-                value: $route,
-                status: 'default',
-                title: "Resolved route: {$route}",
-                id: 'route',
-            );
+            $items[] = ToolbarItem::create($route)
+                ->withStatus('default')
+                ->withTitle("Resolved route: {$route}")
+                ->withId('route');
         }
 
         $statusClass = Vocabulary::statusClass($statusCode);
 
-        $items[] = new ToolbarItem(
-            value: (string) $statusCode,
-            status: $statusClass === 'none' ? 'default' : "status-{$statusClass}",
-            title: trim("Status code: {$statusCode} {$statusText}"),
-            id: 'status',
-        );
+        $items[] = ToolbarItem::create((string) $statusCode)
+            ->withStatus($statusClass === 'none' ? 'default' : "status-{$statusClass}")
+            ->withTitle(trim("Status code: {$statusCode} {$statusText}"))
+            ->withId('status');
 
         return $items;
     }

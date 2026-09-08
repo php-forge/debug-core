@@ -6,10 +6,12 @@ namespace PHPForge\Debug\Helper;
 
 use function abs;
 use function crc32;
+use function mb_strtoupper;
+use function mb_substr;
 use function strtolower;
 
 /**
- * Derives stable, deterministic avatar colours from arbitrary identifying strings.
+ * Derives stable, deterministic avatar colours and monogram initials from arbitrary identifying strings.
  */
 final class Avatar
 {
@@ -32,5 +34,23 @@ final class Avatar
         }
 
         return abs(crc32(strtolower($seed))) % 360;
+    }
+
+    /**
+     * Returns the uppercased first character of the given seed, or `'?'` when the seed is empty.
+     *
+     * Multibyte-safe: the initial is taken as one character, not one byte.
+     *
+     * @param string $seed Identifying value the monogram is derived from.
+     *
+     * @return string Single uppercased character, or `'?'`.
+     */
+    public static function initial(string $seed): string
+    {
+        if ($seed === '') {
+            return '?';
+        }
+
+        return mb_strtoupper(mb_substr($seed, 0, 1));
     }
 }

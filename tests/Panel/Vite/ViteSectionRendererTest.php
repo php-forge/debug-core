@@ -33,9 +33,21 @@ final class ViteSectionRendererTest extends TestCase
             $html,
             'Configuration must use the same overview table as the other diagnostic panels.',
         );
-        self::assertStringContainsString('scope="row"', $html, 'Configuration labels must identify their table rows.');
-        self::assertStringContainsString('Component ID', $html, 'The exact adapter registration ID must remain visible.');
-        self::assertStringContainsString('inertiaVue', $html, 'The exact case-sensitive component ID must be preserved.');
+        self::assertStringContainsString(
+            'scope="row"',
+            $html,
+            'Configuration labels must identify their table rows.',
+        );
+        self::assertStringContainsString(
+            'Component ID',
+            $html,
+            'The exact adapter registration ID must remain visible.',
+        );
+        self::assertStringContainsString(
+            'inertiaVue',
+            $html,
+            'The exact case-sensitive component ID must be preserved.',
+        );
         self::assertDoesNotMatchRegularExpression(
             '~<h2[^>]*>\s*inertiaVue\s*</h2>~',
             $html,
@@ -46,7 +58,11 @@ final class ViteSectionRendererTest extends TestCase
             $html,
             'The chunk heading must use the shared tabular-section treatment.',
         );
-        self::assertStringContainsString('Implementation', $html, 'The implementation field must remain readable.');
+        self::assertStringContainsString(
+            'Implementation',
+            $html,
+            'The implementation field must remain readable.',
+        );
         self::assertMatchesRegularExpression(
             '~<th scope="row">\s*Mode\s*</th><td>\s*Development\s*</td>~',
             $html,
@@ -58,10 +74,26 @@ final class ViteSectionRendererTest extends TestCase
             $html,
             'Successful inspection must use the success badge in its overview row.',
         );
-        self::assertStringContainsString('resources/js/app.js', $html, 'Configured entrypoints must be rendered.');
-        self::assertStringContainsString('http://localhost:5173', $html, 'The development server must be rendered.');
-        self::assertStringContainsString('Enabled', $html, 'Enabled development options must remain explicit.');
-        self::assertStringContainsString('Not applicable', $html, 'Production-only options must be identified.');
+        self::assertStringContainsString(
+            'resources/js/app.js',
+            $html,
+            'Configured entrypoints must be rendered.',
+        );
+        self::assertStringContainsString(
+            'http://localhost:5173',
+            $html,
+            'The development server must be rendered.',
+        );
+        self::assertStringContainsString(
+            'Enabled',
+            $html,
+            'Enabled development options must remain explicit.',
+        );
+        self::assertStringContainsString(
+            'Not applicable',
+            $html,
+            'Production-only options must be identified.',
+        );
         self::assertStringContainsString(
             'Development mode resolves entry points through the dev server.',
             $html,
@@ -80,8 +112,16 @@ final class ViteSectionRendererTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString('2</strong> components', $html, 'Multiple integrations need a plural count.');
-        self::assertStringContainsString('Mixed', $html, 'Different runtime modes must be summarized as mixed.');
+        self::assertStringContainsString(
+            '2</strong> components',
+            $html,
+            'Multiple integrations need a plural count.',
+        );
+        self::assertStringContainsString(
+            'Mixed',
+            $html,
+            'Different runtime modes must be summarized as mixed.',
+        );
         self::assertSame(
             2,
             substr_count($html, 'class="yii-debug-vite-component"'),
@@ -97,7 +137,11 @@ final class ViteSectionRendererTest extends TestCase
             $html,
             'The panel name must remain available to assistive technology.',
         );
-        self::assertStringContainsString('0</strong> components', $html, 'The empty summary must report zero components.');
+        self::assertStringContainsString(
+            '0</strong> components',
+            $html,
+            'The empty summary must report zero components.',
+        );
         self::assertStringContainsString(
             'No Vite integrations captured',
             $html,
@@ -138,10 +182,26 @@ final class ViteSectionRendererTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString('&lt;vite&gt;', $html, 'Plain component metadata must remain escaped.');
-        self::assertStringContainsString('&lt;script&gt;', $html, 'Plain entrypoint metadata must remain escaped.');
-        self::assertStringNotContainsString('<vite>', $html, 'Component metadata must never become markup.');
-        self::assertStringNotContainsString('<script>', $html, 'Entrypoint metadata must never become markup.');
+        self::assertStringContainsString(
+            '&lt;vite&gt;',
+            $html,
+            'Plain component metadata must remain escaped.',
+        );
+        self::assertStringContainsString(
+            '&lt;script&gt;',
+            $html,
+            'Plain entrypoint metadata must remain escaped.',
+        );
+        self::assertStringNotContainsString(
+            '<vite>',
+            $html,
+            'Component metadata must never become markup.',
+        );
+        self::assertStringNotContainsString(
+            '<script>',
+            $html,
+            'Entrypoint metadata must never become markup.',
+        );
         self::assertStringContainsString(
             '<span class="yii-debug-badge yii-debug-badge-success">Available</span>',
             $html,
@@ -159,7 +219,11 @@ final class ViteSectionRendererTest extends TestCase
 
         $html = ViteSectionRenderer::render(new ViteSummary([$component]));
 
-        self::assertStringContainsString('Enabled', $html, 'Enabled production options must remain explicit.');
+        self::assertStringContainsString(
+            'Enabled',
+            $html,
+            'Enabled production options must remain explicit.',
+        );
         self::assertStringContainsString(
             'The Vite manifest is missing or empty — run the front-end build to populate it.',
             $html,
@@ -185,7 +249,11 @@ final class ViteSectionRendererTest extends TestCase
 
         $html = ViteSectionRenderer::render(new ViteSummary([$component]));
 
-        self::assertStringContainsString('1</strong> component', $html, 'A single integration must use the singular label.');
+        self::assertStringContainsString(
+            '1</strong> component',
+            $html,
+            'A single integration must use the singular label.',
+        );
         self::assertMatchesRegularExpression(
             '~<th scope="row">\s*Mode\s*</th><td>\s*Production\s*</td>~',
             $html,
@@ -201,9 +269,39 @@ final class ViteSectionRendererTest extends TestCase
             $html,
             'The manifest path must be rendered.',
         );
-        self::assertStringContainsString('Disabled', $html, 'Disabled production options must remain explicit.');
-        self::assertStringContainsString('scope="col"', $html, 'Chunk headers must identify their column scope.');
-        self::assertStringContainsString('assets/app.js', $html, 'Emitted chunk files must be rendered.');
+        self::assertStringContainsString(
+            'Disabled',
+            $html,
+            'Disabled production options must remain explicit.',
+        );
+        self::assertStringContainsString(
+            <<<HTML
+            <thead>
+            <tr>
+            <th scope="col">
+            #
+            </th><th scope="col">
+            Chunk
+            </th><th scope="col">
+            Output
+            </th><th scope="col">
+            CSS
+            </th><th scope="col">
+            Imports
+            </th><th scope="col">
+            Entry
+            </th>
+            </tr>
+            </thead>
+            HTML,
+            $html,
+            'Chunk columns must stay complete, ordered, and column-scoped.',
+        );
+        self::assertStringContainsString(
+            'assets/app.js',
+            $html,
+            'Emitted chunk files must be rendered.',
+        );
         self::assertMatchesRegularExpression(
             '~<tr>\s*<td>\s*1\s*</td>.*?resources/js/app\.js.*?'
             . '<span class="yii-debug-badge yii-debug-badge-success">entry</span>\s*</td>\s*</tr>~s',
@@ -236,13 +334,21 @@ final class ViteSectionRendererTest extends TestCase
             $html,
             'Failed inspection must use the warning badge in its overview row.',
         );
-        self::assertStringContainsString('role="status"', $html, 'The inspection warning must expose status semantics.');
+        self::assertStringContainsString(
+            'role="status"',
+            $html,
+            'The inspection warning must expose status semantics.',
+        );
         self::assertStringContainsString(
             'Runtime inspection is unavailable for this component.',
             $html,
             'Failed inspection must explain why fields are unavailable.',
         );
-        self::assertGreaterThanOrEqual(3, substr_count($html, 'Unknown'), 'Unknown mode and flags must remain explicit.');
+        self::assertGreaterThanOrEqual(
+            3,
+            substr_count($html, 'Unknown'),
+            'Unknown mode and flags must remain explicit.',
+        );
         self::assertStringContainsString(
             'No build chunks were available for inspection.',
             $html,

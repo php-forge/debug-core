@@ -15,8 +15,6 @@ use Throwable;
 
 /**
  * Unit tests for {@see CollectorCoordinator} validating IDs, lifecycle, and isolated capture failures.
- *
- * @since 0.1
  */
 #[Group('collector')]
 final class CollectorCoordinatorTest extends TestCase
@@ -193,7 +191,9 @@ final class CollectorCoordinatorTest extends TestCase
         try {
             $coordinator->run(
                 static fn(): never => throw $primary,
-                static fn(Throwable $_throwable): never => throw new RuntimeException('Diagnostic failed.'),
+                static fn(Throwable $_throwable): never => throw new RuntimeException(
+                    'Diagnostic failed.',
+                ),
             );
         } catch (RuntimeException $throwable) {
             $caught = $throwable;
@@ -702,20 +702,8 @@ final class CollectorCoordinatorTest extends TestCase
      */
     private function summary(): RequestSummary
     {
-        return new RequestSummary(
-            tag: 'request-1',
-            url: 'https://example.test/',
-            ajax: false,
-            method: 'GET',
-            ip: '127.0.0.1',
-            time: 1_700_000_000.0,
-            statusCode: 200,
-            sqlCount: 0,
-            excessiveCallersCount: 0,
-            mailCount: 0,
-            mailFiles: [],
-            processingTime: null,
-            peakMemory: null,
-        );
+        return RequestSummary::create('request-1')
+            ->withRequest('https://example.test/', 'GET', '127.0.0.1', 1_700_000_000.0)
+            ->withResponse(200);
     }
 }

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Panel\Queue;
 
-use PHPForge\Debug\Panel\Queue\{JobRecord, QueueGridRenderer};
+use PHPForge\Debug\Panel\Queue\QueueGridRenderer;
+use PHPForge\Debug\Tests\Support\JobRecordFixture;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +20,7 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             '#3',
-            QueueGridRenderer::renderAttemptCell(self::makeRecord(attempt: 3)),
+            QueueGridRenderer::renderAttemptCell(JobRecordFixture::create(attempt: 3)),
             "Non-zero attempt must render as '#N'.",
         );
     }
@@ -28,13 +29,13 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             '—',
-            QueueGridRenderer::renderAttemptCell(self::makeRecord(attempt: null)),
+            QueueGridRenderer::renderAttemptCell(JobRecordFixture::create(attempt: null)),
             "'null' attempt must yield '—'.",
         );
 
         self::assertSame(
             '—',
-            QueueGridRenderer::renderAttemptCell(self::makeRecord(attempt: 0)),
+            QueueGridRenderer::renderAttemptCell(JobRecordFixture::create(attempt: 0)),
             "Zero attempt must yield '—'.",
         );
     }
@@ -43,7 +44,7 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             'queueRedis',
-            QueueGridRenderer::renderComponentCell(self::makeRecord(componentId: 'queueRedis')),
+            QueueGridRenderer::renderComponentCell(JobRecordFixture::create(componentId: 'queueRedis')),
             'Component cell must echo the component id verbatim.',
         );
     }
@@ -54,7 +55,7 @@ final class QueueGridRendererTest extends TestCase
             <<<HTML
             <span class="yii-debug-queue-driver yii-debug-queue-driver-is-async" title="yii\queue\sync\Queue">Redis</span>
             HTML,
-            QueueGridRenderer::renderDriverCell(self::makeRecord(driverName: 'Redis', isAsync: true)),
+            QueueGridRenderer::renderDriverCell(JobRecordFixture::create(driverName: 'Redis', isAsync: true)),
             "Async drivers must carry the 'is-async' modifier.",
         );
 
@@ -67,7 +68,7 @@ final class QueueGridRendererTest extends TestCase
             <<<HTML
             <span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="yii\queue\sync\Queue">Sync</span>
             HTML,
-            QueueGridRenderer::renderDriverCell(self::makeRecord(driverName: 'Sync', isAsync: false)),
+            QueueGridRenderer::renderDriverCell(JobRecordFixture::create(driverName: 'Sync', isAsync: false)),
             "Sync drivers must carry the 'is-sync' modifier.",
         );
     }
@@ -76,7 +77,7 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             '',
-            QueueGridRenderer::renderDriverCell(self::makeRecord(driverName: '')),
+            QueueGridRenderer::renderDriverCell(JobRecordFixture::create(driverName: '')),
             'Empty driver name must yield an empty cell.',
         );
     }
@@ -87,7 +88,7 @@ final class QueueGridRendererTest extends TestCase
             <<<HTML
             <span class="yii-debug-queue-driver yii-debug-queue-driver-is-sync" title="Unknown driver">Custom</span>
             HTML,
-            QueueGridRenderer::renderDriverCell(self::makeRecord(driverName: 'Custom', driverClass: '')),
+            QueueGridRenderer::renderDriverCell(JobRecordFixture::create(driverName: 'Custom', driverClass: '')),
             'Missing driver class must use the explicit fallback tooltip.',
         );
     }
@@ -96,12 +97,12 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             '12.3 ms',
-            QueueGridRenderer::renderDurationCell(self::makeRecord(duration: 0.0123)),
+            QueueGridRenderer::renderDurationCell(JobRecordFixture::create(duration: 0.0123)),
             "Seconds must be formatted as 'XX.X ms'.",
         );
         self::assertSame(
             '1,000.0 ms',
-            QueueGridRenderer::renderDurationCell(self::makeRecord(duration: 1.0)),
+            QueueGridRenderer::renderDurationCell(JobRecordFixture::create(duration: 1.0)),
             'One second must convert using exactly one thousand milliseconds.',
         );
     }
@@ -110,7 +111,7 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             '—',
-            QueueGridRenderer::renderDurationCell(self::makeRecord(duration: null)),
+            QueueGridRenderer::renderDurationCell(JobRecordFixture::create(duration: null)),
             "Missing duration must yield '—'.",
         );
     }
@@ -119,7 +120,7 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             '—',
-            QueueGridRenderer::renderIdCell(self::makeRecord(jobId: '')),
+            QueueGridRenderer::renderIdCell(JobRecordFixture::create(jobId: '')),
             "Empty job id must yield '—' to keep the column readable.",
         );
     }
@@ -130,7 +131,7 @@ final class QueueGridRendererTest extends TestCase
             <<<HTML
             <span class="yii-debug-tag-link">69ffbbf2a6830</span>
             HTML,
-            QueueGridRenderer::renderIdCell(self::makeRecord(jobId: '69ffbbf2a6830')),
+            QueueGridRenderer::renderIdCell(JobRecordFixture::create(jobId: '69ffbbf2a6830')),
             'Id must reuse the History tag-link styling.',
         );
 
@@ -145,7 +146,7 @@ final class QueueGridRendererTest extends TestCase
             </div>
             HTML,
             QueueGridRenderer::renderJobCell(
-                self::makeRecord(jobClass: 'app\\jobs\\HelloJob'),
+                JobRecordFixture::create(jobClass: 'app\\jobs\\HelloJob'),
                 '/debug/queue?seq=2',
             ),
             'Short class name must render in bold inside the link.',
@@ -158,7 +159,7 @@ final class QueueGridRendererTest extends TestCase
             <<<HTML
             <span class="yii-debug-queue-status yii-debug-queue-status-failed">Failed</span>
             HTML,
-            QueueGridRenderer::renderStatusCell(self::makeRecord(eventType: 'error')),
+            QueueGridRenderer::renderStatusCell(JobRecordFixture::create(eventType: 'error')),
             "Error events must produce the 'failed' modifier.",
         );
     }
@@ -169,7 +170,7 @@ final class QueueGridRendererTest extends TestCase
             <<<'HTML'
             <span class="yii-debug-queue-status yii-debug-queue-status-queued">Queued</span>
             HTML,
-            QueueGridRenderer::renderStatusCell(self::makeRecord(eventType: 'push')),
+            QueueGridRenderer::renderStatusCell(JobRecordFixture::create(eventType: 'push')),
             "Push events must produce the 'queued' modifier.",
         );
 
@@ -179,7 +180,7 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             date('H:i:s', 1_704_112_496) . '.789',
-            QueueGridRenderer::renderTimeCell(self::makeRecord(time: 1_704_112_496.789)),
+            QueueGridRenderer::renderTimeCell(JobRecordFixture::create(time: 1_704_112_496.789)),
             "Time cell must preserve the exact 'HH:MM:SS.mmm' value.",
         );
     }
@@ -188,7 +189,7 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             date('H:i:s', 1_704_112_496) . '.123',
-            QueueGridRenderer::renderTimeCell(self::makeRecord(time: 1_704_112_496.1239)),
+            QueueGridRenderer::renderTimeCell(JobRecordFixture::create(time: 1_704_112_496.1239)),
             'Sub-millisecond precision must truncate after three digits.',
         );
     }
@@ -197,7 +198,7 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             '300s',
-            QueueGridRenderer::renderTtrCell(self::makeRecord(ttr: 300)),
+            QueueGridRenderer::renderTtrCell(JobRecordFixture::create(ttr: 300)),
             "Non-zero TTR must render as 'Ns'.",
         );
     }
@@ -206,52 +207,13 @@ final class QueueGridRendererTest extends TestCase
     {
         self::assertSame(
             '—',
-            QueueGridRenderer::renderTtrCell(self::makeRecord(ttr: null)),
+            QueueGridRenderer::renderTtrCell(JobRecordFixture::create(ttr: null)),
             "Null TTR must yield '—'.",
         );
         self::assertSame(
             '—',
-            QueueGridRenderer::renderTtrCell(self::makeRecord(ttr: 0)),
+            QueueGridRenderer::renderTtrCell(JobRecordFixture::create(ttr: 0)),
             "Zero TTR must yield '—'.",
-        );
-    }
-
-    /**
-     * @param array<string, mixed> $payloadFields
-     */
-    private static function makeRecord(
-        string $eventType = 'push',
-        string $componentId = 'queue',
-        string $driverName = 'Sync',
-        string $driverClass = 'yii\\queue\\sync\\Queue',
-        bool $isAsync = false,
-        string $jobClass = 'app\\jobs\\HelloJob',
-        array $payloadFields = [],
-        float $time = 0.0,
-        string $jobId = '',
-        int|null $ttr = null,
-        int|null $delay = null,
-        int|null $priority = null,
-        int|null $attempt = null,
-        float|null $duration = null,
-        string $error = '',
-    ): JobRecord {
-        return new JobRecord(
-            eventType: $eventType,
-            componentId: $componentId,
-            driverName: $driverName,
-            driverClass: $driverClass,
-            isAsync: $isAsync,
-            jobClass: $jobClass,
-            payloadFields: $payloadFields,
-            time: $time,
-            jobId: $jobId,
-            ttr: $ttr,
-            delay: $delay,
-            priority: $priority,
-            attempt: $attempt,
-            duration: $duration,
-            error: $error,
         );
     }
 }

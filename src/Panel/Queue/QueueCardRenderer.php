@@ -23,7 +23,6 @@ use function is_float;
 use function is_int;
 use function is_string;
 use function mb_strlen;
-use function mb_strtoupper;
 use function mb_substr;
 use function sprintf;
 
@@ -106,20 +105,6 @@ final class QueueCardRenderer
     }
 
     /**
-     * Returns the uppercased first letter of the short class name, falling back to `'?'` when empty.
-     */
-    private static function initialFor(string $jobClass): string
-    {
-        $shortName = Fqcn::shortName($jobClass);
-
-        if ($shortName === '') {
-            return '?';
-        }
-
-        return mb_strtoupper(mb_substr($shortName, 0, 1));
-    }
-
-    /**
      * Renders one meta-line item with its label and value.
      */
     private static function metaItem(string $label, string $value): Span
@@ -148,7 +133,6 @@ final class QueueCardRenderer
     private static function renderArrayOrObjectRow(string $key, array $value): Details
     {
         $isObject = isset($value['__class']) && is_string($value['__class']);
-
         $isList = !$isObject && array_is_list($value);
 
         $children = [];
@@ -191,6 +175,7 @@ final class QueueCardRenderer
                 ->class('yii-debug-queue-tree-meta')
                 ->content(sprintf('(%d)', count($value)))
                 ->render();
+
             $summaryHtml = "{$keyHtml}{$typeHtml}{$metaHtml}";
         }
 
@@ -228,23 +213,7 @@ final class QueueCardRenderer
             ->addAriaAttribute('hidden', 'true')
             ->addAttribute('style', '--queue-hue: ' . Avatar::hueFor($record->jobClass))
             ->class('yii-debug-queue-avatar')
-            ->content(self::initialFor($record->jobClass));
-    }
-
-    /**
-     * Renders the driver pill (`Sync` / `Database` / `Redis` / `AMQP` / ...).
-     *
-     * Async drivers carry a different visual tone via the `is-async` modifier, so the developer can spot at a glance
-     * which jobs ran in-process.
-     */
-    private static function renderDriverPill(JobRecord $record): Span
-    {
-        $modifier = $record->isAsync ? 'is-async' : 'is-sync';
-
-        return Span::tag()
-            ->class("yii-debug-queue-driver yii-debug-queue-driver-{$modifier}")
-            ->title($record->driverClass !== '' ? $record->driverClass : 'Unknown driver')
-            ->content($record->driverName);
+            ->content(Avatar::initial(Fqcn::shortName($record->jobClass)));
     }
 
     /**
@@ -300,10 +269,10 @@ final class QueueCardRenderer
                 ->content("{$namespace}\\");
         }
 
-        $pills = [self::renderStatusPill($record)];
+        $pills = [QueuePill::status($record)];
 
         if ($record->driverName !== '') {
-            $pills[] = self::renderDriverPill($record);
+            $pills[] = QueuePill::driver($record);
         }
 
         $pills[] = Span::tag()
@@ -406,19 +375,6 @@ final class QueueCardRenderer
                     ->class("yii-debug-queue-tree-value yii-debug-queue-tree-value-{$variant}")
                     ->content($value),
             );
-    }
-
-    /**
-     * Renders the status pill (`Queued` / `Done` / `Failed`).
-     */
-    private static function renderStatusPill(JobRecord $record): Span
-    {
-        $variant = JobRecord::EVENT_VARIANTS[$record->eventType]['variant'] ?? 'queued';
-        $label = JobRecord::EVENT_VARIANTS[$record->eventType]['label'] ?? 'Queued';
-
-        return Span::tag()
-            ->class("yii-debug-queue-status yii-debug-queue-status-{$variant}")
-            ->content($label);
     }
 
     /**

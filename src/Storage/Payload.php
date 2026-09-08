@@ -129,6 +129,55 @@ final readonly class Payload
     }
 
     /**
+     * Reads a list field and maps every element through a factory, passing the indexed element path for error
+     * reporting.
+     *
+     * @template T
+     *
+     * @param string $key Required field name.
+     * @param callable(mixed, string): T $factory Element factory receiving the raw element and its indexed path.
+     *
+     * @return list<T> Mapped elements in payload order.
+     */
+    public function mapList(string $key, callable $factory): array
+    {
+        $path = $this->keyPath($key);
+
+        $items = [];
+
+        foreach ($this->list($key) as $index => $item) {
+            $items[] = $factory($item, "{$path}[{$index}]");
+        }
+
+        return $items;
+    }
+
+    /**
+     * Returns a boolean field or `null`.
+     *
+     * @param string $key Required field name.
+     *
+     * @return bool|null Boolean field value or `null`.
+     */
+    public function nullableBool(string $key): bool|null
+    {
+        $value = $this->value($key);
+
+        if ($value === null) {
+            return null;
+        }
+
+        if (!is_bool($value)) {
+            throw HydrationException::at(
+                $this->keyPath($key),
+                'a boolean or null',
+            );
+        }
+
+        return $value;
+    }
+
+    /**
      * Returns an integer field or `null`.
      *
      * @param string $key Required field name.

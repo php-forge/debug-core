@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Storage;
 
 use JsonSerializable;
 use PHPForge\Debug\Capture\CapturePolicy;
+use PHPForge\Debug\Helper\{Coerce, Fqcn};
 use SensitiveParameter;
 use Stringable;
 use Throwable;
@@ -13,8 +14,6 @@ use Throwable;
 use function array_map;
 use function is_int;
 use function is_string;
-use function strrpos;
-use function substr;
 
 /**
  * Represents a captured throwable without executable state.
@@ -155,13 +154,13 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
         $trace = [];
 
         foreach ($throwable->getTrace() as $entry) {
-            $class = is_string($entry['class'] ?? null) ? $entry['class'] : '';
+            $class = Coerce::string($entry['class'] ?? null);
 
             $trace[] = [
-                'namespace' => Json::safeString(self::namespacePart($class)),
-                'short_class' => Json::safeString(self::shortName($class)),
+                'namespace' => Json::safeString(Fqcn::namespacePart($class)),
+                'short_class' => Json::safeString(Fqcn::shortName($class)),
                 'class' => Json::safeString($class),
-                'type' => Json::safeString(is_string($entry['type'] ?? null) ? $entry['type'] : ''),
+                'type' => Json::safeString(Coerce::string($entry['type'] ?? null)),
                 'function' => Json::safeString($entry['function']),
                 'file' => is_string($entry['file'] ?? null) ? Json::safeString($entry['file']) : null,
                 'line' => is_int($entry['line'] ?? null) ? $entry['line'] : null,
@@ -282,33 +281,5 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
             'toString' => $this->toString,
             'previous' => $this->previous?->jsonSerialize(),
         ];
-    }
-
-    /**
-     * Returns the namespace portion of a fully qualified class name.
-     *
-     * @param string $class Fully qualified class name.
-     *
-     * @return string Namespace portion or an empty string.
-     */
-    private static function namespacePart(string $class): string
-    {
-        $position = strrpos($class, '\\');
-
-        return $position === false ? '' : substr($class, 0, $position);
-    }
-
-    /**
-     * Returns the short portion of a fully qualified class name.
-     *
-     * @param string $class Fully qualified class name.
-     *
-     * @return string Short class name.
-     */
-    private static function shortName(string $class): string
-    {
-        $position = strrpos($class, '\\');
-
-        return $position === false ? $class : substr($class, $position + 1);
     }
 }

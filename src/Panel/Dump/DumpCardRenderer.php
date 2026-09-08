@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Dump;
 
 use Closure;
-use PHPForge\Debug\Helper\Coerce;
+use PHPForge\Debug\Helper\{Coerce, Format};
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\List\{Li, Ul};
 use UIAwesome\Html\Phrasing\Span;
@@ -15,7 +15,6 @@ use function array_map;
 use function array_pop;
 use function basename;
 use function count;
-use function date;
 use function html_entity_decode;
 use function htmlspecialchars;
 use function implode;
@@ -26,7 +25,6 @@ use function ltrim;
 use function preg_match;
 use function preg_replace;
 use function preg_split;
-use function sprintf;
 use function str_replace;
 use function strip_tags;
 use function strtolower;
@@ -89,9 +87,7 @@ final class DumpCardRenderer
             return '';
         }
 
-        $millis = intval($time * 1000) % 1000;
-
-        return date('H:i:s', (int) $time) . '.' . sprintf('%03d', $millis);
+        return Format::timeOfDay(intval($time * 1000));
     }
 
     /**
@@ -101,8 +97,7 @@ final class DumpCardRenderer
      */
     private static function renderBody(DumpRow $row, Closure $traceLine): Div
     {
-        $body = Div::tag()
-            ->class('yii-debug-dump-body');
+        $body = Div::tag()->class('yii-debug-dump-body');
 
         $message = self::sanitizeMessage($row->message);
 
@@ -204,6 +199,7 @@ final class DumpCardRenderer
             -1,
             PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY,
         );
+
         $parts = $parts === false ? [] : $parts;
 
         /** @var list<array{tag: string, index: int, html: string}> $openTags */
@@ -214,13 +210,16 @@ final class DumpCardRenderer
                 $part === '&lt;pre&gt;' => ['tag' => 'pre', 'html' => '<pre>'],
                 preg_match('/^&lt;(code|span) style="color: (#[0-9A-Fa-f]{6})"&gt;/', $part, $match) === 1 => [
                     'tag' => $match[1],
-                    'html' => '<' . $match[1] . ' style="color: ' . $match[2] . '">',
+                    'html' => "<{$match[1]} style=\"color: {$match[2]}\">",
                 ],
                 default => null,
             };
 
             if ($opening !== null) {
-                $openTags[] = [...$opening, 'index' => $index];
+                $openTags[] = [
+                    ...$opening,
+                    'index' => $index,
+                ];
 
                 continue;
             }

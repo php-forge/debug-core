@@ -10,7 +10,7 @@ namespace PHPForge\Debug\View\Sidebar;
  */
 final readonly class SidebarSnapshot
 {
-    public function __construct(
+    private function __construct(
         /**
          * Section heading shown above the snapshot card ('Current request' / 'Newest request').
          */

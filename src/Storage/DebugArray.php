@@ -70,12 +70,6 @@ final readonly class DebugArray implements JsonSerializable
     /**
      * Returns captured entries as display-safe PHP values.
      *
-     * Usage example:
-     *
-     * ```php
-     * $values = \PHPForge\Debug\Storage\DebugArray::capture(['enabled' => true])->values();
-     * ```
-     *
      * @return array<array-key, mixed> Display-safe PHP values.
      */
     public function values(): array

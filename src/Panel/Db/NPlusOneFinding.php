@@ -25,11 +25,6 @@ final readonly class NPlusOneFinding
         public string $representativeQuery,
     ) {}
 
-    public function contains(QueryRow $row): bool
-    {
-        return $row->traceHash === $this->fingerprint;
-    }
-
     public function id(): string
     {
         return "yii-debug-db-n1-{$this->firstSequence}";

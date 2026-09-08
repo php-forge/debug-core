@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Panel\Request;
 
 use PHPForge\Debug\Panel\Request\RequestDataNormalizer;
-use PHPForge\Debug\Storage\RequestSummary;
+use PHPForge\Debug\Tests\Support\RequestSummaryFixture;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -252,7 +252,7 @@ final class RequestDataNormalizerTest extends TestCase
     {
         $view = RequestDataNormalizer::fromPanelData(
             ['general' => ['method' => 'PATCH']],
-            self::summary(['method' => 'GET']),
+            RequestSummaryFixture::create(['method' => 'GET']),
         );
 
         self::assertSame(
@@ -266,7 +266,7 @@ final class RequestDataNormalizerTest extends TestCase
     {
         $view = RequestDataNormalizer::fromPanelData(
             ['statusCode' => 201],
-            self::summary(['statusCode' => 500]),
+            RequestSummaryFixture::create(['statusCode' => 500]),
         );
 
         self::assertSame(
@@ -358,7 +358,7 @@ final class RequestDataNormalizerTest extends TestCase
     {
         $view = RequestDataNormalizer::fromPanelData(
             [],
-            self::summary(['ip' => '127.0.0.1', 'time' => 1_704_112_496.0, 'processingTime' => 0.0125]),
+            RequestSummaryFixture::create(['ip' => '127.0.0.1', 'time' => 1_704_112_496.0, 'processingTime' => 0.0125]),
         );
 
         self::assertSame(
@@ -429,7 +429,7 @@ final class RequestDataNormalizerTest extends TestCase
     {
         $view = RequestDataNormalizer::fromPanelData(
             [],
-            self::summary(['time' => 0.0, 'processingTime' => 1.0]),
+            RequestSummaryFixture::create(['time' => 0.0, 'processingTime' => 1.0]),
         );
 
         self::assertSame(
@@ -441,31 +441,6 @@ final class RequestDataNormalizerTest extends TestCase
             '1000.0 ms',
             $view->hero->getDurationMs(),
             'One second must convert to exactly one thousand milliseconds.',
-        );
-    }
-
-    /**
-     * @param array<string, mixed> $overrides
-     */
-    private static function summary(array $overrides = []): RequestSummary
-    {
-        return RequestSummary::fromArray(
-            [
-                'tag' => 'tag-1',
-                'url' => 'https://example.test/',
-                'ajax' => false,
-                'method' => 'GET',
-                'ip' => '127.0.0.1',
-                'time' => 1_700_000_000.0,
-                'statusCode' => 200,
-                'sqlCount' => 0,
-                'excessiveCallersCount' => 0,
-                'mailCount' => 0,
-                'mailFiles' => [],
-                'processingTime' => null,
-                'peakMemory' => null,
-                ...$overrides,
-            ],
         );
     }
 }

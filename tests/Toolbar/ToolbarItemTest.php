@@ -17,16 +17,24 @@ use function get_object_vars;
 #[Group('toolbar')]
 final class ToolbarItemTest extends TestCase
 {
-    public function testCreateMatchesConstructorDefaults(): void
+    public function testCreateLeavesEveryOptionalFieldUnset(): void
     {
-        self::assertEquals(
-            new ToolbarItem('0'),
-            ToolbarItem::create('0'),
-            'Factory defaults must match the constructor.',
+        self::assertSame(
+            [
+                'value' => '0',
+                'label' => null,
+                'icon' => null,
+                'status' => 'default',
+                'title' => null,
+                'url' => null,
+                'id' => null,
+            ],
+            get_object_vars(ToolbarItem::create('0')),
+            "Only the value and the 'default' status must be set.",
         );
     }
 
-    public function testFluentConstructionMatchesLegacyPayload(): void
+    public function testFluentConstructionSerializesEveryField(): void
     {
         $item = ToolbarItem::create('0')
             ->withLabel('Status')
@@ -37,17 +45,24 @@ final class ToolbarItemTest extends TestCase
             ->withId('status');
 
         self::assertSame(
-            (new ToolbarItem('0', 'Status', 'request', 'default', '<status>', '/debug?tag=0&panel=request', 'status'))
-                ->jsonSerialize(),
+            [
+                'label' => 'Status',
+                'icon' => 'request',
+                'value' => '0',
+                'status' => 'default',
+                'title' => '<status>',
+                'url' => '/debug?tag=0&panel=request',
+                'id' => 'status',
+            ],
             $item->jsonSerialize(),
-            'Fluent construction must preserve the exact serialized field order and raw values.',
+            'Serialized field order and raw values must be preserved.',
         );
     }
 
     #[DataProviderExternal(ToolbarItemProvider::class, 'nullableValues')]
     public function testWithIconPreservesOriginalAndOtherFields(string|null $value): void
     {
-        $original = new ToolbarItem('0', 'Label', 'request', 'success', '<title>', '/debug', 'metric');
+        $original = self::sample();
 
         $before = get_object_vars($original);
 
@@ -92,7 +107,7 @@ final class ToolbarItemTest extends TestCase
     #[DataProviderExternal(ToolbarItemProvider::class, 'nullableValues')]
     public function testWithIdPreservesOriginalAndOtherFields(string|null $value): void
     {
-        $original = new ToolbarItem('0', 'Label', 'request', 'success', '<title>', '/debug', 'metric');
+        $original = self::sample();
 
         $before = get_object_vars($original);
 
@@ -136,7 +151,7 @@ final class ToolbarItemTest extends TestCase
     #[DataProviderExternal(ToolbarItemProvider::class, 'nullableValues')]
     public function testWithLabelPreservesOriginalAndOtherFields(string|null $value): void
     {
-        $original = new ToolbarItem('0', 'Label', 'request', 'success', '<title>', '/debug', 'metric');
+        $original = self::sample();
 
         $before = get_object_vars($original);
 
@@ -181,7 +196,7 @@ final class ToolbarItemTest extends TestCase
     #[DataProviderExternal(ToolbarItemProvider::class, 'statusValues')]
     public function testWithStatusPreservesOriginalAndOtherFields(string $value): void
     {
-        $original = new ToolbarItem('0', 'Label', 'request', 'success', '<title>', '/debug', 'metric');
+        $original = self::sample();
 
         $before = get_object_vars($original);
 
@@ -218,7 +233,7 @@ final class ToolbarItemTest extends TestCase
     #[DataProviderExternal(ToolbarItemProvider::class, 'nullableValues')]
     public function testWithTitlePreservesOriginalAndOtherFields(string|null $value): void
     {
-        $original = new ToolbarItem('0', 'Label', 'request', 'success', '<title>', '/debug', 'metric');
+        $original = self::sample();
 
         $before = get_object_vars($original);
 
@@ -263,7 +278,7 @@ final class ToolbarItemTest extends TestCase
     #[DataProviderExternal(ToolbarItemProvider::class, 'nullableValues')]
     public function testWithUrlPreservesOriginalAndOtherFields(string|null $value): void
     {
-        $original = new ToolbarItem('0', 'Label', 'request', 'success', '<title>', '/debug', 'metric');
+        $original = self::sample();
 
         $before = get_object_vars($original);
 
@@ -303,5 +318,19 @@ final class ToolbarItemTest extends TestCase
                 'Empty and zero strings must remain present.',
             );
         }
+    }
+
+    /**
+     * Returns a metric with every optional field populated.
+     */
+    private static function sample(): ToolbarItem
+    {
+        return ToolbarItem::create('0')
+            ->withLabel('Label')
+            ->withIcon('request')
+            ->withStatus('success')
+            ->withTitle('<title>')
+            ->withUrl('/debug')
+            ->withId('metric');
     }
 }

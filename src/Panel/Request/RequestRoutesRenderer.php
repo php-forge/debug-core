@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Request;
 
-use PHPForge\Debug\Helper\{Disclosure, EmptyState, Vocabulary};
+use PHPForge\Debug\Helper\{Badge, Disclosure, EmptyState, Table, Vocabulary};
 use PHPForge\Debug\Panel\Request\Routing\{
     CurrentRouteView,
     RouteBadge,
@@ -12,6 +12,7 @@ use PHPForge\Debug\Panel\Request\Routing\{
     RouteInventoryView,
     RouteTraceRow,
 };
+use PHPForge\Debug\View\Grid\RowClass;
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Form\InputSearch;
 use UIAwesome\Html\Heading\H2;
@@ -19,7 +20,7 @@ use UIAwesome\Html\Interactive\{Details, Summary};
 use UIAwesome\Html\List\{Dd, Dl, Dt, Li, Ol};
 use UIAwesome\Html\Phrasing\{Code, Span};
 use UIAwesome\Html\Root\Header;
-use UIAwesome\Html\Table\{Table, Tbody, Td, Th, Thead, Tr};
+use UIAwesome\Html\Table\{Td, Tr};
 
 use function count;
 use function in_array;
@@ -27,8 +28,6 @@ use function rtrim;
 
 /**
  * Renders a common route inventory with framework-specific metadata inside row disclosures.
- *
- * @internal
  */
 final class RequestRoutesRenderer
 {
@@ -82,9 +81,7 @@ final class RequestRoutesRenderer
     {
         $variant = in_array($badge->variant, self::BADGE_VARIANTS, true) ? $badge->variant : 'muted';
 
-        return Span::tag()
-            ->class("yii-debug-badge yii-debug-badge-{$variant}")
-            ->content($badge->label);
+        return Badge::render($badge->label, $variant);
     }
 
     private static function renderDetails(RouteDefinition $route): Dl
@@ -142,9 +139,7 @@ final class RequestRoutesRenderer
             $contents = [Code::tag()->content($identity)];
 
             if ($matched) {
-                $contents[] = Span::tag()
-                    ->class('yii-debug-badge yii-debug-badge-success yii-debug-route-match')
-                    ->content('Matched');
+                $contents[] = Badge::render('Matched', 'success', 'yii-debug-route-match');
             }
 
             $entry = Details::tag()
@@ -152,19 +147,29 @@ final class RequestRoutesRenderer
                 ->addDataAttribute('yii-debug-filter-details', true)
                 ->addDataAttribute('yii-debug-filter-default-open', 'false')
                 ->html(
-                    Summary::tag()->class('yii-debug-route-summary')->html(
-                        Span::tag()->class('yii-debug-route-order')->content((string) ($index + 1)),
-                        self::renderMethodChips($route->getMethods()),
-                        Code::tag()->class('yii-debug-route-pattern')->content($route->getPattern() !== '' ? $route->getPattern() : '—'),
-                        Span::tag()->class('yii-debug-route-identity')->html(...$contents),
-                        Disclosure::hint(),
-                    ),
+                    Summary::tag()
+                        ->class('yii-debug-route-summary')
+                        ->html(
+                            Span::tag()
+                                ->class('yii-debug-route-order')
+                                ->content((string) ($index + 1)),
+                            self::renderMethodChips($route->getMethods()),
+                            Code::tag()
+                                ->class('yii-debug-route-pattern')
+                                ->content($route->getPattern() !== '' ? $route->getPattern() : '—'),
+                            Span::tag()
+                                ->class('yii-debug-route-identity')
+                                ->html(...$contents),
+                            Disclosure::hint(),
+                        ),
                     self::renderDetails($route),
                 );
-            $row = Li::tag()->addDataAttribute('yii-debug-filter-row', true)->html($entry);
+            $row = Li::tag()
+                ->addDataAttribute('yii-debug-filter-row', true)
+                ->html($entry);
 
             if ($matched) {
-                $row = $row->class('yii-debug-row-success')->addDataAttribute('yii-debug-route-match', true);
+                $row = $row->attributes(RowClass::for('success'))->addDataAttribute('yii-debug-route-match', true);
             }
 
             $rows[] = $row;
@@ -196,12 +201,8 @@ final class RequestRoutesRenderer
     {
         $source = rtrim($inventory->getSource(), " .\t\n\r\0\x0B");
 
-        $message = $source === '' ? 'Configuration source unavailable.' : "Source: {$source}.";
-
-        if ($inventory->isLive()) {
-            $message .= ' Live configuration may differ from this capture.';
-        }
-
+        $provenance = $source === '' ? 'Configuration source unavailable.' : "Source: {$source}.";
+        $message = "{$provenance} Live configuration may differ from this capture.";
         $badges = [];
 
         foreach ($inventory->getBadges() as $badge) {
@@ -280,13 +281,9 @@ final class RequestRoutesRenderer
         $rows = [];
 
         foreach ($trace as $index => $entry) {
-            $result = Span::tag()
-                ->class(
-                    $entry->matched
-                        ? 'yii-debug-badge yii-debug-badge-success'
-                        : 'yii-debug-badge yii-debug-badge-muted',
-                )
-                ->content($entry->matched ? 'Matched' : 'Not matched');
+            $result = $entry->matched
+                ? Badge::render('Matched', 'success')
+                : Badge::render('Not matched', 'muted');
             $row = Tr::tag()
                 ->html(
                     Td::tag()->content((string) ($index + 1)),
@@ -296,31 +293,17 @@ final class RequestRoutesRenderer
                 );
 
             if ($entry->matched) {
-                $row = $row->class('yii-debug-row-success');
+                $row = $row->attributes(RowClass::for('success'));
             }
 
             $rows[] = $row;
         }
 
-        return Div::tag()
-            ->class('yii-debug-table-wrap yii-debug-route-trace-wrap')
-            ->html(
-                Table::tag()
-                    ->class('yii-debug-table yii-debug-route-trace')
-                    ->html(
-                        Thead::tag()
-                            ->html(
-                                Tr::tag()
-                                    ->html(
-                                        Th::tag()->scope('col')->content('#'),
-                                        Th::tag()->scope('col')->content('Rule'),
-                                        Th::tag()->scope('col')->content('Parent'),
-                                        Th::tag()->scope('col')->content('Result'),
-                                    ),
-                            ),
-                        Tbody::tag()->html(...$rows),
-                    ),
-            )
-            ->render();
+        return Table::render(
+            ['#', 'Rule', 'Parent', 'Result'],
+            $rows,
+            'yii-debug-table yii-debug-route-trace',
+            'yii-debug-table-wrap yii-debug-route-trace-wrap',
+        );
     }
 }

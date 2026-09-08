@@ -10,6 +10,8 @@ use PHPForge\Debug\Tests\Provider\SummaryMetricComparisonProvider;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
+use function array_map;
+
 /**
  * Tests summary metric compatibility with the original adapter calculations and formatting.
  */
@@ -27,6 +29,7 @@ final class SummaryMetricComparisonTest extends TestCase
     ): void {
         $beforeBaseline = $baseline->jsonSerialize();
         $beforeTarget = $target->jsonSerialize();
+
         $actual = [];
 
         foreach (SummaryMetricComparison::between($baseline, $target) as $metric) {
@@ -73,6 +76,32 @@ final class SummaryMetricComparisonTest extends TestCase
             self::row($metrics[$index]),
             'Metric arithmetic and formatting must remain exact.'
         );
+    }
+
+    public function testHasDifferenceFollowsTheFormattedDelta(): void
+    {
+        $baseline = RequestSummary::create('baseline');
+
+        self::assertSame(
+            [false, false, false, false, false, false, false, false],
+            self::differences(SummaryMetricComparison::between($baseline, $baseline)),
+            'Identical summaries must leave every metric unchanged.',
+        );
+        self::assertSame(
+            [true, false, false, false, false, false, false, false],
+            self::differences(SummaryMetricComparison::between($baseline, $baseline->withResponse(500))),
+            'Only the changed status metric must be reported.',
+        );
+    }
+
+    /**
+     * @param list<SummaryMetricComparison> $metrics
+     *
+     * @return list<bool>
+     */
+    private static function differences(array $metrics): array
+    {
+        return array_map(static fn(SummaryMetricComparison $metric): bool => $metric->hasDifference(), $metrics);
     }
 
     /**

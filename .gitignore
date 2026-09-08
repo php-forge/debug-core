@@ -20,6 +20,9 @@ composer.lock
 .github/prompts/**
 .github/skills/**
 
+# Internal docs
+internal
+
 # mac ds_store (if present)
 .DS_Store
 

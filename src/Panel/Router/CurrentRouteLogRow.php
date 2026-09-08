@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Router;
 
+use PHPForge\Debug\Helper\Coerce;
 use PHPForge\Debug\Storage\{PanelRow, Payload};
 
 use function is_array;
@@ -68,7 +69,7 @@ final readonly class CurrentRouteLogRow implements PanelRow
 
         return new self(
             $message['rule'],
-            is_string($parent) ? $parent : '',
+            Coerce::string($parent),
             $message['match'],
         );
     }

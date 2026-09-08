@@ -10,20 +10,26 @@ namespace PHPForge\Debug\Panel\Request\Routing;
 final class RouteInventoryView
 {
     /**
+     * Route badges derived from the inventory.
+     *
      * @var list<RouteBadge>
      */
     private array $badges = [];
-
+    /**
+     * Error message generated while building the inventory, or `null` when no error occurred.
+     */
     private string|null $error = null;
-
-    private bool $live = true;
-
+    /**
+     * Source label describing where the inventory data came from.
+     */
     private string $source = 'Current application configuration';
 
-    /**
-     * @param list<RouteDefinition> $routes
-     */
-    public function __construct(private array $routes) {}
+    public function __construct(
+        /**
+         * @var list<RouteDefinition>
+         */
+        private array $routes,
+    ) {}
 
     /**
      * @param list<RouteDefinition> $routes
@@ -59,11 +65,6 @@ final class RouteInventoryView
         return $this->source;
     }
 
-    public function isLive(): bool
-    {
-        return $this->live;
-    }
-
     /**
      * @param list<RouteBadge> $badges
      */
@@ -79,14 +80,6 @@ final class RouteInventoryView
     {
         $clone = clone $this;
         $clone->error = $error;
-
-        return $clone;
-    }
-
-    public function withLive(bool $live): self
-    {
-        $clone = clone $this;
-        $clone->live = $live;
 
         return $clone;
     }

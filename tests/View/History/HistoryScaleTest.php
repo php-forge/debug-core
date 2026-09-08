@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\View\History;
 
-use PHPForge\Debug\Storage\RequestSummary;
+use PHPForge\Debug\Tests\Support\RequestSummaryFixture;
 use PHPForge\Debug\View\History\{HistoryRow, HistoryScale};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -79,19 +79,8 @@ final class HistoryScaleTest extends TestCase
     private static function row(float|null $processingTime, int|null $peakMemory): HistoryRow
     {
         return HistoryRow::fromSummary(
-            RequestSummary::fromArray(
+            RequestSummaryFixture::create(
                 [
-                    'tag' => 'tag-1',
-                    'url' => 'https://example.test/',
-                    'ajax' => false,
-                    'method' => 'GET',
-                    'ip' => '127.0.0.1',
-                    'time' => 1_700_000_000.0,
-                    'statusCode' => 200,
-                    'sqlCount' => 0,
-                    'excessiveCallersCount' => 0,
-                    'mailCount' => 0,
-                    'mailFiles' => [],
                     'processingTime' => $processingTime,
                     'peakMemory' => $peakMemory,
                 ],

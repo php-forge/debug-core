@@ -91,6 +91,16 @@ final class RequestHeadersRendererTest extends TestCase
             $html,
             'Colonless SAPI response lines must remain inspectable.',
         );
+        self::assertMatchesRegularExpression(
+            '~<div class="yii-debug-diagnostic-row yii-debug-header-raw-row"[^>]*>\s*<dt>\s*Raw response line 0~',
+            $html,
+            'Colonless lines must keep their dedicated raw-row class.',
+        );
+        self::assertMatchesRegularExpression(
+            '~<div class="yii-debug-diagnostic-row"[^>]*>\s*<dt>\s*Accept~',
+            $html,
+            'Named fields must keep the plain diagnostic-row class.',
+        );
         self::assertStringNotContainsString('<th', $html, 'The exchange must not regress to a generic table header.');
     }
 

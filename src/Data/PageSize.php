@@ -20,12 +20,10 @@ final class PageSize
      * Default page size applied when no `per-page` parameter is supplied or the value is invalid.
      */
     public const int DEFAULT = 50;
-
     /**
      * Hard cap on the number of rows per page.
      */
     public const int MAX = 1000;
-
     /**
      * Selector options in display order; the literal `all` disables pagination.
      */
@@ -90,7 +88,7 @@ final class PageSize
      *
      * @param string $current Currently selected raw value (one of {@see OPTIONS} for a highlighted option).
      */
-    public static function selectorHtml(string $current): string
+    private static function selectorHtml(string $current): string
     {
         $select = Select::tag()
             ->addDataAttribute('yii-debug-pagesize', true)

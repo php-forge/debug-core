@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Db;
 
 use Closure;
-use PHPForge\Debug\Helper\Vocabulary;
+use PHPForge\Debug\Helper\{Format, Vocabulary};
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\List\{Li, Ul};
 use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\{Span, Strong};
 
 use function array_map;
-use function date;
 use function implode;
 use function in_array;
-use function intdiv;
 use function number_format;
 use function sprintf;
 use function strtoupper;
@@ -26,24 +24,6 @@ use function trim;
  */
 final class DbQueryRenderer
 {
-    /**
-     * Returns whether the given query type produces a useful EXPLAIN plan.
-     *
-     * Only DML statements that touch tables (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `REPLACE`, `WITH`) are
-     * accepted; metadata, session-control, and transaction-control statements either error or return noise, so they
-     * are filtered out.
-     *
-     * @param string $type SQL command verb (case-insensitive).
-     */
-    public static function canBeExplained(string $type): bool
-    {
-        return in_array(
-            strtoupper($type),
-            ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'],
-            true,
-        );
-    }
-
     /**
      * Renders the statement duration formatted as `N.N ms`.
      */
@@ -65,26 +45,27 @@ final class DbQueryRenderer
         }
 
         $context = trim($context);
-        $context = $context === '' ? '' : " {$context}";
 
+        $context = $context === '' ? '' : " {$context}";
         $items = [];
 
         foreach ($findings as $finding) {
             $groupId = $finding->id();
-            $items[] = Li::tag()->html(
-                A::tag()
-                    ->addDataAttribute('yii-debug-n1-filter', $groupId)
-                    ->class('yii-debug-db-n1-link')
-                    ->href("#{$groupId}")
-                    ->title($finding->representativeQuery)
-                    ->html(
-                        Strong::tag()->content("{$finding->count}×"),
-                        Span::tag()
-                            ->class('yii-debug-db-n1-fingerprint')
-                            ->content($finding->representativeQuery),
-                        Span::tag()->content(number_format($finding->totalDuration, 1) . ' ms'),
-                    ),
-            );
+            $items[] = Li::tag()
+                ->html(
+                    A::tag()
+                        ->addDataAttribute('yii-debug-n1-filter', $groupId)
+                        ->class('yii-debug-db-n1-link')
+                        ->href("#{$groupId}")
+                        ->title($finding->representativeQuery)
+                        ->html(
+                            Strong::tag()->content("{$finding->count}×"),
+                            Span::tag()
+                                ->class('yii-debug-db-n1-fingerprint')
+                                ->content($finding->representativeQuery),
+                            Span::tag()->content(number_format($finding->totalDuration, 1) . ' ms'),
+                        ),
+                );
         }
 
         return Div::tag()
@@ -102,7 +83,9 @@ final class DbQueryRenderer
                             ->content('Show all queries')
                             ->href('#'),
                     ),
-                Ul::tag()->class('yii-debug-db-n1-list')->html(...$items),
+                Ul::tag()
+                    ->class('yii-debug-db-n1-list')
+                    ->html(...$items),
                 Span::tag()
                     ->addAriaAttribute('atomic', 'true')
                     ->addAriaAttribute('live', 'polite')
@@ -215,9 +198,7 @@ final class DbQueryRenderer
      */
     public static function renderTimeCell(QueryRow $row): string
     {
-        $milliseconds = (int) $row->timestamp;
-
-        return date('H:i:s.', intdiv($milliseconds, 1000)) . sprintf('%03d', $milliseconds % 1000);
+        return Format::timeOfDay((int) $row->timestamp);
     }
 
     /**
@@ -231,5 +212,23 @@ final class DbQueryRenderer
             ->class("yii-debug-db-type yii-debug-verb-{$variant}")
             ->content($row->type)
             ->render();
+    }
+
+    /**
+     * Returns whether the given query type produces a useful EXPLAIN plan.
+     *
+     * Only DML statements that touch tables (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `REPLACE`, `WITH`) are
+     * accepted; metadata, session-control, and transaction-control statements either error or return noise, so they
+     * are filtered out.
+     *
+     * @param string $type SQL command verb (case-insensitive).
+     */
+    private static function canBeExplained(string $type): bool
+    {
+        return in_array(
+            strtoupper($type),
+            ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'],
+            true,
+        );
     }
 }
