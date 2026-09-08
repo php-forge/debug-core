@@ -7,7 +7,15 @@ namespace PHPForge\Debug\Panel\Db;
 use PHPForge\Debug\Storage\{PanelRow, Payload};
 
 use function array_values;
+use function hash;
+use function in_array;
+use function json_encode;
 use function max;
+use function preg_match;
+use function str_contains;
+use function strtoupper;
+
+use const JSON_THROW_ON_ERROR;
 
 /**
  * Typed view-model for a single database query row consumed by the queries grid.
@@ -52,6 +60,26 @@ final readonly class QueryRow implements PanelRow
          */
         public int|null $rows,
     ) {}
+
+    /**
+     * Creates a captured statement with milliseconds as the common time unit.
+     */
+    public static function create(string $query, float $duration, float $timestamp): self
+    {
+        preg_match('/^\\s*([a-zA-Z]+)/', $query, $matches);
+
+        return new self(
+            strtoupper($matches[1] ?? ''),
+            $query,
+            $duration,
+            [],
+            '',
+            $timestamp,
+            0,
+            1,
+            null,
+        );
+    }
 
     public static function fromArray(mixed $data, string $path): self
     {
@@ -118,6 +146,18 @@ final readonly class QueryRow implements PanelRow
     }
 
     /**
+     * Returns whether the statement produces a useful EXPLAIN plan.
+     *
+     * Only single table-touching DML verbs (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `REPLACE`, `WITH`) qualify;
+     * multi-statement text and other verbs either error or return noise under EXPLAIN.
+     */
+    public function isExplainable(): bool
+    {
+        return in_array(strtoupper($this->type), ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'], true)
+            && !str_contains($this->query, ';');
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array
@@ -133,5 +173,81 @@ final readonly class QueryRow implements PanelRow
             'duplicate' => $this->duplicate,
             'rows' => $this->rows,
         ];
+    }
+
+    /**
+     * Returns a copy with the given duplicate count.
+     *
+     * @param int $duplicate Number of times the exact same statement was emitted in this request (`>= 1`).
+     */
+    public function withDuplicate(int $duplicate): self
+    {
+        return new self(
+            type: $this->type,
+            query: $this->query,
+            duration: $this->duration,
+            trace: $this->trace,
+            traceHash: $this->traceHash,
+            timestamp: $this->timestamp,
+            seq: $this->seq,
+            duplicate: $duplicate,
+            rows: $this->rows,
+        );
+    }
+
+    /**
+     * Returns a copy with the driver-reported row count, or `null` when the driver did not report one.
+     */
+    public function withRows(int|null $rows): self
+    {
+        return new self(
+            type: $this->type,
+            query: $this->query,
+            duration: $this->duration,
+            trace: $this->trace,
+            traceHash: $this->traceHash,
+            timestamp: $this->timestamp,
+            seq: $this->seq,
+            duplicate: $this->duplicate,
+            rows: $rows,
+        );
+    }
+
+    /**
+     * Returns a copy with the given sequence index.
+     */
+    public function withSequence(int $sequence): self
+    {
+        return new self(
+            type: $this->type,
+            query: $this->query,
+            duration: $this->duration,
+            trace: $this->trace,
+            traceHash: $this->traceHash,
+            timestamp: $this->timestamp,
+            seq: $sequence,
+            duplicate: $this->duplicate,
+            rows: $this->rows,
+        );
+    }
+
+    /**
+     * Returns a copy with the given source frames and the caller hash derived from them.
+     *
+     * @param list<array<string, mixed>> $trace Argument-free source frames.
+     */
+    public function withTrace(array $trace): self
+    {
+        return new self(
+            type: $this->type,
+            query: $this->query,
+            duration: $this->duration,
+            trace: $trace,
+            traceHash: $trace === [] ? '' : hash('sha256', json_encode($trace, JSON_THROW_ON_ERROR)),
+            timestamp: $this->timestamp,
+            seq: $this->seq,
+            duplicate: $this->duplicate,
+            rows: $this->rows,
+        );
     }
 }

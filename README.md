@@ -233,3 +233,17 @@ configuration for its capture coverage and selected fields.
 
 Run `npm run test:events` against the configured local applications for keyboard, filter, responsive layout, and
 light/dark accessibility checks on fresh captures. These checks do not require seeded history fixtures.
+
+### Shared Database adapter contract
+
+Database uses `DbSnapshot::capture()` to normalize exact SQL duplicate counts without changing capture order or the
+existing persisted row shape. `QueryRow::create()` accepts SQL, duration in milliseconds, and epoch milliseconds;
+`withTrace()`, `withSequence()`, `withRows()`, and `withDuplicate()` return immutable copies. Empty traces have no
+synthetic caller hash, so `DbSummary` leaves those rows out of its caller counts.
+
+Adapters reuse `DbSummary`, `DbSummaryRenderer`, `DbQueryRenderer`, `NPlusOneDetector`, and `DbExplainRenderer`.
+`Helper\Trace` is the shared, escaped source-link renderer: `create()` emits IDE deep links by default, `withTemplate()`
+swaps in a placeholder string, `false` for plain text, or a closure, `withPathMappings()` rewrites containerized or
+remote paths to local ones, and `render()` returns one escaped source line. `View\Grid\GridCount` renders the grid
+row-count sentence. Yii3 places Database immediately after Profiling and keeps framework instrumentation, database
+connections, routes, and EXPLAIN execution outside Core.
