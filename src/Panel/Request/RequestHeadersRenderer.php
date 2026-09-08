@@ -7,12 +7,12 @@ namespace PHPForge\Debug\Panel\Request;
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Form\InputSearch;
 use UIAwesome\Html\Heading\{H2, H3};
-use UIAwesome\Html\List\{Dd, Dl, Dt};
 use UIAwesome\Html\Phrasing\Span;
 use UIAwesome\Html\Root\Header;
 use UIAwesome\Html\Sectioning\Section;
 
 use function count;
+use function is_int;
 
 /**
  * Renders request and response headers as a directional HTTP exchange ledger.
@@ -154,22 +154,13 @@ final class RequestHeadersRenderer
             $label = is_int($name)
                 ? ($response ? 'Raw response line ' : 'Raw header line ') . $name
                 : $name;
-            $class = is_int($name)
-                ? 'yii-debug-diagnostic-row yii-debug-header-raw-row'
-                : 'yii-debug-diagnostic-row';
-
-            $rows[] = Div::tag()
-                ->addDataAttribute('yii-debug-filter-row', true)
-                ->class($class)
-                ->html(
-                    Dt::tag()->html(RequestDiagnosticValueRenderer::escape($label)),
-                    Dd::tag()->html(RequestDiagnosticValueRenderer::header($value)),
-                );
+            $rows[] = RequestDiagnosticLedger::row(
+                RequestDiagnosticValueRenderer::escape($label),
+                RequestDiagnosticValueRenderer::header($value),
+                is_int($name) ? 'yii-debug-header-raw-row' : '',
+            );
         }
 
-        return Dl::tag()
-            ->class('yii-debug-diagnostic-ledger yii-debug-header-ledger')
-            ->html(...$rows)
-            ->render();
+        return RequestDiagnosticLedger::render('yii-debug-header-ledger', ...$rows);
     }
 }

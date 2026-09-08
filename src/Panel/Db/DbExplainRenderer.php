@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Db;
 
-use PHPForge\Debug\Helper\Dump;
+use PHPForge\Debug\Helper\{Dump, Table};
 use PHPForge\Debug\Panel\PanelTitle;
 use UIAwesome\Html\Flow\{Div, P, Pre};
 use UIAwesome\Html\Heading\H1;
 use UIAwesome\Html\Phrasing\Em;
-use UIAwesome\Html\Table\{Table, Tbody, Td, Th, Thead, Tr};
+use UIAwesome\Html\Table\{Td, Tr};
 
 use function array_keys;
 use function array_values;
@@ -69,12 +69,10 @@ final class DbExplainRenderer
                 ->class('yii-debug-explain-empty')
                 ->content('EXPLAIN returned no rows.');
         } else {
-            $headerCells = [];
+            $headers = [];
 
             foreach ($columns as $column) {
-                $headerCells[] = Th::tag()
-                    ->scope('col')
-                    ->content((string) $column);
+                $headers[] = (string) $column;
             }
 
             $bodyRows = [];
@@ -94,16 +92,12 @@ final class DbExplainRenderer
                 $bodyRows[] = Tr::tag()->html(...$cells);
             }
 
-            $children[] = Div::tag()
-                ->class('yii-debug-explain-scroll')
-                ->html(
-                    Table::tag()
-                        ->class('yii-debug-table yii-debug-explain-table')
-                        ->html(
-                            Thead::tag()->html(Tr::tag()->html(...$headerCells)),
-                            Tbody::tag()->html(...$bodyRows),
-                        ),
-                );
+            $children[] = Table::render(
+                $headers,
+                $bodyRows,
+                'yii-debug-table yii-debug-explain-table',
+                'yii-debug-explain-scroll',
+            );
         }
 
         return Div::tag()

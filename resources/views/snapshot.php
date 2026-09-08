@@ -16,30 +16,24 @@ use UIAwesome\Html\Root\Header;
  * @var string|null $renderError Panel renderer error message or `null` when rendering succeeded.
  * @var string $url Captured request URL.
  */
+$dangerCallout = static fn(string $headline, string $detail): Div => Div::tag()
+    ->role('alert')
+    ->class('yii-debug-callout yii-debug-callout-danger')
+    ->html(
+        Div::tag()->html(
+            Strong::tag()->content($headline),
+            '<br>',
+            Span::tag()->content($detail),
+        ),
+    );
+
 $failureCallout = $failure === null
     ? ''
-    : Div::tag()
-        ->role('alert')
-        ->class('yii-debug-callout yii-debug-callout-danger')
-        ->html(
-            Div::tag()->html(
-                Strong::tag()->content('Panel ' . $failure['stage'] . ' failed.'),
-                '<br>',
-                Span::tag()->content($failure['exception']),
-            ),
-        );
+    : $dangerCallout('Panel ' . $failure['stage'] . ' failed.', $failure['exception']);
 $renderCallout = $renderError === null
     ? ''
-    : Div::tag()
-        ->role('alert')
-        ->class('yii-debug-callout yii-debug-callout-danger')
-        ->html(
-            Div::tag()->html(
-                Strong::tag()->content('Panel rendering failed.'),
-                '<br>',
-                Span::tag()->content($renderError),
-            ),
-        );
+    : $dangerCallout('Panel rendering failed.', $renderError);
+
 $panelHeader = $panelContent !== null
     ? ''
     : Header::tag()
@@ -48,8 +42,12 @@ $panelHeader = $panelContent !== null
             Div::tag()
                 ->class('yii-debug-panel-heading-copy')
                 ->html(
-                    Small::tag()->class('yii-debug-panel-heading-eyebrow')->content('Selected panel'),
-                    H2::tag()->id('yii-debug-panel-title')->content($panelLabel),
+                    Small::tag()
+                        ->class('yii-debug-panel-heading-eyebrow')
+                        ->content('Selected panel'),
+                    H2::tag()
+                        ->id('yii-debug-panel-title')
+                        ->content($panelLabel),
                 ),
             Span::tag()
                 ->class('yii-debug-panel-heading-kind')

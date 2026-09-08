@@ -138,9 +138,7 @@ final class RequestRenderer
         $identity = [];
 
         if ($method !== '') {
-            $identity[] = Span::tag()
-                ->class('yii-debug-request-hero-method yii-debug-verb-' . Vocabulary::verb($method))
-                ->content($method);
+            $identity[] = RequestSectionRenderer::renderMethodPill($method);
         }
 
         $identity[] = Span::tag()
@@ -212,9 +210,18 @@ final class RequestRenderer
                 Dl::tag()
                     ->class('yii-debug-request-overview-metrics')
                     ->html(
-                        self::renderMetric('Route', $route !== '' ? $route : 'Unresolved'),
-                        self::renderMetric('Action', $action !== '' ? $action : 'Unavailable'),
-                        self::renderMetric('Duration', $hero->getDurationMs() !== '' ? $hero->getDurationMs() : 'Unavailable'),
+                        self::renderMetric(
+                            'Route',
+                            $route !== '' ? $route : 'Unresolved',
+                        ),
+                        self::renderMetric(
+                            'Action',
+                            $action !== '' ? $action : 'Unavailable',
+                        ),
+                        self::renderMetric(
+                            'Duration',
+                            $hero->getDurationMs() !== '' ? $hero->getDurationMs() : 'Unavailable',
+                        ),
                     ),
                 Div::tag()
                     ->class('yii-debug-request-overview-meta')
@@ -305,7 +312,10 @@ final class RequestRenderer
         $server = self::tab($view->tabs, 'server');
 
         if ($server !== null) {
-            $tabs[] = ['label' => 'Server', 'content' => self::renderServer($server, $view)];
+            $tabs[] = [
+                'label' => 'Server',
+                'content' => self::renderServer($server, $view),
+            ];
         }
 
         return Div::tag()

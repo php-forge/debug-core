@@ -10,6 +10,8 @@ use PHPForge\Debug\Tests\Provider\PanelComparisonProvider;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
+use function array_map;
+
 /**
  * Locks the original adapter output before and after sharing panel comparison.
  */
@@ -34,10 +36,12 @@ final class PanelComparisonTest extends TestCase
         $panels = PanelComparison::between($baseline, $target, $labels);
 
         $actual = [];
+        $actualCounts = [];
         $differenceCount = 0;
 
         foreach ($panels as $panel) {
-            $differenceCount += $panel->added + $panel->removed + $panel->changed;
+            $differenceCount += $panel->differenceCount();
+            $actualCounts[] = $panel->differenceCount();
             $actual[] = [
                 $panel->id,
                 $panel->label,
@@ -54,6 +58,11 @@ final class PanelComparisonTest extends TestCase
             $expected,
             $actual,
             'Panel IDs, labels, order, states, and counts must remain exact.',
+        );
+        self::assertSame(
+            array_map(static fn(array $row): int => $row[4] + $row[5] + $row[6], $expected),
+            $actualCounts,
+            'Totals must add added, removed, and changed leaves.',
         );
         self::assertSame(
             $hasDifferences,

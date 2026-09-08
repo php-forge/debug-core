@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Profile;
 
-use PHPForge\Debug\Helper\{CellMore, Fqcn, Gauge};
+use PHPForge\Debug\Helper\{CellMore, Format, Fqcn, Gauge};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Helper\Encode;
 use UIAwesome\Html\Phrasing\Span;
 
-use function date;
-use function intdiv;
 use function sprintf;
 use function str_repeat;
 use function str_starts_with;
@@ -39,8 +37,8 @@ final class ProfileCellRenderer
     }
 
     /**
-     * Renders the block duration formatted as `N.N ms`, with a micro-gauge rail scaled against the capture maximum
-     * when one exists.
+     * Renders the block duration formatted as `N.N ms`, with a micro-gauge rail scaled against the capture maximum when
+     * one exists.
      *
      * @param ProfileRow $row Typed profile row.
      * @param float $maxDuration Capture maximum in milliseconds ({@see ProfileRow::maxDuration()}).
@@ -87,12 +85,9 @@ final class ProfileCellRenderer
     {
         $milliseconds = (int) $row->timestamp;
 
-        $seconds = intdiv($milliseconds, 1000);
-        $suffix = sprintf('%03d', $milliseconds % 1000);
-
         return Span::tag()
-            ->title(date('Y-m-d H:i:s.', $seconds) . $suffix)
-            ->content(date('H:i:s.', $seconds) . $suffix)
+            ->title(Format::timeOfDay($milliseconds, 'Y-m-d H:i:s'))
+            ->content(Format::timeOfDay($milliseconds))
             ->render();
     }
 

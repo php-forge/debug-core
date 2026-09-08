@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\User;
 
-use PHPForge\Debug\Helper\Icon;
-use PHPForge\Debug\Helper\SensitiveDataRedactor;
+use PHPForge\Debug\Helper\{Avatar, Format, Icon, SensitiveDataRedactor};
 
 use function ctype_digit;
 use function date;
 use function in_array;
-use function intdiv;
 use function is_array;
-use function mb_strtoupper;
-use function mb_substr;
 use function preg_match;
 use function str_ends_with;
 use function str_replace;
@@ -150,9 +146,7 @@ final class UserDataNormalizer
             ? self::resolveStatus($rawStatus)
             : ['', 'muted'];
 
-        $monogramSource = $username !== '' ? $username : ($email !== '' ? $email : '?');
-
-        $monogram = mb_strtoupper(mb_substr($monogramSource, 0, 1));
+        $monogram = Avatar::initial($username !== '' ? $username : $email);
 
         return new UserIdentityHero(
             username: $username !== '' ? $username : 'Unknown user',
@@ -277,25 +271,7 @@ final class UserDataNormalizer
         $diff = time() - $unix;
         $absolute = date('M j, Y · H:i', $unix);
 
-        if ($diff < 60) {
-            $relative = 'just now';
-        } elseif ($diff < 3600) {
-            $minutes = intdiv($diff, 60);
-
-            $relative = "{$minutes} min ago";
-        } elseif ($diff < 86400) {
-            $hours = intdiv($diff, 3600);
-
-            $relative = "{$hours} h ago";
-        } elseif ($diff < 2592000) {
-            $days = intdiv($diff, 86400);
-
-            $relative = "{$days} d ago";
-        } else {
-            $relative = $absolute;
-        }
-
-        return [$relative, $absolute];
+        return [Format::relativeTime($diff, $absolute), $absolute];
     }
 
     /**

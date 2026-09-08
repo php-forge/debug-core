@@ -28,16 +28,11 @@ final readonly class EventSnapshot implements PanelSnapshot
 
     public static function fromArray(mixed $data, string $path): self
     {
-        $payload = Payload::object($data, $path)
-            ->shape(['entries']);
-
-        $entries = [];
-
-        foreach ($payload->list('entries') as $index => $entry) {
-            $entries[] = EventRow::fromArray($entry, "{$path}.entries[{$index}]");
-        }
-
-        return new self($entries);
+        return new self(
+            Payload::object($data, $path)
+                ->shape(['entries'])
+                ->mapList('entries', EventRow::fromArray(...)),
+        );
     }
 
     /**

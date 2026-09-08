@@ -19,22 +19,21 @@ composer require php-forge/debug-core
 The core package owns portable collector contracts and coordination, debug data, persistence, normalization and
 presentation primitives under `PHPForge\Debug\Helper`, the frontend source and compiled files, shared fonts and icons,
 the toolbar data contract, and framework-neutral PHP templates composed with the agnostic UI Awesome HTML helpers. It
-does not register assets, render responses, inject toolbar markup, or depend on Yii2, Yii3, an application container, a
-view implementation, or a framework request lifecycle.
+does not register assets, render responses, decide when a response receives the toolbar, or depend on Yii2, Yii3, an
+application container, a view implementation, or a framework request lifecycle.
 
 Shared adapter UI contracts include `PHPForge\Debug\Data\FilterEngine`, `FilterPrefix`, `PageSize`, and `QueryInput`,
-plus `PHPForge\Debug\Panel\PanelRenderContext`. Adapters provide a
-`PHPForge\Debug\Routing\DebugUrlGeneratorInterface` implementation so portable panel renderers can build history,
-panel, and action links without importing a framework URL manager.
+plus `PHPForge\Debug\Panel\PanelRenderContext`. `PHPForge\Debug\Comparison\SnapshotComparison` compares two captures
+(summary metrics and panel payloads) for the history comparison pages, and `PHPForge\Debug\Toolbar\ToolbarInjector`
+places the rendered toolbar before `</body>` once an adapter has decided that a response receives it. Adapters provide a
+`PHPForge\Debug\Routing\DebugUrlGeneratorInterface` implementation so portable panel renderers can build panel
+links without importing a framework URL manager.
 
 Adapters collect framework data, convert it into immutable snapshots, expose toolbar data endpoints, define and
 publish assets through their framework, and render the shared templates with their framework view component. They also
-own toolbar response injection. Routes, controllers or actions, URL generation, panel metadata, and framework-specific
+decide when a response receives the toolbar. Routes, controllers or actions, URL generation, panel metadata, and framework-specific
 panel views remain in each adapter. Yii adapters resolve the packaged frontend at
 `@vendor/php-forge/debug-core/resources/assets` and configure their own alias for `resources/views`.
-
-The visual and behavioral synchronization contract for the Yii adapters is documented in the
-[Yii Debug UI parity baseline](docs/ui-parity-baseline.md).
 
 Persistent adapters apply `PHPForge\Debug\Capture\CapturePolicy` before snapshot capture. Its secure defaults redact
 common credentials, authorization and cookie values recursively, suppress raw bodies whose decoded form changed,
@@ -102,8 +101,8 @@ The package is released under the BSD-3-Clause license. See `LICENSE`.
 
 ## Fluent toolbar models
 
-`ToolbarItem::create($value)` and `ToolbarPanel::create($id, $title)` start immutable configuration chains.
-Their existing constructors and public readonly properties remain supported, including named arguments.
+`ToolbarItem::create($value)` and `ToolbarPanel::create($id, $title)` start immutable configuration chains and are the
+only construction path: the constructors are private, and the public readonly properties remain readable.
 
 ```php
 use PHPForge\Debug\Toolbar\{ToolbarItem, ToolbarPanel};
@@ -134,7 +133,6 @@ distinct. Leaf paths escape `~` and `/`; list positions matter, while map insert
 
 The comparison fingerprints typed leaves temporarily and retains only counts in its result. It does not alter or redact
 the source payloads. `PanelComparison` combines these counts with capture states and ordered panel identities.
-See the [architecture review](docs/architecture-review.md) for boundaries and follow-up work.
 
 ## Panel comparison
 

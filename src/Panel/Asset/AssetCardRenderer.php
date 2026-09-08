@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Asset;
 
-use PHPForge\Debug\Helper\{Icon, Text};
+use PHPForge\Debug\Helper\{Fqcn, Icon, Text};
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Heading\{H2, H3};
 use UIAwesome\Html\List\{Dd, Dl, Dt};
@@ -14,8 +14,6 @@ use UIAwesome\Html\Root\Header;
 use UIAwesome\Html\Sectioning\{Article, Section};
 
 use function array_map;
-use function strrpos;
-use function substr;
 
 /**
  * Renders the per-bundle markup for the Asset Bundles detail view.
@@ -26,12 +24,11 @@ final class AssetCardRenderer
      * Renders one bundle as an `<article class="yii-debug-asset-card">` ready to drop into the detail view.
      *
      * @param AssetBundleView $bundle Per-bundle view-model.
-     * @param AssetSummary $summary Full summary, used to resolve `#anchor` targets for cross-bundle dependency links.
      */
-    public static function renderCard(AssetBundleView $bundle, AssetSummary $summary): Article
+    public static function renderCard(AssetBundleView $bundle): Article
     {
         $head = self::renderHead($bundle);
-        $bodyChildren = self::renderBody($bundle, $summary);
+        $bodyChildren = self::renderBody($bundle);
 
         $articleChildren = [$head];
 
@@ -49,26 +46,13 @@ final class AssetCardRenderer
     }
 
     /**
-     * Resolves the anchor id for a dependency name.
-     *
-     * Uses the same canonical {@see \\PHPForge\\Debug\\Helper\\Text::camel2id()} conversion as bundle registration.
-     *
-     * @param string $depName Fully qualified class name of the dependency.
-     * @param AssetSummary $summary Already-normalized summary, retained for backward compatibility.
-     */
-    public static function resolveAnchor(string $depName, AssetSummary $summary): string
-    {
-        return Text::camel2id($depName);
-    }
-
-    /**
      * Builds the optional card body (Files and Wiring sections), collapsing to an empty list when neither applies.
      *
      * The caller drops the body wrapper entirely when the returned list is empty.
      *
      * @return list<Section> Body sections in render order.
      */
-    private static function renderBody(AssetBundleView $bundle, AssetSummary $summary): array
+    private static function renderBody(AssetBundleView $bundle): array
     {
         $body = [];
 
@@ -77,7 +61,7 @@ final class AssetCardRenderer
         }
 
         if ($bundle->hasWiring || $bundle->hasDepends) {
-            $body[] = self::renderWiringSection($bundle, $summary);
+            $body[] = self::renderWiringSection($bundle);
         }
 
         return $body;
@@ -103,13 +87,12 @@ final class AssetCardRenderer
     }
 
     /**
-     * Renders one dependency link with the short name visible, the full FQCN in `title`, and the anchor resolved via
-     * {@see self::resolveAnchor()}.
+     * Renders one dependency link with the short name visible, the full FQCN in `title`, and the `#anchor` derived
+     * from the dependency name through the same {@see Text::camel2id()} rule used for bundle card ids.
      */
-    private static function renderDepend(string $depName, AssetSummary $summary): A
+    private static function renderDepend(string $depName): A
     {
-        $pos = strrpos($depName, '\\');
-        $shortName = $pos === false ? $depName : substr($depName, $pos + 1);
+        $shortName = Fqcn::shortName($depName);
 
         return A::tag()
             ->class('yii-debug-asset-depend')
@@ -122,7 +105,7 @@ final class AssetCardRenderer
                     ->class('yii-debug-asset-depend-name')
                     ->content($shortName),
             )
-            ->href('#' . self::resolveAnchor($depName, $summary))
+            ->href('#' . Text::camel2id($depName))
             ->title($depName);
     }
 
@@ -252,7 +235,7 @@ final class AssetCardRenderer
      *
      * The caller guarantees that at least one of `hasWiring` / `hasDepends` is `true`.
      */
-    private static function renderWiringSection(AssetBundleView $bundle, AssetSummary $summary): Section
+    private static function renderWiringSection(AssetBundleView $bundle): Section
     {
         $sectionChildren = [
             H3::tag()
@@ -291,7 +274,7 @@ final class AssetCardRenderer
                         ->class('yii-debug-asset-depends-list')
                         ->html(
                             ...array_map(
-                                static fn(string $dep): A => self::renderDepend($dep, $summary),
+                                static fn(string $dep): A => self::renderDepend($dep),
                                 $bundle->depends,
                             ),
                         ),

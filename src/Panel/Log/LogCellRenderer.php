@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Log;
 
 use Closure;
-use PHPForge\Debug\Helper\{CellMore, Fqcn, LogLevel, Vocabulary};
+use PHPForge\Debug\Helper\{CellMore, Format, Fqcn, LogLevel, Vocabulary};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Helper\Encode;
@@ -14,10 +14,8 @@ use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\Span;
 
 use function array_map;
-use function date;
 use function implode;
 use function intdiv;
-use function sprintf;
 use function str_starts_with;
 
 /**
@@ -120,11 +118,7 @@ final class LogCellRenderer
      */
     public static function renderTimeCell(LogRow $row): string
     {
-        $timestamp = (int) $row->time;
-        $seconds = intdiv($timestamp, 1000);
-        $millis = $timestamp % 1000;
-
-        return date('H:i:s.', $seconds) . sprintf('%03d', $millis);
+        return Format::timeOfDay((int) $row->time);
     }
 
     /**

@@ -6,19 +6,15 @@ namespace PHPForge\Debug\Tests\Panel;
 
 use PHPForge\Debug\Panel\PanelMessage;
 use PHPForge\Debug\Tests\Provider\PanelMessageProvider;
+use PHPForge\Debug\Tests\Support\MessageCatalogTestCase;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
-use PHPUnit\Framework\TestCase;
 use UIAwesome\Html\Flow\P;
-use UIAwesome\Html\Helper\Encode;
-
-use function array_column;
-use function iterator_to_array;
 
 /**
- * Tests the panel text catalog and direct enum content without changing rendering or escaping.
+ * Tests the {@see PanelMessage} text catalog and direct enum content without changing rendering or escaping.
  */
 #[Group('panel')]
-final class PanelMessageTest extends TestCase
+final class PanelMessageTest extends MessageCatalogTestCase
 {
     public function testCapturedValuesRemainEscapedAlongsideMessages(): void
     {
@@ -33,41 +29,28 @@ final class PanelMessageTest extends TestCase
         );
     }
 
-    public function testProviderCoversTheCompleteCatalog(): void
-    {
-        self::assertEqualsCanonicalizing(
-            PanelMessage::cases(),
-            array_column(iterator_to_array(PanelMessageProvider::messages()), 0),
-            'Every catalog case must have an explicit wording and rendering regression test.',
-        );
-    }
-
     #[DataProviderExternal(PanelMessageProvider::class, 'messages')]
     public function testRendersMessageDirectlyAsContent(PanelMessage $message, string $expected): void
     {
-        $paragraph = P::tag();
-
-        $rendered = $paragraph->content($message);
-
-        self::assertSame(
+        self::assertRendersAsContent(
+            $message,
             $expected,
-            $message->value,
-            'The catalog must preserve the existing panel wording.',
         );
-        self::assertSame(
-            "<p>\n" . Encode::content($expected) . "\n</p>",
-            $rendered->render(),
-            'Content must accept the enum case without extracting its value.',
-        );
-        self::assertNotSame(
-            $paragraph,
-            $rendered,
-            'Enum content must preserve immutable tag construction.',
-        );
-        self::assertSame(
-            '',
-            $paragraph->getContent(),
-            'Rendering a message must not mutate the original tag.',
-        );
+    }
+
+    /**
+     * @return list<PanelMessage> Cases of the catalog under test.
+     */
+    protected function catalogCases(): array
+    {
+        return PanelMessage::cases();
+    }
+
+    /**
+     * @return iterable<string, array{PanelMessage, string}> Provider rows that drive the rendering test.
+     */
+    protected function catalogProvider(): iterable
+    {
+        return PanelMessageProvider::messages();
     }
 }

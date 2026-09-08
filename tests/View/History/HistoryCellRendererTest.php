@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\View\History;
 
-use PHPForge\Debug\Storage\RequestSummary;
+use PHPForge\Debug\Tests\Support\RequestSummaryFixture;
 use PHPForge\Debug\View\History\{HistoryCellRenderer, HistoryRow, HistoryStatusBucket, HistorySummary};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -21,14 +21,16 @@ final class HistoryCellRendererTest extends TestCase
 {
     public function testBuildRowAttributesAddsDataAttributesForCursorJs(): void
     {
-        $row = self::row([
-            'tag' => 'abc',
-            'method' => 'GET',
-            'url' => '/path',
-            'statusCode' => 200,
-            'time' => 1_700_000_000,
-            'ajax' => true,
-        ]);
+        $row = self::row(
+            [
+                'tag' => 'abc',
+                'method' => 'GET',
+                'url' => '/path',
+                'statusCode' => 200,
+                'time' => 1_700_000_000,
+                'ajax' => true,
+            ],
+        );
 
         $options = HistoryCellRenderer::buildRowAttributes($row, false);
 
@@ -224,7 +226,13 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderSqlCountCellEmitsWarningGlyphWhenCountIsCritical(): void
     {
-        $row = self::row(['tag' => 'flood', 'sqlCount' => 500, 'excessiveCallersCount' => 0]);
+        $row = self::row(
+            [
+                'tag' => 'flood',
+                'sqlCount' => 500,
+                'excessiveCallersCount' => 0,
+            ],
+        );
 
         self::assertSame(
             <<<HTML
@@ -239,7 +247,13 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderSqlCountCellPluralizesExcessiveCallersCount(): void
     {
-        $row = self::row(['tag' => 'flood', 'sqlCount' => 10, 'excessiveCallersCount' => 4]);
+        $row = self::row(
+            [
+                'tag' => 'flood',
+                'sqlCount' => 10,
+                'excessiveCallersCount' => 4,
+            ],
+        );
 
         self::assertSame(
             <<<HTML
@@ -252,7 +266,13 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderSqlCountCellRendersPlainCountWhenNotCritical(): void
     {
-        $row = self::row(['tag' => 'low', 'sqlCount' => 3, 'excessiveCallersCount' => 0]);
+        $row = self::row(
+            [
+                'tag' => 'low',
+                'sqlCount' => 3,
+                'excessiveCallersCount' => 0,
+            ],
+        );
 
         self::assertSame(
             <<<HTML
@@ -266,7 +286,13 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderSqlCountCellSingularizesSingleExcessiveCaller(): void
     {
-        $row = self::row(['tag' => 'flood', 'sqlCount' => 10, 'excessiveCallersCount' => 1]);
+        $row = self::row(
+            [
+                'tag' => 'flood',
+                'sqlCount' => 10,
+                'excessiveCallersCount' => 1,
+            ],
+        );
 
         self::assertSame(
             <<<HTML
@@ -425,25 +451,6 @@ final class HistoryCellRendererTest extends TestCase
      */
     private static function row(array $overrides = []): HistoryRow
     {
-        return HistoryRow::fromSummary(
-            RequestSummary::fromArray(
-                [
-                    'tag' => 'tag-1',
-                    'url' => 'https://example.test/',
-                    'ajax' => false,
-                    'method' => 'GET',
-                    'ip' => '127.0.0.1',
-                    'time' => 1_700_000_000.0,
-                    'statusCode' => 200,
-                    'sqlCount' => 0,
-                    'excessiveCallersCount' => 0,
-                    'mailCount' => 0,
-                    'mailFiles' => [],
-                    'processingTime' => null,
-                    'peakMemory' => null,
-                    ...$overrides,
-                ],
-            ),
-        );
+        return HistoryRow::fromSummary(RequestSummaryFixture::create($overrides));
     }
 }

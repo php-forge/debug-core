@@ -47,17 +47,10 @@ final readonly class MailSnapshot implements PanelSnapshot
 
     public static function fromArray(mixed $data, string $path): self
     {
-        $payload = Payload::object($data, $path)
-            ->shape(['entries']);
-
-        $entries = [];
-
-        foreach ($payload->list('entries') as $index => $entry) {
-            $entries[] = MailMessage::fromArray($entry, "{$path}.entries[{$index}]");
-        }
-
         return new self(
-            $entries,
+            Payload::object($data, $path)
+                ->shape(['entries'])
+                ->mapList('entries', MailMessage::fromArray(...)),
         );
     }
 

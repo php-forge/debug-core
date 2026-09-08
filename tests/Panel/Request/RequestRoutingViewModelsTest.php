@@ -27,12 +27,14 @@ final class RequestRoutingViewModelsTest extends TestCase
 {
     public function testConstructorsStayCompactAndModelStateIsPrivate(): void
     {
-        foreach ([
-            RequestHero::class => 2,
-            RouteDefinition::class => 2,
-            CurrentRouteView::class => 1,
-            RouteInventoryView::class => 1,
-        ] as $class => $count) {
+        foreach (
+            [
+                RequestHero::class => 2,
+                RouteDefinition::class => 2,
+                CurrentRouteView::class => 1,
+                RouteInventoryView::class => 1,
+            ] as $class => $count
+        ) {
             $reflection = new ReflectionClass($class);
 
             self::assertSame(
@@ -58,7 +60,9 @@ final class RequestRoutingViewModelsTest extends TestCase
     public function testCurrentRouteDefaultsRepresentUnavailableDiagnostics(): void
     {
         $current = CurrentRouteView::create();
+
         $trace = new RouteTraceRow('fallback');
+
         $inventory = RouteInventoryView::create([]);
 
         self::assertEquals(
@@ -80,12 +84,19 @@ final class RequestRoutingViewModelsTest extends TestCase
             $inventory->isLive(),
             'Route inventories must describe live configuration by default.',
         );
+        self::assertEquals(
+            RouteInventoryView::create([]),
+            $inventory->withBadges([])->withSource('Current application configuration')->withError(null),
+            'Inventory defaults must remain explicit and deterministic.',
+        );
     }
 
     public function testCurrentRouteFluentOptionsCanResetWithoutChangingTheOriginal(): void
     {
         $definition = RouteDefinition::create('orders', '/orders');
+
         $trace = new RouteTraceRow('/orders');
+
         $current = CurrentRouteView::create('orders')
             ->withAction('OrderAction')
             ->withParameters(['id' => 7])
@@ -93,6 +104,7 @@ final class RequestRoutingViewModelsTest extends TestCase
             ->withMessage('Matched.')
             ->withTrace([$trace])
             ->withError('Captured failure.');
+
         $reset = $current
             ->withAction(null)
             ->withParameters([])
@@ -100,9 +112,13 @@ final class RequestRoutingViewModelsTest extends TestCase
             ->withMessage(null)
             ->withTrace([])
             ->withError(null);
+
         $parameters = $current->getParameters();
+
         $parameters['id'] = 8;
+
         $rows = $current->getTrace();
+
         $rows[] = new RouteTraceRow('fallback');
 
         self::assertSame(
@@ -154,14 +170,16 @@ final class RequestRoutingViewModelsTest extends TestCase
 
         $trace = new RouteTraceRow('/orders');
 
-        foreach ([
-            $current->withAction('OrderAction'),
-            $current->withParameters(['id' => 7]),
-            $current->withDefinition($definition),
-            $current->withMessage('Matched.'),
-            $current->withTrace([$trace]),
-            $current->withError('Captured failure.'),
-        ] as $clone) {
+        foreach (
+            [
+                $current->withAction('OrderAction'),
+                $current->withParameters(['id' => 7]),
+                $current->withDefinition($definition),
+                $current->withMessage('Matched.'),
+                $current->withTrace([$trace]),
+                $current->withError('Captured failure.'),
+            ] as $clone
+        ) {
             self::assertNotSame(
                 $current,
                 $clone,
@@ -186,7 +204,8 @@ final class RequestRoutingViewModelsTest extends TestCase
                 [new RouteDefinition(), RouteDefinition::create()],
                 [new RouteDefinition('orders', '/orders'), RouteDefinition::create(name: 'orders', pattern: '/orders')],
                 [new RouteInventoryView([]), RouteInventoryView::create(routes: [])],
-            ] as [$constructed, $created]) {
+            ] as [$constructed, $created]
+        ) {
             self::assertEquals(
                 $constructed,
                 $created,
@@ -213,6 +232,7 @@ final class RequestRoutingViewModelsTest extends TestCase
             ->withSource('Captured configuration')
             ->withLive(false)
             ->withError('Inventory failure.');
+
         $reset = $inventory
             ->withBadges([])
             ->withSource('Current application configuration')
@@ -272,7 +292,8 @@ final class RequestRoutingViewModelsTest extends TestCase
                 $inventory->withSource('Captured configuration'),
                 $inventory->withLive(false),
                 $inventory->withError('Inventory failure.'),
-            ] as $clone) {
+            ] as $clone
+        ) {
             self::assertNotSame(
                 $inventory,
                 $clone,

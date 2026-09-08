@@ -46,3 +46,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - refactor: use shared `PanelIcon` enum values for built-in panel SVG keys.
 - fix: improve UI contrast, focus, deep links, history alignment, shared asset sizing, and local rebuild documentation.
 - feat!: split panel texts into Event, Log, Profile, and Inertia enums; add the event detail cell, Format::typeOf(), and PageSize::selectorFor().
+- refactor!: centralize fluent factories, shared UI helpers, payload hydration, formatting, and the reduced panel URL contract.

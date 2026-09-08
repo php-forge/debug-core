@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\View\History;
 
 use PHPForge\Debug\Storage\RequestSummary;
+use PHPForge\Debug\Tests\Support\RequestSummaryFixture;
 use PHPForge\Debug\View\History\HistoryRow;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -21,7 +22,7 @@ final class HistoryRowTest extends TestCase
 {
     public function testFromSummaryComputesTimeCompactWhenTimeIsPositive(): void
     {
-        $row = HistoryRow::fromSummary(self::summary(['time' => 1_700_000_000.0]));
+        $row = HistoryRow::fromSummary(RequestSummaryFixture::create(['time' => 1_700_000_000.0]));
 
         self::assertSame(
             date('H:i:s', 1_700_000_000),
@@ -34,7 +35,7 @@ final class HistoryRowTest extends TestCase
     {
         self::assertSame(
             '',
-            HistoryRow::fromSummary(self::summary(['time' => 0.0]))->timeCompact,
+            HistoryRow::fromSummary(RequestSummaryFixture::create(['time' => 0.0]))->timeCompact,
             'A zero capture time must render no clock string.',
         );
     }
@@ -42,7 +43,7 @@ final class HistoryRowTest extends TestCase
     public function testFromSummaryPassesEveryFieldThroughUntouched(): void
     {
         $row = HistoryRow::fromSummary(
-            self::summary(
+            RequestSummaryFixture::create(
                 [
                     'tag' => 'tag-9',
                     'url' => 'https://example.test/orders',
@@ -112,31 +113,6 @@ final class HistoryRowTest extends TestCase
             1_048_576,
             $row->peakMemory,
             'Peak memory must pass through.',
-        );
-    }
-
-    /**
-     * @param array<string, mixed> $overrides
-     */
-    private static function summary(array $overrides = []): RequestSummary
-    {
-        return RequestSummary::fromArray(
-            [
-                'tag' => 'tag-1',
-                'url' => 'https://example.test/',
-                'ajax' => false,
-                'method' => 'GET',
-                'ip' => '127.0.0.1',
-                'time' => 1_700_000_000.0,
-                'statusCode' => 200,
-                'sqlCount' => 0,
-                'excessiveCallersCount' => 0,
-                'mailCount' => 0,
-                'mailFiles' => [],
-                'processingTime' => null,
-                'peakMemory' => null,
-                ...$overrides,
-            ],
         );
     }
 }

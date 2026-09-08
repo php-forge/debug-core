@@ -10,20 +10,30 @@ namespace PHPForge\Debug\Panel\Request\Routing;
 final class RouteInventoryView
 {
     /**
+     * Route badges derived from the inventory.
+     *
      * @var list<RouteBadge>
      */
     private array $badges = [];
-
+    /**
+     * Error message generated while building the inventory, or `null` when no error occurred.
+     */
     private string|null $error = null;
-
+    /**
+     * Whether the inventory reflects live configuration (`true`) or a stored capture (`false`).
+     */
     private bool $live = true;
-
+    /**
+     * Source label describing where the inventory data came from.
+     */
     private string $source = 'Current application configuration';
 
-    /**
-     * @param list<RouteDefinition> $routes
-     */
-    public function __construct(private array $routes) {}
+    public function __construct(
+        /**
+         * @var list<RouteDefinition>
+         */
+        private array $routes,
+    ) {}
 
     /**
      * @param list<RouteDefinition> $routes

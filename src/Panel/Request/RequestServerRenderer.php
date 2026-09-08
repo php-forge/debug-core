@@ -9,7 +9,6 @@ use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Form\InputSearch;
 use UIAwesome\Html\Heading\H2;
 use UIAwesome\Html\Interactive\{Details, Summary};
-use UIAwesome\Html\List\{Dd, Dl, Dt};
 use UIAwesome\Html\Phrasing\Span;
 use UIAwesome\Html\Root\Header;
 use UIAwesome\Html\Sectioning\Section;
@@ -59,7 +58,7 @@ final class RequestServerRenderer
         $target = $url === false ? '' : ($url['path'] ?? '');
 
         if ($url !== false && isset($url['query'])) {
-            $target .= '?' . $query;
+            $target .= "?{$query}";
         }
 
         $shown = [
@@ -130,8 +129,12 @@ final class RequestServerRenderer
                         Span::tag()
                             ->class('yii-debug-server-group-identity')
                             ->html(
-                                Span::tag()->class('yii-debug-server-group-title')->content($group->label),
-                                Span::tag()->class('yii-debug-server-group-count')->content((string) count($group->entries)),
+                                Span::tag()
+                                    ->class('yii-debug-server-group-title')
+                                    ->content($group->label),
+                                Span::tag()
+                                    ->class('yii-debug-server-group-count')
+                                    ->content((string) count($group->entries)),
                             ),
                         Disclosure::hint(),
                     ),
@@ -174,19 +177,14 @@ final class RequestServerRenderer
         $rows = [];
 
         foreach ($entries as $name => $value) {
-            $rows[] = Div::tag()
-                ->addDataAttribute('yii-debug-filter-row', true)
-                ->class('yii-debug-diagnostic-row yii-debug-server-row')
-                ->html(
-                    Dt::tag()->html(RequestDiagnosticValueRenderer::escape((string) $name)),
-                    Dd::tag()->html(RequestDiagnosticValueRenderer::value($value)),
-                );
+            $rows[] = RequestDiagnosticLedger::row(
+                RequestDiagnosticValueRenderer::escape((string) $name),
+                RequestDiagnosticValueRenderer::value($value),
+                'yii-debug-server-row',
+            );
         }
 
-        return Dl::tag()
-            ->class('yii-debug-diagnostic-ledger yii-debug-server-ledger')
-            ->html(...$rows)
-            ->render();
+        return RequestDiagnosticLedger::render('yii-debug-server-ledger', ...$rows);
     }
 
     /**
@@ -198,11 +196,13 @@ final class RequestServerRenderer
         $groups = '';
 
         foreach (ServerVariableGrouper::group($additional) as $group) {
-            $groups .= self::renderGroup(new ServerVariableGroup(
-                $group->id,
-                $group->id === 'header-mirrors' ? 'Additional header variables' : $group->label,
-                $group->entries,
-            ));
+            $groups .= self::renderGroup(
+                new ServerVariableGroup(
+                    $group->id,
+                    $group->id === 'header-mirrors' ? 'Additional header variables' : $group->label,
+                    $group->entries,
+                ),
+            );
         }
 
         if ($groups === '') {
@@ -222,13 +222,17 @@ final class RequestServerRenderer
                         Div::tag()
                             ->class('yii-debug-diagnostic-heading-copy')
                             ->html(
-                                H2::tag()->id('yii-debug-server-environment-title')->content('Server details'),
+                                H2::tag()
+                                    ->id('yii-debug-server-environment-title')
+                                    ->content('Server details'),
                                 Span::tag()
                                     ->class('yii-debug-diagnostic-total')
                                     ->content(count($additional) . ' additional / ' . count($entries) . ' captured'),
                             ),
                     ),
-                Div::tag()->class('yii-debug-server-additional')->html($groups),
+                Div::tag()
+                    ->class('yii-debug-server-additional')
+                    ->html($groups),
                 $entries === [] ? '' : self::renderGroup(new ServerVariableGroup(
                     'raw',
                     'Raw server variables',

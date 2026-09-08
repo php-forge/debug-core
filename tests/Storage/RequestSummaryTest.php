@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Storage;
 
 use PHPForge\Debug\Storage\{HydrationException, RequestSummary};
+use PHPForge\Debug\Tests\Support\RequestSummaryFixture;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -51,9 +52,54 @@ final class RequestSummaryTest extends TestCase
         );
     }
 
+    public function testCreateStartsFromTheFullyClearedShape(): void
+    {
+        self::assertSame(
+            [
+                'tag' => 'tag-1',
+                'url' => '',
+                'ajax' => false,
+                'method' => '',
+                'ip' => '',
+                'time' => 0.0,
+                'statusCode' => 0,
+                'sqlCount' => 0,
+                'excessiveCallersCount' => 0,
+                'mailCount' => 0,
+                'mailFiles' => [],
+                'processingTime' => null,
+                'peakMemory' => null,
+            ],
+            RequestSummary::create('tag-1')->jsonSerialize(),
+            'Only the tag must be set; every other field must start cleared.',
+        );
+    }
+
+    public function testDefaultArgumentsLeaveOptionalCountersAndFlagsCleared(): void
+    {
+        $summary = RequestSummary::create('tag-1')
+            ->withRequest('https://example.test/', 'GET', '127.0.0.1', 1_700_000_000.0)
+            ->withDatabase(3);
+
+        self::assertFalse(
+            $summary->ajax,
+            'An omitted AJAX flag must stay `false`.',
+        );
+        self::assertSame(
+            3,
+            $summary->sqlCount,
+            'The query counter must be stored.',
+        );
+        self::assertSame(
+            0,
+            $summary->excessiveCallersCount,
+            'An omitted excessive-caller counter must stay `0`.',
+        );
+    }
+
     public function testJsonPayloadHydratesWithoutScalarCoercion(): void
     {
-        $summary = RequestSummary::fromArray($this->payload());
+        $summary = RequestSummary::fromArray(RequestSummaryFixture::payload());
 
         self::assertSame(
             200,
@@ -73,7 +119,7 @@ final class RequestSummaryTest extends TestCase
 
     public function testThrowHydrationExceptionForNumericString(): void
     {
-        $payload = $this->payload();
+        $payload = RequestSummaryFixture::payload();
 
         $payload['statusCode'] = '200';
 
@@ -87,7 +133,7 @@ final class RequestSummaryTest extends TestCase
 
     public function testThrowHydrationExceptionForUnknownField(): void
     {
-        $payload = $this->payload();
+        $payload = RequestSummaryFixture::payload();
 
         $payload['unexpected'] = true;
 
@@ -107,27 +153,18 @@ final class RequestSummaryTest extends TestCase
         );
 
         RequestSummary::fromArray(
-            [
-                'tag' => 'tag-1',
-                'url' => 'https://example.test/',
-                'ajax' => false,
-                'method' => 'GET',
-                'ip' => '127.0.0.1',
-                'time' => 1_700_000_000.0,
-                'statusCode' => 200,
-                'sqlCount' => 0,
-                'excessiveCallersCount' => 0,
-                'mailCount' => 2,
-                'mailFiles' => ['a.eml', 42],
-                'processingTime' => null,
-                'peakMemory' => null,
-            ],
+            RequestSummaryFixture::payload(
+                [
+                    'mailCount' => 2,
+                    'mailFiles' => ['a.eml', 42],
+                ],
+            ),
         );
     }
 
     public function testWithProfilingReturnsAnEnrichedCopy(): void
     {
-        $summary = RequestSummary::fromArray($this->payload());
+        $summary = RequestSummary::fromArray(RequestSummaryFixture::payload());
         $profiled = $summary->withProfiling(0.125, 2_097_152);
 
         self::assertSame(
@@ -139,29 +176,5 @@ final class RequestSummaryTest extends TestCase
             $profiled->jsonSerialize(),
             'Profiling metrics must replace only the optional timing fields.',
         );
-    }
-
-    /**
-     * Returns representative decoded request metadata.
-     *
-     * @return array<string, mixed> Representative decoded request metadata.
-     */
-    private function payload(): array
-    {
-        return [
-            'tag' => 'tag-1',
-            'url' => 'https://example.test/',
-            'ajax' => false,
-            'method' => 'GET',
-            'ip' => '127.0.0.1',
-            'time' => 1_700_000_000.0,
-            'statusCode' => 200,
-            'sqlCount' => 0,
-            'excessiveCallersCount' => 0,
-            'mailCount' => 0,
-            'mailFiles' => [],
-            'processingTime' => null,
-            'peakMemory' => null,
-        ];
     }
 }

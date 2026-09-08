@@ -99,21 +99,34 @@ final class PageSizeTest extends TestCase
         );
     }
 
-    public function testSelectorForReadsThePageSizeFromTheQuery(): void
+    public function testSelectorForFallsBackToTheDefaultWhenTheParameterIsMissing(): void
     {
         self::assertSame(
-            PageSize::selectorHtml(PageSize::current('25')),
-            PageSize::selectorFor(['per-page' => '25']),
-            'The query value must drive the selected option.',
-        );
-        self::assertSame(
-            PageSize::selectorHtml(PageSize::current(null)),
+            <<<HTML
+            <label class="yii-debug-grid-pagesize"><span class="yii-debug-grid-pagesize-label">Rows</span><select class="yii-debug-grid-pagesize-select" name="per-page" data-yii-debug-pagesize="true">
+            <option value="10">
+            10
+            </option>
+            <option value="25">
+            25
+            </option>
+            <option value="50" selected>
+            50
+            </option>
+            <option value="100">
+            100
+            </option>
+            <option value="all">
+            All
+            </option>
+            </select></label>
+            HTML,
             PageSize::selectorFor([]),
-            'A missing parameter must fall back to the default selector.',
+            'A missing parameter must preselect the default page size.',
         );
     }
 
-    public function testSelectorHtmlMarksTheCurrentOptionSelected(): void
+    public function testSelectorForMarksTheCurrentOptionSelected(): void
     {
         self::assertSame(
             <<<HTML
@@ -135,12 +148,12 @@ final class PageSizeTest extends TestCase
             </option>
             </select></label>
             HTML,
-            PageSize::selectorHtml('25'),
+            PageSize::selectorFor(['per-page' => '25']),
             'The selector must render the exact JS hook, field name, labels, and selected option.',
         );
     }
 
-    public function testSelectorHtmlSelectsCanonicalizedAllKeyword(): void
+    public function testSelectorForSelectsCanonicalizedAllKeyword(): void
     {
         self::assertSame(
             <<<HTML
@@ -162,7 +175,7 @@ final class PageSizeTest extends TestCase
             </option>
             </select></label>
             HTML,
-            PageSize::selectorHtml(PageSize::current('ALL')),
+            PageSize::selectorFor(['per-page' => 'ALL']),
             "The canonicalized 'all' keyword must render the exact selected selector.",
         );
     }

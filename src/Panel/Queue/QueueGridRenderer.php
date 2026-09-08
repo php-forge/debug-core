@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Queue;
 
-use PHPForge\Debug\Helper\Fqcn;
+use PHPForge\Debug\Helper\{Format, Fqcn};
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\{Span, Strong};
 
-use function abs;
-use function date;
 use function intval;
-use function number_format;
-use function sprintf;
 
 /**
  * Renders the column cells for the Queue panel grid view.
@@ -53,13 +49,7 @@ final class QueueGridRenderer
             return '';
         }
 
-        $modifier = $record->isAsync ? 'is-async' : 'is-sync';
-
-        return Span::tag()
-            ->class("yii-debug-queue-driver yii-debug-queue-driver-{$modifier}")
-            ->title($record->driverClass !== '' ? $record->driverClass : 'Unknown driver')
-            ->content($record->driverName)
-            ->render();
+        return QueuePill::driver($record)->render();
     }
 
     /**
@@ -72,7 +62,7 @@ final class QueueGridRenderer
             return '—';
         }
 
-        return number_format($record->duration * 1000, 1) . ' ms';
+        return Format::milliseconds($record->duration, 1);
     }
 
     /**
@@ -130,13 +120,7 @@ final class QueueGridRenderer
      */
     public static function renderStatusCell(JobRecord $record): string
     {
-        $variant = JobRecord::EVENT_VARIANTS[$record->eventType]['variant'] ?? 'queued';
-        $label = JobRecord::EVENT_VARIANTS[$record->eventType]['label'] ?? 'Queued';
-
-        return Span::tag()
-            ->class("yii-debug-queue-status yii-debug-queue-status-{$variant}")
-            ->content($label)
-            ->render();
+        return QueuePill::status($record)->render();
     }
 
     /**
@@ -144,10 +128,7 @@ final class QueueGridRenderer
      */
     public static function renderTimeCell(JobRecord $record): string
     {
-        $seconds = intval($record->time);
-        $milliseconds = abs(intval($record->time * 1000) % 1000);
-
-        return date('H:i:s.', $seconds) . sprintf('%03d', $milliseconds);
+        return Format::timeOfDay(intval($record->time * 1000));
     }
 
     /**

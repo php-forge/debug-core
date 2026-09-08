@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Event;
 
-use PHPForge\Debug\Helper\Fqcn;
-use UIAwesome\Html\Phrasing\Span;
-
-use function date;
-use function intdiv;
-use function sprintf;
+use PHPForge\Debug\Helper\{Badge, Format, Fqcn};
 
 /**
  * Renders the typed cells of the events grid for the Event debug panel.
@@ -41,10 +36,7 @@ final class EventCellRenderer
             return '—';
         }
 
-        return Span::tag()
-            ->class('yii-debug-badge yii-debug-badge-muted')
-            ->content('static')
-            ->render();
+        return Badge::render('static', 'muted')->render();
     }
 
     /**
@@ -52,8 +44,6 @@ final class EventCellRenderer
      */
     public static function renderTimeCell(EventRow $row): string
     {
-        $milliseconds = (int) ($row->time * 1000);
-
-        return date('H:i:s.', intdiv($milliseconds, 1000)) . sprintf('%03d', $milliseconds % 1000);
+        return Format::timeOfDay((int) ($row->time * 1000));
     }
 }

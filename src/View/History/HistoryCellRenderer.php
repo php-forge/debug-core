@@ -12,7 +12,6 @@ use UIAwesome\Html\Root\Header;
 
 use function date;
 use function implode;
-use function number_format;
 
 /**
  * Renders the History index summary header + the per-cell HTML consumed by the grid columns and the typed
@@ -69,7 +68,7 @@ final class HistoryCellRenderer
         }
 
         return Gauge::render(
-            number_format($row->processingTime * 1000) . ' ms',
+            Format::milliseconds($row->processingTime),
             $row->processingTime,
             $maxProcessingTime,
         );

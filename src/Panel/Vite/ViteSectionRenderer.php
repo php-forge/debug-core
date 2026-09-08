@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Vite;
 
-use PHPForge\Debug\Helper\EmptyState;
+use PHPForge\Debug\Helper\{Badge, EmptyState, Table};
 use PHPForge\Debug\Panel\PanelTitle;
 use Stringable;
 use UIAwesome\Html\Flow\{Div, P};
@@ -12,7 +12,7 @@ use UIAwesome\Html\Heading\{H1, H2};
 use UIAwesome\Html\Phrasing\{Span, Strong};
 use UIAwesome\Html\Root\Header;
 use UIAwesome\Html\Sectioning\Section;
-use UIAwesome\Html\Table\{Table, Tbody, Td, Th, Thead, Tr};
+use UIAwesome\Html\Table\{Td, Th, Tr};
 
 use function implode;
 
@@ -63,27 +63,29 @@ final class ViteSectionRenderer
     /**
      * Renders the production chunk table or the mode-specific explanation for an empty inventory.
      */
-    private static function renderChunks(ViteComponent $component): Stringable
+    private static function renderChunks(ViteComponent $component): string
     {
         $chunks = $component->chunks();
 
         if ($chunks === []) {
-            return P::tag()->content(
-                match ($component->mode) {
-                    ViteComponent::MODE_DEVELOPMENT
-                        => 'Development mode resolves entry points through the dev server.',
-                    ViteComponent::MODE_PRODUCTION
-                        => 'The Vite manifest is missing or empty — run the front-end build to populate it.',
-                    default => 'No build chunks were available for inspection.',
-                },
-            );
+            return P::tag()
+                ->content(
+                    match ($component->mode) {
+                        ViteComponent::MODE_DEVELOPMENT
+                            => 'Development mode resolves entry points through the dev server.',
+                        ViteComponent::MODE_PRODUCTION
+                            => 'The Vite manifest is missing or empty — run the front-end build to populate it.',
+                        default => 'No build chunks were available for inspection.',
+                    },
+                )
+                ->render();
         }
 
         $rows = [];
 
         foreach ($chunks as $index => $chunk) {
             $entry = $chunk->isEntry
-                ? Span::tag()->class('yii-debug-badge yii-debug-badge-success')->content('entry')
+                ? Badge::render('entry', 'success')
                 : Span::tag()->content('—');
 
             $rows[] = Tr::tag()->html(
@@ -106,25 +108,7 @@ final class ViteSectionRenderer
             );
         }
 
-        return Div::tag()
-            ->class('yii-debug-table-wrap')
-            ->html(
-                Table::tag()
-                    ->class('yii-debug-table')
-                    ->html(
-                        Thead::tag()->html(
-                            Tr::tag()->html(
-                                Th::tag()->scope('col')->content('#'),
-                                Th::tag()->scope('col')->content('Chunk'),
-                                Th::tag()->scope('col')->content('Output'),
-                                Th::tag()->scope('col')->content('CSS'),
-                                Th::tag()->scope('col')->content('Imports'),
-                                Th::tag()->scope('col')->content('Entry'),
-                            ),
-                        ),
-                        Tbody::tag()->html(...$rows),
-                    ),
-            );
+        return Table::render(['#', 'Chunk', 'Output', 'CSS', 'Imports', 'Entry'], $rows);
     }
 
     /**
@@ -132,13 +116,9 @@ final class ViteSectionRenderer
      */
     private static function renderComponent(ViteComponent $component): string
     {
-        $inspectionBadge = Span::tag()
-            ->class(
-                $component->inspectionAvailable
-                    ? 'yii-debug-badge yii-debug-badge-success'
-                    : 'yii-debug-badge yii-debug-badge-warning',
-            )
-            ->content($component->inspectionAvailable ? 'Available' : 'Unavailable');
+        $inspectionBadge = $component->inspectionAvailable
+            ? Badge::render('Available', 'success')
+            : Badge::render('Unavailable', 'warning');
 
         $viteClient = $component->mode === ViteComponent::MODE_PRODUCTION
             ? 'Not applicable'
@@ -162,14 +142,7 @@ final class ViteSectionRenderer
             self::renderOverviewRow('Vite client', $viteClient),
             self::renderOverviewRow('Module preload', $modulePreload),
         ];
-        $content = Div::tag()
-            ->class('yii-debug-table-wrap')
-            ->html(
-                Table::tag()
-                    ->class('yii-debug-table yii-debug-table-mono yii-debug-table-vite-overview')
-                    ->html(Tbody::tag()->html(...$rows)),
-            )
-            ->render();
+        $content = Table::render([], $rows, 'yii-debug-table yii-debug-table-mono yii-debug-table-vite-overview');
 
         if ($component->inspectionAvailable === false) {
             $content .= P::tag()
@@ -201,6 +174,7 @@ final class ViteSectionRenderer
     private static function renderHeader(ViteSummary $summary): string
     {
         $count = $summary->count();
+
         $items = [
             Span::tag()
                 ->html(
@@ -238,7 +212,9 @@ final class ViteSectionRenderer
 
         return Tr::tag()
             ->html(
-                Th::tag()->scope('row')->content($term),
+                Th::tag()
+                    ->scope('row')
+                    ->content($term),
                 $description,
             );
     }

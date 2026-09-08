@@ -28,16 +28,11 @@ final readonly class DbSnapshot implements PanelSnapshot
 
     public static function fromArray(mixed $data, string $path): self
     {
-        $payload = Payload::object($data, $path)
-            ->shape(['entries']);
-
-        $entries = [];
-
-        foreach ($payload->list('entries') as $index => $entry) {
-            $entries[] = QueryRow::fromArray($entry, "{$path}.entries[{$index}]");
-        }
-
-        return new self($entries);
+        return new self(
+            Payload::object($data, $path)
+                ->shape(['entries'])
+                ->mapList('entries', QueryRow::fromArray(...)),
+        );
     }
 
     /**

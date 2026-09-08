@@ -28,7 +28,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertSame(
             <<<HTML
@@ -69,7 +69,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertSame(
             <<<HTML
@@ -111,7 +111,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertSame(
             <<<HTML
@@ -163,7 +163,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertSame(
             <<<HTML
@@ -203,7 +203,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertMatchesRegularExpression(
             '/>\s*AppAsset\s*</',
@@ -237,7 +237,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertSame(
             <<<HTML
@@ -284,7 +284,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertSame(
             <<<HTML
@@ -343,7 +343,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected the source bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertSame(
             <<<HTML
@@ -383,7 +383,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertSame(
             <<<HTML
@@ -403,6 +403,50 @@ final class AssetCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderCardResolvesRegisteredDependencyAnchorToBundleId(): void
+    {
+        $summary = (new AssetBundleNormalizer())
+            ->normalize(
+                self::rows(
+                    [
+                        'app\\AppAsset' => ['depends' => ['app\\OtherAsset']],
+                        'app\\OtherAsset' => [],
+                    ],
+                ),
+            );
+
+        $bundle = $summary->bundles[0] ?? self::fail('Expected the source bundle.');
+        $target = $summary->bundles[1] ?? self::fail('Expected a second bundle.');
+
+        $html = AssetCardRenderer::renderCard($bundle)->render();
+
+        self::assertStringContainsString(
+            'href="#' . $target->id . '"',
+            $html,
+            'Registered deps must resolve to the matching card id.',
+        );
+    }
+
+    public function testRenderCardResolvesUnregisteredDependencyAnchorThroughCamel2id(): void
+    {
+        $summary = (new AssetBundleNormalizer())
+            ->normalize(
+                self::rows(
+                    ['app\\AppAsset' => ['depends' => ['unknown\\package\\StrangerAsset']]],
+                ),
+            );
+
+        $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
+
+        $html = AssetCardRenderer::renderCard($bundle)->render();
+
+        self::assertStringContainsString(
+            'href="#unknown\\package\\-stranger-asset"',
+            $html,
+            "Unregistered deps must use the same 'Inflector::camel2id()' rule as registered ones.",
+        );
+    }
+
     public function testRenderCardWiringRendersBasePathRow(): void
     {
         $summary = (new AssetBundleNormalizer())
@@ -412,7 +456,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertMatchesRegularExpression(
             '/>\s*base\s*</',
@@ -460,7 +504,7 @@ final class AssetCardRendererTest extends TestCase
 
         $bundle = $summary->bundles[0] ?? self::fail('Expected one bundle.');
 
-        $html = AssetCardRenderer::renderCard($bundle, $summary)->render();
+        $html = AssetCardRenderer::renderCard($bundle)->render();
 
         self::assertMatchesRegularExpression(
             '/>\s*url\s*</',
@@ -506,41 +550,6 @@ final class AssetCardRendererTest extends TestCase
             '/>\s*base\s*</',
             $html,
             "Empty 'basePath' must not render a row.",
-        );
-    }
-
-    public function testResolveAnchorFallsBackToCamel2idForUnregisteredDep(): void
-    {
-        $summary = (new AssetBundleNormalizer())
-            ->normalize(
-                self::rows(['app\\AppAsset' => []]),
-            );
-
-        self::assertSame(
-            'unknown\\package\\-stranger-asset',
-            AssetCardRenderer::resolveAnchor('unknown\\package\\StrangerAsset', $summary),
-            "Unregistered deps must use the same 'Inflector::camel2id()' rule as registered ones.",
-        );
-    }
-
-    public function testResolveAnchorReturnsRegisteredBundleId(): void
-    {
-        $summary = (new AssetBundleNormalizer())
-            ->normalize(
-                self::rows(
-                    [
-                        'app\\AppAsset' => [],
-                        'app\\OtherAsset' => [],
-                    ],
-                ),
-            );
-
-        $bundle = $summary->bundles[1] ?? self::fail('Expected a second bundle.');
-
-        self::assertSame(
-            $bundle->id,
-            AssetCardRenderer::resolveAnchor('app\\OtherAsset', $summary),
-            'Registered deps must resolve to the matching card id.',
         );
     }
 

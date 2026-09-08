@@ -55,10 +55,7 @@ final readonly class CapturePolicy
             );
         }
 
-        $this->sensitiveKeyPatterns = $sensitiveKeyPatterns
-            ?? ($this->sensitiveKeys === SensitiveDataRedactor::DEFAULT_KEYS
-                ? SensitiveDataRedactor::DEFAULT_PATTERNS
-                : []);
+        $this->sensitiveKeyPatterns = SensitiveDataRedactor::patterns($this->sensitiveKeys, $sensitiveKeyPatterns);
 
         SensitiveDataRedactor::isSensitiveKey(
             '',

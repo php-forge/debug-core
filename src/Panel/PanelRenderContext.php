@@ -29,27 +29,6 @@ final readonly class PanelRenderContext
     ) {}
 
     /**
-     * Builds an adapter action URL for this captured request.
-     *
-     * @param string $action Adapter-defined action identifier.
-     * @param array<array-key, mixed>|null $queryParams Additional parameters, or `null` to reuse the current query.
-     */
-    public function actionUrl(string $action, array|null $queryParams = null): string
-    {
-        return $this->urls->action($action, $this->tag, $queryParams ?? $this->queryParams);
-    }
-
-    /**
-     * Builds the request-history URL.
-     *
-     * @param array<array-key, mixed>|null $queryParams History parameters, or `null` to reuse the current query.
-     */
-    public function historyUrl(array|null $queryParams = null): string
-    {
-        return $this->urls->history($queryParams ?? $this->queryParams);
-    }
-
-    /**
      * Returns another panel payload from the current snapshot when cross-panel composition is required.
      *
      * @return array<string, mixed>|null Serialized panel payload, or `null` when it was not captured.

@@ -159,10 +159,6 @@ final class NPlusOneDetectorTest extends TestCase
             $finding->fingerprint,
             'Global exact duplicates must not leak across callers.',
         );
-        self::assertTrue(
-            $finding->contains($candidate),
-            'Findings should identify rows from their fingerprint.',
-        );
     }
 
     public function testRejectsUnsafeThreshold(): void

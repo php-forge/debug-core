@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\PhpInfo;
 
-use PHPForge\Debug\Helper\{Disclosure, Icon};
+use PHPForge\Debug\Helper\{Disclosure, ExtensionPill, Icon};
 use UIAwesome\Html\Flow\{Div, Pre};
 use UIAwesome\Html\Form\{Button, InputSearch};
 use UIAwesome\Html\Interactive\{Details, Summary};
@@ -85,26 +85,11 @@ final class PhpInfoRenderer
             $state = $enabled ? 'on' : 'off';
         }
 
-        return Span::tag()
+        return ExtensionPill::render($module->title, $state, $enabled, $summary)
             ->addDataAttribute('section', $module->title)
             ->addDataAttribute('yii-debug-phpinfo-compact-module', true)
-            ->class('yii-debug-ext-pill ' . ($enabled ? 'is-on' : 'is-off'))
             ->id($module->slug)
-            ->title($summary)
-            ->html(
-                Span::tag()
-                    ->addAriaAttribute('hidden', 'true')
-                    ->class('yii-debug-ext-pill-dot'),
-                Span::tag()
-                    ->class('yii-debug-ext-pill-label')
-                    ->content($module->title),
-                Span::tag()
-                    ->class('yii-debug-ext-pill-state')
-                    ->content($state),
-                Span::tag()
-                    ->class('yii-debug-sr-only')
-                    ->content($summary),
-            );
+            ->title($summary);
     }
 
     /**

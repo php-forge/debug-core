@@ -9,7 +9,6 @@ use PHPForge\Debug\Storage\{HydrationException, PanelRow, Payload};
 
 use function array_map;
 use function in_array;
-use function is_bool;
 use function is_string;
 
 /**
@@ -17,10 +16,25 @@ use function is_string;
  */
 final readonly class ViteComponent implements PanelRow
 {
+    /**
+     * Identifies the legacy Vite integration implementation.
+     */
     public const string IMPLEMENTATION_LEGACY = 'legacy';
+    /**
+     * Identifies the modern Vite integration implementation.
+     */
     public const string IMPLEMENTATION_MODERN = 'modern';
+    /**
+     * Identifies the Vite development mode.
+     */
     public const string MODE_DEVELOPMENT = 'development';
+    /**
+     * Identifies the Vite production mode.
+     */
     public const string MODE_PRODUCTION = 'production';
+    /**
+     * Identifies an unknown Vite mode.
+     */
     public const string MODE_UNKNOWN = 'unknown';
 
     /**
@@ -92,12 +106,6 @@ final readonly class ViteComponent implements PanelRow
             $entrypoints[] = $entrypoint;
         }
 
-        $chunks = [];
-
-        foreach ($payload->list('chunks') as $index => $chunk) {
-            $chunks[] = ViteChunk::fromArray($chunk, "{$path}.chunks[{$index}]");
-        }
-
         return new self(
             id: $payload->string('id'),
             class: $payload->string('class'),
@@ -108,9 +116,9 @@ final readonly class ViteComponent implements PanelRow
             baseUrl: $payload->string('baseUrl'),
             devServerUrl: $payload->nullableString('devServerUrl'),
             manifestPath: $payload->string('manifestPath'),
-            includeViteClient: self::nullableBool($payload->raw('includeViteClient'), "{$path}.includeViteClient"),
-            modulePreload: self::nullableBool($payload->raw('modulePreload'), "{$path}.modulePreload"),
-            chunks: $chunks,
+            includeViteClient: $payload->nullableBool('includeViteClient'),
+            modulePreload: $payload->nullableBool('modulePreload'),
+            chunks: $payload->mapList('chunks', ViteChunk::fromArray(...)),
         );
     }
 
@@ -133,14 +141,5 @@ final readonly class ViteComponent implements PanelRow
             'modulePreload' => $this->modulePreload,
             'chunks' => array_map(static fn(ViteChunk $chunk): array => $chunk->jsonSerialize(), $this->chunks),
         ];
-    }
-
-    private static function nullableBool(mixed $value, string $path): bool|null
-    {
-        if ($value === null || is_bool($value)) {
-            return $value;
-        }
-
-        throw HydrationException::at($path, 'a boolean or null');
     }
 }

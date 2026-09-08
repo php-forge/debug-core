@@ -17,33 +17,6 @@ use PHPUnit\Framework\TestCase;
 #[Group('db')]
 final class DbQueryRendererTest extends TestCase
 {
-    public function testCanBeExplainedReturnsFalseForUnsupportedVerb(): void
-    {
-        self::assertFalse(
-            DbQueryRenderer::canBeExplained('PRAGMA'),
-            'PRAGMA must not be marked as EXPLAIN-able.',
-        );
-        self::assertFalse(
-            DbQueryRenderer::canBeExplained(''),
-            'Empty verb must not be marked as EXPLAIN-able.',
-        );
-    }
-
-    public function testCanBeExplainedReturnsTrueForSupportedVerbs(): void
-    {
-        foreach (['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'] as $verb) {
-            self::assertTrue(
-                DbQueryRenderer::canBeExplained($verb),
-                "Verb '{$verb}' must be EXPLAIN-able.",
-            );
-            self::assertTrue(
-                DbQueryRenderer::canBeExplained(strtolower($verb)),
-                "Verb '{$verb}' must be EXPLAIN-able regardless of case.",
-            );
-        }
-    }
-
-
     public function testRenderDurationCellFormatsDurationToOneDecimalMillisecond(): void
     {
         self::assertSame(
@@ -139,6 +112,24 @@ final class DbQueryRendererTest extends TestCase
         self::assertStringContainsString('Potential N+1 · 4 similar', $query);
     }
 
+    public function testRenderQueryCellEmitsExplainToggleForExplainableVerbsRegardlessOfCase(): void
+    {
+        foreach (['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'] as $verb) {
+            foreach ([$verb, strtolower($verb)] as $type) {
+                self::assertStringContainsString(
+                    'yii-debug-db-explain-toggle',
+                    DbQueryRenderer::renderQueryCell(
+                        self::makeRow(type: $type),
+                        self::traceLine(),
+                        true,
+                        self::makeUrlBuilder(),
+                    ),
+                    "Verb '{$type}' must be EXPLAIN-able.",
+                );
+            }
+        }
+    }
+
     public function testRenderQueryCellEmitsExplainToggleWithBuiltUrl(): void
     {
         $html = DbQueryRenderer::renderQueryCell(
@@ -205,6 +196,22 @@ final class DbQueryRendererTest extends TestCase
             'Query content must be HTML-escaped.',
         );
 
+    }
+
+    public function testRenderQueryCellOmitsExplainToggleForNonExplainableVerbs(): void
+    {
+        foreach (['PRAGMA', ''] as $type) {
+            self::assertStringNotContainsString(
+                'yii-debug-db-explain-toggle',
+                DbQueryRenderer::renderQueryCell(
+                    self::makeRow(type: $type),
+                    self::traceLine(),
+                    true,
+                    self::makeUrlBuilder(),
+                ),
+                "Verb '{$type}' must not be EXPLAIN-able.",
+            );
+        }
     }
 
     public function testRenderQueryCellOmitsExplainToggleWhenHasExplainIsFalse(): void

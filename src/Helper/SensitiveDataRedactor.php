@@ -75,10 +75,21 @@ final class SensitiveDataRedactor
     public const array DEFAULT_PATTERNS = [
         '~(?:^|[_\-.])(?:password|passwd|secret|token|api[_-]?key|private[_-]?key|credential)(?:$|[_\-.])~i',
     ];
+    /**
+     * Replacement written in place of a sensitive value.
+     */
     public const string PLACEHOLDER = '[redacted]';
+    /**
+     * Replacement written where the depth or node budget stops traversal.
+     */
     public const string TRUNCATED = '[truncated]';
-
+    /**
+     * Nesting depth beyond which nested arrays are replaced by {@see TRUNCATED}.
+     */
     private const int MAX_DEPTH = 10;
+    /**
+     * Maximum entries visited per `redact()` call before traversal stops with {@see TRUNCATED}.
+     */
     private const int MAX_NODES = 10000;
 
     /**
@@ -98,6 +109,22 @@ final class SensitiveDataRedactor
         [$keyMap, $prefixes, $patterns] = self::rules($sensitiveKeys, $sensitiveKeyPrefixes, $sensitiveKeyPatterns);
 
         return self::matches($key, $keyMap, $prefixes, $patterns);
+    }
+
+    /**
+     * Resolves the pattern list a redaction rule set applies, preserving exact-list override behavior.
+     *
+     * An explicit list wins. Otherwise {@see DEFAULT_PATTERNS} applies only alongside the unmodified
+     * {@see DEFAULT_KEYS} list, so a custom exact-key list never inherits the segment-aware defaults.
+     *
+     * @param list<string> $keys Configured exact key names.
+     * @param list<string>|null $patterns Configured PCRE patterns, or `null` to resolve the defaults.
+     *
+     * @return list<string> Patterns applied to complete original keys.
+     */
+    public static function patterns(array $keys, array|null $patterns): array
+    {
+        return $patterns ?? ($keys === self::DEFAULT_KEYS ? self::DEFAULT_PATTERNS : []);
     }
 
     /**
@@ -178,19 +205,6 @@ final class SensitiveDataRedactor
         }
 
         return false;
-    }
-
-    /**
-     * Preserves exact-list override behavior while enabling safer defaults for the default policy.
-     *
-     * @param list<string> $keys
-     * @param list<string>|null $patterns
-     *
-     * @return list<string>
-     */
-    private static function patterns(array $keys, array|null $patterns): array
-    {
-        return $patterns ?? ($keys === self::DEFAULT_KEYS ? self::DEFAULT_PATTERNS : []);
     }
 
     /**

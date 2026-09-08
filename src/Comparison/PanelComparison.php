@@ -105,6 +105,14 @@ final readonly class PanelComparison
     }
 
     /**
+     * Returns the total number of structural differences detected for the panel.
+     */
+    public function differenceCount(): int
+    {
+        return $this->added + $this->removed + $this->changed;
+    }
+
+    /**
      * Returns the captured payload or failure envelope, preserving the distinction between absent and empty.
      *
      * @return array<string, mixed>|null

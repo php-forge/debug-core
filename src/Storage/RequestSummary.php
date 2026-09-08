@@ -30,7 +30,7 @@ final readonly class RequestSummary implements JsonSerializable
      * @param float|null $processingTime Processing duration in seconds or `null` when unavailable.
      * @param int|null $peakMemory Peak memory in bytes or `null` when unavailable.
      */
-    public function __construct(
+    private function __construct(
         public string $tag,
         public string $url,
         public bool $ajax,

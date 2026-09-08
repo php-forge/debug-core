@@ -60,7 +60,6 @@ final class RequestRendererTest extends TestCase
         );
 
         $labels = ['Input', 'Headers', 'Session', 'Routes (2)', 'Server'];
-
         $offset = -1;
 
         foreach ($labels as $label) {
@@ -125,6 +124,25 @@ final class RequestRendererTest extends TestCase
             '&lt;script&gt;',
             $html,
             'Escaped route diagnostics must remain inspectable.',
+        );
+    }
+
+    public function testRenderFallsBackToAnEmptyStateWhenTheHeadersTabIsMissing(): void
+    {
+        $view = new RequestView(
+            RequestHero::create('GET', '/'),
+            [new RequestTab(label: 'Parameters', sections: [], id: 'parameters')],
+        );
+
+        $html = RequestRenderer::render(
+            $view,
+            new RequestRoutingView(CurrentRouteView::create(), RouteInventoryView::create(routes: [])),
+        );
+
+        self::assertStringContainsString(
+            'No headers captured.',
+            $html,
+            'A missing headers tab must render the empty-state card.',
         );
     }
 
@@ -295,6 +313,27 @@ final class RequestRendererTest extends TestCase
         );
     }
 
+    public function testRenderOmitsTheResolutionMessageWhenOnlyATraceWasCaptured(): void
+    {
+        $routing = new RequestRoutingView(
+            CurrentRouteView::create(route: 'home')->withTrace([new RouteTraceRow('fallback', matched: true)]),
+            RouteInventoryView::create(routes: []),
+        );
+
+        $html = RequestRenderer::render(self::requestView(), $routing);
+
+        self::assertStringContainsString(
+            'Routing resolution (1 rules tested)',
+            $html,
+            'A trace without a resolver message must still open the disclosure.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-route-resolution-message',
+            $html,
+            'No paragraph must be rendered for an absent message.',
+        );
+    }
+
     public function testRenderOmitsUnsupportedAndShowsEmptyRouteInventories(): void
     {
         $withoutInventory = RequestRenderer::render(
@@ -303,8 +342,16 @@ final class RequestRendererTest extends TestCase
         );
         $emptyInventory = RequestRenderer::render(
             self::requestView(),
-            new RequestRoutingView(CurrentRouteView::create(), RouteInventoryView::create(routes: [])
-                ->withLive(false)),
+            new RequestRoutingView(
+                CurrentRouteView::create(),
+                RouteInventoryView::create(routes: [])->withLive(false),
+            ),
+        );
+
+        self::assertStringNotContainsString(
+            'Live configuration may differ from this capture.',
+            $emptyInventory,
+            'Captured inventories must not carry the live-drift warning.',
         );
 
         self::assertStringNotContainsString(
@@ -345,6 +392,7 @@ final class RequestRendererTest extends TestCase
                 ),
             ],
         );
+
         $html = RequestRenderer::render($view, self::routingView());
 
         self::assertSame(
@@ -395,12 +443,28 @@ final class RequestRendererTest extends TestCase
             ->withMode('BOTH')
             ->withType('GROUP');
 
-        $html = self::routeLedger(RequestRenderer::render(
-            self::requestView(),
-            new RequestRoutingView(current: CurrentRouteView::create(), inventory: RouteInventoryView::create(routes: [$definition])),
-        ));
+        $html = self::routeLedger(
+            RequestRenderer::render(
+                self::requestView(),
+                new RequestRoutingView(
+                    current: CurrentRouteView::create(),
+                    inventory: RouteInventoryView::create(routes: [$definition]),
+                ),
+            ),
+        );
 
-        foreach (['post/view', 'one.example.test', 'two.example.test', 'Post::&lt;view&gt;', 'Auth', 'Session', '.html', 'BOTH', 'GROUP'] as $value) {
+        foreach (
+            [
+                'post/view',
+                'one.example.test',
+                'two.example.test',
+                'Post::&lt;view&gt;',
+                'Auth',
+                'Session',
+                '.html',
+                'BOTH',
+                'GROUP',
+            ] as $value) {
             self::assertStringContainsString(
                 $value,
                 $html,
@@ -417,7 +481,10 @@ final class RequestRendererTest extends TestCase
             'data-yii-debug-filter-unit="routes"',
             RequestRenderer::render(
                 self::requestView(),
-                new RequestRoutingView(current: CurrentRouteView::create(), inventory: RouteInventoryView::create(routes: [$definition])),
+                new RequestRoutingView(
+                    current: CurrentRouteView::create(),
+                    inventory: RouteInventoryView::create(routes: [$definition]),
+                ),
             ),
             'The filter must count routes rather than metadata fields.',
         );
@@ -499,6 +566,7 @@ final class RequestRendererTest extends TestCase
                 RequestDataNormalizer::fromPanelData($data, null),
                 new RequestRoutingView(current: CurrentRouteView::create()),
             );
+
             preg_match_all('~<details class="yii-debug-disclosure"[^>]*>.*?</details>~s', $html, $matches);
 
             self::assertCount(
@@ -521,7 +589,6 @@ final class RequestRendererTest extends TestCase
                     $section,
                     'The section heading must identify its data.',
                 );
-
                 self::assertStringContainsString(
                     'click to expand',
                     $section,
@@ -577,7 +644,12 @@ final class RequestRendererTest extends TestCase
         $routing = new RequestRoutingView(
             current: CurrentRouteView::create(route: 'home')
                 ->withMessage('No matching URL rule; default parsing was used.')
-                ->withTrace([new RouteTraceRow('fallback', matched: true)])
+                ->withTrace(
+                    [
+                        new RouteTraceRow('fallback', matched: true),
+                        new RouteTraceRow('site/<action>', parent: 'group', matched: false),
+                    ],
+                )
                 ->withError('Captured route metadata could not be read.'),
             inventory: RouteInventoryView::create(
                 routes: [
@@ -618,7 +690,7 @@ final class RequestRendererTest extends TestCase
             'Resolver messages and traces must stay available in a collapsed disclosure.',
         );
         self::assertStringContainsString(
-            'Routing resolution (1 rules tested)',
+            'Routing resolution (2 rules tested)',
             $html,
             'Resolution disclosure must report the trace size.',
         );
@@ -626,6 +698,55 @@ final class RequestRendererTest extends TestCase
             'yii-debug-badge yii-debug-badge-muted">Unknown',
             $html,
             'Unknown badge variants must degrade to the safe muted vocabulary.',
+        );
+        self::assertStringContainsString(
+            <<<HTML
+            <table class="yii-debug-table yii-debug-route-trace">
+            <thead>
+            <tr>
+            <th scope="col">
+            #
+            </th><th scope="col">
+            Rule
+            </th><th scope="col">
+            Parent
+            </th><th scope="col">
+            Result
+            </th>
+            </tr>
+            </thead>
+            HTML,
+            $html,
+            'Trace columns must stay complete and ordered.',
+        );
+        self::assertStringContainsString(
+            <<<HTML
+            <tbody>
+            <tr class="yii-debug-row-success">
+            <td>
+            1
+            </td><td>
+            fallback
+            </td><td>
+            —
+            </td><td>
+            <span class="yii-debug-badge yii-debug-badge-success">Matched</span>
+            </td>
+            </tr><tr>
+            <td>
+            2
+            </td><td>
+            site/&lt;action&gt;
+            </td><td>
+            group
+            </td><td>
+            <span class="yii-debug-badge yii-debug-badge-muted">Not matched</span>
+            </td>
+            </tr>
+            </tbody>
+            HTML,
+            $html,
+            'Trace rows must number from 1, fall back to an em dash without a parent, and badge the match result.',
         );
     }
 

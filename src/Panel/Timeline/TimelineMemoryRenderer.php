@@ -16,6 +16,11 @@ use function usort;
  */
 final class TimelineMemoryRenderer
 {
+    /**
+     * Defines gradient opacity stops keyed by percentage.
+     *
+     * @var array<int, float>
+     */
     private const array GRADIENT = [
         10 => 0.18,
         60 => 0.45,
@@ -108,14 +113,7 @@ final class TimelineMemoryRenderer
      */
     private static function polygonPoints(array $points, int $width, int $height): string
     {
-        $rendered = "0 {$height}";
-
-        $lastY = $height;
-
-        foreach ($points as [$x, $y]) {
-            $rendered .= ' ' . self::number($x) . ' ' . self::number($y);
-            $lastY = $y;
-        }
+        [$rendered, $lastY] = self::tracePoints($points, $height);
 
         return $rendered
             . ' ' . self::number($width - 0.001) . ' ' . self::number($lastY)
@@ -127,6 +125,21 @@ final class TimelineMemoryRenderer
      */
     private static function polylinePoints(array $points, int $width, int $height): string
     {
+        [$rendered, $lastY] = self::tracePoints($points, $height);
+
+        return $rendered . " {$width} " . self::number($lastY);
+    }
+
+    /**
+     * Traces the sampled points from the baseline, returning the point list and the last plotted `y` coordinate the
+     * polygon and polyline closers extend from.
+     *
+     * @param list<array{0: float, 1: float}> $points
+     *
+     * @return array{0: string, 1: float|int} Rendered point list and the last plotted `y` coordinate.
+     */
+    private static function tracePoints(array $points, int $height): array
+    {
         $rendered = "0 {$height}";
 
         $lastY = $height;
@@ -136,6 +149,6 @@ final class TimelineMemoryRenderer
             $lastY = $y;
         }
 
-        return $rendered . " {$width} " . self::number($lastY);
+        return [$rendered, $lastY];
     }
 }

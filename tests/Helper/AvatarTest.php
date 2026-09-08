@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see Avatar} deriving deterministic avatar hues.
+ * Unit tests for {@see Avatar} deriving deterministic avatar hues and monogram initials.
  */
 #[Group('avatar')]
 #[Group('helpers')]
@@ -35,6 +35,34 @@ final class AvatarTest extends TestCase
             210,
             Avatar::hueFor(''),
             'Empty seeds must use the fallback hue.',
+        );
+    }
+
+    public function testInitialReturnsFallbackForEmptySeed(): void
+    {
+        self::assertSame(
+            '?',
+            Avatar::initial(''),
+            'Empty seeds must fall back to a question mark.',
+        );
+    }
+
+    public function testInitialUppercasesTheFirstMultibyteCharacter(): void
+    {
+        self::assertSame(
+            'A',
+            Avatar::initial('alice'),
+            'Leading letter must be uppercased.',
+        );
+        self::assertSame(
+            'Á',
+            Avatar::initial('álvaro'),
+            'Accented letter must survive as a single character.',
+        );
+        self::assertSame(
+            '9',
+            Avatar::initial('9lives'),
+            'Non-letter seeds must keep their first character.',
         );
     }
 }

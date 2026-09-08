@@ -30,13 +30,28 @@ use function usort;
  */
 final class SnapshotStore
 {
+    /**
+     * Names the manifest index file.
+     */
     private const string INDEX_FILE = 'index.json';
+    /**
+     * Defines flags used for deterministic JSON encoding.
+     */
     private const int JSON_FLAGS = JSON_THROW_ON_ERROR
         | JSON_UNESCAPED_SLASHES
         | JSON_UNESCAPED_UNICODE
         | JSON_PRESERVE_ZERO_FRACTION;
+    /**
+     * Names the manifest lock file.
+     */
     private const string LOCK_FILE = 'index.lock';
+    /**
+     * Names the transaction journal file.
+     */
     private const string TRANSACTION_FILE = '.debug-transaction.json';
+    /**
+     * Identifies the transaction journal format version.
+     */
     private const int TRANSACTION_VERSION = 1;
 
     /**
@@ -101,13 +116,7 @@ final class SnapshotStore
     public function loadManifestResult(): ManifestReadResult
     {
         if (!is_dir($this->path)) {
-            $error = is_file($this->path)
-                ? new StorageException(
-                    Message::DATA_PATH_NOT_DIRECTORY->getMessage($this->path),
-                )
-                : null;
-
-            return new ManifestReadResult([], $error);
+            return new ManifestReadResult([], $this->directoryMissingError());
         }
 
         try {
@@ -125,21 +134,9 @@ final class SnapshotStore
                 return new ManifestReadResult([], null);
             }
 
-            $raw = @file_get_contents($file);
-
-            if ($raw === false) {
-                throw new StorageException(
-                    Message::MANIFEST_READ_FAILED->getMessage($file),
-                );
-            }
-
-            if ($raw === '') {
-                throw new StorageException(
-                    Message::MANIFEST_EMPTY->getMessage($file),
-                );
-            }
-
-            $manifest = Manifest::fromArray(self::decode($raw));
+            $manifest = Manifest::fromArray(
+                self::decode(self::readRequiredFile($file, Message::MANIFEST_READ_FAILED, Message::MANIFEST_EMPTY)),
+            );
 
             return new ManifestReadResult(array_reverse($manifest->entries, true), null);
         } catch (Throwable $failure) {
@@ -188,13 +185,7 @@ final class SnapshotStore
         }
 
         if (!is_dir($this->path)) {
-            $error = is_file($this->path)
-                ? new StorageException(
-                    Message::DATA_PATH_NOT_DIRECTORY->getMessage($this->path),
-                )
-                : null;
-
-            return new SnapshotReadResult(null, $error);
+            return new SnapshotReadResult(null, $this->directoryMissingError());
         }
 
         try {
@@ -212,21 +203,9 @@ final class SnapshotStore
                 return new SnapshotReadResult(null, null);
             }
 
-            $raw = @file_get_contents($file);
-
-            if ($raw === false) {
-                throw new StorageException(
-                    Message::SNAPSHOT_READ_FAILED->getMessage($file),
-                );
-            }
-
-            if ($raw === '') {
-                throw new StorageException(
-                    Message::SNAPSHOT_EMPTY->getMessage($file),
-                );
-            }
-
-            $snapshot = DebugSnapshot::fromArray(self::decode($raw));
+            $snapshot = DebugSnapshot::fromArray(
+                self::decode(self::readRequiredFile($file, Message::SNAPSHOT_READ_FAILED, Message::SNAPSHOT_EMPTY)),
+            );
 
             if ($snapshot->summary->tag !== $tag) {
                 throw new StorageException(
@@ -476,6 +455,20 @@ final class SnapshotStore
     }
 
     /**
+     * Returns the diagnostic for a storage path that exists but is not a directory, or `null` when it is simply absent.
+     *
+     * @return StorageException|null Path diagnostic or `null`.
+     */
+    private function directoryMissingError(): StorageException|null
+    {
+        return is_file($this->path)
+            ? new StorageException(
+                Message::DATA_PATH_NOT_DIRECTORY->getMessage($this->path),
+            )
+            : null;
+    }
+
+    /**
      * Encodes a value as deterministic JSON.
      *
      * @param mixed $value Value to encode.
@@ -599,11 +592,40 @@ final class SnapshotStore
     }
 
     /**
+     * Reads a stored document that must exist and carry content.
+     *
+     * @param string $file Document path.
+     * @param Message $failed Diagnostic used when the read fails.
+     * @param Message $empty Diagnostic used when the document is empty.
+     *
+     * @return string Raw document contents.
+     */
+    private static function readRequiredFile(string $file, Message $failed, Message $empty): string
+    {
+        $raw = @file_get_contents($file);
+
+        if ($raw === false) {
+            throw new StorageException(
+                $failed->getMessage($file),
+            );
+        }
+
+        if ($raw === '') {
+            throw new StorageException(
+                $empty->getMessage($file),
+            );
+        }
+
+        return $raw;
+    }
+
+    /**
      * Rebuilds a corrupt manifest from valid snapshot envelopes in deterministic request-time order.
      */
     private function rebuildManifest(): Manifest
     {
         $summaries = [];
+
         $files = glob("{$this->path}/*.json");
 
         foreach ($files === false ? [] : $files as $file) {
@@ -655,6 +677,7 @@ final class SnapshotStore
     private function recoverTransaction(): void
     {
         $file = $this->transactionFile();
+
         $raw = @file_get_contents($file);
 
         if ($raw === false || $raw === '') {

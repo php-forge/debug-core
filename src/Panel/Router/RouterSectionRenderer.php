@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Router;
 
-use PHPForge\Debug\Helper\Tabs;
+use PHPForge\Debug\Helper\{Badge, Table, Tabs};
+use PHPForge\Debug\View\Grid\RowClass;
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Heading\H2;
 use UIAwesome\Html\List\{Dd, Dl, Dt};
-use UIAwesome\Html\Phrasing\{Code, Span};
+use UIAwesome\Html\Phrasing\Code;
 use UIAwesome\Html\Root\Header;
-use UIAwesome\Html\Table\{Table, Tbody, Td, Th, Thead, Tr};
+use UIAwesome\Html\Table\{Td, Tr};
 
 use function count;
 use function sprintf;
@@ -74,47 +75,7 @@ final class RouterSectionRenderer
                 );
         }
 
-        return Div::tag()
-            ->class('yii-debug-table-wrap')
-            ->html(
-                Table::tag()
-                    ->class('yii-debug-table')
-                    ->html(
-                        Thead::tag()
-                            ->html(
-                                Tr::tag()
-                                    ->html(
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('#'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Action'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Route'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('First Matching Rule'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Rules Tested'),
-                                    ),
-                            ),
-                        Tbody::tag()->html(...$rows),
-                    ),
-            )
-            ->render();
-    }
-
-    /**
-     * Renders one read-only badge chip for the flags strip.
-     */
-    private static function renderBadgeChip(string $label, string $variant): Span
-    {
-        return Span::tag()
-            ->class("yii-debug-badge yii-debug-badge-{$variant}")
-            ->content($label);
+        return Table::render(['#', 'Action', 'Route', 'First Matching Rule', 'Rules Tested'], $rows);
     }
 
     /**
@@ -159,6 +120,7 @@ final class RouterSectionRenderer
         $summary = self::renderRouteSummary($current);
         $callout = self::renderCalloutBlock($current);
         $logs = self::renderLogsTable($current);
+
         $body = "{$summary}{$heading}{$callout}{$logs}";
 
         return $body === ''
@@ -183,7 +145,7 @@ final class RouterSectionRenderer
         $chips = [];
 
         foreach ($badges as $badge) {
-            $chips[] = self::renderBadgeChip($badge['label'], $badge['variant']);
+            $chips[] = Badge::render($badge['label'], $badge['variant']);
         }
 
         return Header::tag()
@@ -207,8 +169,8 @@ final class RouterSectionRenderer
 
         foreach ($current->logs as $i => $row) {
             $result = $row->match
-                ? self::renderBadgeChip('Matched', 'success')
-                : self::renderBadgeChip('Not matched', 'muted');
+                ? Badge::render('Matched', 'success')
+                : Badge::render('Not matched', 'muted');
 
             $tr = Tr::tag()
                 ->html(
@@ -219,40 +181,13 @@ final class RouterSectionRenderer
                 );
 
             if ($row->match) {
-                $tr = $tr->class('yii-debug-row-success');
+                $tr = $tr->attributes(RowClass::for('success'));
             }
 
             $rows[] = $tr;
         }
 
-        return Div::tag()
-            ->class('yii-debug-table-wrap')
-            ->html(
-                Table::tag()
-                    ->class('yii-debug-table')
-                    ->html(
-                        Thead::tag()
-                            ->html(
-                                Tr::tag()
-                                    ->html(
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('#'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Rule'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Parent'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Result'),
-                                    ),
-                            ),
-                        Tbody::tag()->html(...$rows),
-                    ),
-            )
-            ->render();
+        return Table::render(['#', 'Rule', 'Parent', 'Result'], $rows);
     }
 
     /**
@@ -283,43 +218,7 @@ final class RouterSectionRenderer
                 );
         }
 
-        return Div::tag()
-            ->class('yii-debug-table-wrap')
-            ->html(
-                Table::tag()
-                    ->class('yii-debug-table')
-                    ->html(
-                        Thead::tag()
-                            ->html(
-                                Tr::tag()
-                                    ->html(
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('#'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Rule'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Target'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Verb'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Suffix'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Mode'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Type'),
-                                    ),
-                            ),
-                        Tbody::tag()->html(...$rows),
-                    ),
-            )
-            ->render();
+        return Table::render(['#', 'Rule', 'Target', 'Verb', 'Suffix', 'Mode', 'Type'], $rows);
     }
 
     /**

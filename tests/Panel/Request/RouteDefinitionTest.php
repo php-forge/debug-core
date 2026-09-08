@@ -211,6 +211,7 @@ final class RouteDefinitionTest extends TestCase
         foreach (
             [
                 ['name', null, "key 'name' must be a string"],
+                ['pattern', 7, "key 'pattern' must be a string"],
                 ['methods', ['GET', 2], "key 'methods' must be a list of strings"],
                 ['hosts', ['host' => 'example.test'], "key 'hosts' must be a list of strings"],
                 ['action', 2, "key 'action' must be a string or null"],

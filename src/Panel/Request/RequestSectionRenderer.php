@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Request;
 
-use PHPForge\Debug\Helper\{Disclosure, Dump, Tabs, Vocabulary};
+use PHPForge\Debug\Helper\{Disclosure, Dump, Table, Tabs, Vocabulary};
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Form\InputSearch;
 use UIAwesome\Html\Heading\H2;
 use UIAwesome\Html\Phrasing\Span;
 use UIAwesome\Html\Root\Header;
-use UIAwesome\Html\Table\{Table, Tbody, Td, Th, Thead, Tr};
-
-use function htmlspecialchars;
-
-use const ENT_QUOTES;
-use const ENT_SUBSTITUTE;
+use UIAwesome\Html\Table\{Td, Th, Tr};
 
 /**
  * Renders the Request panel detail view.
@@ -59,9 +54,7 @@ final class RequestSectionRenderer
         $line = [];
 
         if ($hero->getMethod() !== '') {
-            $line[] = Span::tag()
-                ->class('yii-debug-request-hero-method yii-debug-verb-' . Vocabulary::verb($hero->getMethod()))
-                ->content($hero->getMethod());
+            $line[] = self::renderMethodPill($hero->getMethod());
         }
 
         $line[] = Span::tag()
@@ -101,10 +94,28 @@ final class RequestSectionRenderer
         return Header::tag()
             ->class('yii-debug-request-hero')
             ->html(
-                Div::tag()->class('yii-debug-request-hero-line')->html(...$line),
-                Div::tag()->class('yii-debug-request-hero-meta')->html(...$meta),
+                Div::tag()
+                    ->class('yii-debug-request-hero-line')
+                    ->html(...$line),
+                Div::tag()
+                    ->class('yii-debug-request-hero-meta')
+                    ->html(...$meta),
             )
             ->render();
+    }
+
+    /**
+     * Renders the HTTP method pill carrying the shared semantic verb hue.
+     *
+     * @param string $method Captured HTTP method.
+     *
+     * @return Span Method pill element.
+     */
+    public static function renderMethodPill(string $method): Span
+    {
+        return Span::tag()
+            ->class('yii-debug-request-hero-method yii-debug-verb-' . Vocabulary::verb($method))
+            ->content($method);
     }
 
     /**
@@ -157,15 +168,15 @@ final class RequestSectionRenderer
     }
 
     /**
-     * Renders one row of the section table: name in the `<th>`, value dumped via {@see Dump::asString()} in the
-     * `<td>` with `htmlspecialchars` (`ENT_QUOTES | ENT_SUBSTITUTE`) escaping, so invalid byte sequences degrade to
+     * Renders one row of the section table: name in the `<th>`, value dumped via {@see Dump::asString()} in the `<td>`
+     * and escaped through {@see RequestDiagnosticValueRenderer::escape()}, so invalid byte sequences degrade to
      * substitution characters instead of blanking the row.
      */
     private static function renderRow(int|string $name, mixed $value): Tr
     {
         $valueText = Dump::asString($value);
 
-        $escaped = htmlspecialchars($valueText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', true);
+        $escaped = RequestDiagnosticValueRenderer::escape($valueText);
 
         return Tr::tag()
             ->html(
@@ -219,24 +230,8 @@ final class RequestSectionRenderer
 
         return $wrap
             ->html(
-                Table::tag()
-                    ->class('yii-debug-table yii-debug-table-mono')
-                    ->style(['table-layout' => 'fixed'])
-                    ->html(
-                        Thead::tag()
-                            ->html(
-                                Tr::tag()
-                                    ->html(
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Name'),
-                                        Th::tag()
-                                            ->scope('col')
-                                            ->content('Value'),
-                                    ),
-                            ),
-                        Tbody::tag()->html(...$rows),
-                    ),
+                Table::build(['Name', 'Value'], $rows, 'yii-debug-table yii-debug-table-mono')
+                    ->style(['table-layout' => 'fixed']),
             )
             ->render();
     }

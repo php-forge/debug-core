@@ -90,19 +90,16 @@ final class ToolbarDataTest extends TestCase
             indexUrl: '/debug',
             configUrl: '/debug/view?tag=request-1',
             items: [
-                new ToolbarPanel(
-                    id: 'request',
-                    title: 'Request',
-                    url: '/debug/view?tag=request-1&panel=request',
-                    icon: 'request',
-                    items: [
-                        new ToolbarItem(
-                            value: '200',
-                            label: 'Status',
-                            status: 'success',
-                        ),
-                    ],
-                ),
+                ToolbarPanel::create('request', 'Request')
+                    ->withUrl('/debug/view?tag=request-1&panel=request')
+                    ->withIcon('request')
+                    ->withItems(
+                        [
+                            ToolbarItem::create('200')
+                                ->withLabel('Status')
+                                ->withStatus('success'),
+                        ],
+                    ),
             ],
             phpVersion: '8.5.9',
             yiiVersion: '3',
@@ -161,16 +158,8 @@ final class ToolbarDataTest extends TestCase
 
     public function testJsonSerializeOmitsNullPanelUrlAndIcon(): void
     {
-        $panel = new ToolbarPanel(
-            id: 'logs',
-            title: 'Logs',
-            items: [
-                new ToolbarItem(
-                    value: '3',
-                    status: 'info',
-                ),
-            ],
-        );
+        $panel = ToolbarPanel::create('logs', 'Logs')
+            ->withItems([ToolbarItem::create('3')->withStatus('info')]);
 
         self::assertSame(
             [
@@ -190,22 +179,18 @@ final class ToolbarDataTest extends TestCase
 
     public function testJsonSerializePreservesAllPortableFields(): void
     {
-        $item = new ToolbarItem(
-            value: '15',
-            label: 'Count',
-            icon: 'db',
-            status: 'warning',
-            title: 'Database queries',
-            url: '/debug/db',
-            id: 'query-count',
-        );
-        $panel = new ToolbarPanel(
-            id: 'db',
-            title: 'Database',
-            url: '/debug/db',
-            icon: 'db',
-            items: [$item],
-        );
+        $item = ToolbarItem::create('15')
+            ->withLabel('Count')
+            ->withIcon('db')
+            ->withStatus('warning')
+            ->withTitle('Database queries')
+            ->withUrl('/debug/db')
+            ->withId('query-count');
+        $panel = ToolbarPanel::create('db', 'Database')
+            ->withUrl('/debug/db')
+            ->withIcon('db')
+            ->withItems([$item]);
+
         $data = new ToolbarData(
             tag: 'request-2',
             title: 'Debugger',
@@ -263,16 +248,9 @@ final class ToolbarDataTest extends TestCase
 
     public function testWithPanelsReturnsAnImmutableCopy(): void
     {
-        $sourcePanel = new ToolbarPanel(
-            id: 'request',
-            title: 'Request',
-            items: [],
-        );
-        $replacementPanel = new ToolbarPanel(
-            id: 'logs',
-            title: 'Logs',
-            items: [],
-        );
+        $sourcePanel = ToolbarPanel::create('request', 'Request');
+        $replacementPanel = ToolbarPanel::create('logs', 'Logs');
+
         $source = new ToolbarData(
             tag: 'request-1',
             title: 'Yii Debugger',

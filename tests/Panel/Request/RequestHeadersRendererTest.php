@@ -91,7 +91,33 @@ final class RequestHeadersRendererTest extends TestCase
             $html,
             'Colonless SAPI response lines must remain inspectable.',
         );
+        self::assertMatchesRegularExpression(
+            '~<div class="yii-debug-diagnostic-row yii-debug-header-raw-row"[^>]*>\s*<dt>\s*Raw response line 0~',
+            $html,
+            'Colonless lines must keep their dedicated raw-row class.',
+        );
+        self::assertMatchesRegularExpression(
+            '~<div class="yii-debug-diagnostic-row"[^>]*>\s*<dt>\s*Accept~',
+            $html,
+            'Named fields must keep the plain diagnostic-row class.',
+        );
         self::assertStringNotContainsString('<th', $html, 'The exchange must not regress to a generic table header.');
+    }
+
+    public function testRenderDumpsAHeaderListThatMixesStringsWithOtherScalars(): void
+    {
+        $html = RequestHeadersRenderer::render(['X-Mixed' => ['text/html', 7]], []);
+
+        self::assertStringNotContainsString(
+            'yii-debug-diagnostic-value-list',
+            $html,
+            'A list with a non-string entry must not render as repeated header lines.',
+        );
+        self::assertStringContainsString(
+            'text/html',
+            $html,
+            'The dumped fallback must keep the captured entries visible.',
+        );
     }
 
     public function testRenderEscapesMalformedAndLongDiagnosticsWithoutDroppingThem(): void

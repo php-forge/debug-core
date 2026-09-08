@@ -72,7 +72,7 @@ final class AssetSectionRenderer
         foreach ($summary->bundles as $bundle) {
             $items[] = Li::tag()
                 ->class('yii-debug-asset-list-item')
-                ->html(AssetCardRenderer::renderCard($bundle, $summary));
+                ->html(AssetCardRenderer::renderCard($bundle));
         }
 
         return Ol::tag()
