@@ -262,6 +262,40 @@ final class DbCaptureTest extends TestCase
         );
     }
 
+    public function testSummaryIgnoresRowsWithoutACapturedTrace(): void
+    {
+        $uncaptured = self::makeSummary(['', '']);
+
+        self::assertSame(
+            [],
+            $uncaptured->callers,
+            'An empty hash must not open a caller bucket.',
+        );
+        self::assertSame(
+            0,
+            $uncaptured->excessiveCallerCount(1),
+            'A phantom caller must never be flagged.',
+        );
+        self::assertSame(
+            2,
+            $uncaptured->count,
+            'Uncounted callers must still be counted as queries.',
+        );
+
+        $mixed = self::makeSummary(['', 'a', 'a', '']);
+
+        self::assertSame(
+            ['a' => 2],
+            $mixed->callers,
+            'Only captured traces must be accumulated.',
+        );
+        self::assertSame(
+            1,
+            $mixed->excessiveCallerCount(2),
+            'Captured callers must still reach the threshold.',
+        );
+    }
+
     public function testSummaryRendererUsesExactSharedMarkup(): void
     {
         $summary = new DbSummary(

@@ -12,7 +12,7 @@ use function count;
 final readonly class DbSummary
 {
     /**
-     * Counts captured database queries by trace hash.
+     * Counts captured database queries by trace hash, excluding rows whose trace was not captured (empty hash).
      *
      * @var array<string, int>
      */
@@ -26,7 +26,7 @@ final readonly class DbSummary
      */
     public int $duplicates;
     /**
-     * Stores the total query duration in seconds.
+     * Stores the total query duration in milliseconds.
      */
     public float $duration;
     /**
@@ -52,7 +52,11 @@ final readonly class DbSummary
             }
 
             $duration += $row->duration;
-            $callers[$row->traceHash] = ($callers[$row->traceHash] ?? 0) + 1;
+
+            if ($row->traceHash !== '') {
+                $callers[$row->traceHash] = ($callers[$row->traceHash] ?? 0) + 1;
+            }
+
             $types[$row->type] = $row->type;
         }
 

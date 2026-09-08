@@ -123,7 +123,7 @@ final class DbQueryRendererTest extends TestCase
     public function testRenderQueryCellEmitsClosedNativeTraceDisclosureWhenTracePresent(): void
     {
         $html = DbQueryRenderer::renderQueryCell(
-            self::makeRow(trace: [['file' => '/app/User.php', 'line' => 42]]),
+            self::makeRow(trace: [['file' => '/app/User.php', 'line' => '42']]),
             self::traceLine(),
             false,
             self::makeUrlBuilder(),
@@ -138,7 +138,7 @@ final class DbQueryRendererTest extends TestCase
             <span class="yii-debug-db-trace-chevron" aria-hidden="true">›</span><span>Trace</span>
             </summary><ul class="yii-debug-trace">
             <li>
-            /app/User.php:
+            /app/User.php:42
             </li>
             </ul>
             </details>

@@ -239,7 +239,7 @@ light/dark accessibility checks on fresh captures. These checks do not require s
 Database uses `DbSnapshot::capture()` to normalize exact SQL duplicate counts without changing capture order or the
 existing persisted row shape. `QueryRow::create()` accepts SQL, duration in milliseconds, and epoch milliseconds;
 `withTrace()`, `withSequence()`, `withRows()`, and `withDuplicate()` return immutable copies. Empty traces have no
-synthetic caller hash.
+synthetic caller hash, so `DbSummary` leaves those rows out of its caller counts.
 
 Adapters reuse `DbSummary`, `DbSummaryRenderer`, `DbQueryRenderer`, `NPlusOneDetector`, and `DbExplainRenderer`.
 `Helper\Trace` is the shared, escaped source-link renderer: `create()` emits IDE deep links by default, `withTemplate()`
