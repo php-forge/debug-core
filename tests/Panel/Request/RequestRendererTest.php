@@ -127,6 +127,25 @@ final class RequestRendererTest extends TestCase
         );
     }
 
+    public function testRenderFallsBackToAnEmptyStateWhenTheHeadersTabIsMissing(): void
+    {
+        $view = new RequestView(
+            RequestHero::create('GET', '/'),
+            [new RequestTab(label: 'Parameters', sections: [], id: 'parameters')],
+        );
+
+        $html = RequestRenderer::render(
+            $view,
+            new RequestRoutingView(CurrentRouteView::create(), RouteInventoryView::create(routes: [])),
+        );
+
+        self::assertStringContainsString(
+            'No headers captured.',
+            $html,
+            'A missing headers tab must render the empty-state card.',
+        );
+    }
+
     public function testRenderFallsBackToGenericSectionsWhenSemanticStructureIsIncomplete(): void
     {
         $view = new RequestView(
@@ -291,6 +310,27 @@ final class RequestRendererTest extends TestCase
             '~<h2[^>]*>\s*Routing\s*</h2>~',
             $html,
             'The legacy duplicate Routing table must be removed by semantic section ID.',
+        );
+    }
+
+    public function testRenderOmitsTheResolutionMessageWhenOnlyATraceWasCaptured(): void
+    {
+        $routing = new RequestRoutingView(
+            CurrentRouteView::create(route: 'home')->withTrace([new RouteTraceRow('fallback', matched: true)]),
+            RouteInventoryView::create(routes: []),
+        );
+
+        $html = RequestRenderer::render(self::requestView(), $routing);
+
+        self::assertStringContainsString(
+            'Routing resolution (1 rules tested)',
+            $html,
+            'A trace without a resolver message must still open the disclosure.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-route-resolution-message',
+            $html,
+            'No paragraph must be rendered for an absent message.',
         );
     }
 

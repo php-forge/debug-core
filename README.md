@@ -19,13 +19,13 @@ composer require php-forge/debug-core
 The core package owns portable collector contracts and coordination, debug data, persistence, normalization and
 presentation primitives under `PHPForge\Debug\Helper`, the frontend source and compiled files, shared fonts and icons,
 the toolbar data contract, and framework-neutral PHP templates composed with the agnostic UI Awesome HTML helpers. It
-does not register assets, render responses, inject toolbar markup, or depend on Yii2, Yii3, an application container, a
-view implementation, or a framework request lifecycle.
+does not register assets, render responses, decide when a response receives the toolbar, or depend on Yii2, Yii3, an
+application container, a view implementation, or a framework request lifecycle.
 
 Shared adapter UI contracts include `PHPForge\Debug\Data\FilterEngine`, `FilterPrefix`, `PageSize`, and `QueryInput`,
 plus `PHPForge\Debug\Panel\PanelRenderContext`. `PHPForge\Debug\Comparison\SnapshotComparison` compares two captures
 (summary metrics and panel payloads) for the history comparison pages, and `PHPForge\Debug\Toolbar\ToolbarInjector`
-places the rendered toolbar before `</body>`. Adapters provide a
+places the rendered toolbar before `</body>` once an adapter has decided that a response receives it. Adapters provide a
 `PHPForge\Debug\Routing\DebugUrlGeneratorInterface` implementation so portable panel renderers can build panel
 links without importing a framework URL manager.
 

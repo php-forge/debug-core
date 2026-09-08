@@ -104,6 +104,22 @@ final class RequestHeadersRendererTest extends TestCase
         self::assertStringNotContainsString('<th', $html, 'The exchange must not regress to a generic table header.');
     }
 
+    public function testRenderDumpsAHeaderListThatMixesStringsWithOtherScalars(): void
+    {
+        $html = RequestHeadersRenderer::render(['X-Mixed' => ['text/html', 7]], []);
+
+        self::assertStringNotContainsString(
+            'yii-debug-diagnostic-value-list',
+            $html,
+            'A list with a non-string entry must not render as repeated header lines.',
+        );
+        self::assertStringContainsString(
+            'text/html',
+            $html,
+            'The dumped fallback must keep the captured entries visible.',
+        );
+    }
+
     public function testRenderEscapesMalformedAndLongDiagnosticsWithoutDroppingThem(): void
     {
         $long = str_repeat('a', CellMore::THRESHOLD + 1);

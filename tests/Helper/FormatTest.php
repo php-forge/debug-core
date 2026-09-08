@@ -122,17 +122,17 @@ final class FormatTest extends TestCase
     public function testTimeOfDayAppendsPaddedMillisecondFraction(): void
     {
         self::assertSame(
-            '22:13:20.123',
+            date('H:i:s', 1_700_000_000) . '.123',
             Format::timeOfDay(1_700_000_000_123),
             'Fraction must follow the second-precision part.',
         );
         self::assertSame(
-            '22:13:20.007',
+            date('H:i:s', 1_700_000_000) . '.007',
             Format::timeOfDay(1_700_000_000_007),
             'Fraction must be zero-padded to three digits.',
         );
         self::assertSame(
-            '22:13:20.000',
+            date('H:i:s', 1_700_000_000) . '.000',
             Format::timeOfDay(1_700_000_000_000),
             'Whole seconds must still carry a fraction.',
         );
@@ -141,7 +141,7 @@ final class FormatTest extends TestCase
     public function testTimeOfDayAppliesTheRequestedDateFormat(): void
     {
         self::assertSame(
-            '2023-11-14 22:13:20.123',
+            date('Y-m-d H:i:s', 1_700_000_000) . '.123',
             Format::timeOfDay(1_700_000_000_123, 'Y-m-d H:i:s'),
             'Custom format must prefix the fraction.',
         );
@@ -150,12 +150,12 @@ final class FormatTest extends TestCase
     public function testTimeOfDayUsesFloorDivisionForNegativeTimestamps(): void
     {
         self::assertSame(
-            '23:59:58.500',
+            date('H:i:s', -2) . '.500',
             Format::timeOfDay(-1_500),
             'Negative input must round the second down and keep a positive fraction.',
         );
         self::assertSame(
-            '23:59:59.000',
+            date('H:i:s', -1) . '.000',
             Format::timeOfDay(-1_000),
             'An exact negative second must not borrow from the previous one.',
         );
