@@ -1,89 +1,74 @@
-# Debug Core
+<!-- markdownlint-disable MD041 -->
+<p align="center">
+    <a href="https://github.com/php-forge/debug-core" target="_blank">
+      <img src="https://avatars.githubusercontent.com/u/103309199?s=400&u=ca3561c692f53ed7eb290d3bb226a2828741606f&v=4" width="30%" alt="PHP Forge">
+    </a>
+    <h1 align="center">Debug Core</h1>
+    <br>
+</p>
+<!-- markdownlint-enable MD041 -->
 
-Framework-agnostic contracts, snapshots, storage primitives, normalization and presentation helpers, and complete
-frontend for PHP debugger adapters.
+<p align="center">
+    <a href="https://github.com/php-forge/debug-core/actions/workflows/build.yml" target="_blank">
+        <img src="https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/build.yml?style=for-the-badge&label=PHPUnit&logo=github" alt="PHPUnit">
+    </a>
+    <a href="https://dashboard.stryker-mutator.io/reports/github.com/php-forge/debug-core/main" target="_blank">
+        <img src="https://img.shields.io/endpoint?style=for-the-badge&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fphp-forge%2Fdebug-core%2Fmain" alt="Mutation Testing">
+    </a>
+    <a href="https://github.com/php-forge/debug-core/actions/workflows/static.yml" target="_blank">
+        <img src="https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/static.yml?style=for-the-badge&label=PHPStan&logo=github" alt="PHPStan">
+    </a>
+    <a href="https://github.com/php-forge/debug-core/actions/workflows/security.yml" target="_blank">
+        <img src="https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/security.yml?style=for-the-badge&label=Security&logo=github" alt="Security">
+    </a>
+</p>
 
-This package is the shared engine used by framework-specific integrations. Applications should install an adapter
-instead of requiring this package directly.
+<p align="center">
+    <strong>A framework-agnostic PHP core providing snapshots, storage, and the complete frontend for debugger adapters.</strong>
+</p>
+
+## Features
+
+<picture>
+    <source media="(min-width: 768px)" srcset="./docs/svgs/features.svg">
+    <img src="./docs/svgs/features-mobile.svg" alt="Feature overview" style="width: 100%;">
+</picture>
 
 ## Installation
 
-Adapter packages install Debug Core transitively. If you develop an adapter, run:
+Install an adapter, not this package. Debug Core is pulled in transitively:
 
-```shell
+- [`yii2-extensions/debug`](https://github.com/yii2-extensions/debug)
+- [`yii3/debug`](https://github.com/yii3/debug)
+
+If you develop an adapter:
+
+```bash
 composer require php-forge/debug-core
 ```
 
-## Architecture
+PHP 8.3 or later and the `ctype`, `intl`, and `mbstring` extensions are required.
 
-The core package owns portable collector contracts and coordination, debug data, persistence, normalization and
-presentation primitives under `PHPForge\Debug\Helper`, the frontend source and compiled files, shared fonts and icons,
-the toolbar data contract, and framework-neutral PHP templates composed with the agnostic UI Awesome HTML helpers. It
-does not register assets, render responses, decide when a response receives the toolbar, or depend on Yii2, Yii3, an
-application container, a view implementation, or a framework request lifecycle.
+## Adapter boundary
 
-Shared adapter UI contracts include `PHPForge\Debug\Data\FilterEngine`, `FilterPrefix`, `PageSize`, and `QueryInput`,
-plus `PHPForge\Debug\Panel\PanelRenderContext`. `PHPForge\Debug\Comparison\SnapshotComparison` compares two captures
-(summary metrics and panel payloads) for the history comparison pages, and `PHPForge\Debug\Toolbar\ToolbarInjector`
-places the rendered toolbar before `</body>` once an adapter has decided that a response receives it. Adapters provide a
-`PHPForge\Debug\Routing\DebugUrlGeneratorInterface` implementation so portable panel renderers can build panel
-links without importing a framework URL manager.
+The core owns snapshot capture, persistence, comparison, and the shared UI. A framework adapter remains responsible
+for:
 
-Adapters collect framework data, convert it into immutable snapshots, expose toolbar data endpoints, define and
-publish assets through their framework, and render the shared templates with their framework view component. They also
-decide when a response receives the toolbar. Routes, controllers or actions, URL generation, panel metadata, and framework-specific
-panel views remain in each adapter. Yii adapters resolve the packaged frontend at
-`@vendor/php-forge/debug-core/resources/assets` and configure their own alias for `resources/views`.
+- collecting framework data and converting it into immutable snapshots;
+- exposing the toolbar data endpoints and deciding when a response receives the toolbar;
+- defining and publishing assets through its own framework;
+- rendering the shared templates with its view component;
+- routes, controllers, URL generation, panel metadata, and framework-specific panel views;
+- implementing `Routing\DebugUrlGeneratorInterface` so portable renderers build panel links without a framework URL
+  manager.
 
-Persistent adapters apply `PHPForge\Debug\Capture\CapturePolicy` before snapshot capture. Its secure defaults redact
-common credentials, authorization and cookie values recursively, suppress raw bodies whose decoded form changed,
-truncate opaque bodies at 64 KiB, and sanitize query strings and diagnostic assignments. Tagged-value capture and
-hydration also enforce depth and node budgets, while newly captured exception traces intentionally omit arguments.
-
-`SnapshotStore::loadManifest()` and `readSnapshot()` retain their fail-closed `[]` / `null` behavior. Integrations that
-need to report filesystem, lock, recovery, corruption, or envelope-integrity failures can use the additive
-`loadManifestResult()` and `readSnapshotResult()` methods and inspect the result's nullable `error` property.
-
-Current adapters:
-
-- `yii2-extensions/debug`
-- `yii3/debug`
-
-## Request view models
-
-Request models keep only identity data in their constructors and `::create()` factories. Use the factories to start
-fluent chains without wrapping `new` in parentheses. Optional metadata is configured with `with...` methods
-that return independent copies; retain the returned object or chain the calls. Read values through `get...` methods
-and use `RouteInventoryView::isLive()` for inventory provenance.
-
-```php
-use PHPForge\Debug\Panel\Request\RequestHero;
-use PHPForge\Debug\Panel\Request\Routing\{CurrentRouteView, RouteDefinition, RouteInventoryView};
-
-$definition = RouteDefinition::create('orders', '/orders/{id}')
-    ->withMethods(['GET'])
-    ->withAction('App\\OrderAction');
-$current = CurrentRouteView::create('orders')
-    ->withDefinition($definition)
-    ->withParameters(['id' => 42]);
-$inventory = RouteInventoryView::create([$definition])
-    ->withSource('Captured configuration')
-    ->withLive(false);
-$hero = RequestHero::create('GET', '/orders/42')
-    ->withStatus(200, '2xx')
-    ->withTiming('12:00:00', '3.5 ms');
-```
-
-Migration: optional constructor arguments and public properties on these four models have been replaced by the
-immutable methods and getters. `RouteDefinition::fromArray()` and `toArray()` retain the existing capture schema,
-including the distinction between unavailable middleware metadata (`null`) and no middleware (`[]`).
+The adapter-facing API is documented in the source PHPDoc under `src/`.
 
 ## Frontend development
 
-The complete frontend source lives in `resources/src`. Vite produces the full-page stylesheet and runtime together
-with the toolbar Web Component under `resources/assets/dist`. Rebuild and verify the packaged assets with:
+The frontend source lives in `resources/src` and Vite builds it into `resources/assets/dist`. Rebuild and verify with:
 
-```shell
+```bash
 npm install
 npm run format:check
 npm run lint:js
@@ -92,158 +77,24 @@ npm run test:js
 npm run build
 ```
 
-The toolbar drawer moves focus to its close control, restores the activating chip on close, closes with `Escape`, and
-supports `ArrowUp`, `ArrowDown`, `Home`, and `End` on its resize separator.
+## Package information
+
+[![PHP](https://img.shields.io/badge/%3E%3D8.3-777BB4.svg?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/releases/8.3/en.php)
+[![PHPStan Level Max](https://img.shields.io/badge/PHPStan-Level%20Max-4F5D95.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/php-forge/debug-core/actions/workflows/static.yml)
+[![Latest Stable Version](https://img.shields.io/packagist/v/php-forge/debug-core.svg?style=for-the-badge&logo=packagist&logoColor=white&label=Stable)](https://packagist.org/packages/php-forge/debug-core)
+[![Total Downloads](https://img.shields.io/packagist/dt/php-forge/debug-core.svg?style=for-the-badge&logo=composer&logoColor=white&label=Downloads)](https://packagist.org/packages/php-forge/debug-core)
+
+## Code quality
+
+[![Codecov](https://img.shields.io/codecov/c/github/php-forge/debug-core.svg?style=for-the-badge&logo=codecov&logoColor=white&label=Coverage)](https://codecov.io/gh/php-forge/debug-core)
+[![Quality](https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/quality.yml?style=for-the-badge&label=Quality&logo=github)](https://github.com/php-forge/debug-core/actions/workflows/quality.yml)
+[![Assets](https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/assets.yml?style=for-the-badge&label=Assets&logo=github)](https://github.com/php-forge/debug-core/actions/workflows/assets.yml)
+[![StyleCI](https://img.shields.io/badge/StyleCI-Passed-44CC11.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.styleci.io/repos/php-forge/debug-core?branch=main)
+
+## Social networks
+
+[![Follow on X](https://img.shields.io/badge/-Follow%20on%20X-1DA1F2.svg?style=for-the-badge&logo=x&logoColor=white&labelColor=000000)](https://x.com/Terabytesoftw)
 
 ## License
 
-The package is released under the BSD-3-Clause license. See `LICENSE`.
-
-## Fluent toolbar models
-
-`ToolbarItem::create($value)` and `ToolbarPanel::create($id, $title)` start immutable configuration chains and are the
-only construction path: the constructors are private, and the public readonly properties remain readable.
-
-```php
-use PHPForge\Debug\Toolbar\{ToolbarItem, ToolbarPanel};
-
-$item = ToolbarItem::create('200')
-    ->withId('status')
-    ->withLabel('Status')
-    ->withStatus('success')
-    ->withTitle('Status code: 200 OK');
-$panel = ToolbarPanel::create('request', 'Request')
-    ->withIcon('request')
-    ->withUrl('/debug/view?tag=request-1&panel=request')
-    ->withItems([$item]);
-```
-
-Items offer `withId()`, `withLabel()`, `withIcon()`, `withStatus()`, `withTitle()`, and `withUrl()`.
-Panels offer `withIcon()`, `withUrl()`, and `withItems()`. Every method returns a new instance and preserves all other
-fields. Nullable options accept `null` to remove the field from JSON; `''` and `'0'` remain present. `withItems()` replaces
-rather than appends metrics, preserves their order, and accepts `[]` to clear them. The default item status remains
-`default`; the default panel metric list remains empty. Serialization and escaping responsibilities are unchanged.
-
-## Structural payload comparison
-
-`PHPForge\Debug\Comparison\PayloadDifference::between($baseline, $target)` returns an immutable result with four integer
-properties: `added`, `removed`, `changed`, and `unchanged`. Arguments are captured payload arrays, or `null` for absence.
-An empty array is a captured leaf, not absence. Nested `null`, `false`, integer zero, float zero, and string zero remain
-distinct. Leaf paths escape `~` and `/`; list positions matter, while map insertion order does not affect the counts.
-
-The comparison fingerprints typed leaves temporarily and retains only counts in its result. It does not alter or redact
-the source payloads. `PanelComparison` combines these counts with capture states and ordered panel identities.
-
-## Panel comparison
-
-`PHPForge\Debug\Comparison\PanelComparison::between($baseline, $target, $panelLabels)` accepts two `DebugSnapshot`
-instances and an optional map of labels in display order. It returns an ordered list of immutable results exposing
-`id`, `label`, `baselineState`, `targetState`, `added`, `removed`, `changed`, and `unchanged`.
-
-Only IDs observed in either snapshot's payloads or failures are included, once each. Observed IDs with configured labels
-come first in configuration order; remaining IDs use PHP's existing regular ascending sort and their ID as the label.
-Unknown configured IDs do not create rows, and an explicitly empty label remains empty.
-
-Failure envelopes take precedence even when a payload exists for the same ID. States remain `Failed`, `Captured`, and
-`Not captured`; captured empty arrays are not absence. Structural counts come from `PayloadDifference` unchanged.
-If states differ but `added + removed + changed` is zero, `changed` becomes one; `unchanged` is preserved. A transition
-with structural differences does not add another change. The result retains no diagnostic values and applies no redaction.
-
-Yii2 and Yii3 map these results into their existing public `HistoryPanelComparison` models. Yii3 retains
-`HistoryPanelStates` and `HistoryPanelDifferenceCounts`; neither adapter exposes Core results in place of its public models.
-
-## Request-summary metric comparison
-
-`PHPForge\Debug\Comparison\SummaryMetricComparison::between($baseline, $target)` accepts two `RequestSummary`
-instances and returns an ordered list of immutable comparisons. Each result exposes `label`, `baseline`, `target`,
-`delta`, `trend`, and nullable `panelId`. Adapters map these fields into their own public models; no framework dependency,
-capture policy, payload comparison, or snapshot mutation is involved.
-
-The canonical order is Status, Method, AJAX, Duration, Peak memory, SQL queries, Mail messages, and Excessive DB callers.
-Duration uses milliseconds and memory uses bytes divided by 1,048,576 with the existing `MB` label. Both use two decimal
-places; counters use none. Decimal points, comma grouping, signs, one-decimal percentages, and related panel IDs remain
-identical to the original adapters.
-
-Missing profiling values remain `Not captured`; one missing side produces `Not comparable` with a neutral trend.
-Two missing values produce `No change`. Status zero means `Not captured`, AJAX `false` means `No`, and an empty method
-remains an empty string. Captured numeric zero is never treated as missing, and zero baselines omit percentages.
-Deltas subtract the scaled values before formatting, while percentages use the original values. Comparisons use exact
-floating-point results, not rounded display values or an epsilon: a displayed zero delta may still have a direction.
-
-### Coordinated publication
-
-Publish the Core revision containing `SummaryMetricComparison` and `PanelComparison` before either adapter revision
-that consumes it.
-Both adapters currently require `php-forge/debug-core` at `^0.1@dev`; this constraint alone does not ensure that an
-installed or locked development revision includes these classes. Update and verify consuming application locks together.
-Local adapter installations linked to this workspace verify integration but do not validate older published artifacts.
-No adapter constructor, property, getter, return type, template, asset, or persisted representation changes.
-
-### Event table and diagnostics
-
-Events uses one filterable, sortable table with native diagnostic controls in the event column. Original observation
-numbers, offsets from the first captured event, and previous-observation gaps remain stable across filtering, sorting,
-and pagination. Event/source shortcuts show whole-capture counts and retain the adapter's substring filter semantics.
-
-`EventInspectorRenderer::renderControls()` renders group shortcuts and capture guidance. Adapters reuse one
-`EventSequence` for the complete capture and call `renderTimeCell()` and `renderEventCell()` for each visible row.
-Append `renderDetailRow()` immediately after each event row, passing the table's column count. Adapters that build
-their own rows, for example through a grid widget's after-row callback, call `renderDetailCell()` to obtain the
-disclosure content without the row wrapper. The native disclosure reveals context and source trace across the table
-width, side by side on larger screens and stacked on narrow screens. Diagnostics do not repeat the timestamp, event
-name, class, source, or static flag already available in the table. There is no standalone execution-flow renderer or
-secondary event table.
-
-`PanelMessage` holds only the labels shared by every panel (`CONTEXT`, `GROUP_FILTERS`, `SOURCE_TRACE`). Each panel
-owns its texts in an enum next to its code (`Panel\Event\EventMessage`, `Panel\Log\LogMessage`,
-`Panel\Profile\ProfileMessage`, `Panel\Inertia\InertiaMessage`) with unprefixed case names. Pass cases directly to
-`content()` without `->value`; `ui-awesome/html-mixin ^0.8.1` normalizes the enum value before HTML encoding. Captured
-values, filter keys, and dynamic text remain outside the catalogs. The rendered wording and snapshot format are
-unchanged.
-
-```php
-use PHPForge\Debug\Panel\Event\EventMessage;
-use UIAwesome\Html\Flow\P;
-
-echo P::tag()->content(EventMessage::CAPTURE_GUIDANCE)->render();
-```
-
-`EventRow::withInspection()` creates an enriched copy without changing the captured row. `EventInspection` supplies
-optional bounded scalar context, argument-free source locations, capture states, and request-local lifecycle correlation.
-Rows without diagnostics omit `inspection` from JSON; enriched rows include it. Construct `EventInspection` without
-arguments, configure optional groups through immutable methods, and read values through getters.
-
-```php
-use PHPForge\Debug\Panel\Event\EventInspection;
-
-$inspection = (new EventInspection())
-    ->withContext(['View file' => '/views/site.php'], 'captured')
-    ->withTrace(['/app/action.php:42'], 'captured')
-    ->withLifecycle(1, 'enter', 0, 10.25);
-```
-
-Omit groups that are not captured. Context and trace methods require an explicit capture state; lifecycle metadata
-must describe an actual observation rather than an inferred pair. Capture bounds and hydration validation are unchanged.
-
-Lifecycle intervals are shown only for one explicitly correlated entry/leave pair with a consistent source, depth,
-and monotonic clock. They include nested work and dispatch overhead; they are not listener or exclusive middleware
-durations. Missing or ambiguous observations remain unavailable, never zero or successful. Context and trace capture
-are adapter opt-ins; listener execution and final propagation results are not captured. See each adapter's Events
-configuration for its capture coverage and selected fields.
-
-Run `npm run test:events` against the configured local applications for keyboard, filter, responsive layout, and
-light/dark accessibility checks on fresh captures. These checks do not require seeded history fixtures.
-
-### Shared Database adapter contract
-
-Database uses `DbSnapshot::capture()` to normalize exact SQL duplicate counts without changing capture order or the
-existing persisted row shape. `QueryRow::create()` accepts SQL, duration in milliseconds, and epoch milliseconds;
-`withTrace()`, `withSequence()`, `withRows()`, and `withDuplicate()` return immutable copies. Empty traces have no
-synthetic caller hash, so `DbSummary` leaves those rows out of its caller counts.
-
-Adapters reuse `DbSummary`, `DbSummaryRenderer`, `DbQueryRenderer`, `NPlusOneDetector`, and `DbExplainRenderer`.
-`Helper\Trace` is the shared, escaped source-link renderer: `create()` emits IDE deep links by default, `withTemplate()`
-swaps in a placeholder string, `false` for plain text, or a closure, `withPathMappings()` rewrites containerized or
-remote paths to local ones, and `render()` returns one escaped source line. `View\Grid\GridCount` renders the grid
-row-count sentence. Yii3 places Database immediately after Profiling and keeps framework instrumentation, database
-connections, routes, and EXPLAIN execution outside Core.
+[![License](https://img.shields.io/badge/License-BSD--3--Clause-brightgreen.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=555555)](LICENSE)

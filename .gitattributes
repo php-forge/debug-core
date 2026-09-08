@@ -32,8 +32,8 @@
 /.prettierrc.json               export-ignore
 /.styleci.yml                   export-ignore
 /.stylelintignore               export-ignore
-/codeception.yml                export-ignore
 /composer-require-checker.json  export-ignore
+/docs                           export-ignore
 /ecs.php                        export-ignore
 /infection.json*                export-ignore
 /package-lock.json              export-ignore
@@ -41,7 +41,7 @@
 /phpstan*.neon*                 export-ignore
 /phpunit.xml.dist               export-ignore
 /rector.php                     export-ignore
-/resources/tests               export-ignore
+/resources/tests                export-ignore
 /runtime                        export-ignore
 /scaffold-lock.json             export-ignore
 /stryker.config.mjs             export-ignore
