@@ -53,7 +53,8 @@ Current adapters:
 
 Request models keep only identity data in their constructors and `::create()` factories. Use the factories to start
 fluent chains without wrapping `new` in parentheses. Optional metadata is configured with `with...` methods
-that return independent copies; retain the returned object or chain the calls. Read values through `get...` methods.
+that return independent copies; retain the returned object or chain the calls. Read values through `get...` methods
+and use `RouteInventoryView::isLive()` for inventory provenance.
 
 ```php
 use PHPForge\Debug\Panel\Request\RequestHero;
@@ -66,7 +67,8 @@ $current = CurrentRouteView::create('orders')
     ->withDefinition($definition)
     ->withParameters(['id' => 42]);
 $inventory = RouteInventoryView::create([$definition])
-    ->withSource('Captured configuration');
+    ->withSource('Captured configuration')
+    ->withLive(false);
 $hero = RequestHero::create('GET', '/orders/42')
     ->withStatus(200, '2xx')
     ->withTiming('12:00:00', '3.5 ms');

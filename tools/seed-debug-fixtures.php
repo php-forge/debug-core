@@ -716,21 +716,15 @@ function snapshot(
 ): DebugSnapshot {
     $dbEntries = $panels['db']['entries'] ?? null;
     $mailEntries = $panels['mail']['entries'] ?? null;
-    $summary = new RequestSummary(
-        tag: $tag,
-        url: $url,
-        ajax: false,
-        method: 'GET',
-        ip: '127.0.0.1',
-        time: $timestamp,
-        statusCode: $statusCode,
-        sqlCount: is_array($dbEntries) ? count($dbEntries) : 0,
-        excessiveCallersCount: 0,
-        mailCount: is_array($mailEntries) ? count($mailEntries) : 0,
-        mailFiles: [],
-        processingTime: $statusCode === 204 ? 0.001 : 0.485,
-        peakMemory: $statusCode === 204 ? 1_048_576 : 16_777_216,
-    );
+    $summary = RequestSummary::create($tag)
+        ->withRequest(url: $url, method: 'GET', ip: '127.0.0.1', time: $timestamp)
+        ->withResponse($statusCode)
+        ->withDatabase(is_array($dbEntries) ? count($dbEntries) : 0)
+        ->withMail(is_array($mailEntries) ? count($mailEntries) : 0, [])
+        ->withProfiling(
+            $statusCode === 204 ? 0.001 : 0.485,
+            $statusCode === 204 ? 1_048_576 : 16_777_216,
+        );
 
     return new DebugSnapshot($summary, $panels, []);
 }

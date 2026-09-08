@@ -201,8 +201,12 @@ final class RequestRoutesRenderer
     {
         $source = rtrim($inventory->getSource(), " .\t\n\r\0\x0B");
 
-        $provenance = $source === '' ? 'Configuration source unavailable.' : "Source: {$source}.";
-        $message = "{$provenance} Live configuration may differ from this capture.";
+        $message = $source === '' ? 'Configuration source unavailable.' : "Source: {$source}.";
+
+        if ($inventory->isLive()) {
+            $message .= ' Live configuration may differ from this capture.';
+        }
+
         $badges = [];
 
         foreach ($inventory->getBadges() as $badge) {

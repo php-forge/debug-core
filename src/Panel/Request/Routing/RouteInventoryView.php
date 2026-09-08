@@ -20,6 +20,10 @@ final class RouteInventoryView
      */
     private string|null $error = null;
     /**
+     * Whether the inventory reflects live configuration (`true`) or a stored capture (`false`).
+     */
+    private bool $live = true;
+    /**
      * Source label describing where the inventory data came from.
      */
     private string $source = 'Current application configuration';
@@ -65,6 +69,11 @@ final class RouteInventoryView
         return $this->source;
     }
 
+    public function isLive(): bool
+    {
+        return $this->live;
+    }
+
     /**
      * @param list<RouteBadge> $badges
      */
@@ -80,6 +89,14 @@ final class RouteInventoryView
     {
         $clone = clone $this;
         $clone->error = $error;
+
+        return $clone;
+    }
+
+    public function withLive(bool $live): self
+    {
+        $clone = clone $this;
+        $clone->live = $live;
 
         return $clone;
     }

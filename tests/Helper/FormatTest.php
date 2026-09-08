@@ -147,12 +147,17 @@ final class FormatTest extends TestCase
         );
     }
 
-    public function testTimeOfDayNormalizesNegativeFractions(): void
+    public function testTimeOfDayUsesFloorDivisionForNegativeTimestamps(): void
     {
         self::assertSame(
-            '23:59:59.500',
+            '23:59:58.500',
             Format::timeOfDay(-1_500),
-            'Pre-epoch input must keep a three-digit unsigned fraction.',
+            'Negative input must round the second down and keep a positive fraction.',
+        );
+        self::assertSame(
+            '23:59:59.000',
+            Format::timeOfDay(-1_000),
+            'An exact negative second must not borrow from the previous one.',
         );
     }
 

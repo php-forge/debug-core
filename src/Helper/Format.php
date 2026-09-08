@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
-use function abs;
 use function count;
 use function date;
 use function gettype;
@@ -117,7 +116,8 @@ final class Format
      * Returns the wall-clock readout of the given epoch milliseconds, suffixed with the millisecond fraction
      * (`H:i:s.mmm`).
      *
-     * The fraction is rendered as an absolute value, so the `.mmm` segment always spans three digits.
+     * Negative timestamps use floor division, so the fraction stays in the `000`-`999` range and the seconds part
+     * names the wall-clock second that contains the instant.
      *
      * @param int $epochMilliseconds Unix timestamp in milliseconds.
      * @param string $format `date()` format for the second-precision part, without the fraction separator.
@@ -127,7 +127,12 @@ final class Format
     public static function timeOfDay(int $epochMilliseconds, string $format = 'H:i:s'): string
     {
         $seconds = intdiv($epochMilliseconds, self::MILLISECONDS_PER_SECOND);
-        $fraction = abs($epochMilliseconds % self::MILLISECONDS_PER_SECOND);
+        $fraction = $epochMilliseconds % self::MILLISECONDS_PER_SECOND;
+
+        if ($fraction < 0) {
+            --$seconds;
+            $fraction += self::MILLISECONDS_PER_SECOND;
+        }
 
         return date("{$format}.", $seconds) . sprintf('%03d', $fraction);
     }

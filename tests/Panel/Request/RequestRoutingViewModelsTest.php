@@ -80,6 +80,10 @@ final class RequestRoutingViewModelsTest extends TestCase
             $trace->matched,
             'A trace row must remain unmatched until an adapter reports a match.',
         );
+        self::assertTrue(
+            $inventory->isLive(),
+            'Route inventories must describe live configuration by default.',
+        );
         self::assertEquals(
             RouteInventoryView::create([]),
             $inventory->withBadges([])->withSource('Current application configuration')->withError(null),
@@ -226,11 +230,13 @@ final class RequestRoutingViewModelsTest extends TestCase
         $inventory = RouteInventoryView::create($routes)
             ->withBadges($badges)
             ->withSource('Captured configuration')
+            ->withLive(false)
             ->withError('Inventory failure.');
 
         $reset = $inventory
             ->withBadges([])
             ->withSource('Current application configuration')
+            ->withLive(true)
             ->withError(null);
 
         $routes[] = RouteDefinition::create('other', '/other');
@@ -259,6 +265,10 @@ final class RequestRoutingViewModelsTest extends TestCase
             $inventory->getSource(),
             'Later options must preserve provenance.',
         );
+        self::assertFalse(
+            $inventory->isLive(),
+            'A non-live inventory must preserve its explicit false value.',
+        );
         self::assertSame(
             'Inventory failure.',
             $inventory->getError(),
@@ -280,6 +290,7 @@ final class RequestRoutingViewModelsTest extends TestCase
             [
                 $inventory->withBadges([new RouteBadge('Pretty URLs enabled')]),
                 $inventory->withSource('Captured configuration'),
+                $inventory->withLive(false),
                 $inventory->withError('Inventory failure.'),
             ] as $clone
         ) {
@@ -312,7 +323,9 @@ final class RequestRoutingViewModelsTest extends TestCase
             ->withDefinition($definition)
             ->withMessage('Matched home.')
             ->withTrace([$trace]);
-        $inventory = RouteInventoryView::create(routes: [$definition])->withBadges([$badge]);
+        $inventory = RouteInventoryView::create(routes: [$definition])
+            ->withBadges([$badge])
+            ->withLive(false);
 
         $view = new RequestRoutingView($current, $inventory);
 

@@ -302,7 +302,16 @@ final class RequestRendererTest extends TestCase
         );
         $emptyInventory = RequestRenderer::render(
             self::requestView(),
-            new RequestRoutingView(CurrentRouteView::create(), RouteInventoryView::create(routes: [])),
+            new RequestRoutingView(
+                CurrentRouteView::create(),
+                RouteInventoryView::create(routes: [])->withLive(false),
+            ),
+        );
+
+        self::assertStringNotContainsString(
+            'Live configuration may differ from this capture.',
+            $emptyInventory,
+            'Captured inventories must not carry the live-drift warning.',
         );
 
         self::assertStringNotContainsString(
@@ -540,7 +549,6 @@ final class RequestRendererTest extends TestCase
                     $section,
                     'The section heading must identify its data.',
                 );
-
                 self::assertStringContainsString(
                     'click to expand',
                     $section,
@@ -596,7 +604,12 @@ final class RequestRendererTest extends TestCase
         $routing = new RequestRoutingView(
             current: CurrentRouteView::create(route: 'home')
                 ->withMessage('No matching URL rule; default parsing was used.')
-                ->withTrace([new RouteTraceRow('fallback', matched: true)])
+                ->withTrace(
+                    [
+                        new RouteTraceRow('fallback', matched: true),
+                        new RouteTraceRow('site/<action>', parent: 'group', matched: false),
+                    ],
+                )
                 ->withError('Captured route metadata could not be read.'),
             inventory: RouteInventoryView::create(
                 routes: [
@@ -610,6 +623,7 @@ final class RequestRendererTest extends TestCase
                 ],
             )
             ->withSource('Current application configuration.')
+            ->withLive(true)
             ->withError('Current route configuration could not be read.'),
         );
 
@@ -636,7 +650,7 @@ final class RequestRendererTest extends TestCase
             'Resolver messages and traces must stay available in a collapsed disclosure.',
         );
         self::assertStringContainsString(
-            'Routing resolution (1 rules tested)',
+            'Routing resolution (2 rules tested)',
             $html,
             'Resolution disclosure must report the trace size.',
         );
@@ -666,9 +680,33 @@ final class RequestRendererTest extends TestCase
             'Trace columns must stay complete and ordered.',
         );
         self::assertStringContainsString(
-            '<span class="yii-debug-badge yii-debug-badge-success">Matched</span>',
+            <<<HTML
+            <tbody>
+            <tr class="yii-debug-row-success">
+            <td>
+            1
+            </td><td>
+            fallback
+            </td><td>
+            —
+            </td><td>
+            <span class="yii-debug-badge yii-debug-badge-success">Matched</span>
+            </td>
+            </tr><tr>
+            <td>
+            2
+            </td><td>
+            site/&lt;action&gt;
+            </td><td>
+            group
+            </td><td>
+            <span class="yii-debug-badge yii-debug-badge-muted">Not matched</span>
+            </td>
+            </tr>
+            </tbody>
+            HTML,
             $html,
-            'A matched trace row must carry the success badge.',
+            'Trace rows must number from 1, fall back to an em dash without a parent, and badge the match result.',
         );
     }
 

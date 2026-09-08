@@ -9,8 +9,9 @@ use PHPForge\Debug\Storage\DebugSnapshot;
 /**
  * Pairs request-summary metrics with per-panel structural differences for two captured snapshots.
  *
- * Results retain only labels, states, and counts, so an overview cannot surface values that the individual panels
- * keep behind their own presentation and redaction rules.
+ * The comparison keeps references to both source snapshots so adapter facades can expose them, while the metric and
+ * panel results retain only labels, states, and counts. An overview therefore cannot surface values that the individual
+ * panels keep behind their own presentation and redaction rules unless it reads the snapshots directly.
  */
 final readonly class SnapshotComparison
 {
