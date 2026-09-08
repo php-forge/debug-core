@@ -15,11 +15,11 @@
     <a href="https://dashboard.stryker-mutator.io/reports/github.com/php-forge/debug-core/main" target="_blank">
         <img src="https://img.shields.io/endpoint?style=for-the-badge&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fphp-forge%2Fdebug-core%2Fmain" alt="Mutation Testing">
     </a>
-    <a href="https://github.com/php-forge/debug-core/actions/workflows/ecs.yml" target="_blank">
-        <img src="https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/ecs.yml?style=for-the-badge&label=ECS&logo=github" alt="Easy Coding Standard">
+    <a href="https://github.com/php-forge/debug-core/actions/workflows/static.yml" target="_blank">
+        <img src="https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/static.yml?style=for-the-badge&label=PHPStan&logo=github" alt="PHPStan">
     </a>
-    <a href="https://github.com/php-forge/debug-core/actions/workflows/dependency-check.yml" target="_blank">
-        <img src="https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/dependency-check.yml?style=for-the-badge&label=Dependency%20Check&logo=github" alt="Dependency Check">
+    <a href="https://github.com/php-forge/debug-core/actions/workflows/security.yml" target="_blank">
+        <img src="https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/security.yml?style=for-the-badge&label=Security&logo=github" alt="Security">
     </a>
 </p>
 
@@ -80,15 +80,14 @@ npm run build
 ## Package information
 
 [![PHP](https://img.shields.io/badge/%3E%3D8.3-777BB4.svg?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/releases/8.3/en.php)
+[![PHPStan Level Max](https://img.shields.io/badge/PHPStan-Level%20Max-4F5D95.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/php-forge/debug-core/actions/workflows/static.yml)
 [![Latest Stable Version](https://img.shields.io/packagist/v/php-forge/debug-core.svg?style=for-the-badge&logo=packagist&logoColor=white&label=Stable)](https://packagist.org/packages/php-forge/debug-core)
 [![Total Downloads](https://img.shields.io/packagist/dt/php-forge/debug-core.svg?style=for-the-badge&logo=composer&logoColor=white&label=Downloads)](https://packagist.org/packages/php-forge/debug-core)
 
 ## Code quality
 
 [![Codecov](https://img.shields.io/codecov/c/github/php-forge/debug-core.svg?style=for-the-badge&logo=codecov&logoColor=white&label=Coverage)](https://codecov.io/gh/php-forge/debug-core)
-[![PHPStan Level Max](https://img.shields.io/badge/PHPStan-Level%20Max-4F5D95.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/php-forge/debug-core/actions/workflows/static.yml)
 [![Quality](https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/quality.yml?style=for-the-badge&label=Quality&logo=github)](https://github.com/php-forge/debug-core/actions/workflows/quality.yml)
-[![Security](https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/security.yml?style=for-the-badge&label=Security&logo=github)](https://github.com/php-forge/debug-core/actions/workflows/security.yml)
 [![Assets](https://img.shields.io/github/actions/workflow/status/php-forge/debug-core/assets.yml?style=for-the-badge&label=Assets&logo=github)](https://github.com/php-forge/debug-core/actions/workflows/assets.yml)
 [![StyleCI](https://img.shields.io/badge/StyleCI-Passed-44CC11.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.styleci.io/repos/php-forge/debug-core?branch=main)
 
