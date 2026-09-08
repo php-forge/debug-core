@@ -22,8 +22,10 @@ final class ActiveFilterBanner
      *
      * @param array<string, string> $activeFilters Attribute-to-value map of the currently applied filters.
      * @param Closure(list<string>): string $removeUrl Builds the link that drops the given attributes from the URL.
+     * @param list<string>|null $clearAttributes Attribute names the clear-all link removes, or `null` to remove every
+     * active filter.
      */
-    public static function render(array $activeFilters, Closure $removeUrl): string
+    public static function render(array $activeFilters, Closure $removeUrl, array|null $clearAttributes = null): string
     {
         if ($activeFilters === []) {
             return '';
@@ -74,7 +76,7 @@ final class ActiveFilterBanner
             ->class('yii-debug-active-filters-clear')
             ->addAriaAttribute('label', 'Clear all active filters')
             ->addAttribute('title', 'Clear all filters and show every row')
-            ->href($removeUrl(array_keys($activeFilters)))
+            ->href($removeUrl($clearAttributes ?? array_keys($activeFilters)))
             ->content('Clear all')
             ->render();
 

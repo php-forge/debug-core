@@ -12,13 +12,26 @@ use function implode;
 use function substr_count;
 
 /**
- * Unit tests for {@see ActiveFilterBanner} covering the removable filter pills, the "Clear all" action, and the
- * empty-state short-circuit.
+ * Unit tests for {@see ActiveFilterBanner} covering the removable filter pills, the "Clear all" action and its
+ * attribute override, and the empty-state short-circuit.
  */
 #[Group('view')]
 #[Group('grid')]
 final class ActiveFilterBannerTest extends TestCase
 {
+    public function testRenderAcceptsAnEmptyClearAllAttributeList(): void
+    {
+        self::assertStringContainsString(
+            '<a class="yii-debug-active-filters-clear" href="/debug?without=" ',
+            ActiveFilterBanner::render(
+                ['url' => 'admin'],
+                static fn(array $without): string => '/debug?without=' . implode(',', $without),
+                [],
+            ),
+            'An empty list must not fall back to the active filters.',
+        );
+    }
+
     public function testRenderBuildsRemovalUrlsThroughTheCallback(): void
     {
         $html = ActiveFilterBanner::render(
@@ -36,6 +49,26 @@ final class ActiveFilterBannerTest extends TestCase
             'Pill link must drop only its own attribute.',
         );
 
+    }
+
+    public function testRenderClearsEveryActiveFilterByDefault(): void
+    {
+        $calls = [];
+
+        ActiveFilterBanner::render(
+            ['statusCode' => '404', 'url' => 'admin'],
+            static function (array $without) use (&$calls): string {
+                $calls[] = $without;
+
+                return '/debug';
+            },
+        );
+
+        self::assertSame(
+            [['statusCode'], ['url'], ['statusCode', 'url']],
+            $calls,
+            'Clear-all must receive every active key, in order.',
+        );
     }
 
     public function testRenderEmitsOnePillPerActiveFilter(): void
@@ -58,6 +91,32 @@ final class ActiveFilterBannerTest extends TestCase
             HTML,
             $html,
             'Plural count label must surface.',
+        );
+    }
+
+    public function testRenderOverridesTheClearAllAttributes(): void
+    {
+        $calls = [];
+
+        $html = ActiveFilterBanner::render(
+            ['url' => 'admin'],
+            static function (array $without) use (&$calls): string {
+                $calls[] = $without;
+
+                return '/debug?without=' . implode(',', $without);
+            },
+            ['url', 'rejected'],
+        );
+
+        self::assertSame(
+            [['url'], ['url', 'rejected']],
+            $calls,
+            'Pills stay single-attribute while clear-all takes the override.',
+        );
+        self::assertStringContainsString(
+            '<a class="yii-debug-active-filters-clear" href="/debug?without=url,rejected" ',
+            $html,
+            'The override must reach the clear-all URL verbatim.',
         );
     }
 

@@ -7,16 +7,15 @@ namespace PHPForge\Debug\Panel\Db;
 use Closure;
 use PHPForge\Debug\Helper\{Format, Vocabulary};
 use UIAwesome\Html\Flow\Div;
+use UIAwesome\Html\Interactive\{Details, Summary};
 use UIAwesome\Html\List\{Li, Ul};
 use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\{Span, Strong};
 
 use function array_map;
 use function implode;
-use function in_array;
 use function number_format;
 use function sprintf;
-use function strtoupper;
 use function trim;
 
 /**
@@ -97,14 +96,14 @@ final class DbQueryRenderer
     }
 
     /**
-     * Renders the SQL statement column with its optional backtrace list and EXPLAIN toggle.
+     * Renders the SQL statement column with its optional collapsed backtrace and EXPLAIN toggle.
      *
-     * The caller supplies an URL builder (typically `static fn(int $seq) => Url::to(['db-explain', 'seq' => $seq, ...])`)
-     * so the renderer stays free of routing concerns and easy to test in isolation.
+     * The caller supplies a URL builder so the renderer stays free of routing concerns and easy to test in isolation
+     * (typically `static fn(int $seq) => Url::to(['db-explain', 'seq' => $seq, ...])`).
      *
      * @param QueryRow $row Typed query record.
      * @param Closure(array<string, mixed>): string $traceLine Renders one backtrace frame as a link line.
-     * @param bool $hasExplain `true` when the active driver supports EXPLAIN for the row's statement type.
+     * @param bool $hasExplain `true` when the active driver supports EXPLAIN; the row must also be EXPLAIN-eligible.
      * @param callable(int): string $explainUrlBuilder Builds the EXPLAIN URL for the given query sequence index.
      */
     public static function renderQueryCell(
@@ -145,12 +144,23 @@ final class DbQueryRenderer
                 $row->trace,
             );
 
-            $children[] = Ul::tag()
-                ->class('yii-debug-trace')
-                ->html(...$items);
+            $children[] = Details::tag()
+                ->class('yii-debug-db-trace')
+                ->html(
+                    Summary::tag()
+                        ->class('yii-debug-db-trace-toggle')
+                        ->html(
+                            Span::tag()
+                                ->addAriaAttribute('hidden', 'true')
+                                ->class('yii-debug-db-trace-chevron')
+                                ->content('›'),
+                            Span::tag()->content(DbMessage::TRACE),
+                        ),
+                    Ul::tag()->class('yii-debug-trace')->html(...$items),
+                );
         }
 
-        if ($hasExplain && self::canBeExplained($row->type)) {
+        if ($hasExplain && $row->isExplainable()) {
             $explainTargetId = "yii-debug-db-explain-{$row->seq}";
 
             $children[] = Div::tag()
@@ -212,23 +222,5 @@ final class DbQueryRenderer
             ->class("yii-debug-db-type yii-debug-verb-{$variant}")
             ->content($row->type)
             ->render();
-    }
-
-    /**
-     * Returns whether the given query type produces a useful EXPLAIN plan.
-     *
-     * Only DML statements that touch tables (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `REPLACE`, `WITH`) are
-     * accepted; metadata, session-control, and transaction-control statements either error or return noise, so they
-     * are filtered out.
-     *
-     * @param string $type SQL command verb (case-insensitive).
-     */
-    private static function canBeExplained(string $type): bool
-    {
-        return in_array(
-            strtoupper($type),
-            ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'],
-            true,
-        );
     }
 }

@@ -108,8 +108,44 @@ final class DbQueryRendererTest extends TestCase
             $summary,
             'Default summary output must remain backward compatible.',
         );
-        self::assertStringContainsString('id="yii-debug-db-n1-7"', $query);
-        self::assertStringContainsString('Potential N+1 · 4 similar', $query);
+        self::assertStringContainsString(
+            'id="yii-debug-db-n1-7"',
+            $query,
+            'Query cell must include the correct ID for filtering.',
+        );
+        self::assertStringContainsString(
+            'Potential N+1 · 4 similar',
+            $query,
+            'Query cell must include the correct summary for N+1 findings.',
+        );
+    }
+
+    public function testRenderQueryCellEmitsClosedNativeTraceDisclosureWhenTracePresent(): void
+    {
+        $html = DbQueryRenderer::renderQueryCell(
+            self::makeRow(trace: [['file' => '/app/User.php', 'line' => 42]]),
+            self::traceLine(),
+            false,
+            self::makeUrlBuilder(),
+        );
+
+        self::assertSame(
+            <<<HTML
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
+            </div><details class="yii-debug-db-trace">
+            <summary class="yii-debug-db-trace-toggle">
+            <span class="yii-debug-db-trace-chevron" aria-hidden="true">›</span><span>Trace</span>
+            </summary><ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            </details>
+            HTML,
+            $html,
+            'Trace must use a closed native disclosure with preserved frames and a keyboard-accessible summary.',
+        );
     }
 
     public function testRenderQueryCellEmitsExplainToggleForExplainableVerbsRegardlessOfCase(): void
@@ -153,30 +189,6 @@ final class DbQueryRendererTest extends TestCase
         );
     }
 
-    public function testRenderQueryCellEmitsTraceListWhenTracePresent(): void
-    {
-        $html = DbQueryRenderer::renderQueryCell(
-            self::makeRow(trace: [['file' => '/app/User.php', 'line' => 42]]),
-            self::traceLine(),
-            false,
-            self::makeUrlBuilder(),
-        );
-
-        self::assertSame(
-            <<<HTML
-            <div class="yii-debug-db-sql">
-            <span class="yii-debug-sql-kw">SELECT</span> <span class="yii-debug-sql-num">1</span>
-            </div><ul class="yii-debug-trace">
-            <li>
-            /app/User.php:
-            </li>
-            </ul>
-            HTML,
-            $html,
-            'Trace list must carry the dedicated class.',
-        );
-    }
-
     public function testRenderQueryCellEscapesQueryContent(): void
     {
         $html = DbQueryRenderer::renderQueryCell(
@@ -196,6 +208,20 @@ final class DbQueryRendererTest extends TestCase
             'Query content must be HTML-escaped.',
         );
 
+    }
+
+    public function testRenderQueryCellOmitsExplainToggleForMultiStatementQueries(): void
+    {
+        self::assertStringNotContainsString(
+            'yii-debug-db-explain-toggle',
+            DbQueryRenderer::renderQueryCell(
+                self::makeRow(type: 'SELECT', query: 'SELECT 1; SELECT 2'),
+                self::traceLine(),
+                true,
+                self::makeUrlBuilder(),
+            ),
+            'A statement separator must suppress the toggle.',
+        );
     }
 
     public function testRenderQueryCellOmitsExplainToggleForNonExplainableVerbs(): void
@@ -424,6 +450,7 @@ final class DbQueryRendererTest extends TestCase
     private static function traceLine(): \Closure
     {
         return static fn(array $frame): string => Coerce::string($frame['file']
-            ?? null) . ':' . Coerce::string($frame['line'] ?? null);
+            ?? null) . ':' . Coerce::string($frame['line']
+            ?? null);
     }
 }
