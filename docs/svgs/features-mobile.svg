@@ -1,0 +1,57 @@
+<!-- Mobile version - Single column -->
+<svg viewBox="0 0 620 620" width="100%" height="580" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .box-bg { fill: #e6f4ea; stroke: #a7cdb3; stroke-width: 1; }
+        .title { font-weight: 700; font-size: 14px; fill: #1a202c; }
+        .content { font-size: 11px; fill: #4a5568; }
+    </style>
+
+    <g>
+        <rect class="box-bg" x="16" y="16" width="588" height="84" rx="6"/>
+        <rect x="16" y="16" width="4" height="84" fill="#1f883d"/>
+        <text class="title" x="32" y="42">Complete Frontend</text>
+        <text class="content" x="32" y="66">Toolbar Web Component &#8226; Vite bundles &#8226; Fonts &#8226; Icons</text>
+        <text class="content" x="32" y="84">Built assets committed for package consumers</text>
+    </g>
+
+    <g>
+        <rect class="box-bg" x="16" y="116" width="588" height="84" rx="6"/>
+        <rect x="16" y="116" width="4" height="84" fill="#1f883d"/>
+        <text class="title" x="32" y="142">Framework Agnostic</text>
+        <text class="content" x="32" y="166">Plain PHP &#8226; Yii2 &#8226; Yii3 &#8226; Other adapters</text>
+        <text class="content" x="32" y="184">No container, view, routing, or request lifecycle</text>
+    </g>
+
+    <g>
+        <rect class="box-bg" x="16" y="216" width="588" height="84" rx="6"/>
+        <rect x="16" y="216" width="4" height="84" fill="#1f883d"/>
+        <text class="title" x="32" y="242">History Comparison</text>
+        <text class="content" x="32" y="266">Payload diff &#8226; Panel states &#8226; Summary metrics</text>
+        <text class="content" x="32" y="284">Ordered results that retain no captured values</text>
+    </g>
+
+    <g>
+        <rect class="box-bg" x="16" y="316" width="588" height="84" rx="6"/>
+        <rect x="16" y="316" width="4" height="84" fill="#1f883d"/>
+        <text class="title" x="32" y="342">Secure Capture</text>
+        <text class="content" x="32" y="366">Credential redaction &#8226; Body limits &#8226; Depth budgets</text>
+        <text class="content" x="32" y="384">Sensitive values sanitized before reaching disk</text>
+    </g>
+
+    <g>
+        <rect class="box-bg" x="16" y="416" width="588" height="84" rx="6"/>
+        <rect x="16" y="416" width="4" height="84" fill="#1f883d"/>
+        <text class="title" x="32" y="442">Shared Panels</text>
+        <text class="content" x="32" y="466">Request &#8226; Router &#8226; Database &#8226; Events &#8226; Log &#8226; Profile</text>
+        <text class="content" x="32" y="484">Portable renderers, filters, and neutral templates</text>
+    </g>
+
+    <g>
+        <rect class="box-bg" x="16" y="516" width="588" height="84" rx="6"/>
+        <rect x="16" y="516" width="4" height="84" fill="#1f883d"/>
+        <text class="title" x="32" y="542">Snapshot Pipeline</text>
+        <text class="content" x="32" y="566">Collectors &#8226; Typed capture &#8226; Hydration &#8226; Persistence</text>
+        <text class="content" x="32" y="584">Immutable snapshots with fail-closed reads</text>
+    </g>
+</svg>

@@ -3,12 +3,6 @@
 .codex
 .config/gh
 
-# codecoverage (if present)
-code_coverage
-
-# codeception (if present)
-c3.php
-
 # composer
 composer.lock
 
@@ -25,9 +19,6 @@ internal
 
 # mac ds_store (if present)
 .DS_Store
-
-# netbeans project (if present)
-nbproject
 
 # node_modules (if present)
 node_modules
@@ -49,9 +40,6 @@ reports/mutation
 # local browser quality artifacts
 artifacts
 
-# vagrant (if present)
-.vagrant
-
 # vendor
 vendor
 
@@ -60,8 +48,3 @@ vendor
 
 # windows thumbnail cache (if present)
 Thumbs.db
-
-# zend studio for eclipse project (if present)
-.buildpath
-.project
-.settings

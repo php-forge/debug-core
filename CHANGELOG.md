@@ -7,44 +7,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.1.0 Under development
 
-- feat: add framework-agnostic debug snapshot contracts, strict JSON hydration, and filesystem persistence.
-- fix: bundle toolbar control icons and retry snapshot data while Yii3 finishes its post-response persistence.
-- feat: add shared framework-neutral normalization and presentation helpers for debug adapters.
-- feat: add validated collector contracts, lifecycle coordination, and isolated typed snapshot capture for adapters.
-- fix: guard the user-switch panel against concurrent submits so a double-click (or set + reset in the same tick) sends a single identity-switch request instead of racing two session regenerations.
-- test: strengthen mutation coverage and clear PHPStan's result cache before static mutation analysis.
-- feat(router): implement Router panel with Current Route and Rules sections.
-- fix(toolbar): follow debug tags through adapter query URLs and enforce complete JavaScript mutation coverage.
-- feat(panel): add `UserRbacRow` typed view-model so adapters render RBAC role and permission rows from a single normalized shape.
-- feat: add shared UI parity contracts, Asset composition, and cross-adapter acceptance documentation.
-- feat(ui): share database EXPLAIN markup across debugger adapters.
-- feat(ui): add shared profiler normalization and Timeline rendering contracts.
-- feat(tests): add unit tests for panel snapshots and enhance existing test coverage.
-- feat(ui): share User guest and RBAC section rendering and support selecting filtered tabs.
-- feat(ui): add sensitive queue-payload redaction and recognize Yii3 queue producers for Dump, Mail, and Queue parity.
-- fix(ui): add keyboard-resizable drawers with Escape handling and focus restoration.
-- fix: harden packaging, privacy, lifecycle, snapshot recovery, dump and toolbar security, and accelerate value hydration.
-- refactor: simplify strict value hydration, collector cleanup reporting, sensitive-key lookup, and toolbar message validation without changing public contracts.
-- test: enforce complete PHP line, method, and mutation coverage with exact HTML rendering assertions.
-- perf: return the committed manifest from snapshot writes and reuse its raw rollback payload to avoid duplicate index reads and hydration.
-- fix(ui): polish Request/Timeline layout, typography, focus/motion behavior, keyboard switching, and EXPLAIN status announcements.
-- feat(ui): expand the shared debug UI with secure same-origin navigation, configurable sensitive-key redaction, responsive and accessible interactions, persistent drawer and bounded `EXPLAIN` workflows, query grouping, conditional feature loading, and cross-adapter browser quality gates.
-- test: enforce JavaScript coverage gates, extend mutation coverage to new UI modules, and simplify N+1 detection, redaction, rendering, and panels.
-- feat(ui): add framework-neutral Vite snapshots, summary and detail rendering, consistent shell density, and labeled card-contained sidebar groups for adapter-provided extension panels.
-- refactor(ui): replace the installed-extension tag cloud with a compact Composer namespace ledger.
-- feat(ui): improve Request disclosures, body limits, history navigation, and table spacing.
-- fix(ui): show short class names with full hover titles, standardize Timeline dots and bars on one blue token, and remove the redundant category legend.
-- test: migrate JavaScript unit and mutation tests to Vitest with isolated workers, V8 coverage, per-test mutation analysis, and supported Node.js release ranges.
-- feat(ui): expose captured trace totals and style clickable Log severity counters as filter pills alongside History status shortcuts.
-- refactor(ui): unify Request, Server, Session, Input, routing, and tabs with collapsible filters, focus states, and refreshed assets.
-- feat(api): centralize typed structural payload differences and add immutable fluent toolbar item and panel construction while preserving diagnostic values, constructors, and serialized payloads.
-- feat(api): centralize request-summary metric calculations and formatting in `SummaryMetricComparison`, preserving history labels, order, units, rounding, percentages, trends, and panel links.
-- feat(api): add framework-neutral `PanelComparison` for ordered panel IDs, failure precedence, capture states, and combined structural/state counts without changing adapter output or diagnostic values.
-- refactor: share captured URL-to-path display conversion through `Text::urlToPath()` while retaining original diagnostic URLs and adapter-owned presentation models.
-- feat(events): add the shared execution inspector, stable chronology, grouped filters, bounded optional context and traces, and explicit lifecycle correlation.
-- refactor: centralize exception messages and panel titles in typed enums while preserving diagnostics, labels, and configurable names.
-- refactor: use shared `PanelIcon` enum values for built-in panel SVG keys.
-- fix: improve UI contrast, focus, deep links, history alignment, shared asset sizing, and local rebuild documentation.
-- feat!: split panel texts into Event, Log, Profile, and Inertia enums; add the event detail cell, Format::typeOf(), and PageSize::selectorFor().
-- refactor!: centralize fluent factories, shared UI helpers, payload hydration, formatting, and the reduced panel URL contract.
-- refactor(db/ui): unify query rows, traces, EXPLAIN, metrics, grid sizing, and shared helper contracts across adapters.
+- feat: initial development release.
