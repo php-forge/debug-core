@@ -30,6 +30,8 @@ final readonly class ConfigSummary
 
     /**
      * Returns the number of installed extensions in {@see $extensions}.
+     *
+     * @return int Installed extension count.
      */
     public function extensionCount(): int
     {
@@ -38,6 +40,8 @@ final readonly class ConfigSummary
 
     /**
      * Returns whether at least one installed extension is recorded.
+     *
+     * @return bool `true` when the roster holds at least one extension; `false` otherwise.
      */
     public function hasExtensions(): bool
     {

@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Helper;
 
 use function addslashes;
-use function array_keys;
-use function count;
+use function array_is_list;
 use function get_debug_type;
 use function gettype;
 use function is_array;
 use function is_scalar;
-use function range;
 use function str_repeat;
 use function var_export;
 
@@ -21,8 +19,8 @@ use function var_export;
 final class Dump
 {
     /**
-     * Renders a value as a display string: quoted strings, bare scalars, and 4-space-indented arrays without
-     * trailing commas.
+     * Renders a value as a display string: quoted strings, bare scalars, and 4-space-indented arrays without trailing
+     * commas.
      *
      * @param mixed $value JSON-safe value to render.
      * @param int $depth Maximum nesting level rendered before collapsing to `[...]`.
@@ -48,9 +46,13 @@ final class Dump
     }
 
     /**
+     * Renders an array as an indented display block, or `[...]` once the depth budget is exhausted.
+     *
      * @param array<array-key, mixed> $value Array to render.
      * @param int $depth Maximum nesting level.
      * @param int $level Current nesting level.
+     *
+     * @return string Display block for the array.
      */
     private static function dumpArray(array $value, int $depth, int $level): string
     {
@@ -66,19 +68,24 @@ final class Dump
 
         $output = '[';
 
-        foreach (array_keys($value) as $key) {
+        foreach ($value as $key => $item) {
             $output .= "\n{$spaces}    ";
             $output .= self::dumpInternal($key, $depth, $level);
             $output .= ' => ';
-            $output .= self::dumpInternal($value[$key], $depth, $level + 1);
+            $output .= self::dumpInternal($item, $depth, $level + 1);
         }
 
         return "{$output}\n{$spaces}]";
     }
 
     /**
+     * Renders one value of any type at the current nesting level.
+     *
+     * @param mixed $value JSON-safe value to render.
      * @param int $depth Maximum nesting level.
      * @param int $level Current nesting level.
+     *
+     * @return string Display string for the value.
      */
     private static function dumpInternal(mixed $value, int $depth, int $level): string
     {
@@ -93,7 +100,12 @@ final class Dump
     }
 
     /**
+     * Renders one value as a parsable PHP expression at the current nesting level.
+     *
+     * @param mixed $value JSON-safe value to render.
      * @param int $level Current nesting level.
+     *
+     * @return string Parsable expression for the value.
      */
     private static function exportInternal(mixed $value, int $level): string
     {
@@ -106,7 +118,7 @@ final class Dump
                 return '[]';
             }
 
-            $outputKeys = array_keys($value) !== range(0, count($value) - 1);
+            $outputKeys = array_is_list($value) === false;
             $spaces = str_repeat(' ', $level * 4);
 
             $output = '[';

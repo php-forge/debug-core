@@ -27,7 +27,7 @@
         "ui-awesome/html-core-component": "^0.4",
         "ui-awesome/html-helper": "^0.7",
         "ui-awesome/html-interop": "^0.4",
-        "ui-awesome/html-mixin": "^0.8.1",
+        "ui-awesome/html-mixin": "^0.8.2",
         "ui-awesome/html-svg": "^0.6"
     },
     "require-dev": {

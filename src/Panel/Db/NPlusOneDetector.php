@@ -17,9 +17,33 @@ use function usort;
 final class NPlusOneDetector
 {
     /**
-     * @param list<QueryRow> $rows
+     * Indexes findings by every query sequence they cover, so a grid row can look up its own group.
      *
-     * @return list<NPlusOneFinding>
+     * @param list<NPlusOneFinding> $findings Findings to index.
+     *
+     * @return array<int, NPlusOneFinding> Findings keyed by covered query sequence.
+     */
+    public static function bySequence(array $findings): array
+    {
+        $bySequence = [];
+
+        foreach ($findings as $finding) {
+            foreach ($finding->sequences as $sequence) {
+                $bySequence[$sequence] = $finding;
+            }
+        }
+
+        return $bySequence;
+    }
+    /**
+     * Groups repeated `SELECT` statements by captured call site and keeps the groups above the threshold.
+     *
+     * @param list<QueryRow> $rows Captured query rows in capture order.
+     * @param int $threshold Minimum occurrences a call site needs to be reported; must be at least `2`.
+     *
+     * @return list<NPlusOneFinding> Findings ordered by count, then total duration, then first sequence.
+     *
+     * @throws InvalidArgumentException When the threshold is lower than `2`.
      */
     public static function detect(array $rows, int $threshold = 3): array
     {
@@ -42,30 +66,27 @@ final class NPlusOneDetector
 
         foreach ($rows as $row) {
             if (
-                $row->traceHash === ''
-                || strtoupper($row->type) !== 'SELECT'
+                $row->getTraceHash() === ''
+                || strtoupper($row->getType()) !== 'SELECT'
             ) {
                 continue;
             }
 
-            if (!isset($groups[$row->traceHash])) {
-                $groups[$row->traceHash] = [
-                    'count' => 0,
-                    'duration' => 0.0,
-                    'first' => $row->seq,
-                    'query' => $row->query,
-                    'sequences' => [],
-                ];
-            }
+            $group = $groups[$row->getTraceHash()] ?? [
+                'count' => 0,
+                'duration' => 0.0,
+                'first' => $row->getSequence(),
+                'query' => $row->getQuery(),
+                'sequences' => [],
+            ];
 
-            $group = &$groups[$row->traceHash];
             $group['count']++;
-            $group['duration'] += $row->duration;
-            $group['first'] = min($group['first'], $row->seq);
-            $group['sequences'][] = $row->seq;
-        }
+            $group['duration'] += $row->getDuration();
+            $group['first'] = min($group['first'], $row->getSequence());
+            $group['sequences'][] = $row->getSequence();
 
-        unset($group);
+            $groups[$row->getTraceHash()] = $group;
+        }
 
         $findings = [];
 

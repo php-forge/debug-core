@@ -32,6 +32,8 @@ final class Trace
 
     /**
      * Creates a renderer emitting {@see DEFAULT_TEMPLATE} links without path rewriting.
+     *
+     * @return self Renderer using the default template and no path mappings.
      */
     public static function create(): self
     {
@@ -103,6 +105,8 @@ final class Trace
      * single trailing slash, and only the first matching prefix is applied.
      *
      * @param array<array-key, mixed> $pathMappings Remote source-path prefixes mapped to local prefixes.
+     *
+     * @return self New instance rewriting frame paths through the normalized mappings.
      */
     public function withPathMappings(array $pathMappings): self
     {
@@ -131,6 +135,8 @@ final class Trace
      * `{line}`, and `{text}` against the escaped frame values, `false` to emit escaped plain text without a link, or a
      * closure receiving the frame with the normalized `file`, `line`, and `text` keys; a `string` returned by the
      * closure resolves the same placeholders, any other result renders as an escaped dump.
+     *
+     * @return self New instance rendering every frame with the given template.
      */
     public function withTemplate(Closure|string|false $template): self
     {
@@ -140,6 +146,13 @@ final class Trace
         );
     }
 
+    /**
+     * Rewrites a captured file path through the first matching source-path mapping.
+     *
+     * @param string $file Captured source path.
+     *
+     * @return string Locally reachable path, or the captured path when no mapping matches.
+     */
     private function mapPath(string $file): string
     {
         foreach ($this->pathMappings as $remote => $local) {
@@ -151,6 +164,13 @@ final class Trace
         return $file;
     }
 
+    /**
+     * Normalizes a path prefix to forward slashes and exactly one trailing separator.
+     *
+     * @param string $path Raw configured prefix.
+     *
+     * @return string Prefix using `/` separators and ending in a single `/`.
+     */
     private static function normalizePrefix(string $path): string
     {
         return rtrim(str_replace('\\', '/', $path), '/') . '/';

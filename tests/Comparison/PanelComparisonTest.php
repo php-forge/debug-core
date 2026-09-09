@@ -13,7 +13,10 @@ use PHPUnit\Framework\TestCase;
 use function array_map;
 
 /**
- * Locks the original adapter output before and after sharing panel comparison.
+ * Unit tests for {@see PanelComparison} validating panel contracts, difference detection, and immutability of baseline
+ * and target snapshots.
+ *
+ * {@see PanelComparisonProvider} for test case data providers.
  */
 #[Group('history')]
 final class PanelComparisonTest extends TestCase
@@ -33,7 +36,11 @@ final class PanelComparisonTest extends TestCase
         $beforeBaseline = $baseline->jsonSerialize();
         $beforeTarget = $target->jsonSerialize();
 
-        $panels = PanelComparison::between($baseline, $target, $labels);
+        $panels = PanelComparison::between(
+            $baseline,
+            $target,
+            $labels,
+        );
 
         $actual = [];
         $actualCounts = [];

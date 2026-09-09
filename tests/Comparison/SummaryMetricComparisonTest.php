@@ -13,7 +13,9 @@ use PHPUnit\Framework\TestCase;
 use function array_map;
 
 /**
- * Tests summary metric compatibility with the original adapter calculations and formatting.
+ * Unit tests for {@see SummaryMetricComparison} validating metric contracts, boundaries, and formatted deltas.
+ *
+ * {@see SummaryMetricComparisonProvider} for test case data providers.
  */
 #[Group('history')]
 final class SummaryMetricComparisonTest extends TestCase
@@ -30,11 +32,12 @@ final class SummaryMetricComparisonTest extends TestCase
         $beforeBaseline = $baseline->jsonSerialize();
         $beforeTarget = $target->jsonSerialize();
 
-        $actual = [];
+        $metrics = SummaryMetricComparison::between(
+            $baseline,
+            $target,
+        );
 
-        foreach (SummaryMetricComparison::between($baseline, $target) as $metric) {
-            $actual[] = self::row($metric);
-        }
+        $actual = array_map(self::row(...), $metrics);
 
         self::assertSame(
             $expected,

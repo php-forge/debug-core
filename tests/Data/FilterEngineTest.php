@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Data;
 
 use PHPForge\Debug\Data\FilterEngine;
+use PHPForge\Debug\Panel\Db\QueryRow;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
@@ -262,6 +263,33 @@ final class FilterEngineTest extends TestCase
             'A leading `<` must compare numeric strings numerically.',
         );
     }
+    public function testFilterReadsPrivatePanelStateAndPreservesRowIdentity(): void
+    {
+        $engine = new FilterEngine();
+
+        $match = QueryRow::create('SELECT * FROM users', 2.5, 1000.0);
+
+        $rows = [
+            QueryRow::create('SELECT * FROM posts', 3.0, 1000.0),
+            QueryRow::create('SELECT * FROM users', 1.0, 1000.0),
+            $match,
+        ];
+
+        $engine->addCondition('type', 'sel', partial: true);
+        $engine->addCondition('query', 'USERS', partial: true);
+        $engine->addMinimumCondition('duration', 2.5);
+
+        self::assertSame(
+            [$match],
+            $engine->filter($rows),
+            'Panel filtering must use persisted fields while returning the original row instances.',
+        );
+        self::assertSame(
+            $rows,
+            $engine->filter($rows),
+            'Panel filtering must reset its conditions after each run.',
+        );
+    }
 
     public function testFilterReadsPublicPropertiesFromObjectRows(): void
     {
@@ -325,7 +353,12 @@ final class FilterEngineTest extends TestCase
 
     public function testFilterRequiresTheEntireComparisonGrammarToMatch(): void
     {
-        foreach (['prefix >5', '>5 suffix'] as $value) {
+        $values = [
+            'prefix >5',
+            '>5 suffix',
+        ];
+
+        foreach ($values as $value) {
             $engine = new FilterEngine();
 
             $engine->addCondition('value', $value);

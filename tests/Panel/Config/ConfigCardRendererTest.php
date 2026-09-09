@@ -163,6 +163,23 @@ final class ConfigCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderInstalledExtensionsSectionKeepsEverySegmentAfterTheVendorInThePackageName(): void
+    {
+        $summary = self::makeSummary(extensions: ['acme/tool/plugin' => '1.0.0']);
+
+        $section = ConfigCardRenderer::renderInstalledExtensionsSection($summary);
+
+        self::assertNotNull(
+            $section,
+            'Non-empty roster must produce a section.',
+        );
+        self::assertStringContainsString(
+            'tool/plugin',
+            $section->render(),
+            'Only the first separator splits vendor from package.',
+        );
+    }
+
     public function testRenderInstalledExtensionsSectionReturnsNullWhenRosterIsEmpty(): void
     {
         $summary = self::makeSummary(extensions: []);

@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Collector;
 
 use InvalidArgumentException;
 use PHPForge\Debug\Exception\Message;
+use PHPForge\Debug\Instrumentation\InstrumentationGuard;
 use PHPForge\Debug\Storage\{DebugSnapshot, PanelFailure, RequestSummary};
 use Throwable;
 
@@ -20,8 +21,10 @@ final class CollectorCoordinator
      * @var array<string, CollectorInterface> Collectors indexed by their stable ID.
      */
     private array $collectors = [];
+    /**
+     * @var bool Whether every registered collector completed startup in the active cycle.
+     */
     private bool $started = false;
-
     /**
      * @var array<string, CollectorInterface> Collectors that still require cleanup in the active or failed cycle.
      */
@@ -73,7 +76,10 @@ final class CollectorCoordinator
                     $panels[$id] = $snapshot->jsonSerialize();
                 }
             } catch (Throwable $throwable) {
-                $failures[$id] = PanelFailure::fromThrowable(PanelFailure::CAPTURE, $throwable);
+                $failures[$id] = PanelFailure::fromThrowable(
+                    PanelFailure::CAPTURE,
+                    $throwable,
+                );
             }
         }
 
@@ -134,7 +140,7 @@ final class CollectorCoordinator
             try {
                 $this->shutdown();
             } catch (Throwable $cleanupFailure) {
-                self::reportCleanupFailure($cleanupFailure, $cleanupFailureHandler);
+                (new InstrumentationGuard($cleanupFailureHandler))->report($cleanupFailure);
             }
 
             throw $primaryFailure;
@@ -193,14 +199,10 @@ final class CollectorCoordinator
                 $collector->startup();
             }
         } catch (Throwable $startupFailure) {
-            foreach ($this->startedCollectors as $affectedId => $affectedCollector) {
-                try {
-                    $affectedCollector->shutdown();
-
-                    unset($this->startedCollectors[$affectedId]);
-                } catch (Throwable) {
-                    // Preserve the startup failure while continuing rollback.
-                }
+            try {
+                $this->shutdown();
+            } catch (Throwable) {
+                // A rollback cleanup failure must not replace the primary startup failure.
             }
 
             throw $startupFailure;
@@ -209,21 +211,4 @@ final class CollectorCoordinator
         $this->started = true;
     }
 
-    /**
-     * Reports a secondary cleanup failure without allowing the observer to replace the primary failure.
-     *
-     * @param (callable(Throwable): void)|null $cleanupFailureHandler Secondary-failure observer.
-     */
-    private static function reportCleanupFailure(
-        Throwable $cleanupFailure,
-        callable|null $cleanupFailureHandler,
-    ): void {
-        if ($cleanupFailureHandler !== null) {
-            try {
-                $cleanupFailureHandler($cleanupFailure);
-            } catch (Throwable) {
-                // Diagnostic observers must not replace the primary application failure.
-            }
-        }
-    }
 }

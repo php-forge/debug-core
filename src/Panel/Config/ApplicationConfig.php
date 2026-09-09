@@ -11,35 +11,35 @@ final readonly class ApplicationConfig
 {
     public function __construct(
         /**
-         * Yii framework version reported at request capture time.
+         * Framework version reported at request capture time.
          */
         public string $yii,
         /**
-         * Configured {@see \yii\base\Application::$name}, or empty string when the application is unavailable.
+         * Configured application name, or an empty string when the application is unavailable.
          */
         public string $name,
         /**
-         * Configured {@see \yii\base\Application::$version}, or empty string when none is set.
+         * Configured application version, or an empty string when none is set.
          */
         public string $version,
         /**
-         * Configured {@see \yii\base\Application::$language} BCP-47 tag, or empty string.
+         * Configured application language as a BCP-47 tag, or an empty string.
          */
         public string $language,
         /**
-         * Configured {@see \yii\base\Application::$sourceLanguage} BCP-47 tag, or empty string.
+         * Configured source language as a BCP-47 tag, or an empty string.
          */
         public string $sourceLanguage,
         /**
-         * Configured {@see \yii\base\Application::$charset}, or empty string.
+         * Configured application charset, or an empty string.
          */
         public string $charset,
         /**
-         * Active {@see YII_ENV} environment label.
+         * Active environment label reported by the adapter.
          */
         public string $env,
         /**
-         * Active {@see YII_DEBUG} flag.
+         * Whether the application ran with debug mode enabled.
          */
         public bool $debug,
     ) {}

@@ -26,9 +26,7 @@ final class Fqcn
     {
         $position = strrpos($fqcn, '\\');
 
-        return $position === false
-            ? ''
-            : substr($fqcn, 0, $position);
+        return $position === false ? '' : substr($fqcn, 0, $position);
     }
 
     /**
@@ -76,8 +74,6 @@ final class Fqcn
     {
         $position = strrpos($fqcn, '\\');
 
-        return $position === false
-            ? $fqcn
-            : substr($fqcn, $position + 1);
+        return $position === false ? $fqcn : substr($fqcn, $position + 1);
     }
 }

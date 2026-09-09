@@ -7,7 +7,7 @@ namespace PHPForge\Debug\Tests\Provider;
 use PHPForge\Debug\Storage\{DebugSnapshot, ExceptionSnapshot, PanelFailure, RequestSummary};
 
 /**
- * Characterization cases for panel selection, capture states, and combined difference counts.
+ * Data provider for {@see PanelComparisonTest} test cases.
  */
 final class PanelComparisonProvider
 {
@@ -54,24 +54,39 @@ final class PanelComparisonProvider
         ];
         $counts = [
             'absent' => [
-                'absent' => [0, 0, 0, 0], 'empty' => [1, 0, 0, 0], 'failure' => [9, 0, 0, 0],
-                'envelope' => [9, 0, 0, 0], 'both' => [9, 0, 0, 0],
+                'absent' => [0, 0, 0, 0],
+                'empty' => [1, 0, 0, 0],
+                'failure' => [9, 0, 0, 0],
+                'envelope' => [9, 0, 0, 0],
+                'both' => [9, 0, 0, 0],
             ],
             'empty' => [
-                'absent' => [0, 1, 0, 0], 'empty' => [0, 0, 0, 1], 'failure' => [9, 1, 0, 0],
-                'envelope' => [9, 1, 0, 0], 'both' => [9, 1, 0, 0],
+                'absent' => [0, 1, 0, 0],
+                'empty' => [0, 0, 0, 1],
+                'failure' => [9, 1, 0, 0],
+                'envelope' => [9, 1, 0, 0],
+                'both' => [9, 1, 0, 0],
             ],
             'failure' => [
-                'absent' => [0, 9, 0, 0], 'empty' => [1, 9, 0, 0], 'failure' => [0, 0, 0, 9],
-                'envelope' => [0, 0, 1, 9], 'both' => [0, 0, 0, 9],
+                'absent' => [0, 9, 0, 0],
+                'empty' => [1, 9, 0, 0],
+                'failure' => [0, 0, 0, 9],
+                'envelope' => [0, 0, 1, 9],
+                'both' => [0, 0, 0, 9],
             ],
             'envelope' => [
-                'absent' => [0, 9, 0, 0], 'empty' => [1, 9, 0, 0], 'failure' => [0, 0, 1, 9],
-                'envelope' => [0, 0, 0, 9], 'both' => [0, 0, 1, 9],
+                'absent' => [0, 9, 0, 0],
+                'empty' => [1, 9, 0, 0],
+                'failure' => [0, 0, 1, 9],
+                'envelope' => [0, 0, 0, 9],
+                'both' => [0, 0, 1, 9],
             ],
             'both' => [
-                'absent' => [0, 9, 0, 0], 'empty' => [1, 9, 0, 0], 'failure' => [0, 0, 0, 9],
-                'envelope' => [0, 0, 1, 9], 'both' => [0, 0, 0, 9],
+                'absent' => [0, 9, 0, 0],
+                'empty' => [1, 9, 0, 0],
+                'failure' => [0, 0, 0, 9],
+                'envelope' => [0, 0, 1, 9],
+                'both' => [0, 0, 0, 9],
             ],
         ];
 

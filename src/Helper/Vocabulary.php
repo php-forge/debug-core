@@ -30,6 +30,7 @@ final class Vocabulary
             default => 'other',
         };
     }
+
     /**
      * Returns the verb suffix for an SQL statement type.
      *

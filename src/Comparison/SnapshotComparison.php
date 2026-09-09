@@ -8,10 +8,6 @@ use PHPForge\Debug\Storage\DebugSnapshot;
 
 /**
  * Pairs request-summary metrics with per-panel structural differences for two captured snapshots.
- *
- * The comparison keeps references to both source snapshots so adapter facades can expose them, while the metric and
- * panel results retain only labels, states, and counts. An overview therefore cannot surface values that the individual
- * panels keep behind their own presentation and redaction rules unless it reads the snapshots directly.
  */
 final readonly class SnapshotComparison
 {
@@ -31,7 +27,11 @@ final readonly class SnapshotComparison
     /**
      * Compares two snapshots, combining summary metrics with panel structural differences.
      *
+     * @param DebugSnapshot $baseline Baseline snapshot.
+     * @param DebugSnapshot $target Target snapshot.
      * @param array<string, string> $panelLabels Display names indexed by stable panel ID, in display order.
+     *
+     * @return self Comparison pairing summary metrics with per-panel structural differences.
      */
     public static function between(DebugSnapshot $baseline, DebugSnapshot $target, array $panelLabels = []): self
     {
@@ -45,6 +45,8 @@ final readonly class SnapshotComparison
 
     /**
      * Returns whether any summary metric or panel payload differs.
+     *
+     * @return bool `true` when at least one metric or panel differs; `false` otherwise.
      */
     public function hasDifferences(): bool
     {

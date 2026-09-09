@@ -6,7 +6,8 @@ namespace PHPForge\Debug\Tests\Panel\Db;
 
 use PHPForge\Debug\Helper\Coerce;
 use PHPForge\Debug\Panel\Db\{DbQueryRenderer, NPlusOneFinding, QueryRow};
-use PHPUnit\Framework\Attributes\Group;
+use PHPForge\Debug\Tests\Provider\DbQueryRendererProvider;
+use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -148,22 +149,19 @@ final class DbQueryRendererTest extends TestCase
         );
     }
 
-    public function testRenderQueryCellEmitsExplainToggleForExplainableVerbsRegardlessOfCase(): void
+    #[DataProviderExternal(DbQueryRendererProvider::class, 'explainableVerbs')]
+    public function testRenderQueryCellEmitsExplainToggleForExplainableVerbsRegardlessOfCase(string $type): void
     {
-        foreach (['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'] as $verb) {
-            foreach ([$verb, strtolower($verb)] as $type) {
-                self::assertStringContainsString(
-                    'yii-debug-db-explain-toggle',
-                    DbQueryRenderer::renderQueryCell(
-                        self::makeRow(type: $type),
-                        self::traceLine(),
-                        true,
-                        self::makeUrlBuilder(),
-                    ),
-                    "Verb '{$type}' must be EXPLAIN-able.",
-                );
-            }
-        }
+        self::assertStringContainsString(
+            'yii-debug-db-explain-toggle',
+            DbQueryRenderer::renderQueryCell(
+                self::makeRow(type: $type),
+                self::traceLine(),
+                true,
+                self::makeUrlBuilder(),
+            ),
+            "Verb '{$type}' must be EXPLAIN-able.",
+        );
     }
 
     public function testRenderQueryCellEmitsExplainToggleWithBuiltUrl(): void
@@ -224,20 +222,19 @@ final class DbQueryRendererTest extends TestCase
         );
     }
 
-    public function testRenderQueryCellOmitsExplainToggleForNonExplainableVerbs(): void
+    #[DataProviderExternal(DbQueryRendererProvider::class, 'nonExplainableVerbs')]
+    public function testRenderQueryCellOmitsExplainToggleForNonExplainableVerbs(string $type): void
     {
-        foreach (['PRAGMA', ''] as $type) {
-            self::assertStringNotContainsString(
-                'yii-debug-db-explain-toggle',
-                DbQueryRenderer::renderQueryCell(
-                    self::makeRow(type: $type),
-                    self::traceLine(),
-                    true,
-                    self::makeUrlBuilder(),
-                ),
-                "Verb '{$type}' must not be EXPLAIN-able.",
-            );
-        }
+        self::assertStringNotContainsString(
+            'yii-debug-db-explain-toggle',
+            DbQueryRenderer::renderQueryCell(
+                self::makeRow(type: $type),
+                self::traceLine(),
+                true,
+                self::makeUrlBuilder(),
+            ),
+            "Verb '{$type}' must not be EXPLAIN-able.",
+        );
     }
 
     public function testRenderQueryCellOmitsExplainToggleWhenHasExplainIsFalse(): void
@@ -418,17 +415,13 @@ final class DbQueryRendererTest extends TestCase
         int $duplicate = 1,
         int|null $rows = null,
     ): QueryRow {
-        return new QueryRow(
-            type: $type,
-            query: $query,
-            duration: $duration,
-            trace: $trace,
-            traceHash: $traceHash,
-            timestamp: $timestamp,
-            seq: $seq,
-            duplicate: $duplicate,
-            rows: $rows,
-        );
+        return QueryRow::create($query, $duration, $timestamp)
+            ->withType($type)
+            ->withTrace($trace)
+            ->withTraceHash($traceHash)
+            ->withSequence($seq)
+            ->withDuplicate($duplicate)
+            ->withRows($rows);
     }
 
     /**
@@ -449,8 +442,7 @@ final class DbQueryRendererTest extends TestCase
      */
     private static function traceLine(): \Closure
     {
-        return static fn(array $frame): string => Coerce::string($frame['file']
-            ?? null) . ':' . Coerce::string($frame['line']
-            ?? null);
+        return static fn(array $frame): string => Coerce::string($frame['file'] ?? null) . ':'
+            . Coerce::string($frame['line'] ?? null);
     }
 }

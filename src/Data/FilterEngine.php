@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Data;
 
 use PHPForge\Debug\Helper\Dump;
+use PHPForge\Debug\Storage\PanelRow;
 
 use function array_filter;
 use function array_key_exists;
@@ -24,13 +25,18 @@ use function preg_match;
  */
 final class FilterEngine
 {
+    /**
+     * Charset used by every case-insensitive comparison.
+     */
     private const string CHARSET = 'UTF-8';
 
     /**
+     * Conditions are evaluated in the order they are added, and all must match for a row to be included.
+     *
      * @var list<
      *   array{attribute: string, operator: '>'|'<'|'>=', value: float}
      *   |array{attribute: string, operator: 'contains'|'same', value: string}
-     * >
+     * > Conditions registered for the next {@see filter()} run.
      */
     private array $conditions = [];
 
@@ -39,7 +45,7 @@ final class FilterEngine
      *
      * Empty and non-scalar raw values register nothing, so unfiltered attributes can be passed through unconditionally.
      *
-     * @param string $attribute Row attribute (public property or array key) the condition applies to.
+     * @param string $attribute Row field (persisted panel field, public property, or array key) to compare.
      * @param mixed $rawValue Raw filter value as read from the request; scalars are compared as strings.
      * @param bool $partial Whether a non-numeric value matches as a case-insensitive substring instead of whole-value.
      */
@@ -71,7 +77,7 @@ final class FilterEngine
     /**
      * Registers a numeric greater-than-or-equal condition.
      *
-     * @param string $attribute Row attribute (public property or array key) the condition applies to.
+     * @param string $attribute Row field (persisted panel field, public property, or array key) to compare.
      * @param float $value Inclusive lower bound the attribute value must reach.
      */
     public function addMinimumCondition(string $attribute, float $value): void
@@ -98,25 +104,32 @@ final class FilterEngine
     }
 
     /**
+     * Returns whether the row satisfies every registered condition.
+     *
      * @param array<string, mixed>|object $row Typed row object or string-keyed array.
+     *
+     * @return bool `true` when every condition matches; `false` on the first failing condition.
      */
     private function matches(array|object $row): bool
     {
+        $values = match (true) {
+            $row instanceof PanelRow => $row->jsonSerialize(),
+            is_object($row) => get_object_vars($row),
+            default => $row,
+        };
+
         foreach ($this->conditions as $condition) {
             $attribute = $condition['attribute'];
-
-            $values = is_object($row) ? get_object_vars($row) : $row;
 
             if (!array_key_exists($attribute, $values)) {
                 return false;
             }
 
             $candidate = $values[$attribute];
+            $expected = $condition['value'];
             $operator = $condition['operator'];
 
             if ($operator === '>' || $operator === '<' || $operator === '>=') {
-                $expected = $condition['value'];
-
                 if (!is_float($expected) || !is_numeric($candidate)) {
                     return false;
                 }
@@ -127,18 +140,14 @@ final class FilterEngine
                     default => $candidate >= $expected,
                 };
 
-                if (!$matched) {
+                if ($matched === false) {
                     return false;
                 }
 
                 continue;
             }
 
-            $candidate = is_scalar($candidate)
-                ? (string) $candidate
-                : Dump::export($candidate);
-
-            $expected = $condition['value'];
+            $candidate = is_scalar($candidate) ? (string) $candidate : Dump::export($candidate);
 
             if (!is_string($expected)) {
                 return false;

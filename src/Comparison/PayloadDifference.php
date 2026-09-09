@@ -17,6 +17,12 @@ use function str_replace;
  */
 final readonly class PayloadDifference
 {
+    /**
+     * @param int $added Leaves present only in the target payload.
+     * @param int $removed Leaves present only in the baseline payload.
+     * @param int $changed Leaves present in both payloads under a different value.
+     * @param int $unchanged Leaves present in both payloads under the same value.
+     */
     private function __construct(
         public int $added,
         public int $removed,
@@ -29,6 +35,8 @@ final readonly class PayloadDifference
      *
      * @param array<string, mixed>|null $baseline Baseline payload, or `null` when not captured.
      * @param array<string, mixed>|null $target Target payload, or `null` when not captured.
+     *
+     * @return self Structural difference counts for the two payloads.
      */
     public static function between(array|null $baseline, array|null $target): self
     {
@@ -51,17 +59,19 @@ final readonly class PayloadDifference
         }
 
         return new self(
-            count(array_diff_key($targetLeaves, $baselineLeaves)),
-            count(array_diff_key($baselineLeaves, $targetLeaves)),
-            $changed,
-            $unchanged,
+            added: count(array_diff_key($targetLeaves, $baselineLeaves)),
+            removed: count(array_diff_key($baselineLeaves, $targetLeaves)),
+            changed: $changed,
+            unchanged: $unchanged,
         );
     }
 
     /**
-     * @param array<string, mixed>|null $payload
+     * Reduces a payload to its typed leaves indexed by escaped path.
      *
-     * @return array<string, string>
+     * @param array<string, mixed>|null $payload Payload to flatten, or `null` when not captured.
+     *
+     * @return array<string, string> Leaf fingerprints indexed by escaped path.
      */
     private static function flatten(array|null $payload): array
     {
@@ -75,7 +85,11 @@ final readonly class PayloadDifference
     }
 
     /**
-     * @param array<string, string> $leaves
+     * Records the typed fingerprint of every leaf reachable from the value.
+     *
+     * @param mixed $value Value to traverse.
+     * @param string $path Escaped path of the value within the payload.
+     * @param array<string, string> $leaves Accumulator receiving leaf fingerprints indexed by escaped path.
      */
     private static function flattenValue(mixed $value, string $path, array &$leaves): void
     {

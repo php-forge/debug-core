@@ -14,6 +14,8 @@ final readonly class ConfigSnapshot implements PanelSnapshot
     use ArrayPayloadSnapshot;
 
     /**
+     * Returns the captured configuration payload.
+     *
      * @return array<array-key, mixed> Captured application, PHP, and extension configuration.
      */
     public function data(): array

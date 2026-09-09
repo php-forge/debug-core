@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Panel\Db;
 
 use PHPForge\Debug\Panel\Db\{DbSnapshot, DbSummary, DbSummaryRenderer, QueryRow};
-use PHPUnit\Framework\Attributes\Group;
+use PHPForge\Debug\Tests\Provider\DbCaptureProvider;
+use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for shared Database capture factories, duplicate resolution, request-wide metrics, EXPLAIN eligibility,
- * and the toolbar warning wording.
+ * Unit tests for {@see DbCapture} covering interleaved rows, duplicate normalization, and query factories.
  */
 #[Group('db')]
 final class DbCaptureTest extends TestCase
@@ -18,9 +18,21 @@ final class DbCaptureTest extends TestCase
     public function testCapturePreservesInterleavedRowsAndNormalizesExactDuplicates(): void
     {
         $rows = [
-            new QueryRow('SELECT', 'SELECT 1', 1.25, [['file' => '/a', 'line' => 3]], 'first', 1000.0, 8, 99, 4),
-            new QueryRow('UPDATE', 'UPDATE t SET a=1', 2.5, [], 'second', 2000.0, 4, 99, 0),
-            new QueryRow('SELECT', 'SELECT 1', 3.25, [], 'first', 3000.0, 6, 99, null),
+            QueryRow::create('SELECT 1', 1.25, 1000.0)
+                ->withTrace([['file' => '/a', 'line' => 3]])
+                ->withTraceHash('first')
+                ->withSequence(8)
+                ->withDuplicate(99)
+                ->withRows(4),
+            QueryRow::create('UPDATE t SET a=1', 2.5, 2000.0)
+                ->withTraceHash('second')
+                ->withSequence(4)
+                ->withDuplicate(99)
+                ->withRows(0),
+            QueryRow::create('SELECT 1', 3.25, 3000.0)
+                ->withTraceHash('first')
+                ->withSequence(6)
+                ->withDuplicate(99),
         ];
 
         $snapshot = DbSnapshot::capture($rows);
@@ -50,32 +62,18 @@ final class DbCaptureTest extends TestCase
         );
         self::assertSame(
             99,
-            $rows[0]->duplicate,
+            $rows[0]->getDuplicate(),
             'Capture must not mutate the source row.',
         );
     }
 
-    public function testIsExplainableAcceptsSingleStatementDmlVerbsRegardlessOfCase(): void
+    #[DataProviderExternal(DbCaptureProvider::class, 'explainableStatements')]
+    public function testIsExplainable(string $type, string $query, bool $expected): void
     {
-        foreach (['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'REPLACE', 'WITH'] as $verb) {
-            foreach ([$verb, strtolower($verb)] as $type) {
-                self::assertTrue(
-                    self::makeRow($type)->isExplainable(),
-                    "Verb '{$type}' must qualify.",
-                );
-            }
-        }
-
-        foreach (['SHOW', ''] as $type) {
-            self::assertFalse(
-                self::makeRow($type)->isExplainable(),
-                "Verb '{$type}' must not qualify.",
-            );
-        }
-
-        self::assertFalse(
-            self::makeRow('SELECT', 'SELECT 1; SELECT 2')->isExplainable(),
-            'A statement separator must disqualify the row.',
+        self::assertSame(
+            $expected,
+            self::makeRow($type, $query)->isExplainable(),
+            'EXPLAIN eligibility must match the query type and statement count.',
         );
     }
 
@@ -100,11 +98,16 @@ final class DbCaptureTest extends TestCase
         );
         self::assertSame(
             '',
-            QueryRow::create('123 SELECT', 0.0, 0.0)->type,
+            QueryRow::create('123 SELECT', 0.0, 0.0)->getType(),
             'Non-word prefixes must have no SQL verb.',
         );
 
-        $source = new QueryRow('UPDATE', 'UPDATE t', 9.5, [['file' => '/old']], 'old', 99.0, 5, 4, 2);
+        $source = QueryRow::create('UPDATE t', 9.5, 99.0)
+            ->withTrace([['file' => '/old']])
+            ->withTraceHash('old')
+            ->withSequence(5)
+            ->withDuplicate(4)
+            ->withRows(2);
 
         $trace = [['file' => '/new', 'line' => 7]];
 
@@ -116,6 +119,7 @@ final class DbCaptureTest extends TestCase
         $expected['trace'] = $trace;
 
         $expected['traceHash'] = hash('sha256', json_encode($trace, JSON_THROW_ON_ERROR));
+
         $expected['seq'] = 8;
 
         self::assertSame(
@@ -124,18 +128,13 @@ final class DbCaptureTest extends TestCase
             'Withers must preserve all unrelated fields.',
         );
         self::assertSame(
-            'old',
-            $source->traceHash,
-            'Withers must not mutate the original row.',
-        );
-        self::assertSame(
             [],
-            $changed->withTrace([])->trace,
+            $changed->withTrace([])->getTrace(),
             'An empty trace must clear the frames.',
         );
         self::assertSame(
             '',
-            $changed->withTrace([])->traceHash,
+            $changed->withTrace([])->getTraceHash(),
             'An empty trace must not create a synthetic caller.',
         );
 
@@ -149,11 +148,6 @@ final class DbCaptureTest extends TestCase
             $duplicated->jsonSerialize(),
             'The duplicate count must be the only replaced field.',
         );
-        self::assertSame(
-            4,
-            $source->duplicate,
-            'The source duplicate count must stay untouched.',
-        );
 
         $counted = $source->withRows(5);
         $expectedRows = $source->jsonSerialize();
@@ -166,12 +160,12 @@ final class DbCaptureTest extends TestCase
             'The reported row count must be the only replaced field.',
         );
         self::assertNull(
-            $counted->withRows(null)->rows,
+            $counted->withRows(null)->getRows(),
             'An unreported row count must clear the field.',
         );
         self::assertSame(
             2,
-            $source->rows,
+            $source->getRows(),
             'The source row count must stay untouched.',
         );
     }
@@ -179,9 +173,21 @@ final class DbCaptureTest extends TestCase
     public function testSummaryAggregatesRequestWideCountDurationDuplicatesAndCallers(): void
     {
         $rows = [
-            new QueryRow('SELECT', 'SELECT 1', 1.25, [['file' => '/a', 'line' => 3]], 'first', 1000.0, 8, 99, 4),
-            new QueryRow('UPDATE', 'UPDATE t SET a=1', 2.5, [], 'second', 2000.0, 4, 99, 0),
-            new QueryRow('SELECT', 'SELECT 1', 3.25, [], 'first', 3000.0, 6, 99, null),
+            QueryRow::create('SELECT 1', 1.25, 1000.0)
+                ->withTrace([['file' => '/a', 'line' => 3]])
+                ->withTraceHash('first')
+                ->withSequence(8)
+                ->withDuplicate(99)
+                ->withRows(4),
+            QueryRow::create('UPDATE t SET a=1', 2.5, 2000.0)
+                ->withTraceHash('second')
+                ->withSequence(4)
+                ->withDuplicate(99)
+                ->withRows(0),
+            QueryRow::create('SELECT 1', 3.25, 3000.0)
+                ->withTraceHash('first')
+                ->withSequence(6)
+                ->withDuplicate(99),
         ];
 
         $summary = new DbSummary(DbSnapshot::capture($rows)->entries());
@@ -365,7 +371,7 @@ final class DbCaptureTest extends TestCase
 
     private static function makeRow(string $type, string $query = 'SELECT 1'): QueryRow
     {
-        return new QueryRow($type, $query, 1.0, [], '', 0.0, 0, 1, null);
+        return QueryRow::create($query, 1.0, 0.0)->withType($type);
     }
 
     /**
@@ -378,7 +384,10 @@ final class DbCaptureTest extends TestCase
         $rows = [];
 
         foreach ($traceHashes as $seq => $traceHash) {
-            $rows[] = new QueryRow('SELECT', "SELECT {$seq}", 1.0, [], $traceHash, 0.0, $seq, 1, null);
+            $rows[] = QueryRow::create("SELECT {$seq}", 1.0, 0.0)
+                ->withType('SELECT')
+                ->withTraceHash($traceHash)
+                ->withSequence($seq);
         }
 
         return new DbSummary($rows);

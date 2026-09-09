@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Panel\Db;
 
 use InvalidArgumentException;
+use PHPForge\Debug\Exception\Message;
 use PHPForge\Debug\Panel\Db\{NPlusOneDetector, NPlusOneFinding, QueryRow};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Unit tests for {@see NPlusOneDetector} covering read-query grouping, threshold validation, and finding order.
+ */
 #[Group('panel')]
 #[Group('db')]
 final class NPlusOneDetectorTest extends TestCase
@@ -136,6 +140,7 @@ final class NPlusOneDetectorTest extends TestCase
     public function testDuplicateCountsFromOtherCallSitesDoNotTriggerFinding(): void
     {
         $candidate = self::row(1, 'caller-b', 'SELECT 1', 1, duplicate: 5);
+
         $rows = [
             self::row(0, 'caller-a', 'SELECT 1', 1, duplicate: 5), $candidate,
         ];
@@ -161,11 +166,11 @@ final class NPlusOneDetectorTest extends TestCase
         );
     }
 
-    public function testRejectsUnsafeThreshold(): void
+    public function testThrowInvalidArgumentExceptionForAnUnsafeThreshold(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage(
-            'The N+1 threshold must be at least two.',
+            Message::N_PLUS_ONE_THRESHOLD_INVALID->getMessage(),
         );
 
         NPlusOneDetector::detect([], 1);
@@ -194,16 +199,10 @@ final class NPlusOneDetectorTest extends TestCase
         string $type = 'SELECT',
         int $duplicate = 1,
     ): QueryRow {
-        return new QueryRow(
-            type: $type,
-            query: $query,
-            duration: $duration,
-            trace: [],
-            traceHash: $traceHash,
-            timestamp: 0,
-            seq: $seq,
-            duplicate: $duplicate,
-            rows: null,
-        );
+        return QueryRow::create($query, $duration, 0)
+            ->withType($type)
+            ->withTraceHash($traceHash)
+            ->withSequence($seq)
+            ->withDuplicate($duplicate);
     }
 }

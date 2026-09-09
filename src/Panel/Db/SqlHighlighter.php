@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Panel\Db;
 
 use UIAwesome\Html\Helper\Encode;
 
+use function array_reverse;
 use function preg_match_all;
 use function strlen;
 use function substr;
@@ -44,10 +45,15 @@ final class SqlHighlighter
      * Returns the SQL statement as fully escaped HTML with `yii-debug-sql-*` token spans.
      *
      * @param string $sql Raw SQL statement to highlight.
+     *
+     * @return string Escaped HTML with `yii-debug-sql-*` token spans.
      */
     public static function highlight(string $sql): string
     {
         preg_match_all(self::PATTERN, $sql, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
+
+        // Named groups fill up to the last match, so the last present group is the one that matched.
+        $tokenClasses = array_reverse(self::TOKEN_CLASSES, true);
 
         $html = '';
         $offset = 0;
@@ -60,7 +66,7 @@ final class SqlHighlighter
 
             $token = $text;
 
-            foreach (array_reverse(self::TOKEN_CLASSES, true) as $group => $class) {
+            foreach ($tokenClasses as $group => $class) {
                 if (isset($match[$group])) {
                     $token = $class === '' ? $text : "<span class=\"{$class}\">{$text}</span>";
 

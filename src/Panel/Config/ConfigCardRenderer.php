@@ -26,6 +26,9 @@ use function is_string;
  */
 final class ConfigCardRenderer
 {
+    /**
+     * Decorative corner positions framing every readout card, in render order.
+     */
     private const array CORNERS = [
         'tl',
         'tr',
@@ -35,33 +38,33 @@ final class ConfigCardRenderer
 
     /**
      * Renders the `Application details` description list (charset, current language, source language).
+     *
+     * @param ApplicationConfig $app Typed application section.
+     *
+     * @return Section Application details section.
      */
     public static function renderApplicationDetailsSection(ApplicationConfig $app): Section
     {
-        return Section::tag()
-            ->class('yii-debug-section')
-            ->html(
-                H2::tag()
-                    ->class('yii-debug-section-title')
-                    ->html(
-                        Span::tag()
-                            ->class('yii-debug-section-mark')
-                            ->content('//'),
-                        ' Application details',
-                    ),
-                Dl::tag()
-                    ->class('yii-debug-dl')
-                    ->html(
-                        self::renderDlRow('Charset', $app->charset !== '' ? $app->charset : '—'),
-                        self::renderDlRow('Current language', self::formatLanguage($app->language)),
-                        self::renderDlRow('Source language', self::formatLanguage($app->sourceLanguage)),
-                    ),
-            );
+        return self::renderSection(
+            '//',
+            [' Application details'],
+            Dl::tag()
+                ->class('yii-debug-dl')
+                ->html(
+                    self::renderDlRow('Charset', $app->charset !== '' ? $app->charset : '—'),
+                    self::renderDlRow('Current language', self::formatLanguage($app->language)),
+                    self::renderDlRow('Source language', self::formatLanguage($app->sourceLanguage)),
+                ),
+        );
     }
 
     /**
      * Renders the Installed extensions section, or returns `null` when the roster is empty so the caller can omit the
      * wrapper entirely.
+     *
+     * @param ConfigSummary $summary Typed configuration summary.
+     *
+     * @return Section|null Installed extensions section, or `null` when the roster is empty.
      */
     public static function renderInstalledExtensionsSection(ConfigSummary $summary): Section|null
     {
@@ -85,28 +88,26 @@ final class ConfigCardRenderer
             $items[] = self::renderPackageGroup($vendor, $packages);
         }
 
-        return Section::tag()
-            ->class('yii-debug-section')
-            ->html(
-                H2::tag()
-                    ->class('yii-debug-section-title')
-                    ->html(
-                        Span::tag()
-                            ->class('yii-debug-section-mark')
-                            ->content('::'),
-                        ' Installed extensions ',
-                        Span::tag()
-                            ->class('yii-debug-section-count')
-                            ->content((string) $summary->extensionCount()),
-                    ),
-                Div::tag()
-                    ->class('yii-debug-package-groups')
-                    ->html(...$items),
-            );
+        return self::renderSection(
+            '::',
+            [
+                ' Installed extensions ',
+                Span::tag()
+                    ->class('yii-debug-section-count')
+                    ->content((string) $summary->extensionCount()),
+            ],
+            Div::tag()
+                ->class('yii-debug-package-groups')
+                ->html(...$items),
+        );
     }
 
     /**
      * Renders the labeled on/off pill strip for the bundled PHP extensions (Xdebug, APCu, Memcache, Memcached).
+     *
+     * @param PhpConfig $php Typed PHP runtime section.
+     *
+     * @return Section PHP extensions section.
      */
     public static function renderPhpExtensionsSection(PhpConfig $php): Section
     {
@@ -117,21 +118,13 @@ final class ConfigCardRenderer
             self::renderExtensionPill('Memcached', $php->memcached),
         ];
 
-        return Section::tag()
-            ->class('yii-debug-section')
-            ->html(
-                H2::tag()
-                    ->class('yii-debug-section-title')
-                    ->html(
-                        Span::tag()
-                            ->class('yii-debug-section-mark')
-                            ->content('::'),
-                        ' PHP extensions',
-                    ),
-                Div::tag()
-                    ->class('yii-debug-ext-strip')
-                    ->html(...$pills),
-            );
+        return self::renderSection(
+            '::',
+            [' PHP extensions'],
+            Div::tag()
+                ->class('yii-debug-ext-strip')
+                ->html(...$pills),
+        );
     }
 
     /**
@@ -139,6 +132,10 @@ final class ConfigCardRenderer
      *
      * The caller resolves the destination URL (typically via `Url::to(['php-info'])`) so the renderer stays free of
      * routing concerns and easy to test in isolation.
+     *
+     * @param string $href Destination URL of the standalone phpinfo viewer.
+     *
+     * @return A Call-to-action link element.
      */
     public static function renderPhpInfoCta(string $href): A
     {
@@ -152,8 +149,7 @@ final class ConfigCardRenderer
                     ->class('yii-debug-cta-prompt')
                     ->addAriaAttribute('hidden', 'true')
                     ->content('→'),
-                Span::tag()
-                    ->content('View full phpinfo'),
+                Span::tag()->content('View full phpinfo'),
                 Span::tag()
                     ->class('yii-debug-cta-external')
                     ->addAriaAttribute('hidden', 'true')
@@ -163,6 +159,10 @@ final class ConfigCardRenderer
 
     /**
      * Renders the four-card readout grid (`Yii`, `PHP`, `Environment`, `Application`) at the top of the detail view.
+     *
+     * @param ConfigSummary $summary Typed configuration summary.
+     *
+     * @return Div Readout grid container.
      */
     public static function renderReadoutGrid(ConfigSummary $summary): Div
     {
@@ -196,6 +196,10 @@ final class ConfigCardRenderer
     /**
      * Returns a BCP-47 tag annotated with its English display name, or the em-dash placeholder when the locale is
      * empty.
+     *
+     * @param string $locale BCP-47 tag to annotate.
+     *
+     * @return string Annotated tag, the bare tag when no display name resolves, or `—` for an empty locale.
      */
     private static function formatLanguage(string $locale): string
     {
@@ -203,17 +207,24 @@ final class ConfigCardRenderer
             return '—';
         }
 
+        $candidates = [
+            Locale::getDisplayLanguage($locale, 'en'),
+            Locale::getDisplayRegion($locale, 'en'),
+        ];
+
         $parts = [];
 
-        foreach ([Locale::getDisplayLanguage($locale, 'en'), Locale::getDisplayRegion($locale, 'en')] as $part) {
+        foreach ($candidates as $part) {
             if (is_string($part) && $part !== '') {
                 $parts[] = $part;
             }
         }
 
-        $displayName = implode(', ', $parts);
+        if ($parts === []) {
+            return $locale;
+        }
 
-        return $parts === [] ? $locale : "{$locale} ({$displayName})";
+        return "{$locale} (" . implode(', ', $parts) . ')';
     }
 
     /**
@@ -234,6 +245,11 @@ final class ConfigCardRenderer
 
     /**
      * Renders one `<dt>term</dt><dd>value</dd>` row inside the application-details description list.
+     *
+     * @param string $term Row label.
+     * @param string $value Row value.
+     *
+     * @return Div Description-list row.
      */
     private static function renderDlRow(string $term, string $value): Div
     {
@@ -247,16 +263,28 @@ final class ConfigCardRenderer
 
     /**
      * Renders one extension pill with an on/off state and a label.
+     *
+     * @param string $name Extension name shown in the pill.
+     * @param bool $enabled Whether the extension is loaded.
+     *
+     * @return Span Extension pill element.
      */
     private static function renderExtensionPill(string $name, bool $enabled): Span
     {
-        return ExtensionPill::render($name, $enabled ? 'on' : 'off', $enabled);
+        return ExtensionPill::render(
+            $name,
+            $enabled ? 'on' : 'off',
+            $enabled,
+        );
     }
 
     /**
      * Renders one Composer vendor group as a compact dependency ledger.
      *
-     * @param array<string, string> $packages
+     * @param string $vendor Composer vendor name.
+     * @param array<string, string> $packages Package names mapped to their installed version.
+     *
+     * @return Article Vendor group element.
      */
     private static function renderPackageGroup(string $vendor, array $packages): Article
     {
@@ -289,6 +317,11 @@ final class ConfigCardRenderer
 
     /**
      * Renders one package name and version row inside its Composer vendor group.
+     *
+     * @param string $name Package name without its vendor prefix.
+     * @param string $version Installed version.
+     *
+     * @return Div Package row.
      */
     private static function renderPackageItem(string $name, string $version): Div
     {
@@ -306,11 +339,16 @@ final class ConfigCardRenderer
 
     /**
      * Builds one readout card with a label, value, and either a plain-text meta line or a chip.
+     *
+     * @param string $label Card label.
+     * @param string $value Card value.
+     * @param Span|string $meta Chip element or plain-text meta line shown under the value.
+     *
+     * @return Article Readout card element.
      */
     private static function renderReadoutCard(string $label, string $value, Span|string $meta): Article
     {
-        $metaWrap = Span::tag()
-            ->class('yii-debug-readout-meta');
+        $metaWrap = Span::tag()->class('yii-debug-readout-meta');
 
         $metaWrap = $meta instanceof Stringable
             ? $metaWrap->html($meta)
@@ -330,5 +368,31 @@ final class ConfigCardRenderer
         return Article::tag()
             ->class('yii-debug-readout-card')
             ->html(...$children);
+    }
+
+    /**
+     * Builds the shared section shell: a marked title followed by the section body.
+     *
+     * @param string $mark Glyph rendered inside the section mark.
+     * @param list<string|Stringable> $title Title nodes rendered after the mark.
+     * @param string|Stringable ...$body Section body nodes.
+     *
+     * @return Section Section element.
+     */
+    private static function renderSection(string $mark, array $title, string|Stringable ...$body): Section
+    {
+        return Section::tag()
+            ->class('yii-debug-section')
+            ->html(
+                H2::tag()
+                    ->class('yii-debug-section-title')
+                    ->html(
+                        Span::tag()
+                            ->class('yii-debug-section-mark')
+                            ->content($mark),
+                        ...$title,
+                    ),
+                ...$body,
+            );
     }
 }

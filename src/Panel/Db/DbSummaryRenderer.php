@@ -15,6 +15,14 @@ use function sprintf;
  */
 final class DbSummaryRenderer
 {
+    /**
+     * Renders the grid summary header with the request-wide totals and the optional page-size selector.
+     *
+     * @param DbSummary $summary Request-wide Database metrics.
+     * @param string|null $pageSize Rendered page-size selector appended after the totals, or `null` to omit it.
+     *
+     * @return string Summary header markup.
+     */
     public static function render(DbSummary $summary, string|null $pageSize = null): string
     {
         $separator = Span::tag()
@@ -22,12 +30,16 @@ final class DbSummaryRenderer
             ->content('·');
 
         $items = [
-            Span::tag()->html(Strong::tag()->content((string) $summary->count), DbMessage::QUERY_COUNT_SUFFIX->value),
+            Span::tag()
+                ->html(
+                    Strong::tag()->content((string) $summary->count),
+                    DbMessage::QUERY_COUNT_SUFFIX,
+                ),
             $separator,
             Span::tag()
                 ->html(
                     Strong::tag()->content(number_format($summary->duration, 3)),
-                    DbMessage::TOTAL_SUFFIX->value,
+                    DbMessage::TOTAL_SUFFIX,
                 ),
         ];
 
@@ -38,7 +50,7 @@ final class DbSummaryRenderer
                 ->class('yii-debug-grid-summary-stat-warn')
                 ->html(
                     Strong::tag()->content((string) $summary->duplicates),
-                    DbMessage::DUPLICATE_SUFFIX->value,
+                    DbMessage::DUPLICATE_SUFFIX,
                 );
         }
 
@@ -61,6 +73,8 @@ final class DbSummaryRenderer
      * @param DbSummary $summary Request-wide Database metrics.
      * @param int|null $criticalQueryThreshold Query count above which the request is critical, or `null` to disable.
      * @param int|null $excessiveCallerThreshold Statements per call site that flag it, or `null` to disable.
+     *
+     * @return string Warning sentences when a threshold is exceeded, otherwise the executed-query count.
      */
     public static function toolbarTitle(
         DbSummary $summary,

@@ -3502,6 +3502,21 @@
     width: 100%;
   }
 
+  /* Keep the native content width without clipping the verb or adding fixed empty space. */
+  .yii-debug-grid-db .filters select,
+  .yii-debug-grid-db td.yii-debug-filter-cell select {
+    min-width: max-content;
+
+    &:focus {
+      box-shadow: none;
+    }
+
+    &:focus-visible {
+      outline-width: 2px;
+      outline-offset: 1px;
+    }
+  }
+
   /* SQL token spans emitted by SqlHighlighter — fixed semantic hues. */
   .yii-debug-sql-kw {
     color: var(--yii-debug-sql-kw);

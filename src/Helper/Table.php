@@ -29,9 +29,7 @@ final class Table
         $table = HtmlTable::tag()->class($class);
 
         if ($headers === []) {
-            return $table
-                ->html(Tbody::tag()
-                ->html(...$rows));
+            return $table->html(Tbody::tag()->html(...$rows));
         }
 
         $cells = [];

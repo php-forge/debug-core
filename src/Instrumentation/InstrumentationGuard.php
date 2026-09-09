@@ -13,7 +13,7 @@ use Throwable;
 final readonly class InstrumentationGuard
 {
     /**
-     * @var (Closure(Throwable): void)|null
+     * @var (Closure(Throwable): void)|null Observer notified of every suppressed instrumentation failure.
      */
     private Closure|null $failureHandler;
 
@@ -22,7 +22,7 @@ final readonly class InstrumentationGuard
      */
     public function __construct(callable|null $failureHandler = null)
     {
-        $this->failureHandler = $failureHandler === null ? null : Closure::fromCallable($failureHandler);
+        $this->failureHandler = $failureHandler === null ? null : $failureHandler(...);
     }
 
     /**
@@ -35,12 +35,22 @@ final readonly class InstrumentationGuard
         try {
             $observer();
         } catch (Throwable $failure) {
-            if ($this->failureHandler !== null) {
-                try {
-                    ($this->failureHandler)($failure);
-                } catch (Throwable) {
-                    // A diagnostic failure handler is itself instrumentation and must remain fail-open.
-                }
+            $this->report($failure);
+        }
+    }
+
+    /**
+     * Reports a failure that was already caught, keeping the handler itself fail-open.
+     *
+     * @param Throwable $failure Suppressed instrumentation failure.
+     */
+    public function report(Throwable $failure): void
+    {
+        if ($this->failureHandler !== null) {
+            try {
+                ($this->failureHandler)($failure);
+            } catch (Throwable) {
+                // A diagnostic failure handler is itself instrumentation and must remain fail-open.
             }
         }
     }

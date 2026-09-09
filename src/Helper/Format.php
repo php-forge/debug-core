@@ -26,11 +26,11 @@ final class Format
     /**
      * Bytes in one mebibyte, the unit of the `bytesToMb()` readout.
      */
-    private const int BYTES_PER_MB = 1024 * 1024;
+    public const int BYTES_PER_MB = 1024 * 1024;
     /**
      * Milliseconds in one second, used to scale second-based durations.
      */
-    private const int MILLISECONDS_PER_SECOND = 1000;
+    public const int MILLISECONDS_PER_SECOND = 1000;
     /**
      * Relative-time threshold: ages of one day or more render as `X d ago`.
      */
@@ -127,6 +127,7 @@ final class Format
     public static function timeOfDay(int $epochMilliseconds, string $format = 'H:i:s'): string
     {
         $seconds = intdiv($epochMilliseconds, self::MILLISECONDS_PER_SECOND);
+
         $fraction = $epochMilliseconds % self::MILLISECONDS_PER_SECOND;
 
         if ($fraction < 0) {

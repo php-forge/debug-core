@@ -55,7 +55,7 @@ final class Coerce
     }
 
     /**
-     * Returns the value as an int when it is an integer or numeric, `null` otherwise.
+     * Returns the value as an int when it is numeric, `null` otherwise.
      *
      * @param mixed $value Value to narrow.
      *
