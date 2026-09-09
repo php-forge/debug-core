@@ -226,8 +226,10 @@ function bannerFixture(existing = false, withSummary = false) {
       attached = true;
     },
   };
+  var filterLink = new Element();
   var root = {
     querySelector(selector) {
+      if (selector === "[data-yii-debug-n1-filter]") return filterLink;
       if (selector === ".yii-debug-db-n1-summary")
         return withSummary ? grid : null;
       return selector === ".yii-debug-grid-db"
@@ -247,7 +249,10 @@ function bannerFixture(existing = false, withSummary = false) {
       return pill;
     },
   };
-  return { root, banner, label, clear };
+  filterLink.focus = () => {
+    root.activeElement = filterLink;
+  };
+  return { root, banner, label, clear, filterLink };
 }
 
 test("N+1 creates the standard active-filter banner and clears it without navigation", () => {
@@ -305,6 +310,36 @@ test("N+1 inserts its banner before the summary instead of the grid", () => {
   };
   updateNPlusOneBanner(root, { activeGroup: "a", visible: 3 }, () => {});
   assert.equal(root.querySelector(".yii-debug-active-filters"), banner);
+});
+
+test("N+1 restores focus only when removing the focused control", () => {
+  var { root, banner, clear, filterLink } = bannerFixture();
+  var active = { activeGroup: "a", visible: 3 };
+  var inactive = { activeGroup: null, visible: 4 };
+  var clearFilter = () => {};
+
+  updateNPlusOneBanner(root, active, clearFilter);
+  root.activeElement = banner.querySelector("[data-yii-debug-n1-pill]");
+  updateNPlusOneBanner(root, inactive, clearFilter);
+  assert.equal(root.activeElement, filterLink);
+
+  updateNPlusOneBanner(root, active, clearFilter);
+  root.activeElement = clear;
+  updateNPlusOneBanner(root, inactive, clearFilter);
+  assert.equal(root.activeElement, filterLink);
+
+  var existing = bannerFixture(true);
+  updateNPlusOneBanner(existing.root, active, clearFilter);
+  existing.root.activeElement = existing.clear;
+  updateNPlusOneBanner(existing.root, inactive, clearFilter);
+  assert.equal(existing.root.activeElement, existing.clear);
+
+  updateNPlusOneBanner(existing.root, active, clearFilter);
+  existing.root.activeElement = existing.banner.querySelector(
+    "[data-yii-debug-n1-pill]",
+  );
+  updateNPlusOneBanner(existing.root, inactive, clearFilter);
+  assert.equal(existing.root.activeElement, existing.filterLink);
 });
 
 test("N+1 shares the existing banner while preserving server filters and Clear all URL", () => {

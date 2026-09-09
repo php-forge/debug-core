@@ -95,7 +95,8 @@ final class SensitiveDataRedactor
     /**
      * Returns whether a key matches a configured exact name, literal prefix, or PCRE pattern.
      *
-     * @param string $key Original key to inspect case-insensitively.
+     * @param string $key Original key to inspect. Exact names and literal prefixes ignore case; PCRE patterns retain
+     * their own case-sensitivity modifiers.
      * @param list<string> $sensitiveKeys Exact key names to inspect.
      * @param list<string> $sensitiveKeyPrefixes Literal key prefixes to inspect case-insensitively.
      * @param list<string>|null $sensitiveKeyPatterns PCRE patterns applied to the complete original key. `null` uses

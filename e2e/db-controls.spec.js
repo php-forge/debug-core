@@ -159,7 +159,9 @@ for (const dialect of ["yii2", "yii3"]) {
           ),
         ),
       ).toBe(true);
-      await rowTags.nth(1).click();
+      await rowTags.nth(1).focus();
+      await rowTags.nth(1).press("Enter");
+      await expect(rowTags.nth(1)).toBeFocused();
       await expect(visibleRows).toHaveCount(4);
       await expect(clear).toBeHidden();
       await expect(banner).toHaveCount(0);
@@ -176,6 +178,16 @@ for (const dialect of ["yii2", "yii3"]) {
       expect(page.url()).toBe("http://debug.test/?panel=db&sort=-duration");
       await expect(select).toHaveValue("SELECT");
       await expect(banner).toHaveCount(0);
+      await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
+
+      await page.locator(".yii-debug-db-n1-link").press("Enter");
+      const groupPill = banner.getByRole("link", {
+        name: "Remove N+1: 3 similar queries filter",
+      });
+      await groupPill.focus();
+      await groupPill.press("Enter");
+      await expect(banner).toHaveCount(0);
+      await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
 
       await page.goto(
         "http://debug.test/?panel=db&sort=-duration&Db%5Bquery%5D=demo_items",
@@ -192,9 +204,9 @@ for (const dialect of ["yii2", "yii3"]) {
           ),
         ),
       ).toBe(true);
-      await banner
-        .getByRole("link", { name: "Remove N+1: 3 similar queries filter" })
-        .click();
+      await groupPill.focus();
+      await groupPill.press("Enter");
+      await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
       await expect(banner).toContainText("1 filter active");
       await expect(banner.locator("[data-yii-debug-n1-pill]")).toHaveCount(0);
       await expect(visibleRows).toHaveCount(4);

@@ -61,6 +61,15 @@ export function updateNPlusOneBanner(root, result, clearFilter) {
     pill.querySelector(".yii-debug-active-filter-value").textContent = label;
     pill.setAttribute("aria-label", "Remove N+1: " + label + " filter");
   } else if (pill) {
+    if (
+      root.activeElement === pill ||
+      (banner.querySelectorAll(".yii-debug-active-filter-pill").length === 1 &&
+        root.activeElement ===
+          banner.querySelector(".yii-debug-active-filters-clear"))
+    ) {
+      root.querySelector("[data-yii-debug-n1-filter]").focus();
+    }
+
     pill.remove();
   }
 
