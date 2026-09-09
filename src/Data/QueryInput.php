@@ -58,6 +58,8 @@ final class QueryInput
      * whenever `null` comes back.
      *
      * @param string $value Raw submitted bound.
+     *
+     * @return float|null Finite, non-negative bound, or `null` when the value is unusable.
      */
     public static function minimumBound(string $value): float|null
     {
@@ -75,12 +77,21 @@ final class QueryInput
      *
      * @param array<array-key, mixed> $query Parsed query parameters.
      * @param string $name Parameter name to read.
+     *
+     * @return string|null Parameter value as a string, or `null` when absent or non-scalar.
      */
     public static function scalar(array $query, string $name): string|null
     {
         return self::stringValue($query[$name] ?? null);
     }
 
+    /**
+     * Normalizes a scalar query value to its string form.
+     *
+     * @param mixed $value Raw query value.
+     *
+     * @return string|null String form of a string, `int`, or `float` value; `null` for any other type.
+     */
     private static function stringValue(mixed $value): string|null
     {
         if (is_string($value)) {

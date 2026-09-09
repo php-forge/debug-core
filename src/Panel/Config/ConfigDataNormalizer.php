@@ -37,6 +37,8 @@ final class ConfigDataNormalizer
      * Builds the application-section view-model from the `application` slice of the raw payload.
      *
      * @param array<array-key, mixed> $raw Raw `application` slice.
+     *
+     * @return ApplicationConfig Typed application section.
      */
     private function buildApplication(array $raw): ApplicationConfig
     {
@@ -56,6 +58,8 @@ final class ConfigDataNormalizer
      * Builds the PHP-runtime view-model from the `php` slice of the raw payload.
      *
      * @param array<array-key, mixed> $raw Raw `php` slice.
+     *
+     * @return PhpConfig Typed PHP runtime section.
      */
     private function buildPhp(array $raw): PhpConfig
     {
@@ -72,6 +76,9 @@ final class ConfigDataNormalizer
      * Coerces the value at `$raw[$key]` to a boolean, falling back to `false` when missing.
      *
      * @param array<array-key, mixed> $raw Slice to read from.
+     * @param string $key Entry to read.
+     *
+     * @return bool Coerced flag.
      */
     private function extractBool(array $raw, string $key): bool
     {
@@ -82,6 +89,9 @@ final class ConfigDataNormalizer
      * Returns the value at `$raw[$key]` when it is a string, falling back to `''` otherwise.
      *
      * @param array<array-key, mixed> $raw Slice to read from.
+     * @param string $key Entry to read.
+     *
+     * @return string String value, or `''` when missing or not a string.
      */
     private function extractString(array $raw, string $key): string
     {

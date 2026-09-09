@@ -28,7 +28,7 @@ final class DbQueryRenderer
      */
     public static function renderDurationCell(QueryRow $row): string
     {
-        return sprintf('%.1f ms', $row->duration);
+        return sprintf('%.1f ms', $row->getDuration());
     }
 
     /**
@@ -115,7 +115,7 @@ final class DbQueryRenderer
     ): string {
         $sql = Div::tag()
             ->class('yii-debug-db-sql')
-            ->html(SqlHighlighter::highlight($row->query));
+            ->html(SqlHighlighter::highlight($row->getQuery()));
 
         $children = [$sql];
 
@@ -123,7 +123,7 @@ final class DbQueryRenderer
             $groupId = $nPlusOneFinding->id();
             $sql = $sql->addDataAttribute('yii-debug-n1-group', $groupId);
 
-            if ($row->seq === $nPlusOneFinding->firstSequence) {
+            if ($row->getSequence() === $nPlusOneFinding->firstSequence) {
                 $sql = $sql->id($groupId);
             }
 
@@ -138,10 +138,10 @@ final class DbQueryRenderer
             ];
         }
 
-        if ($row->trace !== []) {
+        if ($row->getTrace() !== []) {
             $items = array_map(
                 static fn(array $frame): Li => Li::tag()->html(($traceLine)($frame)),
-                $row->trace,
+                $row->getTrace(),
             );
 
             $children[] = Details::tag()
@@ -156,12 +156,14 @@ final class DbQueryRenderer
                                 ->content('›'),
                             Span::tag()->content(DbMessage::TRACE),
                         ),
-                    Ul::tag()->class('yii-debug-trace')->html(...$items),
+                    Ul::tag()
+                        ->class('yii-debug-trace')
+                        ->html(...$items),
                 );
         }
 
         if ($hasExplain && $row->isExplainable()) {
-            $explainTargetId = "yii-debug-db-explain-{$row->seq}";
+            $explainTargetId = "yii-debug-db-explain-{$row->getSequence()}";
 
             $children[] = Div::tag()
                 ->class('yii-debug-db-explain')
@@ -171,7 +173,7 @@ final class DbQueryRenderer
                         ->addAriaAttribute('expanded', 'false')
                         ->addAriaAttribute('label', 'Toggle EXPLAIN output')
                         ->class('yii-debug-db-explain-toggle')
-                        ->href($explainUrlBuilder($row->seq))
+                        ->href($explainUrlBuilder($row->getSequence()))
                         ->html(
                             Span::tag()
                                 ->addAriaAttribute('hidden', 'true')
@@ -196,11 +198,11 @@ final class DbQueryRenderer
      */
     public static function renderRowsCell(QueryRow $row): string
     {
-        if ($row->rows === null) {
+        if ($row->getRows() === null) {
             return '–';
         }
 
-        return "{$row->rows} " . ($row->rows === 1 ? 'row' : 'rows');
+        return "{$row->getRows()} " . ($row->getRows() === 1 ? 'row' : 'rows');
     }
 
     /**
@@ -208,7 +210,7 @@ final class DbQueryRenderer
      */
     public static function renderTimeCell(QueryRow $row): string
     {
-        return Format::timeOfDay((int) $row->timestamp);
+        return Format::timeOfDay((int) $row->getTimestamp());
     }
 
     /**
@@ -216,11 +218,11 @@ final class DbQueryRenderer
      */
     public static function renderTypeCell(QueryRow $row): string
     {
-        $variant = Vocabulary::sqlVerb($row->type);
+        $variant = Vocabulary::sqlVerb($row->getType());
 
         return Span::tag()
             ->class("yii-debug-db-type yii-debug-verb-{$variant}")
-            ->content($row->type)
+            ->content($row->getType())
             ->render();
     }
 }

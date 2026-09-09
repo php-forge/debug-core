@@ -22,7 +22,11 @@ final class SnapshotComparisonTest extends TestCase
         $baseline = self::snapshot(['db' => ['queries' => 1]]);
         $target = self::snapshot(['db' => ['queries' => 2]]);
 
-        $comparison = SnapshotComparison::between($baseline, $target, ['db' => 'Database']);
+        $comparison = SnapshotComparison::between(
+            $baseline,
+            $target,
+            ['db' => 'Database'],
+        );
 
         self::assertSame(
             $baseline,
@@ -116,7 +120,10 @@ final class SnapshotComparisonTest extends TestCase
         $panels = ['db' => ['queries' => 1]];
 
         self::assertFalse(
-            SnapshotComparison::between(self::snapshot($panels), self::snapshot($panels))->hasDifferences(),
+            SnapshotComparison::between(
+                self::snapshot($panels),
+                self::snapshot($panels),
+            )->hasDifferences(),
             'Equal summaries and payloads must report no difference.',
         );
     }

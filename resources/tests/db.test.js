@@ -101,6 +101,7 @@ var historyPushes = [];
 var historyStub = {
   pushState(_state, _title, url) {
     historyPushes.push(url);
+    window.location.href = url;
   },
 };
 
@@ -197,7 +198,169 @@ globalThis.XMLHttpRequest.prototype.respond = function respond(
   this.onreadystatechange();
 };
 
-const { applyNPlusOneFilter } = await import("../src/panels/db.js");
+const { applyNPlusOneFilter, updateNPlusOneBanner } =
+  await import("../src/panels/db.js");
+
+function bannerFixture(existing = false, withSummary = false) {
+  var pills = existing ? [new Element()] : [];
+  var label = new Element();
+  var clear = new Element();
+  clear.setAttribute("href", "/debug?panel=db&sort=-duration");
+  var list = { appendChild: (pill) => pills.push(pill) };
+  var banner = new Element();
+  var attached = existing;
+  banner.querySelector = (selector) => {
+    if (selector === ".yii-debug-active-filters-label") return label;
+    if (selector === ".yii-debug-active-filters-list") return list;
+    if (selector === ".yii-debug-active-filters-clear") return clear;
+    return (
+      pills.find((pill) => pill.getAttribute("data-yii-debug-n1-pill")) || null
+    );
+  };
+  banner.querySelectorAll = () => pills;
+  banner.remove = () => {
+    attached = false;
+  };
+  var grid = {
+    before: () => {
+      attached = true;
+    },
+  };
+  var filterLink = new Element();
+  var root = {
+    querySelector(selector) {
+      if (selector === "[data-yii-debug-n1-filter]") return filterLink;
+      if (selector === ".yii-debug-db-n1-summary")
+        return withSummary ? grid : null;
+      return selector === ".yii-debug-grid-db"
+        ? grid
+        : attached
+          ? banner
+          : null;
+    },
+    createElement(tag) {
+      if (tag === "div") return banner;
+      var pill = new Element();
+      var value = new Element();
+      pill.querySelector = () => value;
+      pill.remove = () => {
+        pills = pills.filter((item) => item !== pill);
+      };
+      return pill;
+    },
+  };
+  filterLink.focus = () => {
+    root.activeElement = filterLink;
+  };
+  return { root, banner, label, clear, filterLink };
+}
+
+test("N+1 creates the standard active-filter banner and clears it without navigation", () => {
+  var { root, banner, label, clear } = bannerFixture();
+  var cleared = 0;
+  var clearFilter = () => {
+    cleared += 1;
+  };
+  var inactive = { activeGroup: null, visible: 4 };
+  updateNPlusOneBanner(root, inactive, clearFilter);
+  assert.equal(root.querySelector(".yii-debug-active-filters"), null);
+  updateNPlusOneBanner(
+    { querySelector: () => null },
+    { activeGroup: "a" },
+    clearFilter,
+  );
+
+  updateNPlusOneBanner(root, { activeGroup: "a", visible: 3 }, clearFilter);
+  assert.equal(root.querySelector(".yii-debug-active-filters"), banner);
+  assert.equal(banner.getAttribute("aria-label"), "Active filters");
+  assert.equal(label.textContent, "1 filter active");
+  var pill = banner.querySelector("[data-yii-debug-n1-pill]");
+  assert.equal(
+    pill.getAttribute("aria-label"),
+    "Remove N+1: 3 similar queries filter",
+  );
+  assert.equal(
+    pill.querySelector(".yii-debug-active-filter-value").textContent,
+    "3 similar queries",
+  );
+
+  updateNPlusOneBanner(root, { activeGroup: "b", visible: 5 }, clearFilter);
+  assert.equal(
+    banner.querySelectorAll(".yii-debug-active-filter-pill").length,
+    1,
+  );
+  assert.equal(
+    pill.querySelector(".yii-debug-active-filter-value").textContent,
+    "5 similar queries",
+  );
+  pill.dispatchEvent(new Event("click"));
+  clear.dispatchEvent(new Event("click"));
+  assert.equal(cleared, 2);
+
+  updateNPlusOneBanner(root, inactive, clearFilter);
+  assert.equal(root.querySelector(".yii-debug-active-filters"), null);
+});
+
+test("N+1 inserts its banner before the summary instead of the grid", () => {
+  var { root, banner } = bannerFixture(false, true);
+  var querySelector = root.querySelector;
+  root.querySelector = (selector) => {
+    assert.notEqual(selector, ".yii-debug-grid-db");
+    return querySelector(selector);
+  };
+  updateNPlusOneBanner(root, { activeGroup: "a", visible: 3 }, () => {});
+  assert.equal(root.querySelector(".yii-debug-active-filters"), banner);
+});
+
+test("N+1 restores focus only when removing the focused control", () => {
+  var { root, banner, clear, filterLink } = bannerFixture();
+  var active = { activeGroup: "a", visible: 3 };
+  var inactive = { activeGroup: null, visible: 4 };
+  var clearFilter = () => {};
+
+  updateNPlusOneBanner(root, active, clearFilter);
+  root.activeElement = banner.querySelector("[data-yii-debug-n1-pill]");
+  updateNPlusOneBanner(root, inactive, clearFilter);
+  assert.equal(root.activeElement, filterLink);
+
+  updateNPlusOneBanner(root, active, clearFilter);
+  root.activeElement = clear;
+  updateNPlusOneBanner(root, inactive, clearFilter);
+  assert.equal(root.activeElement, filterLink);
+
+  var existing = bannerFixture(true);
+  updateNPlusOneBanner(existing.root, active, clearFilter);
+  existing.root.activeElement = existing.clear;
+  updateNPlusOneBanner(existing.root, inactive, clearFilter);
+  assert.equal(existing.root.activeElement, existing.clear);
+
+  updateNPlusOneBanner(existing.root, active, clearFilter);
+  existing.root.activeElement = existing.banner.querySelector(
+    "[data-yii-debug-n1-pill]",
+  );
+  updateNPlusOneBanner(existing.root, inactive, clearFilter);
+  assert.equal(existing.root.activeElement, existing.filterLink);
+});
+
+test("N+1 shares the existing banner while preserving server filters and Clear all URL", () => {
+  var { root, banner, label, clear } = bannerFixture(true);
+  var inactive = { activeGroup: null, visible: 4 };
+  updateNPlusOneBanner(root, inactive, () => {});
+  assert.equal(label.textContent, "1 filter active");
+
+  updateNPlusOneBanner(root, { activeGroup: "a", visible: 3 }, () => {});
+  assert.equal(label.textContent, "2 filters active");
+  assert.equal(clear.getAttribute("href"), "/debug?panel=db&sort=-duration");
+  assert.equal(clear.listeners.size, 0);
+
+  updateNPlusOneBanner(root, inactive, () => {});
+  assert.equal(root.querySelector(".yii-debug-active-filters"), banner);
+  assert.equal(
+    banner.querySelectorAll(".yii-debug-active-filter-pill").length,
+    1,
+  );
+  assert.equal(label.textContent, "1 filter active");
+});
 
 test("N+1 group links filter query rows and expose live progress", () => {
   var rows = [new Element(), new Element(), new Element(), new Element()];
@@ -243,7 +406,19 @@ test("N+1 group links filter query rows and expose live progress", () => {
   assert.equal(clear.hidden, false);
   assert.equal(status.textContent, "Showing 2 potential N+1 queries.");
 
+  markers[0].classList.add("yii-debug-deep-link-target");
+  applyNPlusOneFilter(root, "group-b");
+  assert.equal(
+    markers[0].classList.contains("yii-debug-deep-link-target"),
+    false,
+  );
+
+  markers[2].classList.add("yii-debug-deep-link-target");
   applyNPlusOneFilter(root, null);
+  assert.equal(
+    markers[2].classList.contains("yii-debug-deep-link-target"),
+    false,
+  );
   rows.forEach((row) => assert.equal(row.hidden, false));
   assert.equal(clear.hidden, true);
 });
@@ -456,8 +631,9 @@ test("explain toggles reuse loaded output and explain-all short-circuits loaded 
   });
 });
 
-test("N+1 filter links navigate, scroll, and clear through the document handlers", () => {
+test("N+1 filter links navigate, toggle off, and clear through the document handlers", () => {
   historyPushes.length = 0;
+  window.location.href = "https://example.test/debug?tab=db&sort=-duration";
 
   filterLinks[0].dispatchEvent(new Event("click"));
 
@@ -468,22 +644,52 @@ test("N+1 filter links navigate, scroll, and clear through the document handlers
   assert.equal(clearLink.hidden, false);
   assert.equal(filterLinks[0].getAttribute("aria-current"), "true");
 
-  clearLink.dispatchEvent(new Event("click"));
-  assert.equal(docStatus.textContent, "Showing all database queries.");
-  assert.equal(clearLink.hidden, true);
-
-  filterLinks[1].dispatchEvent(new Event("click"));
-  assert.equal(historyPushes.length, 1);
-
-  delete anchorTarget.scrollIntoView;
+  docMarker.classList.add("yii-debug-deep-link-target");
   delete anchorTarget.scrolled;
   filterLinks[0].dispatchEvent(new Event("click"));
   assert.equal(historyPushes.length, 2);
+  assert.equal(
+    window.location.href,
+    "https://example.test/debug?tab=db&sort=-duration",
+  );
   assert.equal(anchorTarget.scrolled, undefined);
+  assert.equal(filterLinks[0].getAttribute("aria-current"), null);
+  assert.equal(
+    docMarker.classList.contains("yii-debug-deep-link-target"),
+    false,
+  );
+  assert.equal(docStatus.textContent, "Showing all database queries.");
+  assert.equal(clearLink.hidden, true);
+
+  filterLinks[0].dispatchEvent(new Event("click"));
+  docMarker.classList.add("yii-debug-deep-link-target");
+  clearLink.dispatchEvent(new Event("click"));
+  assert.equal(historyPushes.length, 4);
+  assert.equal(new URL(window.location.href).hash, "");
+  assert.equal(
+    docMarker.classList.contains("yii-debug-deep-link-target"),
+    false,
+  );
+  assert.equal(docStatus.textContent, "Showing all database queries.");
+  assert.equal(clearLink.hidden, true);
+
+  window.location.href += "#unrelated-section";
+  filterLinks[1].dispatchEvent(new Event("click"));
+  assert.equal(historyPushes.length, 4);
+  assert.equal(new URL(window.location.href).hash, "#unrelated-section");
+
+  delete anchorTarget.scrollIntoView;
+  filterLinks[0].dispatchEvent(new Event("click"));
+  assert.equal(historyPushes.length, 5);
+
+  // Applying an already linked group does not add a duplicate history entry.
+  filterLinks[0].removeAttribute("aria-current");
+  filterLinks[0].dispatchEvent(new Event("click"));
+  assert.equal(historyPushes.length, 5);
 
   delete window.history;
   filterLinks[0].dispatchEvent(new Event("click"));
-  assert.equal(historyPushes.length, 2);
+  assert.equal(historyPushes.length, 5);
   window.history = historyStub;
 });
 

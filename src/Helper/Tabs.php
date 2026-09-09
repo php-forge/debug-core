@@ -18,10 +18,14 @@ use function array_key_exists;
 final class Tabs
 {
     /**
-     * @param non-empty-string $id
-     * @param non-empty-string $ariaLabel
-     * @param list<array{label: string, content: string}> $tabs
+     * Renders the tab list and its panels as one markup fragment.
+     *
+     * @param non-empty-string $id Base ID every tab and panel ID derives from.
+     * @param non-empty-string $ariaLabel Accessible name announced for the tab list.
+     * @param list<array{label: string, content: string}> $tabs Tabs in display order.
      * @param int $activeIndex Zero-based index of the tab selected on initial render.
+     *
+     * @return string Rendered tab list followed by its panels.
      */
     public static function render(string $id, string $ariaLabel, array $tabs, int $activeIndex = 0): string
     {
@@ -63,14 +67,14 @@ final class Tabs
                 ->class($active ? 'yii-debug-tab-panel is-active' : 'yii-debug-tab-panel')
                 ->html($tab['content']);
 
-            if (!$active) {
+            if ($active === false) {
                 $panel = $panel->addAttribute('hidden', true);
             }
 
             $panels[] = $panel;
         }
 
-        $tabs = Ul::tag()
+        $tabList = Ul::tag()
             ->class('yii-debug-tabs')
             ->addAriaAttribute('label', $ariaLabel)
             ->addAttribute('role', 'tablist')
@@ -81,6 +85,6 @@ final class Tabs
             ->html(...$panels)
             ->render();
 
-        return "{$tabs}{$content}";
+        return "{$tabList}{$content}";
     }
 }

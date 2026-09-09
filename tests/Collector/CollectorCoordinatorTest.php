@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Tests\Collector;
 
 use InvalidArgumentException;
 use PHPForge\Debug\Collector\CollectorCoordinator;
+use PHPForge\Debug\Exception\Message;
 use PHPForge\Debug\Storage\{PanelFailure, RequestSummary};
 use PHPForge\Debug\Tests\Support\{ArrayPayloadSnapshotFixture, CollectorFixture};
 use PHPUnit\Framework\Attributes\Group;
@@ -94,12 +95,8 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testCollectorReturnsRegisteredInstanceOrNull(): void
     {
-        $collector = new CollectorFixture(
-            'app.example',
-        );
-        $coordinator = new CollectorCoordinator(
-            [$collector],
-        );
+        $collector = new CollectorFixture('app.example');
+        $coordinator = new CollectorCoordinator([$collector]);
 
         self::assertSame(
             $collector,
@@ -114,13 +111,7 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testHasCollectorUsesStableId(): void
     {
-        $coordinator = new CollectorCoordinator(
-            [
-                new CollectorFixture(
-                    'app.example',
-                ),
-            ],
-        );
+        $coordinator = new CollectorCoordinator([new CollectorFixture('app.example')]);
 
         self::assertTrue(
             $coordinator->hasCollector('app.example'),
@@ -134,12 +125,8 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testLifecycleCallsCollectorsOncePerCycle(): void
     {
-        $collector = new CollectorFixture(
-            'app.example',
-        );
-        $coordinator = new CollectorCoordinator(
-            [$collector],
-        );
+        $collector = new CollectorFixture('app.example');
+        $coordinator = new CollectorCoordinator([$collector]);
 
         $coordinator->startup();
         $coordinator->startup();
@@ -281,12 +268,8 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testRunReturnsOperationResultAndCompletesLifecycle(): void
     {
-        $collector = new CollectorFixture(
-            'app.example',
-        );
-        $coordinator = new CollectorCoordinator(
-            [$collector],
-        );
+        $collector = new CollectorFixture('app.example');
+        $coordinator = new CollectorCoordinator([$collector]);
 
         self::assertSame(
             'result',
@@ -317,9 +300,7 @@ final class CollectorCoordinatorTest extends TestCase
             failShutdown: true,
             shutdownFailureMessage: 'Second shutdown failed.',
         );
-        $successful = new CollectorFixture(
-            'successful',
-        );
+        $successful = new CollectorFixture('successful');
         $coordinator = new CollectorCoordinator(
             [
                 $firstBroken,
@@ -353,9 +334,7 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testShutdownRetriesOnlyCollectorsWhoseCleanupFailed(): void
     {
-        $successful = new CollectorFixture(
-            'successful',
-        );
+        $successful = new CollectorFixture('successful');
         $flaky = new CollectorFixture(
             'flaky',
             shutdownFailuresRemaining: 1,
@@ -392,16 +371,12 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testStartupAllowsRetryAfterRollback(): void
     {
-        $first = new CollectorFixture(
-            'first',
-        );
+        $first = new CollectorFixture('first');
         $flaky = new CollectorFixture(
             'flaky',
             startupFailuresRemaining: 1,
         );
-        $later = new CollectorFixture(
-            'later',
-        );
+        $later = new CollectorFixture('later');
         $coordinator = new CollectorCoordinator(
             [
                 $first,
@@ -527,16 +502,12 @@ final class CollectorCoordinatorTest extends TestCase
 
     public function testStartupRollsBackAffectedCollectorsWhenSecondCollectorFails(): void
     {
-        $first = new CollectorFixture(
-            'first',
-        );
+        $first = new CollectorFixture('first');
         $failed = new CollectorFixture(
             'failed',
             startupFailuresRemaining: 1,
         );
-        $later = new CollectorFixture(
-            'later',
-        );
+        $later = new CollectorFixture('later');
         $coordinator = new CollectorCoordinator(
             [
                 $first,
@@ -611,9 +582,7 @@ final class CollectorCoordinatorTest extends TestCase
     public function testThrowInvalidArgumentExceptionForDuplicateId(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Duplicate debug collector ID: app.example.',
-        );
+        $this->expectExceptionMessage(Message::COLLECTOR_ID_DUPLICATE->getMessage('app.example'));
 
         new CollectorCoordinator(
             [
@@ -630,9 +599,7 @@ final class CollectorCoordinatorTest extends TestCase
     public function testThrowInvalidArgumentExceptionForEmptyId(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'Debug collector ID must not be empty.',
-        );
+        $this->expectExceptionMessage(Message::COLLECTOR_ID_EMPTY->getMessage());
 
         new CollectorCoordinator([new CollectorFixture('   ')]);
     }

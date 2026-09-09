@@ -26,11 +26,13 @@ final readonly class DbSnapshot implements PanelSnapshot
      */
     public static function capture(array $rows): self
     {
-        $occurrences = array_count_values(array_map(static fn(QueryRow $row): string => $row->query, $rows));
+        $occurrences = array_count_values(array_map(static fn(QueryRow $row): string => $row->getQuery(), $rows));
 
         return new self(
             array_map(
-                static fn(QueryRow $row): QueryRow => $row->withDuplicate($occurrences[$row->query] ?? $row->duplicate),
+                static fn(QueryRow $row): QueryRow => $row->withDuplicate(
+                    $occurrences[$row->getQuery()] ?? $row->getDuplicate(),
+                ),
                 $rows,
             ),
         );

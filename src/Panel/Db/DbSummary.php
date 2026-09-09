@@ -37,7 +37,7 @@ final readonly class DbSummary
     public array $types;
 
     /**
-     * @param list<QueryRow> $rows
+     * @param list<QueryRow> $rows Captured query rows the metrics are computed from.
      */
     public function __construct(array $rows)
     {
@@ -47,17 +47,17 @@ final readonly class DbSummary
         $types = [];
 
         foreach ($rows as $row) {
-            if ($row->duplicate > 1) {
+            if ($row->getDuplicate() > 1) {
                 $duplicates++;
             }
 
-            $duration += $row->duration;
+            $duration += $row->getDuration();
 
-            if ($row->traceHash !== '') {
-                $callers[$row->traceHash] = ($callers[$row->traceHash] ?? 0) + 1;
+            if ($row->getTraceHash() !== '') {
+                $callers[$row->getTraceHash()] = ($callers[$row->getTraceHash()] ?? 0) + 1;
             }
 
-            $types[$row->type] = $row->type;
+            $types[$row->getType()] = $row->getType();
         }
 
         $this->count = count($rows);
@@ -69,6 +69,10 @@ final readonly class DbSummary
 
     /**
      * Counts the call sites that issued at least `$threshold` statements, or `0` when the threshold is `null`.
+     *
+     * @param int|null $threshold Statements per call site that flag it, or `null` to disable the check.
+     *
+     * @return int Number of call sites at or above the threshold.
      */
     public function excessiveCallerCount(int|null $threshold): int
     {
@@ -92,6 +96,8 @@ final readonly class DbSummary
      *
      * @param int|null $criticalQueryThreshold Query count above which the request is critical, or `null` to disable.
      * @param int|null $excessiveCallerThreshold Statements per call site that flag it, or `null` to disable.
+     *
+     * @return bool `true` when either threshold is exceeded; `false` otherwise.
      */
     public function hasWarning(int|null $criticalQueryThreshold, int|null $excessiveCallerThreshold): bool
     {
@@ -101,6 +107,10 @@ final readonly class DbSummary
 
     /**
      * Returns whether the query count exceeds `$threshold`, or `false` when the threshold is `null`.
+     *
+     * @param int|null $threshold Query count above which the request is critical, or `null` to disable the check.
+     *
+     * @return bool `true` when the captured query count exceeds the threshold; `false` otherwise.
      */
     public function isCritical(int|null $threshold): bool
     {

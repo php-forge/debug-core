@@ -17,6 +17,10 @@ use function strcasecmp;
 final class PageSize
 {
     /**
+     * Selector value that disables pagination.
+     */
+    public const string ALL = 'all';
+    /**
      * Default page size applied when no `per-page` parameter is supplied or the value is invalid.
      */
     public const int DEFAULT = 50;
@@ -32,7 +36,7 @@ final class PageSize
         '25',
         '50',
         '100',
-        'all',
+        self::ALL,
     ];
 
     /**
@@ -40,6 +44,8 @@ final class PageSize
      *
      * @param string|null $raw Raw `per-page` query-parameter value, or `null` when absent.
      * @param int $default Page size used when no value is supplied.
+     *
+     * @return string Canonical selector value: {@see ALL}, the raw value, or the default as a string.
      */
     public static function current(string|null $raw, int $default = self::DEFAULT): string
     {
@@ -47,7 +53,7 @@ final class PageSize
             return (string) $default;
         }
 
-        return strcasecmp($raw, 'all') === 0 ? 'all' : $raw;
+        return strcasecmp($raw, self::ALL) === 0 ? self::ALL : $raw;
     }
 
     /**
@@ -60,7 +66,7 @@ final class PageSize
      */
     public static function resolve(string|null $raw, int $default = self::DEFAULT): int|null
     {
-        if ($raw !== null && strcasecmp($raw, 'all') === 0) {
+        if ($raw !== null && strcasecmp($raw, self::ALL) === 0) {
             return null;
         }
 
@@ -77,6 +83,8 @@ final class PageSize
      * Renders the page-size selector for the `per-page` value found in the query parameters.
      *
      * @param array<array-key, mixed> $queryParams Query parameters already normalized by the panel.
+     *
+     * @return string Rendered selector markup.
      */
     public static function selectorFor(array $queryParams): string
     {
@@ -87,6 +95,8 @@ final class PageSize
      * Renders the inline page-size selector shown in the grid summary header.
      *
      * @param string $current Currently selected raw value (one of {@see OPTIONS} for a highlighted option).
+     *
+     * @return string Rendered selector markup.
      */
     private static function selectorHtml(string $current): string
     {
@@ -99,7 +109,7 @@ final class PageSize
             $select = $select->option(
                 Option::tag()
                     ->value($row)
-                    ->content($row === 'all' ? 'All' : $row)
+                    ->content($row === self::ALL ? 'All' : $row)
                     ->selected($row === $current),
             );
         }

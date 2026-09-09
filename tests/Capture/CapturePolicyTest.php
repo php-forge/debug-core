@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Tests\Capture;
 
 use InvalidArgumentException;
 use PHPForge\Debug\Capture\CapturePolicy;
+use PHPForge\Debug\Exception\Message;
 use PHPForge\Debug\Helper\SensitiveDataRedactor;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -23,28 +24,6 @@ final class CapturePolicyTest extends TestCase
             (new CapturePolicy(maxBodyBytes: 1))->redactBody('a', null),
             'A one-byte body limit must remain valid.',
         );
-    }
-
-    public function testConstructorRejectsANonPositiveBodyLimit(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            'greater than zero',
-        );
-
-        $policy = new CapturePolicy(maxBodyBytes: 0);
-
-        self::fail(
-            'Expected invalid policy construction to fail, got ' . $policy::class . '.',
-        );
-    }
-
-    public function testConstructorRejectsInvalidPatternConfigurationImmediately(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('not a valid PCRE pattern');
-
-        new CapturePolicy(sensitiveKeyPatterns: ['invalid']);
     }
 
     public function testMaxBodyBytesReturnsTheConfiguredPersistentLimit(): void
@@ -206,7 +185,10 @@ final class CapturePolicyTest extends TestCase
 
     public function testRedactTextAppliesPatternRulesWhenPatternsAreTheOnlyConfiguredSource(): void
     {
-        $policy = new CapturePolicy(sensitiveKeys: [], sensitiveKeyPatterns: ['~^secret-word$~i']);
+        $policy = new CapturePolicy(
+            sensitiveKeys: [],
+            sensitiveKeyPatterns: ['~^secret-word$~i'],
+        );
 
         self::assertSame(
             'secret-word=[redacted]; plain-word=visible',
@@ -217,7 +199,11 @@ final class CapturePolicyTest extends TestCase
 
     public function testRedactTextAppliesPrefixRulesWhenPrefixesAreTheOnlyConfiguredSource(): void
     {
-        $policy = new CapturePolicy(sensitiveKeys: [], sensitiveKeyPrefixes: ['private_'], sensitiveKeyPatterns: []);
+        $policy = new CapturePolicy(
+            sensitiveKeys: [],
+            sensitiveKeyPrefixes: ['private_'],
+            sensitiveKeyPatterns: [],
+        );
 
         self::assertSame(
             'private_key=[redacted]; public_key=visible',
@@ -325,6 +311,90 @@ final class CapturePolicyTest extends TestCase
             'https://example.test/path?page=1#result',
             $policy->redactUrl('https://example.test/path?page=1#result'),
             'A fragment must not become part of a safe query value.',
+        );
+    }
+
+    public function testThrowInvalidArgumentExceptionForAnEmptySensitiveKeyPrefix(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            Message::SENSITIVE_KEY_PREFIX_EMPTY->getMessage(),
+        );
+
+        new CapturePolicy(sensitiveKeyPrefixes: ['']);
+    }
+
+    public function testThrowInvalidArgumentExceptionForAnInvalidSensitiveKeyPattern(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            Message::SENSITIVE_KEY_PATTERN_INVALID->getMessage('invalid'),
+        );
+
+        new CapturePolicy(sensitiveKeyPatterns: ['invalid']);
+    }
+
+    public function testThrowInvalidArgumentExceptionWhenMaxBodyBytesIsNotPositive(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            Message::BODY_SIZE_INVALID->getMessage(),
+        );
+
+        new CapturePolicy(maxBodyBytes: 0);
+    }
+
+    public function testWithAdditionalSensitiveKeysExtendsTheDefaultListAndKeepsPatternRules(): void
+    {
+        $policy = new CapturePolicy();
+
+        $extended = $policy->withAdditionalSensitiveKeys(['queueSecret', 'jobPayload']);
+
+        self::assertTrue(
+            $extended->isSensitiveKey('queueSecret'),
+            'First additional key must be denied.',
+        );
+        self::assertTrue(
+            $extended->isSensitiveKey('jobPayload'),
+            'Every additional key must be denied, not only the first.',
+        );
+        self::assertTrue(
+            $extended->isSensitiveKey('cookie'),
+            'Configured exact keys must survive.',
+        );
+        self::assertTrue(
+            $extended->isSensitiveKey('MY_APP_PASSWORD'),
+            'Segment-aware defaults must survive the wider key list.',
+        );
+        self::assertFalse(
+            $policy->isSensitiveKey('queueSecret'),
+            'Source policy must stay unchanged.',
+        );
+    }
+
+    public function testWithAdditionalSensitiveKeysPreservesLimitsPrefixesAndDisabledPatterns(): void
+    {
+        $policy = new CapturePolicy(
+            sensitiveKeys: [],
+            maxBodyBytes: 3,
+            sensitiveKeyPrefixes: ['private_'],
+            sensitiveKeyPatterns: [],
+        );
+
+        $extended = $policy->withAdditionalSensitiveKeys(['queueSecret']);
+
+        self::assertSame(
+            3,
+            $extended->maxBodyBytes(),
+            'Byte limit must carry over.',
+        );
+        self::assertTrue(
+            $extended->isSensitiveKey('private_key'),
+            'Prefix rules must carry over.',
+        );
+        self::assertFalse(
+            $extended->isSensitiveKey('MY_APP_PASSWORD'),
+            'Disabled patterns must stay disabled.',
         );
     }
 }

@@ -10,7 +10,6 @@ use PHPForge\Debug\Helper\SensitiveDataRedactor;
 use SensitiveParameter;
 
 use function array_reverse;
-use function array_shift;
 use function get_object_vars;
 use function http_build_query;
 use function is_array;
@@ -32,6 +31,13 @@ use const PREG_SET_ORDER;
 final readonly class CapturePolicy
 {
     /**
+     * Raw body bytes retained by persistent capture when no explicit limit is configured.
+     */
+    public const int DEFAULT_MAX_BODY_BYTES = 65536;
+
+    /**
+     * PCRE patterns applied to complete original keys.
+     *
      * @var list<string>
      */
     private array $sensitiveKeyPatterns;
@@ -45,7 +51,7 @@ final readonly class CapturePolicy
      */
     public function __construct(
         private array $sensitiveKeys = SensitiveDataRedactor::DEFAULT_KEYS,
-        private int $maxBodyBytes = 65536,
+        private int $maxBodyBytes = self::DEFAULT_MAX_BODY_BYTES,
         private array $sensitiveKeyPrefixes = [],
         array|null $sensitiveKeyPatterns = null,
     ) {
@@ -57,16 +63,16 @@ final readonly class CapturePolicy
 
         $this->sensitiveKeyPatterns = SensitiveDataRedactor::patterns($this->sensitiveKeys, $sensitiveKeyPatterns);
 
-        SensitiveDataRedactor::isSensitiveKey(
-            '',
-            [],
-            $this->sensitiveKeyPrefixes,
-            $this->sensitiveKeyPatterns,
-        );
+        // One probe rejects an empty prefix or an invalid pattern at configuration time instead of on first capture.
+        $this->isSensitiveKey('');
     }
 
     /**
      * Returns whether a key is denied by this policy.
+     *
+     * @param string $key Original key to check case-insensitively.
+     *
+     * @return bool `true` when the key matches an exact name, a prefix, or a pattern rule; `false` otherwise.
      */
     public function isSensitiveKey(string $key): bool
     {
@@ -80,6 +86,8 @@ final readonly class CapturePolicy
 
     /**
      * Returns the maximum number of body bytes that may reach persistent capture.
+     *
+     * @return int Configured body byte limit.
      */
     public function maxBodyBytes(): int
     {
@@ -106,9 +114,13 @@ final readonly class CapturePolicy
     }
 
     /**
-     * Redacts a decoded body and suppresses its raw representation whenever redaction was required.
+     * Redacts a decoded body, suppressing its raw representation whenever redaction was required and truncating it at
+     * the configured byte boundary otherwise.
      *
-     * @return array{decoded: mixed, raw: string}
+     * @param string $raw Raw body exactly as received.
+     * @param mixed $decoded Decoded body, or `null` when the body could not be decoded.
+     *
+     * @return array{decoded: mixed, raw: string} Sanitized decoded body and its bounded raw representation.
      */
     public function redactBody(#[SensitiveParameter] string $raw, #[SensitiveParameter] mixed $decoded): array
     {
@@ -118,16 +130,26 @@ final readonly class CapturePolicy
             default => $decoded,
         };
 
+        if ($sanitized !== $decoded) {
+            return ['decoded' => $sanitized, 'raw' => SensitiveDataRedactor::PLACEHOLDER];
+        }
+
+        $body = $this->redactText($raw);
+
         return [
             'decoded' => $sanitized,
-            'raw' => $sanitized !== $decoded
-                ? SensitiveDataRedactor::PLACEHOLDER
-                : $this->truncateBody($raw),
+            'raw' => strlen($body) > $this->maxBodyBytes
+                ? substr($body, 0, $this->maxBodyBytes) . SensitiveDataRedactor::TRUNCATED
+                : $body,
         ];
     }
 
     /**
      * Redacts common `key=value` and `key: value` secret fragments in diagnostic text.
+     *
+     * @param string $text Diagnostic text to sanitize.
+     *
+     * @return string Text with every sensitive assignment value replaced.
      */
     public function redactText(#[SensitiveParameter] string $text): string
     {
@@ -140,16 +162,20 @@ final readonly class CapturePolicy
             PREG_SET_ORDER | PREG_OFFSET_CAPTURE,
         );
 
-        foreach (array_reverse($matches) as $match) {
-            [$assignment, $assignmentOffset] = array_shift($match);
-            [$key] = array_pop($match);
+        // Later assignments are rewritten first so earlier match offsets stay valid.
+        $assignments = array_reverse($matches);
 
-            if (!$this->isSensitiveKey($key)) {
+        foreach ($assignments as $match) {
+            [$assignment, $assignmentOffset] = $match[0];
+            [$key] = $match[2];
+
+            if ($this->isSensitiveKey($key) === false) {
                 continue;
             }
 
             $valueStart = $assignmentOffset + strlen($assignment);
             $valueLength = strcspn($text, ",;&\r\n", $valueStart);
+
             $text = substr_replace(
                 $text,
                 SensitiveDataRedactor::PLACEHOLDER,
@@ -163,12 +189,18 @@ final readonly class CapturePolicy
 
     /**
      * Redacts sensitive values in a URL query string without changing the URL outside its query component.
+     *
+     * @param string $url URL to sanitize.
+     *
+     * @return string URL with every sensitive query value replaced.
      */
     public function redactUrl(#[SensitiveParameter] string $url): string
     {
         $fragmentPosition = strpos($url, '#');
+
         $fragment = $fragmentPosition === false ? '' : substr($url, $fragmentPosition);
         $withoutFragment = $fragmentPosition === false ? $url : substr($url, 0, $fragmentPosition);
+
         $queryPosition = strpos($withoutFragment, '?');
 
         if ($queryPosition === false) {
@@ -185,14 +217,22 @@ final readonly class CapturePolicy
     }
 
     /**
-     * Truncates an opaque body at the configured byte boundary.
+     * Returns a new instance whose exact-key list also covers the given keys.
+     *
+     * The already resolved pattern rules are carried over, so extending the default key list keeps the segment-aware
+     * defaults active instead of silently dropping them.
+     *
+     * @param list<string> $sensitiveKeys Extra exact, case-insensitive keys to redact recursively.
+     *
+     * @return self New instance denying both the configured and the additional keys.
      */
-    private function truncateBody(#[SensitiveParameter] string $body): string
+    public function withAdditionalSensitiveKeys(array $sensitiveKeys): self
     {
-        $body = $this->redactText($body);
-
-        return strlen($body) > $this->maxBodyBytes
-            ? substr($body, 0, $this->maxBodyBytes) . SensitiveDataRedactor::TRUNCATED
-            : $body;
+        return new self(
+            [...$this->sensitiveKeys, ...$sensitiveKeys],
+            $this->maxBodyBytes,
+            $this->sensitiveKeyPrefixes,
+            $this->sensitiveKeyPatterns,
+        );
     }
 }

@@ -95,10 +95,14 @@ final class SensitiveDataRedactor
     /**
      * Returns whether a key matches a configured exact name, literal prefix, or PCRE pattern.
      *
+     * @param string $key Original key to inspect. Exact names and literal prefixes ignore case; PCRE patterns retain
+     * their own case-sensitivity modifiers.
      * @param list<string> $sensitiveKeys Exact key names to inspect.
      * @param list<string> $sensitiveKeyPrefixes Literal key prefixes to inspect case-insensitively.
      * @param list<string>|null $sensitiveKeyPatterns PCRE patterns applied to the complete original key. `null` uses
      * defaults only with the default exact-key list; `[]` explicitly disables patterns.
+     *
+     * @return bool `true` when the key matches any configured rule; `false` otherwise.
      */
     public static function isSensitiveKey(
         string $key,
@@ -176,9 +180,12 @@ final class SensitiveDataRedactor
     /**
      * Returns whether the key matches any normalized redaction rule.
      *
+     * @param string $key Original key to inspect.
      * @param array<string, true> $sensitiveKeys
      * @param list<string> $sensitiveKeyPrefixes
      * @param list<string> $sensitiveKeyPatterns
+     *
+     * @return bool `true` when the key matches any normalized rule; `false` otherwise.
      */
     private static function matches(
         string $key,
@@ -268,10 +275,14 @@ final class SensitiveDataRedactor
     /**
      * @template TKey of array-key
      *
+     * Redacts one nesting level, tracking depth and the shared node budget.
+     *
      * @param array<TKey, mixed> $value
      * @param array<string, true> $sensitiveKeys
      * @param list<string> $sensitiveKeyPrefixes
      * @param list<string> $sensitiveKeyPatterns
+     * @param int $depth Current nesting level.
+     * @param int $nodes Entries visited so far, shared across the whole traversal.
      *
      * @return array<TKey, mixed>
      */

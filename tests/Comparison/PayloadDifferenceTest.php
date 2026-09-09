@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 use function get_object_vars;
 
 /**
- * Unit tests for typed structural comparisons without retaining or modifying diagnostic values.
+ * Unit tests for {@see PayloadDifference} validating structural comparisons and immutability of input arrays.
  *
  * {@see PayloadDifferenceProvider} for test case data providers.
  */
@@ -30,7 +30,10 @@ final class PayloadDifferenceTest extends TestCase
         $originalBaseline = $baseline;
         $originalTarget = $target;
 
-        $difference = PayloadDifference::between($baseline, $target);
+        $difference = PayloadDifference::between(
+            $baseline,
+            $target,
+        );
 
         self::assertSame(
             $expected,

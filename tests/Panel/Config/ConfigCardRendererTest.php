@@ -16,6 +16,19 @@ use PHPUnit\Framework\TestCase;
 #[Group('config')]
 final class ConfigCardRendererTest extends TestCase
 {
+    public function testRenderApplicationDetailsSectionPreservesLocaleWhenIntlCannotResolveIt(): void
+    {
+        $locale = str_repeat('a', 200);
+
+        $summary = self::makeSummary(language: $locale);
+
+        self::assertStringContainsString(
+            "<dd>\n{$locale}\n</dd>",
+            ConfigCardRenderer::renderApplicationDetailsSection($summary->application)->render(),
+            'A locale exceeding the native ICU limit must remain visible without an invented display name.',
+        );
+    }
+
     public function testRenderApplicationDetailsSectionShowsCharsetAndLanguageRows(): void
     {
         $summary = self::makeSummary(charset: 'UTF-8', language: 'en-US', sourceLanguage: 'en');
@@ -160,6 +173,23 @@ final class ConfigCardRendererTest extends TestCase
             HTML,
             $html,
             'Packages must be grouped by vendor with aligned names and versions.',
+        );
+    }
+
+    public function testRenderInstalledExtensionsSectionKeepsEverySegmentAfterTheVendorInThePackageName(): void
+    {
+        $summary = self::makeSummary(extensions: ['acme/tool/plugin' => '1.0.0']);
+
+        $section = ConfigCardRenderer::renderInstalledExtensionsSection($summary);
+
+        self::assertNotNull(
+            $section,
+            'Non-empty roster must produce a section.',
+        );
+        self::assertStringContainsString(
+            'tool/plugin',
+            $section->render(),
+            'Only the first separator splits vendor from package.',
         );
     }
 

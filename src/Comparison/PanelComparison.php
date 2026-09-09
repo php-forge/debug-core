@@ -20,6 +20,29 @@ use function sort;
  */
 final readonly class PanelComparison
 {
+    /**
+     * Capture state of a panel whose payload reached the snapshot.
+     */
+    public const string STATE_CAPTURED = 'Captured';
+    /**
+     * Capture state of a panel whose capture failed.
+     */
+    public const string STATE_FAILED = 'Failed';
+    /**
+     * Capture state of a panel absent from the snapshot.
+     */
+    public const string STATE_NOT_CAPTURED = 'Not captured';
+
+    /**
+     * @param string $id Stable panel ID.
+     * @param string $label Display name, falling back to the panel ID.
+     * @param string $baselineState Capture state in the baseline snapshot.
+     * @param string $targetState Capture state in the target snapshot.
+     * @param int $added Leaves present only in the target payload.
+     * @param int $removed Leaves present only in the baseline payload.
+     * @param int $changed Leaves that differ, or `1` for a state-only transition.
+     * @param int $unchanged Leaves present in both payloads under the same value.
+     */
     private function __construct(
         public string $id,
         public string $label,
@@ -37,9 +60,11 @@ final readonly class PanelComparison
      * Failures take precedence over payloads. A state transition adds one change only when there are no structural
      * additions, removals, or changes; unchanged leaves remain counted even for that state-only transition.
      *
+     * @param DebugSnapshot $baseline Baseline snapshot.
+     * @param DebugSnapshot $target Target snapshot.
      * @param array<string, string> $panelLabels Display names indexed by stable panel ID, in display order.
      *
-     * @return list<self>
+     * @return list<self> Panel comparisons in configured display order.
      */
     public static function between(DebugSnapshot $baseline, DebugSnapshot $target, array $panelLabels = []): array
     {
@@ -52,9 +77,10 @@ final readonly class PanelComparison
             ],
         );
 
+        $configuredIds = array_keys($panelLabels);
         $orderedIds = [];
 
-        foreach ($panelLabels as $id => $_label) {
+        foreach ($configuredIds as $id) {
             if (in_array($id, $observedIds, true)) {
                 $orderedIds[] = $id;
             }
@@ -80,12 +106,9 @@ final readonly class PanelComparison
                 self::panelPayload($target, $id),
             );
 
-            $added = $difference->added;
-            $removed = $difference->removed;
             $changed = $difference->changed;
-            $unchanged = $difference->unchanged;
 
-            if ($added + $removed + $changed === 0 && $baselineState !== $targetState) {
+            if ($difference->added + $difference->removed + $changed === 0 && $baselineState !== $targetState) {
                 $changed = 1;
             }
 
@@ -94,10 +117,10 @@ final readonly class PanelComparison
                 label: $panelLabels[$id] ?? $id,
                 baselineState: $baselineState,
                 targetState: $targetState,
-                added: $added,
-                removed: $removed,
+                added: $difference->added,
+                removed: $difference->removed,
                 changed: $changed,
-                unchanged: $unchanged,
+                unchanged: $difference->unchanged,
             );
         }
 
@@ -106,6 +129,8 @@ final readonly class PanelComparison
 
     /**
      * Returns the total number of structural differences detected for the panel.
+     *
+     * @return int Sum of added, removed, and changed leaves.
      */
     public function differenceCount(): int
     {
@@ -115,7 +140,10 @@ final readonly class PanelComparison
     /**
      * Returns the captured payload or failure envelope, preserving the distinction between absent and empty.
      *
-     * @return array<string, mixed>|null
+     * @param DebugSnapshot $snapshot Snapshot to inspect.
+     * @param string $id Stable panel ID.
+     *
+     * @return array<string, mixed>|null Captured payload, failure envelope, or `null` when the panel is absent.
      */
     private static function panelPayload(DebugSnapshot $snapshot, string $id): array|null
     {
@@ -126,12 +154,20 @@ final readonly class PanelComparison
         return $snapshot->panels[$id] ?? null;
     }
 
+    /**
+     * Returns the capture state of the panel within the snapshot.
+     *
+     * @param DebugSnapshot $snapshot Snapshot to inspect.
+     * @param string $id Stable panel ID.
+     *
+     * @return string One of {@see STATE_CAPTURED}, {@see STATE_FAILED}, or {@see STATE_NOT_CAPTURED}.
+     */
     private static function panelState(DebugSnapshot $snapshot, string $id): string
     {
         if (array_key_exists($id, $snapshot->failures)) {
-            return 'Failed';
+            return self::STATE_FAILED;
         }
 
-        return array_key_exists($id, $snapshot->panels) ? 'Captured' : 'Not captured';
+        return array_key_exists($id, $snapshot->panels) ? self::STATE_CAPTURED : self::STATE_NOT_CAPTURED;
     }
 }

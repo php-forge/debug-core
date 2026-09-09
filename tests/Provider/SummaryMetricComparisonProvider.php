@@ -9,12 +9,15 @@ use PHPForge\Debug\Storage\RequestSummary;
 use function array_replace;
 
 /**
- * Regression cases recorded from the adapters before sharing summary metric calculations.
+ * Data provider for {@see SummaryMetricComparisonTest} test cases.
  */
 final class SummaryMetricComparisonProvider
 {
     /**
-     * @return iterable<string, array{RequestSummary, RequestSummary, int, array{string, string, string, string, string, string|null}}>
+     * @return iterable<string, array{
+     *     RequestSummary, RequestSummary, int,
+     *     array{string, string, string, string, string, string|null},
+     * }>
      */
     public static function metrics(): iterable
     {
@@ -554,7 +557,10 @@ final class SummaryMetricComparisonProvider
     }
 
     /**
-     * @return iterable<string, array{RequestSummary, RequestSummary, list<array{string, string, string, string, string, string|null}>}>
+     * @return iterable<string, array{
+     *     RequestSummary, RequestSummary,
+     *     list<array{string, string, string, string, string, string|null}>,
+     * }>
      */
     public static function summaries(): iterable
     {

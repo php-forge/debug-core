@@ -35,6 +35,10 @@ final class Text
      *
      * Unparsable URLs pass through unchanged. This is a display conversion, not URL validation or HTML escaping;
      * callers must retain the original diagnostic URL and escape the result at the rendering boundary.
+     *
+     * @param string $url Captured URL to convert for display.
+     *
+     * @return string Path with its non-empty query and fragment, or the original URL when unparsable.
      */
     public static function urlToPath(string $url): string
     {

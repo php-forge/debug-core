@@ -8,6 +8,81 @@ const EXPLAIN_ERROR_MESSAGE = "Unable to load the EXPLAIN output. Try again.";
 
 export const EXPLAIN_CONCURRENCY = 3;
 
+export function updateNPlusOneBanner(root, result, clearFilter) {
+  var banner = root.querySelector(".yii-debug-active-filters");
+
+  if (!banner && result.activeGroup) {
+    var anchor =
+      root.querySelector(".yii-debug-db-n1-summary") ||
+      root.querySelector(".yii-debug-grid-db");
+
+    if (!anchor) {
+      return;
+    }
+
+    banner = root.createElement("div");
+    banner.className = "yii-debug-active-filters";
+    banner.setAttribute("role", "group");
+    banner.setAttribute("aria-label", "Active filters");
+    banner.innerHTML =
+      '<span class="yii-debug-active-filters-label"></span>' +
+      '<span class="yii-debug-active-filters-list"></span>' +
+      '<a class="yii-debug-active-filters-clear" href="#" ' +
+      'aria-label="Clear all active filters" title="Clear all filters and show every row">Clear all</a>';
+    banner
+      .querySelector(".yii-debug-active-filters-clear")
+      .addEventListener("click", clearFilter);
+    anchor.before(banner);
+  }
+
+  if (!banner) {
+    return;
+  }
+
+  var pill = banner.querySelector("[data-yii-debug-n1-pill]");
+
+  if (result.activeGroup) {
+    if (!pill) {
+      pill = root.createElement("a");
+      pill.className = "yii-debug-active-filter-pill";
+      pill.setAttribute("data-yii-debug-n1-pill", "true");
+      pill.setAttribute("href", "#");
+      pill.setAttribute("title", "Remove this filter");
+      pill.innerHTML =
+        '<span class="yii-debug-active-filter-attr">N+1</span>' +
+        '<span class="yii-debug-active-filter-sep">:</span>' +
+        '<span class="yii-debug-active-filter-value"></span>' +
+        '<span class="yii-debug-active-filter-x" aria-hidden="true">×</span>';
+      pill.addEventListener("click", clearFilter);
+      banner.querySelector(".yii-debug-active-filters-list").appendChild(pill);
+    }
+
+    var label = result.visible + " similar queries";
+    pill.querySelector(".yii-debug-active-filter-value").textContent = label;
+    pill.setAttribute("aria-label", "Remove N+1: " + label + " filter");
+  } else if (pill) {
+    if (
+      root.activeElement === pill ||
+      (banner.querySelectorAll(".yii-debug-active-filter-pill").length === 1 &&
+        root.activeElement ===
+          banner.querySelector(".yii-debug-active-filters-clear"))
+    ) {
+      root.querySelector("[data-yii-debug-n1-filter]").focus();
+    }
+
+    pill.remove();
+  }
+
+  var count = banner.querySelectorAll(".yii-debug-active-filter-pill").length;
+
+  if (count === 0) {
+    banner.remove();
+  } else {
+    banner.querySelector(".yii-debug-active-filters-label").textContent =
+      count + " filter" + (count === 1 ? "" : "s") + " active";
+  }
+}
+
 export function formatExplainProgress(completed, total) {
   return "Explaining " + completed + "/" + total;
 }
@@ -57,6 +132,12 @@ export function applyNPlusOneFilter(root, groupId) {
   });
   var active = valid ? groupId : null;
   var visible = 0;
+
+  markers.forEach(function (marker) {
+    if (marker.getAttribute("data-yii-debug-n1-group") !== active) {
+      marker.classList.remove("yii-debug-deep-link-target");
+    }
+  });
 
   rows.forEach(function (row) {
     var matched = active === null || groupByRow.get(row) === active;
@@ -352,22 +433,51 @@ export function applyNPlusOneFilter(root, groupId) {
 
   syncExplainAllControls();
 
+  function updateNPlusOneLocation(groupId) {
+    if (!window.history) {
+      return;
+    }
+
+    var url = new URL(window.location.href);
+    var isGroupHash = Array.from(
+      document.querySelectorAll("[data-yii-debug-n1-group]"),
+    ).some(function (marker) {
+      return url.hash === "#" + marker.getAttribute("data-yii-debug-n1-group");
+    });
+
+    if (groupId || isGroupHash) {
+      url.hash = groupId || "";
+
+      if (url.href !== window.location.href) {
+        window.history.pushState(null, "", url.href);
+      }
+    }
+  }
+
+  function clearNPlusOneFilter(event) {
+    event.preventDefault();
+    var result = applyNPlusOneFilter(document, null);
+    updateNPlusOneLocation(null);
+    updateNPlusOneBanner(document, result, clearNPlusOneFilter);
+  }
+
   on(
     document.querySelectorAll("[data-yii-debug-n1-filter]"),
     "click",
     function (event) {
-      var groupId = this.getAttribute("data-yii-debug-n1-filter");
+      var groupId =
+        this.getAttribute("aria-current") === "true"
+          ? null
+          : this.getAttribute("data-yii-debug-n1-filter");
 
       event.preventDefault();
-      applyNPlusOneFilter(document, groupId);
+      var result = applyNPlusOneFilter(document, groupId);
+      updateNPlusOneLocation(result.activeGroup);
+      updateNPlusOneBanner(document, result, clearNPlusOneFilter);
 
-      if (window.history && groupId) {
-        var url = new URL(window.location.href);
-        url.hash = groupId;
-        window.history.pushState(null, "", url.href);
-      }
-
-      var target = groupId ? document.getElementById(groupId) : null;
+      var target = result.activeGroup
+        ? document.getElementById(result.activeGroup)
+        : null;
       if (target && typeof target.scrollIntoView === "function") {
         target.scrollIntoView({ block: "center" });
       }
@@ -377,9 +487,6 @@ export function applyNPlusOneFilter(root, groupId) {
   on(
     document.querySelectorAll("[data-yii-debug-n1-clear]"),
     "click",
-    function (event) {
-      event.preventDefault();
-      applyNPlusOneFilter(document, null);
-    },
+    clearNPlusOneFilter,
   );
 })();
