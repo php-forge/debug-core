@@ -17,6 +17,27 @@ use PHPUnit\Framework\TestCase;
 #[Group('db')]
 final class NPlusOneDetectorTest extends TestCase
 {
+    public function testBySequenceIndexesEveryFindingWithoutCopyingIt(): void
+    {
+        $first = new NPlusOneFinding('caller-a', 2, 3.0, 3, [3, 7], 'SELECT 1');
+        $second = new NPlusOneFinding('caller-b', 2, 4.0, 9, [9, 12], 'SELECT 2');
+
+        self::assertSame(
+            [3 => $first, 7 => $first, 9 => $second, 12 => $second],
+            NPlusOneDetector::bySequence([$first, $second]),
+            'Every sequence must reference its original finding without reindexing the keys.',
+        );
+    }
+
+    public function testBySequenceReturnsEmptyArrayWithoutFindings(): void
+    {
+        self::assertSame(
+            [],
+            NPlusOneDetector::bySequence([]),
+            'An empty finding list must produce an empty index.',
+        );
+    }
+
     public function testDetectAcceptsThresholdTwoAndLowercaseSelectAfterSkippedRow(): void
     {
         $rows = [
