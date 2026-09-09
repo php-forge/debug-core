@@ -5458,36 +5458,118 @@
 
   /**
    * History rows are single-line instrument readouts: dense padding and
-   * no wrapping keep every capture scannable at a glance, while the URL
-   * cell's own ellipsis cap prevents runaway growth.
+   * no wrapping keep every capture scannable at a glance. Fixed instrument
+   * widths keep filters, pagination, and empty results from moving columns;
+   * URL alone takes the remaining space. Both adapters share the first six
+   * and last three columns, with optional counters between IP and Method.
    */
   .yii-debug-grid-history .yii-debug-table {
+    --yii-debug-history-query-width: 0px;
+    --yii-debug-history-mail-width: 0px;
+    --yii-debug-history-fixed-width: calc(
+      916px + var(--yii-debug-history-query-width) + var(--yii-debug-history-mail-width)
+    );
+
+    min-width: calc(var(--yii-debug-history-fixed-width) + 180px);
+    table-layout: fixed;
+
+    &:has(thead th.yii-debug-col-num:not(:first-child, .yii-debug-col-mail)) {
+      --yii-debug-history-query-width: 66px;
+    }
+
+    &:has(thead th.yii-debug-col-mail) {
+      --yii-debug-history-mail-width: 56px;
+    }
+
+    thead tr:first-child {
+      > th:first-child {
+        width: 36px;
+      }
+
+      > th:nth-child(2) {
+        width: 276px;
+      }
+
+      > th:nth-child(3) {
+        width: 80px;
+      }
+
+      > th:nth-child(4),
+      > th:nth-child(5) {
+        width: 100px;
+      }
+
+      > th.yii-debug-col-ip {
+        width: 112px;
+      }
+
+      > th.yii-debug-col-num:not(:first-child, .yii-debug-col-mail) {
+        width: 66px;
+      }
+
+      > th.yii-debug-col-mail {
+        width: 56px;
+      }
+
+      > th:nth-last-child(3) {
+        width: 128px;
+      }
+
+      > th:nth-last-child(2) {
+        width: 84px;
+      }
+    }
+
     tbody td,
     tbody th {
       padding: 8px 10px;
       white-space: nowrap;
+    }
+
+    tbody td.yii-debug-col-ip {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    /* A colspan empty state must not recreate responsively hidden columns. */
+    tbody:has(> tr:only-child > td[colspan]) {
+      display: table-caption;
+      caption-side: bottom;
+
+      td {
+        display: block;
+      }
+    }
+
+    .yii-debug-tag-link,
+    .yii-debug-url-cell {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .yii-debug-tag-link {
+      display: inline-block;
+      vertical-align: middle;
     }
   }
 
   /**
    * IP and MAIL are low-signal on laptop viewports (IP reads `::1` for
    * every local capture, MAIL is almost always `0`) — hiding them at mid
-   * widths keeps the History grid inside its scroll wrap without an
-   * internal scrollbar. Both columns return on wide desktops.
+   * widths leaves more room for the URL. Narrow screens retain horizontal
+   * scrolling inside the table wrap. Both columns return on wide desktops.
    */
   @media (width <= 1366px) {
+    .yii-debug-grid-history .yii-debug-table {
+      --yii-debug-history-fixed-width: calc(
+        804px + var(--yii-debug-history-query-width)
+      );
+    }
+
     .yii-debug-grid-history .yii-debug-col-ip,
     .yii-debug-grid-history .yii-debug-col-mail {
       display: none;
-    }
-
-    /**
-     * The URL preview yields first: a tighter ellipsis cap lets the
-     * remaining instrument columns fit the scroll wrap without an
-     * internal scrollbar at laptop widths.
-     */
-    .yii-debug-grid-history .yii-debug-url-cell {
-      max-width: 200px;
     }
   }
 
