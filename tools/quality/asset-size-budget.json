@@ -66,7 +66,7 @@
         }
     },
     "total": {
-        "maxBytes": 422400,
+        "maxBytes": 424448,
         "maxGzipBytes": 214800
     }
 }

@@ -1,7 +1,13 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { build } from "vite";
 
-export default function globalSetup() {
+export default async function globalSetup() {
+  // Build once before workers start, including runs that skip fixture seeding.
+  await build({
+    configFile: fileURLToPath(new URL("../vite.config.js", import.meta.url)),
+  });
+
   if (process.env.DEBUG_UI_SEED_FIXTURES === "0") {
     return;
   }

@@ -19,7 +19,7 @@
     "check:contrast": "node tools/check-token-contrast.mjs",
     "check:contrast:strict": "node tools/check-token-contrast.mjs --strict",
     "test:events": "DEBUG_UI_SEED_FIXTURES=0 playwright test e2e/events.spec.js",
-    "test:e2e": "playwright test e2e/smoke.spec.js e2e/security.spec.js e2e/db-controls.spec.js",
+    "test:e2e": "playwright test e2e/smoke.spec.js e2e/security.spec.js e2e/db-controls.spec.js e2e/history-layout.spec.js",
     "test:e2e:list": "DEBUG_UI_SEED_FIXTURES=0 playwright test --list",
     "test:a11y": "playwright test e2e/accessibility.spec.js",
     "test:security": "playwright test e2e/security.spec.js",
@@ -28,7 +28,7 @@
     "test:visual:update": "DEBUG_UI_VISUAL_COMPARE=1 playwright test e2e/visual.spec.js --update-snapshots",
     "test:perf": "DEBUG_UI_SEED_FIXTURES=0 playwright test e2e/large-data.spec.js --project=desktop-1440",
     "test:perf:live": "playwright test e2e/live-performance.spec.js --project=desktop-1440",
-    "test:browser": "playwright test e2e/smoke.spec.js e2e/security.spec.js e2e/db-controls.spec.js e2e/accessibility.spec.js e2e/visual.spec.js e2e/events.spec.js"
+    "test:browser": "playwright test e2e/smoke.spec.js e2e/security.spec.js e2e/db-controls.spec.js e2e/history-layout.spec.js e2e/accessibility.spec.js e2e/visual.spec.js e2e/events.spec.js"
   },
   "engines": {
     "node": "^22.12.0 || >=24.0.0"
