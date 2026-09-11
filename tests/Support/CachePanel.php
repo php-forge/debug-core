@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Acme\Debug;
+namespace PHPForge\Debug\Tests\Support;
 
 use InvalidArgumentException;
 use PHPForge\Debug\{Panel, PanelView};

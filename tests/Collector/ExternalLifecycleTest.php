@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Collector;
 
-use Acme\Debug\{Cache, CacheCollector, CachePanel};
 use PHPForge\Debug\Collector\CollectorCoordinator;
 use PHPForge\Debug\Storage\RequestSummary;
+use PHPForge\Debug\Tests\Support\{Cache, CacheCollector, CachePanel};
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
