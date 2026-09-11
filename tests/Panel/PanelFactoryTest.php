@@ -6,7 +6,7 @@ namespace PHPForge\Debug\Tests\Panel;
 
 use InvalidArgumentException;
 use PHPForge\Debug\Panel\PanelFactory;
-use PHPForge\Vite\Debug\VitePanel;
+use PHPForge\Debug\Tests\Support\PanelFixture;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -18,8 +18,8 @@ final class PanelFactoryTest extends TestCase
     public function testCreateResolvesAnInstalledProvider(): void
     {
         self::assertInstanceOf(
-            VitePanel::class,
-            PanelFactory::create(VitePanel::class),
+            PanelFixture::class,
+            PanelFactory::create(PanelFixture::class),
             'Installed portable providers must resolve.',
         );
     }
