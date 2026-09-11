@@ -109,6 +109,23 @@ final class CollectorCoordinatorTest extends TestCase
         );
     }
 
+    public function testCollectorsReturnsEveryRegisteredCollectorIndexedById(): void
+    {
+        $first = new CollectorFixture('app.first');
+        $second = new CollectorFixture('app.second');
+
+        self::assertSame(
+            ['app.first' => $first, 'app.second' => $second],
+            (new CollectorCoordinator([$first, $second]))->collectors(),
+            'Registration order must be preserved, keyed by stable ID.',
+        );
+        self::assertSame(
+            [],
+            (new CollectorCoordinator([]))->collectors(),
+            'No registration means an empty map.',
+        );
+    }
+
     public function testHasCollectorUsesStableId(): void
     {
         $coordinator = new CollectorCoordinator([new CollectorFixture('app.example')]);
