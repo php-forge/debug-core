@@ -17,7 +17,8 @@ for (const [host, baseURL] of [
       expect(capture.status()).toBe(200);
       const tag = capture.headers()["x-debug-tag"];
       expect(tag).toBeTruthy();
-      await request.get(`${baseURL}/?state=changed`);
+      const changed = await request.get(`${baseURL}/?state=changed`);
+      expect(changed.status()).toBe(200);
       for (const [id, title] of [
         ["cache-operations", "Cache operations"],
         ["independent-second-cache", "Secondary cache"],
