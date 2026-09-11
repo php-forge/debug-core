@@ -26,7 +26,7 @@ final class CollectorCoordinatorTest extends TestCase
             [
                 new CollectorFixture(
                     'app.example',
-                    ArrayPayloadSnapshotFixture::capture(['value' => 42]),
+                    ArrayPayloadSnapshotFixture::capture(['value' => 42])->jsonSerialize(),
                 ),
                 new CollectorFixture(
                     'broken',
@@ -66,7 +66,7 @@ final class CollectorCoordinatorTest extends TestCase
             [
                 new CollectorFixture(
                     'app.example',
-                    ArrayPayloadSnapshotFixture::capture(['value' => 42]),
+                    ArrayPayloadSnapshotFixture::capture(['value' => 42])->jsonSerialize(),
                 ),
                 new CollectorFixture(
                     'empty',
@@ -582,7 +582,9 @@ final class CollectorCoordinatorTest extends TestCase
     public function testThrowInvalidArgumentExceptionForDuplicateId(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(Message::COLLECTOR_ID_DUPLICATE->getMessage('app.example'));
+        $this->expectExceptionMessage(
+            Message::COLLECTOR_ID_DUPLICATE->getMessage('app.example'),
+        );
 
         new CollectorCoordinator(
             [
@@ -599,16 +601,16 @@ final class CollectorCoordinatorTest extends TestCase
     public function testThrowInvalidArgumentExceptionForEmptyId(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage(Message::COLLECTOR_ID_EMPTY->getMessage());
+        $this->expectExceptionMessage(
+            Message::COLLECTOR_ID_EMPTY->getMessage(),
+        );
 
         new CollectorCoordinator([new CollectorFixture('   ')]);
     }
 
     public function testThrowRuntimeExceptionWhenRollbackShutdownFails(): void
     {
-        $first = new CollectorFixture(
-            'first',
-        );
+        $first = new CollectorFixture('first');
         $rollbackFailure = new CollectorFixture(
             'rollback-failure',
             failShutdown: true,
@@ -619,9 +621,7 @@ final class CollectorCoordinatorTest extends TestCase
             startupFailuresRemaining: 1,
             startupFailureMessage: 'Primary startup failed.',
         );
-        $later = new CollectorFixture(
-            'later',
-        );
+        $later = new CollectorFixture('later');
         $coordinator = new CollectorCoordinator(
             [
                 $first,

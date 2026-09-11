@@ -54,7 +54,8 @@ PHP 8.3 or later and the `ctype`, `intl`, and `mbstring` extensions are required
 The core owns snapshot capture, persistence, comparison, and the shared UI. A framework adapter remains responsible
 for:
 
-- collecting framework data and converting it into immutable snapshots;
+- collecting framework data through `PHPForge\Debug\CollectorInterface`, the single collector contract shared with
+  provider-owned collectors, and returning the persisted payload from `capture()`;
 - exposing the toolbar data endpoints and deciding when a response receives the toolbar;
 - defining and publishing assets through its own framework;
 - rendering the shared templates with its view component;

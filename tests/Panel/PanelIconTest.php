@@ -23,7 +23,6 @@ final class PanelIconTest extends TestCase
             'DATABASE' => 'db',
             'DUMP' => 'dump',
             'EVENTS' => 'events',
-            'INERTIA' => 'inertia',
             'LOGS' => 'logs',
             'MAIL' => 'mail',
             'PROFILING' => 'profiling',
@@ -32,7 +31,6 @@ final class PanelIconTest extends TestCase
             'ROUTER' => 'router',
             'TIMELINE' => 'timeline',
             'USER' => 'user',
-            'VITE' => 'brand-javascript',
         ];
 
         self::assertCount(

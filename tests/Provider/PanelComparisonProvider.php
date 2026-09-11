@@ -45,66 +45,181 @@ final class PanelComparisonProvider
             false,
         ];
 
-        $states = [
-            'absent' => [[], [], 'Not captured'],
-            'empty' => [['p' => []], [], 'Captured'],
-            'failure' => [[], ['p' => $failure], 'Failed'],
-            'envelope' => [['p' => $envelope], [], 'Captured'],
-            'both' => [['p' => ['ignored' => 'baseline payload']], ['p' => $failure], 'Failed'],
+        yield 'absent to absent' => [
+            new DebugSnapshot($summary, [], []),
+            new DebugSnapshot($summary, [], []),
+            ['p' => 'Panel'],
+            [],
+            false,
         ];
-        $counts = [
-            'absent' => [
-                'absent' => [0, 0, 0, 0],
-                'empty' => [1, 0, 0, 0],
-                'failure' => [9, 0, 0, 0],
-                'envelope' => [9, 0, 0, 0],
-                'both' => [9, 0, 0, 0],
-            ],
-            'empty' => [
-                'absent' => [0, 1, 0, 0],
-                'empty' => [0, 0, 0, 1],
-                'failure' => [9, 1, 0, 0],
-                'envelope' => [9, 1, 0, 0],
-                'both' => [9, 1, 0, 0],
-            ],
-            'failure' => [
-                'absent' => [0, 9, 0, 0],
-                'empty' => [1, 9, 0, 0],
-                'failure' => [0, 0, 0, 9],
-                'envelope' => [0, 0, 1, 9],
-                'both' => [0, 0, 0, 9],
-            ],
-            'envelope' => [
-                'absent' => [0, 9, 0, 0],
-                'empty' => [1, 9, 0, 0],
-                'failure' => [0, 0, 1, 9],
-                'envelope' => [0, 0, 0, 9],
-                'both' => [0, 0, 1, 9],
-            ],
-            'both' => [
-                'absent' => [0, 9, 0, 0],
-                'empty' => [1, 9, 0, 0],
-                'failure' => [0, 0, 0, 9],
-                'envelope' => [0, 0, 1, 9],
-                'both' => [0, 0, 0, 9],
-            ],
+        yield 'absent to empty' => [
+            new DebugSnapshot($summary, [], []),
+            new DebugSnapshot($summary, ['p' => []], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Not captured', 'Captured', 1, 0, 0, 0]],
+            true,
         ];
-
-        foreach ($states as $baselineName => [$baselinePanels, $baselineFailures, $baselineState]) {
-            foreach ($states as $targetName => [$targetPanels, $targetFailures, $targetState]) {
-                [$added, $removed, $changed, $unchanged] = $counts[$baselineName][$targetName];
-
-                yield "{$baselineName} to {$targetName}" => [
-                    new DebugSnapshot($summary, $baselinePanels, $baselineFailures),
-                    new DebugSnapshot($summary, $targetPanels, $targetFailures),
-                    ['p' => 'Panel'],
-                    $baselineName === 'absent' && $targetName === 'absent'
-                        ? []
-                        : [['p', 'Panel', $baselineState, $targetState, $added, $removed, $changed, $unchanged]],
-                    $added + $removed + $changed > 0,
-                ];
-            }
-        }
+        yield 'absent to failure' => [
+            new DebugSnapshot($summary, [], []),
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Not captured', 'Failed', 9, 0, 0, 0]],
+            true,
+        ];
+        yield 'absent to envelope' => [
+            new DebugSnapshot($summary, [], []),
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Not captured', 'Captured', 9, 0, 0, 0]],
+            true,
+        ];
+        yield 'absent to both' => [
+            new DebugSnapshot($summary, [], []),
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Not captured', 'Failed', 9, 0, 0, 0]],
+            true,
+        ];
+        yield 'empty to absent' => [
+            new DebugSnapshot($summary, ['p' => []], []),
+            new DebugSnapshot($summary, [], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Not captured', 0, 1, 0, 0]],
+            true,
+        ];
+        yield 'empty to empty' => [
+            new DebugSnapshot($summary, ['p' => []], []),
+            new DebugSnapshot($summary, ['p' => []], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Captured', 0, 0, 0, 1]],
+            false,
+        ];
+        yield 'empty to failure' => [
+            new DebugSnapshot($summary, ['p' => []], []),
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Failed', 9, 1, 0, 0]],
+            true,
+        ];
+        yield 'empty to envelope' => [
+            new DebugSnapshot($summary, ['p' => []], []),
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Captured', 9, 1, 0, 0]],
+            true,
+        ];
+        yield 'empty to both' => [
+            new DebugSnapshot($summary, ['p' => []], []),
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Failed', 9, 1, 0, 0]],
+            true,
+        ];
+        yield 'failure to absent' => [
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            new DebugSnapshot($summary, [], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Not captured', 0, 9, 0, 0]],
+            true,
+        ];
+        yield 'failure to empty' => [
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            new DebugSnapshot($summary, ['p' => []], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Captured', 1, 9, 0, 0]],
+            true,
+        ];
+        yield 'failure to failure' => [
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Failed', 0, 0, 0, 9]],
+            false,
+        ];
+        yield 'failure to envelope' => [
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Captured', 0, 0, 1, 9]],
+            true,
+        ];
+        yield 'failure to both' => [
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Failed', 0, 0, 0, 9]],
+            false,
+        ];
+        yield 'envelope to absent' => [
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            new DebugSnapshot($summary, [], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Not captured', 0, 9, 0, 0]],
+            true,
+        ];
+        yield 'envelope to empty' => [
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            new DebugSnapshot($summary, ['p' => []], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Captured', 1, 9, 0, 0]],
+            true,
+        ];
+        yield 'envelope to failure' => [
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Failed', 0, 0, 1, 9]],
+            true,
+        ];
+        yield 'envelope to envelope' => [
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Captured', 0, 0, 0, 9]],
+            false,
+        ];
+        yield 'envelope to both' => [
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Captured', 'Failed', 0, 0, 1, 9]],
+            true,
+        ];
+        yield 'both to absent' => [
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            new DebugSnapshot($summary, [], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Not captured', 0, 9, 0, 0]],
+            true,
+        ];
+        yield 'both to empty' => [
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            new DebugSnapshot($summary, ['p' => []], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Captured', 1, 9, 0, 0]],
+            true,
+        ];
+        yield 'both to failure' => [
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            new DebugSnapshot($summary, [], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Failed', 0, 0, 0, 9]],
+            false,
+        ];
+        yield 'both to envelope' => [
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            new DebugSnapshot($summary, ['p' => $envelope], []),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Captured', 0, 0, 1, 9]],
+            true,
+        ];
+        yield 'both to both' => [
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            new DebugSnapshot($summary, ['p' => ['ignored' => 'baseline payload']], ['p' => $failure]),
+            ['p' => 'Panel'],
+            [['p', 'Panel', 'Failed', 'Failed', 0, 0, 0, 9]],
+            false,
+        ];
 
         yield 'configured observed IDs first and extras use regular sorting' => [
             new DebugSnapshot($summary, ['z' => [], 'a10' => [], 'request' => [], 'a2' => []], ['z' => $failure]),

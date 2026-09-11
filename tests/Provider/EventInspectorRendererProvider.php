@@ -68,12 +68,30 @@ final class EventInspectorRendererProvider
      */
     public static function numericGroupKeys(): iterable
     {
-        foreach (['name', 'class', 'senderClass'] as $attribute) {
-            foreach (['0', '123', '-123', '0123'] as $value) {
-                yield "{$attribute} {$value} without filters" => [$attribute, $value, false];
-                yield "{$attribute} {$value} with filters" => [$attribute, $value, true];
-            }
-        }
+        yield 'class -123 with filters' => ['class', '-123', true];
+        yield 'class -123 without filters' => ['class', '-123', false];
+        yield 'class 0 with filters' => ['class', '0', true];
+        yield 'class 0 without filters' => ['class', '0', false];
+        yield 'class 0123 with filters' => ['class', '0123', true];
+        yield 'class 0123 without filters' => ['class', '0123', false];
+        yield 'class 123 with filters' => ['class', '123', true];
+        yield 'class 123 without filters' => ['class', '123', false];
+        yield 'name -123 with filters' => ['name', '-123', true];
+        yield 'name -123 without filters' => ['name', '-123', false];
+        yield 'name 0 with filters' => ['name', '0', true];
+        yield 'name 0 without filters' => ['name', '0', false];
+        yield 'name 0123 with filters' => ['name', '0123', true];
+        yield 'name 0123 without filters' => ['name', '0123', false];
+        yield 'name 123 with filters' => ['name', '123', true];
+        yield 'name 123 without filters' => ['name', '123', false];
+        yield 'senderClass -123 with filters' => ['senderClass', '-123', true];
+        yield 'senderClass -123 without filters' => ['senderClass', '-123', false];
+        yield 'senderClass 0 with filters' => ['senderClass', '0', true];
+        yield 'senderClass 0 without filters' => ['senderClass', '0', false];
+        yield 'senderClass 0123 with filters' => ['senderClass', '0123', true];
+        yield 'senderClass 0123 without filters' => ['senderClass', '0123', false];
+        yield 'senderClass 123 with filters' => ['senderClass', '123', true];
+        yield 'senderClass 123 without filters' => ['senderClass', '123', false];
     }
 
     /**
