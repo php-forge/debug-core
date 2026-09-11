@@ -9,7 +9,6 @@ use PHPForge\Debug\Panel\Config\ConfigSnapshot;
 use PHPForge\Debug\Panel\Db\DbSnapshot;
 use PHPForge\Debug\Panel\Dump\DumpSnapshot;
 use PHPForge\Debug\Panel\Event\EventSnapshot;
-use PHPForge\Debug\Panel\Inertia\InertiaSnapshot;
 use PHPForge\Debug\Panel\Log\LogSnapshot;
 use PHPForge\Debug\Panel\Mail\MailSnapshot;
 use PHPForge\Debug\Panel\Profile\ProfilingSnapshot;
@@ -28,7 +27,6 @@ const PANEL_SNAPSHOT_CLASSES = [
     'db' => DbSnapshot::class,
     'dump' => DumpSnapshot::class,
     'event' => EventSnapshot::class,
-    'inertia' => InertiaSnapshot::class,
     'log' => LogSnapshot::class,
     'mail' => MailSnapshot::class,
     'profiling' => ProfilingSnapshot::class,
@@ -281,7 +279,13 @@ function emptyPanels(float $timestamp): array
             'db' => ['entries' => []],
             'dump' => ['entries' => []],
             'event' => ['entries' => []],
-            'inertia' => InertiaSnapshot::capture(null, null, [], [], 204)->jsonSerialize(),
+            'inertia' => [
+                'location' => null,
+                'page' => null,
+                'requestHeaders' => [],
+                'sharedKeys' => [],
+                'statusCode' => 204,
+            ],
             'log' => ['entries' => []],
             'mail' => ['entries' => []],
             'profiling' => ['memory' => 1_048_576, 'time' => 0.001, 'entries' => [], 'samples' => []],
@@ -451,9 +455,9 @@ function densePanels(
                 ],
             ),
         ],
-        'inertia' => InertiaSnapshot::capture(
-            null,
-            [
+        'inertia' => [
+            'location' => null,
+            'page' => [
                 'component' => 'Quality/Fixture',
                 'props' => [
                     'title' => 'Deterministic dense state',
@@ -469,10 +473,11 @@ function densePanels(
                 'url' => '/quality-fixture/dense',
                 'version' => 'quality-fixture-v1',
             ],
-            ['x-inertia' => 'true', 'accept' => 'text/html, application/xhtml+xml'],
-            ['auth', 'appName', 'qualityFixture'],
-            200,
-        )->jsonSerialize(),
+            'requestHeaders' => ['X-Inertia' => 'true', 'X-Inertia-Version' => 'quality-fixture-v1'],
+            'sharedKeys' => ['auth', 'appName', 'qualityFixture'],
+            'statusCode' => 200,
+            'resultType' => 'page',
+        ],
         'log' => [
             'entries' => rows(
                 $rowCount,
@@ -682,19 +687,30 @@ function densePanels(
  * Hydrates and reserializes every payload through its production DTO. This makes
  * schema drift fail fixture generation before an invalid file reaches an app.
  *
+ * Panels owned by a provider package have no Debug Core DTO; their payloads are kept verbatim, exactly as the
+ * provider collector persists them.
+ *
  * @param array<string, array<string, mixed>> $panels
  *
  * @return array<string, array<string, mixed>>
  */
 function normalizePanels(array $panels): array
 {
+    foreach (array_keys(PANEL_SNAPSHOT_CLASSES) as $id) {
+        if (!is_array($panels[$id] ?? null)) {
+            throw new RuntimeException("Fixture panel '{$id}' is missing.");
+        }
+    }
+
     $normalized = [];
 
-    foreach (PANEL_SNAPSHOT_CLASSES as $id => $class) {
-        $payload = $panels[$id] ?? null;
+    foreach ($panels as $id => $payload) {
+        $class = PANEL_SNAPSHOT_CLASSES[$id] ?? null;
 
-        if (!is_array($payload)) {
-            throw new RuntimeException("Fixture panel '{$id}' is missing.");
+        if ($class === null) {
+            $normalized[$id] = $payload;
+
+            continue;
         }
 
         $snapshot = $class::fromArray($payload, "$.panels.{$id}");

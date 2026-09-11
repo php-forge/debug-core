@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Panel;
 
 use PHPForge\Debug\Panel\PanelRenderContext;
-use PHPForge\Debug\Routing\DebugUrlGeneratorInterface;
+use PHPForge\Debug\Tests\Support\DebugUrlGeneratorFixture;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
-
-use function http_build_query;
 
 /**
  * Unit tests for {@see PanelRenderContext} delegating portable panel links to the active adapter.
@@ -25,7 +23,7 @@ final class PanelRenderContextTest extends TestCase
             'log',
             ['Log' => ['level' => 'error']],
             'dark',
-            self::urlGenerator(),
+            new DebugUrlGeneratorFixture(),
         );
 
         self::assertSame(
@@ -42,7 +40,7 @@ final class PanelRenderContextTest extends TestCase
             'log',
             ['page' => 2],
             'light',
-            self::urlGenerator(),
+            new DebugUrlGeneratorFixture(),
         );
 
         self::assertSame(
@@ -59,7 +57,7 @@ final class PanelRenderContextTest extends TestCase
             'timeline',
             [],
             'light',
-            self::urlGenerator(),
+            new DebugUrlGeneratorFixture(),
             [
                 'profiling' => ['time' => 0.125, 'entries' => []],
             ],
@@ -74,17 +72,5 @@ final class PanelRenderContextTest extends TestCase
             $context->panelPayload('missing'),
             'Missing sibling payloads must resolve to null.',
         );
-    }
-
-    private static function urlGenerator(): DebugUrlGeneratorInterface
-    {
-        return new class implements DebugUrlGeneratorInterface {
-            public function panel(string $tag, string $panel, array $queryParams = []): string
-            {
-                $path = "/panel/{$tag}/{$panel}";
-
-                return $queryParams === [] ? $path : $path . '?' . http_build_query($queryParams);
-            }
-        };
     }
 }

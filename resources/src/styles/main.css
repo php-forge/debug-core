@@ -2218,7 +2218,7 @@
 
   .yii-debug-disclosure-summary:hover .yii-debug-disclosure-hint,
   .yii-debug-disclosure-summary:focus-visible .yii-debug-disclosure-hint {
-    color: var(--yii-debug-panel-link-hover);
+    color: var(--yii-debug-panel-link);
   }
 
   details[open] > summary .yii-debug-disclosure-hint {
@@ -2770,13 +2770,15 @@
     }
   }
 
-  .yii-debug-table-vite-overview tbody th {
+  .yii-debug-table-vite-overview tbody th,
+  .yii-debug-table-overview tbody th {
     width: 200px;
     min-width: 160px;
     max-width: 200px;
   }
 
-  .yii-debug-vite-component + .yii-debug-vite-component {
+  .yii-debug-vite-component + .yii-debug-vite-component,
+  .yii-debug-panel-group + .yii-debug-panel-group {
     margin-top: var(--yii-debug-space-6);
   }
 

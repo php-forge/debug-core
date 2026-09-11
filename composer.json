@@ -28,7 +28,8 @@
         "ui-awesome/html-helper": "^0.7",
         "ui-awesome/html-interop": "^0.4",
         "ui-awesome/html-mixin": "^0.8.2",
-        "ui-awesome/html-svg": "^0.6"
+        "ui-awesome/html-svg": "^0.6",
+        "php-forge/debug": "^0.1@dev"
     },
     "require-dev": {
         "infection/infection": "^0.35",
@@ -39,7 +40,9 @@
         "phpstan/phpstan-strict-rules": "^2.0.3",
         "phpunit/phpunit": "^12.5",
         "xepozz/internal-mocker": "^1.4",
-        "yii2-extensions/scaffold": "^0.2"
+        "yii2-extensions/scaffold": "^0.2",
+        "php-forge/vite": "^0.2@dev",
+        "php-forge/inertia": "^0.2@dev"
     },
     "autoload": {
         "psr-4": {

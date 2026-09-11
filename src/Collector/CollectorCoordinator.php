@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Collector;
 
 use InvalidArgumentException;
+use PHPForge\Debug\CollectorInterface;
 use PHPForge\Debug\Exception\Message;
 use PHPForge\Debug\Instrumentation\InstrumentationGuard;
-use PHPForge\Debug\Storage\{DebugSnapshot, PanelFailure, RequestSummary};
+use PHPForge\Debug\Storage\{DebugSnapshot, Json, PanelFailure, RequestSummary};
 use Throwable;
 
 use function trim;
 
 /**
- * Coordinates validated collectors and isolates their snapshot capture failures.
+ * Coordinates validated collectors and isolates their capture failures.
+ *
+ * Every collector, built-in or provider-owned, implements {@see CollectorInterface} and returns the payload already
+ * shaped for persistence, so one JSON boundary and one failure-isolation rule apply to all of them.
  */
 final class CollectorCoordinator
 {
@@ -70,10 +74,10 @@ final class CollectorCoordinator
 
         foreach ($this->collectors as $id => $collector) {
             try {
-                $snapshot = $collector->capture();
+                $payload = $collector->capture();
 
-                if ($snapshot !== null) {
-                    $panels[$id] = $snapshot->jsonSerialize();
+                if ($payload !== null) {
+                    $panels[$id] = Json::payload($payload);
                 }
             } catch (Throwable $throwable) {
                 $failures[$id] = PanelFailure::fromThrowable(
@@ -100,6 +104,14 @@ final class CollectorCoordinator
     public function collector(string $id): CollectorInterface|null
     {
         return $this->collectors[$id] ?? null;
+    }
+
+    /**
+     * @return array<string, CollectorInterface> Registered collectors for host-local instrumentation hooks.
+     */
+    public function collectors(): array
+    {
+        return $this->collectors;
     }
 
     /**

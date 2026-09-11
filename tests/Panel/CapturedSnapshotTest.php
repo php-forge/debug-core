@@ -6,7 +6,6 @@ namespace PHPForge\Debug\Tests\Panel;
 
 use PHPForge\Debug\Helper\LogLevel;
 use PHPForge\Debug\Panel\Dump\DumpSnapshot;
-use PHPForge\Debug\Panel\Inertia\InertiaSnapshot;
 use PHPForge\Debug\Panel\Log\LogSnapshot;
 use PHPForge\Debug\Panel\Mail\MailSnapshot;
 use PHPForge\Debug\Panel\Queue\QueueSnapshot;
@@ -29,6 +28,7 @@ final class CapturedSnapshotTest extends TestCase
                 ['dump', LogLevel::INFO, 'application', 1_700_000_000.5, [['file' => '/app/index.php']]],
             ],
         );
+
         $payload = $captured->jsonSerialize();
 
         $snapshot = DumpSnapshot::fromArray($payload, '$.panels.dump');
@@ -48,38 +48,6 @@ final class CapturedSnapshotTest extends TestCase
         );
     }
 
-    public function testInertiaSnapshotCapturesAndHydratesResponseData(): void
-    {
-        $captured = InertiaSnapshot::capture(
-            '/dashboard',
-            ['component' => 'Dashboard'],
-            ['X-Inertia' => 'true'],
-            ['authenticated' => true],
-            303,
-        );
-
-        $payload = $captured->jsonSerialize();
-
-        $snapshot = InertiaSnapshot::fromArray($payload, '$.panels.inertia');
-
-        self::assertSame(
-            $payload,
-            $snapshot->jsonSerialize(),
-            'Inertia payload must round-trip exactly.',
-        );
-        self::assertSame(
-            [
-                'location' => '/dashboard',
-                'page' => ['component' => 'Dashboard'],
-                'requestHeaders' => ['X-Inertia' => 'true'],
-                'sharedKeys' => ['authenticated' => true],
-                'statusCode' => 303,
-            ],
-            $snapshot->data(),
-            'Inertia response data must be restored for display.',
-        );
-    }
-
     public function testLogSnapshotCapturesLinksAndHydratesRows(): void
     {
         $captured = LogSnapshot::capture(
@@ -89,6 +57,7 @@ final class CapturedSnapshotTest extends TestCase
                 ['third', LogLevel::ERROR, 'application', 101.0, [], 4_096],
             ],
         );
+
         $payload = $captured->jsonSerialize();
 
         self::assertSame(
@@ -139,7 +108,10 @@ final class CapturedSnapshotTest extends TestCase
             'Log capture must preserve tuple indexes, time deltas, and terminal navigation exactly.',
         );
 
-        $snapshot = LogSnapshot::fromArray($payload, '$.panels.log');
+        $snapshot = LogSnapshot::fromArray(
+            $payload,
+            '$.panels.log',
+        );
 
         $first = $snapshot->entries()[0] ?? self::fail('Expected the first hydrated log row.');
         $second = $snapshot->entries()[1] ?? self::fail('Expected the second hydrated log row.');
@@ -178,7 +150,10 @@ final class CapturedSnapshotTest extends TestCase
 
         $payload = $captured->jsonSerialize();
 
-        $snapshot = MailSnapshot::fromArray($payload, '$.panels.mail');
+        $snapshot = MailSnapshot::fromArray(
+            $payload,
+            '$.panels.mail',
+        );
 
         $capturedMessage = $captured->entries()[0] ?? self::fail('Expected one captured mail message.');
         $message = $snapshot->entries()[0] ?? self::fail('Expected one hydrated mail message.');
@@ -218,7 +193,10 @@ final class CapturedSnapshotTest extends TestCase
 
         $payload = $captured->jsonSerialize();
 
-        $snapshot = QueueSnapshot::fromArray($payload, '$.panels.queue');
+        $snapshot = QueueSnapshot::fromArray(
+            $payload,
+            '$.panels.queue',
+        );
 
         $capturedRecord = $captured->entries()[0] ?? self::fail('Expected one captured queue record.');
         $record = $snapshot->entries()[0] ?? self::fail('Expected one hydrated queue record.');
@@ -241,7 +219,10 @@ final class CapturedSnapshotTest extends TestCase
 
         $payload = $captured->jsonSerialize();
 
-        $snapshot = RequestSnapshot::fromArray($payload, '$.panels.request');
+        $snapshot = RequestSnapshot::fromArray(
+            $payload,
+            '$.panels.request',
+        );
 
         self::assertSame(
             $payload,
@@ -329,7 +310,10 @@ final class CapturedSnapshotTest extends TestCase
 
         $payload = $captured->jsonSerialize();
 
-        $snapshot = RouterSnapshot::fromArray($payload, '$.panels.router');
+        $snapshot = RouterSnapshot::fromArray(
+            $payload,
+            '$.panels.router',
+        );
 
         self::assertSame(
             $payload,
@@ -391,7 +375,11 @@ final class CapturedSnapshotTest extends TestCase
 
     public function testRouterSnapshotReportsNoMatchWithoutSuccessfulRows(): void
     {
-        $snapshot = RouterSnapshot::capture(null, [], 'missing');
+        $snapshot = RouterSnapshot::capture(
+            null,
+            [],
+            'missing',
+        );
 
         self::assertFalse(
             $snapshot->hasMatch(),

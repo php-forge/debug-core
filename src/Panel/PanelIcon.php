@@ -37,11 +37,6 @@ enum PanelIcon: string
     case EVENTS = 'events';
 
     /**
-     * Icon key for the Inertia panel.
-     */
-    case INERTIA = 'inertia';
-
-    /**
      * Icon key for the Logs panel.
      */
     case LOGS = 'logs';
@@ -80,9 +75,4 @@ enum PanelIcon: string
      * Icon key for the User panel.
      */
     case USER = 'user';
-
-    /**
-     * Icon key for the Vite panel.
-     */
-    case VITE = 'brand-javascript';
 }

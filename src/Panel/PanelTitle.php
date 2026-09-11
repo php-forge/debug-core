@@ -50,11 +50,6 @@ enum PanelTitle: string
     case HISTORY = 'History';
 
     /**
-     * Inertia panel name and detail heading.
-     */
-    case INERTIA = 'Inertia';
-
-    /**
      * Log panel detail heading.
      */
     case LOG_MESSAGES = 'Log Messages';

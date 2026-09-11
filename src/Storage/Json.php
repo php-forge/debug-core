@@ -13,10 +13,28 @@ use function sprintf;
  */
 final class Json
 {
+    private const int PAYLOAD_DEPTH = 500;
+
     /**
      * Prevents instantiation of this static helper.
      */
     private function __construct() {}
+
+    /**
+     * Freezes a provider payload as JSON values before it enters the request envelope.
+     *
+     * Strict encoding rejects invalid UTF-8, non-finite numbers, resources, cycles, and excessive depth.
+     * Decoding freezes nested serialization results so application callbacks never run again during storage.
+     * The depth limit reserves room for the request envelope. No redaction or truncation is applied here.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public static function payload(array $payload): array
+    {
+        $json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION, self::PAYLOAD_DEPTH);
+        return Payload::object(json_decode($json, true, self::PAYLOAD_DEPTH, JSON_THROW_ON_ERROR))->all();
+    }
 
     /**
      * Returns valid UTF-8, representing binary text as base64.

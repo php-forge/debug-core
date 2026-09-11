@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Support;
 
-use PHPForge\Debug\Collector\CollectorInterface;
-use PHPForge\Debug\Storage\PanelSnapshot;
+use PHPForge\Debug\CollectorInterface;
 use RuntimeException;
 
 /**
@@ -18,7 +17,7 @@ final class CollectorFixture implements CollectorInterface
 
     /**
      * @param string $collectorId Stable collector ID.
-     * @param PanelSnapshot|null $snapshot Snapshot returned from capture.
+     * @param array<string, mixed>|null $payload Payload returned from capture.
      * @param bool $failCapture Whether capture should fail.
      * @param bool $failShutdown Whether shutdown should fail.
      * @param string $shutdownFailureMessage Shutdown failure message.
@@ -28,7 +27,7 @@ final class CollectorFixture implements CollectorInterface
      */
     public function __construct(
         private readonly string $collectorId,
-        private readonly PanelSnapshot|null $snapshot = null,
+        private readonly array|null $payload = null,
         private readonly bool $failCapture = false,
         private readonly bool $failShutdown = false,
         private readonly string $shutdownFailureMessage = 'Collector shutdown failed.',
@@ -37,13 +36,18 @@ final class CollectorFixture implements CollectorInterface
         private int $shutdownFailuresRemaining = 0,
     ) {}
 
-    public function capture(): PanelSnapshot|null
+    /**
+     * @return array<string, mixed>|null Configured payload returned from capture.
+     */
+    public function capture(): array|null
     {
         if ($this->failCapture) {
-            throw new RuntimeException('Collector capture failed.');
+            throw new RuntimeException(
+                'Collector capture failed.',
+            );
         }
 
-        return $this->snapshot;
+        return $this->payload;
     }
 
     public function id(): string
@@ -54,6 +58,7 @@ final class CollectorFixture implements CollectorInterface
     public function shutdown(): void
     {
         ++$this->shutdownCount;
+
         $shouldFail = $this->failShutdown || $this->shutdownFailuresRemaining > 0;
 
         if ($this->shutdownFailuresRemaining > 0) {
@@ -61,7 +66,9 @@ final class CollectorFixture implements CollectorInterface
         }
 
         if ($shouldFail) {
-            throw new RuntimeException($this->shutdownFailureMessage);
+            throw new RuntimeException(
+                $this->shutdownFailureMessage,
+            );
         }
     }
 
@@ -72,7 +79,9 @@ final class CollectorFixture implements CollectorInterface
         if ($this->startupFailuresRemaining > 0) {
             --$this->startupFailuresRemaining;
 
-            throw new RuntimeException($this->startupFailureMessage);
+            throw new RuntimeException(
+                $this->startupFailureMessage,
+            );
         }
     }
 }
