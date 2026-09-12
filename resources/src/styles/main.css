@@ -2497,9 +2497,8 @@
     resize: vertical;
   }
 
-  /* GridView filter-row inputs (`.filters` row or per-cell `.yii-debug-filter-cell` dialect). */
-  .yii-debug-grid .filters td,
-  .yii-debug-grid td.yii-debug-filter-cell {
+  /* GridView filter-row inputs. */
+  .yii-debug-grid .filters td {
     padding: 6px 12px;
     border-bottom: var(--yii-debug-border);
     background: color-mix(
@@ -2511,10 +2510,7 @@
 
   .yii-debug-grid .filters input,
   .yii-debug-grid .filters select,
-  .yii-debug-grid .filters textarea,
-  .yii-debug-grid td.yii-debug-filter-cell input,
-  .yii-debug-grid td.yii-debug-filter-cell select,
-  .yii-debug-grid td.yii-debug-filter-cell textarea {
+  .yii-debug-grid .filters textarea {
     width: 100%;
     min-width: 0;
     min-height: 28px;
@@ -2826,8 +2822,7 @@
     }
 
     /* Filter inputs grow with their cell instead of clinging to a fixed width. */
-    tbody tr.filters td input,
-    td.yii-debug-filter-cell input {
+    tbody tr.filters td input {
       width: 100%;
       min-width: 0;
     }
@@ -3505,8 +3500,7 @@
   }
 
   /* Keep the native content width without clipping the verb or adding fixed empty space. */
-  .yii-debug-grid-db .filters select,
-  .yii-debug-grid-db td.yii-debug-filter-cell select {
+  .yii-debug-grid-db .filters select {
     min-width: max-content;
 
     &:focus {
@@ -5451,9 +5445,7 @@
    * so this wins regardless of source order.
    */
   .yii-debug-grid .filters input.yii-debug-col-id-input,
-  .yii-debug-grid .filters input.yii-debug-col-queue-id-input,
-  .yii-debug-grid td.yii-debug-filter-cell input.yii-debug-col-id-input,
-  .yii-debug-grid td.yii-debug-filter-cell input.yii-debug-col-queue-id-input {
+  .yii-debug-grid .filters input.yii-debug-col-queue-id-input {
     box-sizing: border-box;
     width: 104px;
   }
@@ -5589,8 +5581,7 @@
         padding: 8px 10px;
       }
 
-      .filters td,
-      td.yii-debug-filter-cell {
+      .filters td {
         padding: 6px 10px;
       }
     }

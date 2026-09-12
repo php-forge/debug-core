@@ -5,6 +5,7 @@ import "./history-cursor.js";
 import { bindCopyControls } from "./clipboard.js";
 import { initSectionPermalinks } from "./deep-links.js";
 import { dropdownNavigationIndex } from "./dropdown.js";
+import { clearGridFilter, shouldClearGridFilter } from "./grid-filter.js";
 import { loadPanelFeatures } from "./features.js";
 import {
   applyLiveFilter,
@@ -300,18 +301,10 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
       return;
     }
 
-    if (
-      event.key === "Escape" &&
-      event.target.matches &&
-      event.target.matches(
-        ".yii-debug-grid .filters input, .yii-debug-grid td.yii-debug-filter-cell input",
-      ) &&
-      event.target.value !== ""
-    ) {
+    if (shouldClearGridFilter(event)) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      event.target.value = "";
-      event.target.dispatchEvent(new Event("change", { bubbles: true }));
+      clearGridFilter(event.target);
       return;
     }
 

@@ -23,9 +23,7 @@ for (const name of await readdir(fonts)) {
   assets.set(`/fonts/${name}`, new URL(name, fonts));
 }
 
-function databaseFixture(dialect, theme, filtered) {
-  const filterClass =
-    dialect === "yii2" ? "" : ' class="yii-debug-filter-cell"';
+function databaseFixture(theme, filtered) {
   const rows = ["SELECT", "SELECT", "SELECT", "UPDATE"]
     .map(
       (verb, index) => `
@@ -59,11 +57,11 @@ function databaseFixture(dialect, theme, filtered) {
     <div class="yii-debug-grid yii-debug-grid-db"><div class="yii-debug-table-wrap">
     <table class="yii-debug-table"><thead><tr>
     <th>Type</th><th>Time</th><th>Duration</th><th>Rows</th><th>Dup</th><th>Query</th></tr>
-    <tr ${dialect === "yii2" ? 'class="filters"' : ""}>
-    <td${filterClass}><select class="yii-debug-select" aria-label="Filter by Type">
+    <tr class="filters">
+    <td><select class="yii-debug-select" aria-label="Filter by Type">
     <option></option><option>SELECT</option><option>UPDATE</option></select></td>
-    <td${filterClass}></td><td${filterClass}></td><td${filterClass}></td><td${filterClass}></td>
-    <td${filterClass}><input class="yii-debug-input" aria-label="Filter by Query"></td>
+    <td></td><td></td><td></td><td></td>
+    <td><input class="yii-debug-input" aria-label="Filter by Query"></td>
     </tr></thead><tbody>${rows}</tbody></table></div></div></main>
     <script type="module">
       import '/db.js';
@@ -73,157 +71,154 @@ function databaseFixture(dialect, theme, filtered) {
     </script></body></html>`;
 }
 
-for (const dialect of ["yii2", "yii3"]) {
-  for (const theme of ["light", "dark"]) {
-    test(`${dialect} ${theme} database controls fit and clear N+1 without reloading`, async ({
-      page,
-    }, testInfo) => {
-      const errors = [];
-      page.on("pageerror", (error) => errors.push(error.message));
-      await page.route("http://debug.test/**", async (route) => {
-        const path = new URL(route.request().url()).pathname;
-        const asset = assets.get(path);
-        await route.fulfill({
-          contentType: path.endsWith(".woff2")
-            ? "font/woff2"
-            : path === "/debug.css"
-              ? "text/css"
-              : asset
-                ? "text/javascript"
-                : "text/html",
-          body: asset
-            ? await readFile(asset)
-            : databaseFixture(
-                dialect,
-                theme,
-                new URL(route.request().url()).searchParams.has("Db[query]"),
-              ),
-        });
-      });
-      await page.goto("http://debug.test/?panel=db&sort=-duration#group-a");
-      await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
-      await expect(page.locator("#group-a")).toHaveClass(
-        /yii-debug-deep-link-target/,
-      );
-
-      await page.evaluate(() => document.fonts.ready);
-      const select = page.getByLabel("Filter by Type");
-      await select.selectOption("SELECT");
-      await select.focus();
-      const spacing = await select.evaluate((element) => {
-        const style = getComputedStyle(element);
-        const context = document.createElement("canvas").getContext("2d");
-        context.font = style.font;
-        return {
-          width: element.getBoundingClientRect().width,
-          text: Math.max(
-            ...Array.from(
-              element.options,
-              (option) => context.measureText(option.text).width,
+for (const theme of ["light", "dark"]) {
+  test(`${theme} database controls fit and clear N+1 without reloading`, async ({
+    page,
+  }, testInfo) => {
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.route("http://debug.test/**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      const asset = assets.get(path);
+      await route.fulfill({
+        contentType: path.endsWith(".woff2")
+          ? "font/woff2"
+          : path === "/debug.css"
+            ? "text/css"
+            : asset
+              ? "text/javascript"
+              : "text/html",
+        body: asset
+          ? await readFile(asset)
+          : databaseFixture(
+              theme,
+              new URL(route.request().url()).searchParams.has("Db[query]"),
             ),
-          ),
-          left: parseFloat(style.paddingLeft),
-          right: parseFloat(style.paddingRight),
-          outline: style.outlineWidth,
-          offset: style.outlineOffset,
-          shadow: style.boxShadow,
-        };
       });
-      expect(spacing.width).toBeGreaterThanOrEqual(
-        spacing.text + spacing.left + spacing.right + 16,
-      );
-      expect(spacing.width).toBeLessThanOrEqual(
-        spacing.text + spacing.left + spacing.right + 32,
-      );
-      expect(spacing.left).toBe(spacing.right);
-      expect(spacing.outline).toBe("2px");
-      expect(spacing.offset).toBe("1px");
-      expect(spacing.shadow).toBe("none");
-      await select.screenshot({
-        path: testInfo.outputPath("sql-type-focus.png"),
-      });
-
-      const rowTags = page.locator(".yii-debug-db-n1-row-link");
-      const clear = page.locator("[data-yii-debug-n1-clear]");
-      const banner = page.getByRole("group", { name: "Active filters" });
-      const visibleRows = page.locator(".yii-debug-grid-db tbody tr:visible");
-      await rowTags.first().click();
-      await expect(visibleRows).toHaveCount(3);
-      await expect(clear).toBeVisible();
-      await expect(banner).toContainText("1 filter active");
-      await expect(banner).toContainText("3 similar queries");
-      expect(
-        await banner.evaluate((element) =>
-          element.nextElementSibling.classList.contains(
-            "yii-debug-db-n1-summary",
-          ),
-        ),
-      ).toBe(true);
-      await rowTags.nth(1).focus();
-      await rowTags.nth(1).press("Enter");
-      await expect(rowTags.nth(1)).toBeFocused();
-      await expect(visibleRows).toHaveCount(4);
-      await expect(clear).toBeHidden();
-      await expect(banner).toHaveCount(0);
-      await expect(page.locator(".yii-debug-deep-link-target")).toHaveCount(0);
-      expect(page.url()).toBe("http://debug.test/?panel=db&sort=-duration");
-
-      await page.locator(".yii-debug-db-n1-link").click();
-      await expect(visibleRows).toHaveCount(3);
-      await banner
-        .getByRole("link", { name: "Clear all active filters" })
-        .click();
-      await expect(visibleRows).toHaveCount(4);
-      await expect(page.locator('[aria-current="true"]')).toHaveCount(0);
-      expect(page.url()).toBe("http://debug.test/?panel=db&sort=-duration");
-      await expect(select).toHaveValue("SELECT");
-      await expect(banner).toHaveCount(0);
-      await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
-
-      await page.locator(".yii-debug-db-n1-link").press("Enter");
-      const groupPill = banner.getByRole("link", {
-        name: "Remove N+1: 3 similar queries filter",
-      });
-      await groupPill.focus();
-      await groupPill.press("Enter");
-      await expect(banner).toHaveCount(0);
-      await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
-
-      await page.goto(
-        "http://debug.test/?panel=db&sort=-duration&Db%5Bquery%5D=demo_items",
-      );
-      await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
-      await rowTags.first().click();
-      await expect(banner).toHaveCount(1);
-      await expect(banner).toContainText("2 filters active");
-      await expect(banner).toContainText("demo_items");
-      expect(
-        await banner.evaluate((element) =>
-          element.nextElementSibling.classList.contains(
-            "yii-debug-db-n1-summary",
-          ),
-        ),
-      ).toBe(true);
-      await groupPill.focus();
-      await groupPill.press("Enter");
-      await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
-      await expect(banner).toContainText("1 filter active");
-      await expect(banner.locator("[data-yii-debug-n1-pill]")).toHaveCount(0);
-      await expect(visibleRows).toHaveCount(4);
-      expect(new URL(page.url()).searchParams.get("Db[query]")).toBe(
-        "demo_items",
-      );
-
-      await rowTags.first().click();
-      await expect(banner).toContainText("2 filters active");
-      await banner
-        .getByRole("link", { name: "Clear all active filters" })
-        .click();
-      await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
-      await expect(banner).toHaveCount(0);
-      await expect(visibleRows).toHaveCount(4);
-      expect(page.url()).toBe("http://debug.test/?panel=db&sort=-duration");
-      expect(errors).toEqual([]);
     });
-  }
+    await page.goto("http://debug.test/?panel=db&sort=-duration#group-a");
+    await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
+    await expect(page.locator("#group-a")).toHaveClass(
+      /yii-debug-deep-link-target/,
+    );
+
+    await page.evaluate(() => document.fonts.ready);
+    const select = page.getByLabel("Filter by Type");
+    await select.selectOption("SELECT");
+    await select.focus();
+    const spacing = await select.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const context = document.createElement("canvas").getContext("2d");
+      context.font = style.font;
+      return {
+        width: element.getBoundingClientRect().width,
+        text: Math.max(
+          ...Array.from(
+            element.options,
+            (option) => context.measureText(option.text).width,
+          ),
+        ),
+        left: parseFloat(style.paddingLeft),
+        right: parseFloat(style.paddingRight),
+        outline: style.outlineWidth,
+        offset: style.outlineOffset,
+        shadow: style.boxShadow,
+      };
+    });
+    expect(spacing.width).toBeGreaterThanOrEqual(
+      spacing.text + spacing.left + spacing.right + 16,
+    );
+    expect(spacing.width).toBeLessThanOrEqual(
+      spacing.text + spacing.left + spacing.right + 32,
+    );
+    expect(spacing.left).toBe(spacing.right);
+    expect(spacing.outline).toBe("2px");
+    expect(spacing.offset).toBe("1px");
+    expect(spacing.shadow).toBe("none");
+    await select.screenshot({
+      path: testInfo.outputPath("sql-type-focus.png"),
+    });
+
+    const rowTags = page.locator(".yii-debug-db-n1-row-link");
+    const clear = page.locator("[data-yii-debug-n1-clear]");
+    const banner = page.getByRole("group", { name: "Active filters" });
+    const visibleRows = page.locator(".yii-debug-grid-db tbody tr:visible");
+    await rowTags.first().click();
+    await expect(visibleRows).toHaveCount(3);
+    await expect(clear).toBeVisible();
+    await expect(banner).toContainText("1 filter active");
+    await expect(banner).toContainText("3 similar queries");
+    expect(
+      await banner.evaluate((element) =>
+        element.nextElementSibling.classList.contains(
+          "yii-debug-db-n1-summary",
+        ),
+      ),
+    ).toBe(true);
+    await rowTags.nth(1).focus();
+    await rowTags.nth(1).press("Enter");
+    await expect(rowTags.nth(1)).toBeFocused();
+    await expect(visibleRows).toHaveCount(4);
+    await expect(clear).toBeHidden();
+    await expect(banner).toHaveCount(0);
+    await expect(page.locator(".yii-debug-deep-link-target")).toHaveCount(0);
+    expect(page.url()).toBe("http://debug.test/?panel=db&sort=-duration");
+
+    await page.locator(".yii-debug-db-n1-link").click();
+    await expect(visibleRows).toHaveCount(3);
+    await banner
+      .getByRole("link", { name: "Clear all active filters" })
+      .click();
+    await expect(visibleRows).toHaveCount(4);
+    await expect(page.locator('[aria-current="true"]')).toHaveCount(0);
+    expect(page.url()).toBe("http://debug.test/?panel=db&sort=-duration");
+    await expect(select).toHaveValue("SELECT");
+    await expect(banner).toHaveCount(0);
+    await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
+
+    await page.locator(".yii-debug-db-n1-link").press("Enter");
+    const groupPill = banner.getByRole("link", {
+      name: "Remove N+1: 3 similar queries filter",
+    });
+    await groupPill.focus();
+    await groupPill.press("Enter");
+    await expect(banner).toHaveCount(0);
+    await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
+
+    await page.goto(
+      "http://debug.test/?panel=db&sort=-duration&Db%5Bquery%5D=demo_items",
+    );
+    await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
+    await rowTags.first().click();
+    await expect(banner).toHaveCount(1);
+    await expect(banner).toContainText("2 filters active");
+    await expect(banner).toContainText("demo_items");
+    expect(
+      await banner.evaluate((element) =>
+        element.nextElementSibling.classList.contains(
+          "yii-debug-db-n1-summary",
+        ),
+      ),
+    ).toBe(true);
+    await groupPill.focus();
+    await groupPill.press("Enter");
+    await expect(page.locator(".yii-debug-db-n1-link")).toBeFocused();
+    await expect(banner).toContainText("1 filter active");
+    await expect(banner.locator("[data-yii-debug-n1-pill]")).toHaveCount(0);
+    await expect(visibleRows).toHaveCount(4);
+    expect(new URL(page.url()).searchParams.get("Db[query]")).toBe(
+      "demo_items",
+    );
+
+    await rowTags.first().click();
+    await expect(banner).toContainText("2 filters active");
+    await banner
+      .getByRole("link", { name: "Clear all active filters" })
+      .click();
+    await expect(page.locator("body")).toHaveAttribute("data-ready", "true");
+    await expect(banner).toHaveCount(0);
+    await expect(visibleRows).toHaveCount(4);
+    expect(page.url()).toBe("http://debug.test/?panel=db&sort=-duration");
+    expect(errors).toEqual([]);
+  });
 }

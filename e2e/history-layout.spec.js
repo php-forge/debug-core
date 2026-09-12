@@ -76,7 +76,6 @@ for (const [adapter, query, mail] of [
       page,
     }) => {
       const definitions = columns(query, mail);
-      const filterClass = adapter === "Yii3" ? "yii-debug-filter-cell" : "";
 
       await page.setContent(`
         <!doctype html>
@@ -89,7 +88,7 @@ for (const [adapter, query, mail] of [
                     <table class="yii-debug-table">
                       <thead>
                         <tr>${definitions.map(([label, className]) => `<th class="${className}">${label}</th>`).join("")}</tr>
-                        <tr class="${adapter === "Yii3" ? "" : "filters"}">${definitions.map(([, className, attribute]) => `<td class="${className} ${filterClass}">${filter(attribute)}</td>`).join("")}</tr>
+                        <tr class="filters">${definitions.map(([, className, attribute]) => `<td class="${className}">${filter(attribute)}</td>`).join("")}</tr>
                       </thead>
                       <tbody>${rows(definitions, 10)}</tbody>
                     </table>
