@@ -303,9 +303,7 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
     if (
       event.key === "Escape" &&
       event.target.matches &&
-      event.target.matches(
-        ".yii-debug-grid .filters input, .yii-debug-grid td.yii-debug-filter-cell input",
-      ) &&
+      event.target.matches(".yii-debug-grid .filters input") &&
       event.target.value !== ""
     ) {
       event.preventDefault();
