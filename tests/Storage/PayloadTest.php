@@ -46,6 +46,14 @@ final class PayloadTest extends TestCase
         );
     }
 
+    public function testNullableBoolReturnsTheCapturedFlag(): void
+    {
+        self::assertFalse(
+            Payload::object(['modulePreload' => false])->nullableBool('modulePreload'),
+            'A captured flag must be returned unchanged.',
+        );
+    }
+
     public function testNullableNumberReturnsIntegerInputAsFloat(): void
     {
         self::assertSame(

@@ -139,7 +139,7 @@ final class HistoryCellRenderer
             $warningParts[] = "{$row->excessiveCallersCount} {$callerLabel} making too many calls.";
         }
 
-        $warning = implode(' &#10;', $warningParts);
+        $warning = implode("\n", $warningParts);
 
         $content = (string) $row->sqlCount;
 

@@ -43,7 +43,9 @@ final class RequestSectionRendererTest extends TestCase
             <th scope="row">
             HTTP_HOST
             </th><td>
-            &#039;localhost&#039;
+            <div class="yii-debug-php-dump">
+            <pre><code style="color: #000000"><span style="color: #DD0000">'localhost'</span></code></pre>
+            </div>
             </td>
             </tr>
             </tbody>
@@ -182,7 +184,9 @@ final class RequestSectionRendererTest extends TestCase
             <th scope="row">
             HTTP_HOST
             </th><td>
-            &#039;localhost&#039;
+            <div class="yii-debug-php-dump">
+            <pre><code style="color: #000000"><span style="color: #DD0000">'localhost'</span></code></pre>
+            </div>
             </td>
             </tr>
             </tbody>
@@ -219,7 +223,9 @@ final class RequestSectionRendererTest extends TestCase
             <th scope="row">
             X-Custom
             </th><td>
-            &#039;\&#039;quoted\&#039; &lt;script&gt;alert(1)&lt;/script&gt;&#039;
+            <div class="yii-debug-php-dump">
+            <pre><code style="color: #000000"><span style="color: #DD0000">'\'quoted\' &lt;script&gt;alert(1)&lt;/script&gt;'</span></code></pre>
+            </div>
             </td>
             </tr>
             </tbody>
@@ -342,7 +348,9 @@ final class RequestSectionRendererTest extends TestCase
             <th scope="row">
             page
             </th><td>
-            1
+            <div class="yii-debug-php-dump">
+            <pre><code style="color: #000000"><span style="color: #0000BB">1</span></code></pre>
+            </div>
             </td>
             </tr>
             </tbody>
@@ -366,7 +374,9 @@ final class RequestSectionRendererTest extends TestCase
             <th scope="row">
             name
             </th><td>
-            &#039;Ada&#039;
+            <div class="yii-debug-php-dump">
+            <pre><code style="color: #000000"><span style="color: #DD0000">'Ada'</span></code></pre>
+            </div>
             </td>
             </tr>
             </tbody>

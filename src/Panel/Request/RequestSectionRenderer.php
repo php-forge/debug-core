@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Request;
 
-use PHPForge\Debug\Helper\{Disclosure, Dump, Table, Tabs, Vocabulary};
+use PHPForge\Debug\Helper\{Disclosure, PhpHighlighter, Table, Tabs, Vocabulary};
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Form\InputSearch;
 use UIAwesome\Html\Heading\H2;
@@ -29,21 +29,23 @@ final class RequestSectionRenderer
                 ->content('No data')
                 ->render();
         } else {
-            $content = '';
-
             $filter = self::renderFilter($section);
 
-            if ($filter !== null) {
-                $content .= Div::tag()
+            $toolbar = $filter === null
+                ? ''
+                : Div::tag()
                     ->class('yii-debug-mini-toolbar')
                     ->html($filter)
                     ->render();
-            }
 
-            $content .= self::renderSectionTable($section);
+            $content = $toolbar . self::renderSectionTable($section);
         }
 
-        return Disclosure::render($section->caption, $content, $section->entries !== []);
+        return Disclosure::render(
+            $section->caption,
+            $content,
+            $section->entries !== [],
+        );
     }
 
     /**
@@ -151,7 +153,11 @@ final class RequestSectionRenderer
             $items[] = ['label' => $tab->label, 'content' => $content];
         }
 
-        return Tabs::render('request', 'Request data', $items);
+        return Tabs::render(
+            'request',
+            'Request data',
+            $items,
+        );
     }
 
     private static function renderFilter(RequestSection $section): InputSearch|null
@@ -174,16 +180,16 @@ final class RequestSectionRenderer
      */
     private static function renderRow(int|string $name, mixed $value): Tr
     {
-        $valueText = Dump::asString($value);
-
-        $escaped = RequestDiagnosticValueRenderer::escape($valueText);
-
         return Tr::tag()
             ->html(
                 Th::tag()
                     ->scope('row')
                     ->content((string) $name),
-                Td::tag()->html($escaped),
+                Td::tag()->html(
+                    Div::tag()
+                        ->class('yii-debug-php-dump')
+                        ->html(PhpHighlighter::highlight($value)),
+                ),
             );
     }
 
