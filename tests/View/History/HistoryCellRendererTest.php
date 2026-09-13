@@ -488,5 +488,3 @@ final class HistoryCellRendererTest extends TestCase
         return HistoryRow::fromSummary(RequestSummaryFixture::create($overrides));
     }
 }
-
-

@@ -202,11 +202,13 @@ final class QueuePanelTest extends TestCase
         $view = $panel
             ->jobUrls([1 => '/debug/queue-job?seq=1'])
             ->present(
-                new QueueSnapshot(
-                    [
-                        JobRecordFixture::create(time: self::TIME),
-                        JobRecordFixture::create(time: self::TIME),
-                    ],
+                (
+                        new QueueSnapshot(
+                            [
+                                JobRecordFixture::create(time: self::TIME),
+                                JobRecordFixture::create(time: self::TIME),
+                            ],
+                        )
                 )->jsonSerialize(),
             );
 
