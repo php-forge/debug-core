@@ -218,6 +218,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
     gap: var(--yii-debug-space-2);
     margin-bottom: var(--yii-debug-space-4);
   }
@@ -722,7 +723,12 @@
     }
 
     dd {
+      display: flex;
+      min-width: 0;
+      flex-wrap: wrap;
+      align-items: center;
       margin: 0;
+      gap: var(--yii-debug-space-2);
       color: var(--yii-debug-panel-text);
       font-family: var(--yii-debug-font-mono);
       font-size: var(--yii-debug-fs-sm);
@@ -735,24 +741,33 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--yii-debug-space-2) var(--yii-debug-space-4);
-    padding: 10px var(--yii-debug-space-4);
+    gap: var(--yii-debug-space-2) var(--yii-debug-space-5);
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
     color: var(--yii-debug-panel-muted);
     font-family: var(--yii-debug-font-mono);
     font-size: var(--yii-debug-fs-xs);
   }
 
+  .yii-debug-request-overview-config {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--yii-debug-space-2);
+    margin-inline-start: auto;
+  }
+
   .yii-debug-request-overview-meta-item {
     display: inline-flex;
     min-width: 0;
-    align-items: baseline;
-    gap: 6px;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .yii-debug-request-overview-meta-label {
+    margin-bottom: 2px;
     color: var(--yii-debug-panel-muted);
     font-family: var(--yii-debug-font-sans);
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -762,6 +777,9 @@
     overflow: hidden;
     max-width: 34ch;
     color: var(--yii-debug-panel-text);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-sm);
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -851,7 +869,6 @@
 
     h2 {
       margin: 0;
-      font-size: var(--yii-debug-fs-lg);
     }
   }
 
@@ -1055,7 +1072,6 @@
   }
 
   .yii-debug-server-group-body > .yii-debug-mini-toolbar {
-    justify-content: flex-end;
     margin: 0;
     padding: var(--yii-debug-space-2) var(--yii-debug-space-4);
     border-bottom: var(--yii-debug-border);
@@ -1167,230 +1183,8 @@
     }
   }
 
-  .yii-debug-route-inventory-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--yii-debug-space-3);
-    margin-bottom: var(--yii-debug-space-2);
-  }
-
-  .yii-debug-route-inventory-title {
-    display: flex;
-    align-items: baseline;
-    gap: var(--yii-debug-space-2);
-
-    h2 {
-      margin: 0;
-      font-size: var(--yii-debug-fs-lg);
-    }
-  }
-
-  .yii-debug-route-inventory-count {
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .yii-debug-route-inventory-context {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--yii-debug-space-3);
-    margin-bottom: var(--yii-debug-space-3);
-  }
-
-  .yii-debug-route-inventory-provenance {
-    margin: 0;
-    color: var(--yii-debug-panel-muted);
-    font-size: var(--yii-debug-fs-xs);
-  }
-
-  .yii-debug-route-inventory-badges,
-  .yii-debug-route-methods {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--yii-debug-space-1);
-  }
-
-  .yii-debug-route-inventory-error {
-    margin-bottom: var(--yii-debug-space-3);
-
-    p {
-      margin: 0;
-    }
-  }
-
-  .yii-debug-route-ledger {
-    overflow: hidden;
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    container: routes / inline-size;
-  }
-
-  .yii-debug-route-columns,
-  .yii-debug-route-summary {
-    display: grid;
-    grid-template-columns: 24px 88px minmax(0, 1fr) minmax(0, 1fr) 132px;
-    align-items: center;
-    gap: var(--yii-debug-space-3);
-    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
-  }
-
-  .yii-debug-route-columns {
-    background: var(--yii-debug-panel-surface-muted);
-    color: var(--yii-debug-panel-muted);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 600;
-  }
-
-  .yii-debug-route-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
-    > li {
-      border-top: var(--yii-debug-border);
-    }
-
-    > [data-yii-debug-route-match="true"] {
-      box-shadow: inset 3px 0 0 var(--yii-debug-success);
-    }
-  }
-
-  .yii-debug-route-summary {
-    min-height: 56px;
-    cursor: pointer;
-    list-style: none;
-
-    &:hover {
-      background: var(--yii-debug-panel-surface-hover);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--yii-debug-focus-ring);
-      outline-offset: -3px;
-    }
-
-    &::-webkit-details-marker {
-      display: none;
-    }
-
-    .yii-debug-disclosure-hint {
-      font-size: 0.625rem;
-      text-align: right;
-    }
-  }
-
-  .yii-debug-route-order {
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .yii-debug-route-method {
-    display: inline-flex;
-    align-items: center;
-    min-height: 20px;
-    padding: 1px 7px;
-    border-radius: var(--yii-debug-radius-pill);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .yii-debug-route-methods-any {
-    color: var(--yii-debug-panel-muted);
-    font-size: var(--yii-debug-fs-xs);
-  }
-
-  .yii-debug-route-pattern,
-  .yii-debug-route-identity {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    white-space: normal;
-    font-size: var(--yii-debug-fs-xs);
-
-    code {
-      white-space: normal;
-    }
-  }
-
-  .yii-debug-route-pattern,
-  .yii-debug-route-identity code {
-    padding: 0;
-    background: transparent;
-  }
-
-  .yii-debug-route-identity {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--yii-debug-space-2);
-  }
-
-  .yii-debug-route-metadata {
-    margin: 0;
-    padding: var(--yii-debug-space-4);
-    border-top: var(--yii-debug-border);
-    background: var(--yii-debug-panel-surface);
-    font-size: var(--yii-debug-fs-sm);
-
-    > div {
-      display: grid;
-      grid-template-columns: 120px minmax(0, 1fr);
-      gap: var(--yii-debug-space-4);
-    }
-
-    > div + div {
-      margin-top: var(--yii-debug-space-3);
-    }
-
-    dt {
-      color: var(--yii-debug-panel-muted);
-    }
-
-    dd {
-      min-width: 0;
-      margin: 0;
-      overflow-wrap: anywhere;
-      font-family: var(--yii-debug-font-mono);
-    }
-  }
-
-  @container routes (width < 640px) {
-    .yii-debug-route-columns {
-      display: none;
-    }
-
-    .yii-debug-route-summary {
-      grid-template-columns: 24px 72px minmax(0, 1fr);
-      gap: var(--yii-debug-space-2);
-    }
-
-    .yii-debug-route-identity {
-      grid-column: 3;
-    }
-
-    .yii-debug-route-summary .yii-debug-disclosure-hint {
-      grid-column: 3;
-      text-align: left;
-    }
-
-    .yii-debug-route-metadata > div {
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--yii-debug-space-1);
-    }
-  }
-
   .yii-debug-route-resolution {
-    margin-top: var(--yii-debug-space-4);
+    margin: var(--yii-debug-space-3) var(--yii-debug-space-4) var(--yii-debug-space-4);
   }
 
   .yii-debug-route-resolution-message {
@@ -1401,6 +1195,28 @@
 
   .yii-debug-route-trace {
     min-width: 560px;
+  }
+
+  .yii-debug-table.yii-debug-route-trace {
+    thead th,
+    tbody td {
+      text-align: center;
+    }
+
+    thead th:nth-child(2),
+    tbody td:nth-child(2) {
+      text-align: start;
+    }
+
+    thead th:first-child,
+    tbody td:first-child {
+      width: 56px;
+    }
+
+    thead th:last-child,
+    tbody td:last-child {
+      width: 160px;
+    }
   }
 
   .yii-debug-panel-heading {
@@ -1473,17 +1289,6 @@
 
     .yii-debug-panel-heading {
       align-items: flex-start;
-    }
-
-    .yii-debug-route-inventory-header,
-    .yii-debug-route-inventory-context {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .yii-debug-route-filter {
-      width: 100%;
-      max-width: none;
     }
   }
 
@@ -1837,11 +1642,9 @@
    * a soft border, and a near-transparent wash of the same hue.
    */
   .yii-debug-request-hero-method,
-  .yii-debug-route-method,
   .yii-debug-snapshot-status,
   .yii-debug-level-chip,
   .yii-debug-db-type,
-  .yii-debug-mail-status,
   .yii-debug-dump-type,
   .yii-debug-badge:is(
     .yii-debug-status-2xx,
@@ -1926,58 +1729,6 @@
 
   .yii-debug-callout-danger {
     border-left-color: var(--yii-debug-danger);
-  }
-
-  /**
-   * Router-specific callout — surfaces the resolver explanation captured for
-   * the routing pass (for example the "no matching rule" trace message).
-   */
-  .yii-debug-router-callout {
-    flex-direction: column;
-  }
-
-  .yii-debug-router-callout-message {
-    margin: 0;
-  }
-
-  /**
-   * Always-on resolved route / dispatched action readout at the top of the
-   * Current Route pane — keeps the pane informative even when the resolver
-   * left no trace messages to replay.
-   */
-  .yii-debug-router-summary {
-    display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    gap: 4px var(--yii-debug-space-3);
-    margin: 0 0 var(--yii-debug-space-3);
-    font-size: var(--yii-debug-fs-sm);
-
-    dt {
-      color: var(--yii-debug-panel-muted);
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      font-size: var(--yii-debug-fs-xs);
-      align-self: center;
-    }
-
-    dd {
-      min-width: 0;
-      margin: 0;
-      overflow-wrap: anywhere;
-    }
-
-    code {
-      display: inline;
-      min-width: 0;
-      padding: 1px 8px;
-      border-radius: var(--yii-debug-radius-sm);
-      background: var(--yii-debug-panel-surface);
-      color: var(--yii-debug-panel-text);
-      font-family: var(--yii-debug-font-mono);
-      font-size: var(--yii-debug-fs-sm);
-      overflow-wrap: anywhere;
-    }
   }
 
   /**
@@ -2194,7 +1945,8 @@
 
   /* Shared accent label for collapsed and populated Request sections. */
   .yii-debug-disclosure-title,
-  .yii-debug-request-section-title {
+  .yii-debug-request-section-title,
+  .yii-debug-diagnostic-heading-copy h2 {
     color: var(--yii-debug-panel-primary-strong);
     font-family: var(--yii-debug-font-mono);
     font-size: var(--yii-debug-fs-xs);
@@ -3717,447 +3469,6 @@
 
   /**
    * -------------------------------------------------------------------
-   * Mail panel — developer inbox.
-   * The panel opens with the shared `.yii-debug-grid-summary` strip;
-   * each ListView item is a self-contained "email card" with a 3-zone
-   * header (avatar / sender+subject+preview / status+time+download), a
-   * recipient pill row, a paper-card body, and a collapsible
-   * raw-headers <details> block. Avatars use a deterministic HSL hue
-   * derived from `crc32(email)` so the same sender always renders the
-   * same color.
-   * -------------------------------------------------------------------
-   */
-
-  .yii-debug-mail-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--yii-debug-space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .yii-debug-mail-list-item {
-    display: block;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .yii-debug-mail-pager {
-    margin-top: var(--yii-debug-space-4);
-  }
-
-  .yii-debug-mail-card {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--yii-debug-space-4);
-    padding: var(--yii-debug-space-4) var(--yii-debug-space-4)
-      var(--yii-debug-space-3);
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface);
-    box-shadow: var(--yii-debug-shadow-sm);
-    transition:
-      transform 160ms ease,
-      border-color 160ms ease,
-      box-shadow 160ms ease;
-
-    &:hover {
-      border-color: color-mix(
-        in srgb,
-        var(--yii-debug-panel-primary),
-        transparent 60%
-      );
-      transform: translateY(-1px);
-      box-shadow:
-        var(--yii-debug-shadow-sm),
-        0 12px 32px
-          color-mix(in srgb, var(--yii-debug-panel-primary), transparent 88%);
-    }
-  }
-
-  .yii-debug-mail-card-head {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: var(--yii-debug-space-3);
-    align-items: flex-start;
-  }
-
-  .yii-debug-mail-avatar {
-    --mail-hue: 210;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    flex: none;
-    border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      hsl(var(--mail-hue) 72% 52%),
-      hsl(calc(var(--mail-hue) + 28) 65% 40%)
-    );
-    box-shadow:
-      0 2px 10px hsl(var(--mail-hue) 60% 40% / 32%),
-      inset 0 1px 0 rgb(255 255 255 / 22%);
-    color: #fff;
-    font-family: var(--yii-debug-font-mono);
-    font-size: 16px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-
-  .yii-debug-mail-headline {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .yii-debug-mail-from {
-    margin: 0;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    letter-spacing: 0.02em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .yii-debug-mail-subject {
-    margin: 0;
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-sans);
-    font-size: var(--yii-debug-fs-lg);
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    line-height: 1.25;
-  }
-
-  .yii-debug-mail-preview {
-    margin: 2px 0 0;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-sans);
-    font-size: var(--yii-debug-fs-sm);
-    line-height: 1.4;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    line-clamp: 1;
-    -webkit-box-orient: vertical;
-  }
-
-  .yii-debug-mail-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-    flex: none;
-  }
-
-  .yii-debug-mail-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px 3px 8px;
-    border-radius: var(--yii-debug-radius-pill);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    line-height: 1;
-  }
-
-  /* The "state LED": tinted by the same hue the chip formula consumes. */
-  .yii-debug-mail-status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    flex: none;
-    background: var(--yii-debug-hue, var(--yii-debug-panel-muted));
-    box-shadow: 0 0 0 3px
-      color-mix(
-        in srgb,
-        var(--yii-debug-hue, var(--yii-debug-panel-muted)),
-        transparent 80%
-      );
-  }
-
-  .yii-debug-mail-status-ok {
-    --yii-debug-hue: var(--yii-debug-success);
-  }
-
-  .yii-debug-mail-status-fail {
-    --yii-debug-hue: var(--yii-debug-danger);
-  }
-
-  .yii-debug-mail-time {
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    letter-spacing: 0.02em;
-    cursor: help;
-  }
-
-  .yii-debug-mail-download {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface-muted);
-    color: var(--yii-debug-panel-link);
-    text-decoration: none;
-    transition:
-      background-color 140ms ease,
-      border-color 140ms ease,
-      color 140ms ease,
-      transform 140ms ease;
-
-    svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    &:hover,
-    &:focus-visible {
-      border-color: color-mix(
-        in srgb,
-        var(--yii-debug-panel-primary),
-        transparent 50%
-      );
-      background: color-mix(
-        in srgb,
-        var(--yii-debug-panel-primary),
-        transparent 88%
-      );
-      color: var(--yii-debug-panel-primary-strong);
-      transform: translateY(-1px);
-      text-decoration: none;
-    }
-  }
-
-  .yii-debug-mail-recipients {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: var(--yii-debug-space-3);
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border) 60%, transparent);
-    border-radius: var(--yii-debug-radius-md);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-panel-surface-muted),
-      transparent 40%
-    );
-  }
-
-  .yii-debug-mail-recipient-group {
-    display: grid;
-    grid-template-columns: 64px 1fr;
-    gap: var(--yii-debug-space-3);
-    align-items: center;
-  }
-
-  .yii-debug-mail-recipient-label {
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-align: right;
-
-    &[data-role="reply"] {
-      color: var(--yii-debug-info);
-    }
-
-    &[data-role="bcc"] {
-      color: var(--yii-debug-warning);
-    }
-  }
-
-  .yii-debug-mail-recipient-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .yii-debug-mail-recipient-pill {
-    display: inline-flex;
-    align-items: center;
-    max-width: 100%;
-    padding: 3px 10px;
-    border: 1px solid var(--yii-debug-panel-border);
-    border-radius: var(--yii-debug-radius-pill);
-    background: var(--yii-debug-panel-surface);
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    line-height: 1.4;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .yii-debug-mail-body {
-    padding: var(--yii-debug-space-4);
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border) 60%, transparent);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface-muted);
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-sm);
-    line-height: 1.55;
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-  }
-
-  .yii-debug-mail-body-empty {
-    color: var(--yii-debug-panel-muted);
-    font-style: italic;
-    text-align: center;
-  }
-
-  .yii-debug-mail-tech {
-    border: 1px dashed
-      color-mix(in srgb, var(--yii-debug-panel-border) 70%, transparent);
-    border-radius: var(--yii-debug-radius-md);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-panel-surface-muted),
-      transparent 30%
-    );
-    overflow: hidden;
-
-    > summary {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px var(--yii-debug-space-3);
-      color: var(--yii-debug-panel-muted);
-      font-family: var(--yii-debug-font-mono);
-      font-size: var(--yii-debug-fs-xs);
-      letter-spacing: 0.06em;
-      list-style: none;
-      cursor: pointer;
-      user-select: none;
-
-      &::-webkit-details-marker {
-        display: none;
-      }
-
-      &:hover {
-        color: var(--yii-debug-panel-text);
-      }
-    }
-
-    &[open] > summary {
-      border-bottom: 1px solid
-        color-mix(in srgb, var(--yii-debug-panel-border) 50%, transparent);
-      color: var(--yii-debug-panel-text);
-    }
-
-    &[open] .yii-debug-mail-tech-chevron {
-      transform: rotate(180deg);
-    }
-  }
-
-  .yii-debug-mail-tech-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    color: var(--yii-debug-panel-primary);
-
-    svg {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  .yii-debug-mail-tech-label {
-    text-transform: uppercase;
-    font-weight: 700;
-  }
-
-  .yii-debug-mail-tech-charset {
-    margin-left: 4px;
-    padding: 2px 8px;
-    border: 1px solid var(--yii-debug-panel-border);
-    border-radius: var(--yii-debug-radius-pill);
-    background: var(--yii-debug-panel-surface);
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: none;
-  }
-
-  .yii-debug-mail-tech-chevron {
-    margin-left: auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    color: var(--yii-debug-panel-muted);
-    transition: transform 200ms ease;
-
-    svg {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  .yii-debug-mail-headers {
-    margin: 0;
-    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
-    background: var(--yii-debug-panel-code-bg);
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    line-height: 1.5;
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-    overflow-x: auto;
-  }
-
-  /* Compact the head row when the panel iframe gets narrow. */
-  @media (width <= 640px) {
-    .yii-debug-mail-card-head {
-      grid-template-columns: auto 1fr;
-    }
-
-    .yii-debug-mail-meta {
-      grid-column: 1 / -1;
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-start;
-    }
-
-    .yii-debug-mail-recipient-group {
-      grid-template-columns: 1fr;
-      gap: 4px;
-    }
-
-    .yii-debug-mail-recipient-label {
-      text-align: left;
-    }
-  }
-
-  /**
-   * -------------------------------------------------------------------
    * Queue panel — request-scoped roster of `Yii::$app->queue->push()` /
    * exec / error events. The default view is a paginated GridView with
    * filter row (status, driver, component, job class, job id); each row
@@ -4614,6 +3925,26 @@
     color: var(--yii-debug-panel-link);
   }
 
+  .yii-debug-php-dump {
+    text-align: start;
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-sm);
+    line-height: 1.5;
+    overflow-x: auto;
+
+    pre {
+      margin: 0;
+      background: transparent;
+    }
+
+    code {
+      display: block;
+      padding: 0;
+      background: transparent;
+      white-space: pre;
+    }
+  }
+
   .yii-debug-dump-body {
     padding: var(--yii-debug-space-3);
     font-family: var(--yii-debug-font-mono);
@@ -4634,10 +3965,10 @@
    * so we use `[…] &` to compile to `[data-yii-debug-theme="dark"] .yii-debug …`
    * (selector reads outside-in, matching the actual DOM).
    */
-  [data-yii-debug-theme="dark"] & .yii-debug-dump-body {
+  [data-yii-debug-theme="dark"] & :is(.yii-debug-dump-body, .yii-debug-php-dump) {
     span[style*="color: #DD0000"],
     span[style*="color:#DD0000"] {
-      color: #fca5a5 !important; /* strings → pastel red */
+      color: #e5c07b !important; /* strings → warm sand, calmer than red on the dark surface */
     }
 
     span[style*="color: #0000BB"],
@@ -4660,465 +3991,6 @@
       color: var(
         --yii-debug-panel-text
       ) !important; /* black text → panel text */
-    }
-  }
-
-  /**
-   * -------------------------------------------------------------------
-   * Asset Bundles panel — dependency graph + asset inventory.
-   * Top "stats strip" gives a build-summary feel (bundles / css / js /
-   * depend-edges). Each bundle renders as a card with a 3-zone header
-   * (icon / short class + FQCN suffix / count chips) and a 2-column
-   * body splitting into "Files" (CSS + JS rows tagged by filetype) and
-   * "Wiring" (sourcePath / basePath / baseUrl + a `Depends on N` block
-   * whose pills are real anchors that jump to the dependency's card).
-   * The card uses :target to flag the bundle that the user just jumped
-   * to via a depend pill.
-   * -------------------------------------------------------------------
-   */
-
-  .yii-debug-asset-stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--yii-debug-space-3);
-    margin: 0 0 var(--yii-debug-space-4);
-  }
-
-  .yii-debug-asset-stat {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface);
-    box-shadow: var(--yii-debug-shadow-sm);
-
-    &[data-kind="bundles"] .yii-debug-asset-stat-icon {
-      color: var(--yii-debug-panel-primary);
-    }
-
-    &[data-kind="css"] .yii-debug-asset-stat-icon {
-      color: var(--yii-debug-info);
-    }
-
-    &[data-kind="js"] .yii-debug-asset-stat-icon {
-      color: var(--yii-debug-warning);
-    }
-
-    &[data-kind="deps"] .yii-debug-asset-stat-icon {
-      color: var(--yii-debug-success);
-    }
-  }
-
-  .yii-debug-asset-stat-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    flex: none;
-
-    svg {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  .yii-debug-asset-stat-value {
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xl);
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  .yii-debug-asset-stat-label {
-    margin-left: auto;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .yii-debug-asset-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--yii-debug-space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .yii-debug-asset-list-item {
-    display: block;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .yii-debug-asset-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: var(--yii-debug-space-4);
-    padding: var(--yii-debug-space-4);
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface);
-    box-shadow: var(--yii-debug-shadow-sm);
-    scroll-margin-top: var(--yii-debug-space-4);
-    transition:
-      transform 160ms ease,
-      border-color 160ms ease,
-      box-shadow 160ms ease;
-
-    &:hover {
-      border-color: color-mix(
-        in srgb,
-        var(--yii-debug-panel-primary),
-        transparent 60%
-      );
-      transform: translateY(-1px);
-      box-shadow:
-        var(--yii-debug-shadow-sm),
-        0 12px 32px
-          color-mix(in srgb, var(--yii-debug-panel-primary), transparent 88%);
-    }
-
-    &:target {
-      border-color: var(--yii-debug-panel-primary);
-      box-shadow:
-        0 0 0 3px
-          color-mix(in srgb, var(--yii-debug-panel-primary), transparent 78%),
-        var(--yii-debug-shadow-sm);
-    }
-  }
-
-  .yii-debug-asset-card-head {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: var(--yii-debug-space-3);
-    align-items: center;
-  }
-
-  .yii-debug-asset-card-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    flex: none;
-    border-radius: var(--yii-debug-radius-md);
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--yii-debug-panel-primary), transparent 78%),
-      color-mix(in srgb, var(--yii-debug-info), transparent 78%)
-    );
-    color: var(--yii-debug-panel-primary-strong);
-
-    svg {
-      width: 22px;
-      height: 22px;
-    }
-  }
-
-  .yii-debug-asset-card-title {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .yii-debug-asset-card-name {
-    margin: 0;
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-lg);
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .yii-debug-asset-card-fqcn {
-    margin: 0;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    letter-spacing: 0.01em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .yii-debug-asset-card-meta {
-    display: inline-flex;
-    flex-wrap: nowrap;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 5px;
-    flex: none;
-  }
-
-  .yii-debug-asset-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border: 1px solid var(--yii-debug-panel-border);
-    border-radius: var(--yii-debug-radius-pill);
-    background: var(--yii-debug-panel-surface-muted);
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    white-space: nowrap;
-
-    strong {
-      color: var(--yii-debug-panel-text);
-      font-weight: 800;
-    }
-  }
-
-  .yii-debug-asset-chip-css {
-    border-color: color-mix(in srgb, var(--yii-debug-info), transparent 60%);
-    background: color-mix(in srgb, var(--yii-debug-info), transparent 90%);
-    color: var(--yii-debug-info);
-
-    strong {
-      color: var(--yii-debug-info);
-    }
-  }
-
-  .yii-debug-asset-chip-js {
-    border-color: color-mix(in srgb, var(--yii-debug-warning), transparent 60%);
-    background: color-mix(in srgb, var(--yii-debug-warning), transparent 90%);
-    color: var(--yii-debug-warning);
-
-    strong {
-      color: var(--yii-debug-warning);
-    }
-  }
-
-  .yii-debug-asset-chip-deps {
-    border-color: color-mix(in srgb, var(--yii-debug-success), transparent 60%);
-    background: color-mix(in srgb, var(--yii-debug-success), transparent 90%);
-    color: var(--yii-debug-success);
-
-    strong {
-      color: var(--yii-debug-success);
-    }
-  }
-
-  .yii-debug-asset-card-body {
-    display: grid;
-    grid-template-columns: minmax(180px, 2fr) minmax(0, 3fr);
-    gap: var(--yii-debug-space-4);
-  }
-
-  .yii-debug-asset-card-body[data-cols="1"] {
-    grid-template-columns: 1fr;
-  }
-
-  .yii-debug-asset-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--yii-debug-space-3);
-    min-width: 0;
-  }
-
-  .yii-debug-asset-section-title {
-    margin: 0;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-sans);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .yii-debug-asset-files {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    + .yii-debug-asset-files {
-      margin-top: 4px;
-    }
-  }
-
-  .yii-debug-asset-file {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border) 60%, transparent);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    min-width: 0;
-  }
-
-  .yii-debug-asset-file-type {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 30px;
-    padding: 0 5px;
-    border-radius: var(--yii-debug-radius-pill);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  .yii-debug-asset-file-type-css {
-    background: color-mix(in srgb, var(--yii-debug-info), transparent 84%);
-    color: var(--yii-debug-info);
-  }
-
-  .yii-debug-asset-file-type-js {
-    background: color-mix(in srgb, var(--yii-debug-warning), transparent 84%);
-    color: var(--yii-debug-warning);
-  }
-
-  .yii-debug-asset-file-name {
-    color: var(--yii-debug-panel-text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
-  }
-
-  .yii-debug-asset-wiring {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin: 0;
-  }
-
-  .yii-debug-asset-wiring-row {
-    display: grid;
-    grid-template-columns: 56px 1fr;
-    align-items: baseline;
-    gap: 8px;
-    padding: 6px 10px;
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border) 60%, transparent);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface-muted);
-  }
-
-  .yii-debug-asset-wiring-label {
-    margin: 0;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .yii-debug-asset-wiring-value {
-    margin: 0;
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    word-break: break-all;
-  }
-
-  .yii-debug-asset-depends {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px var(--yii-debug-space-3);
-    border: 1px dashed
-      color-mix(in srgb, var(--yii-debug-success), transparent 50%);
-    border-radius: var(--yii-debug-radius-md);
-    background: color-mix(in srgb, var(--yii-debug-success), transparent 92%);
-  }
-
-  .yii-debug-asset-depends-label {
-    color: var(--yii-debug-success);
-    font-family: var(--yii-debug-font-sans);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .yii-debug-asset-depends-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .yii-debug-asset-depend {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px 3px 8px;
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-success), transparent 50%);
-    border-radius: var(--yii-debug-radius-pill);
-    background: var(--yii-debug-panel-surface);
-    color: var(--yii-debug-success);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 600;
-    text-decoration: none;
-    transition:
-      background-color 140ms ease,
-      color 140ms ease,
-      transform 140ms ease,
-      border-color 140ms ease;
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--yii-debug-success);
-      background: color-mix(in srgb, var(--yii-debug-success), transparent 86%);
-      color: var(--yii-debug-success);
-      text-decoration: none;
-      transform: translateY(-1px);
-    }
-  }
-
-  .yii-debug-asset-depend-icon {
-    font-size: 12px;
-    line-height: 1;
-    opacity: 0.85;
-  }
-
-  .yii-debug-asset-depend-name {
-    white-space: nowrap;
-  }
-
-  @media (width <= 720px) {
-    .yii-debug-asset-stats {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .yii-debug-asset-card-body {
-      grid-template-columns: 1fr;
-    }
-
-    .yii-debug-asset-card-head {
-      grid-template-columns: auto 1fr;
-    }
-
-    .yii-debug-asset-card-meta {
-      grid-column: 1 / -1;
-      justify-content: flex-start;
-      max-width: 100%;
     }
   }
 
@@ -5771,13 +4643,6 @@
 
   /* -- Readout card grid (hero stats) --------------------------------- */
 
-  .yii-debug-readout {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: var(--yii-debug-space-3);
-    margin-bottom: var(--yii-debug-space-6);
-  }
-
   .yii-debug-readout-card {
     position: relative;
     display: flex;
@@ -5843,48 +4708,6 @@
   }
 
   /* Four L-shaped corner ticks per card, like gun sights on a schematic. */
-  .yii-debug-readout-corner {
-    position: absolute;
-    width: 9px;
-    height: 9px;
-    border: 1.5px solid
-      color-mix(in srgb, var(--yii-debug-panel-primary), transparent 40%);
-    pointer-events: none;
-    transition: border-color 0.15s ease;
-
-    &[data-corner="tl"] {
-      top: 8px;
-      left: 8px;
-      border-right: 0;
-      border-bottom: 0;
-    }
-
-    &[data-corner="tr"] {
-      top: 8px;
-      right: 8px;
-      border-left: 0;
-      border-bottom: 0;
-    }
-
-    &[data-corner="bl"] {
-      bottom: 8px;
-      left: 8px;
-      border-right: 0;
-      border-top: 0;
-    }
-
-    &[data-corner="br"] {
-      bottom: 8px;
-      right: 8px;
-      border-left: 0;
-      border-top: 0;
-    }
-  }
-
-  .yii-debug-readout-card:hover .yii-debug-readout-corner {
-    border-color: var(--yii-debug-panel-primary);
-  }
-
   .yii-debug-readout-label {
     position: relative;
     display: block;
@@ -5928,29 +4751,6 @@
     letter-spacing: 0.05em;
     line-height: 1;
     text-transform: lowercase;
-  }
-
-  .yii-debug-readout-chip {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 7px;
-    border-radius: var(--yii-debug-radius-sm);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-panel-primary),
-      transparent 80%
-    );
-    color: var(--yii-debug-panel-primary);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .yii-debug-readout-chip-muted {
-    background: var(--yii-debug-panel-surface-muted);
-    color: var(--yii-debug-panel-muted);
   }
 
   /* -- Extension status strip ----------------------------------------- */
@@ -6037,187 +4837,6 @@
 
   .yii-debug-ext-pill.is-off {
     opacity: 0.55;
-  }
-
-  /* -- Definition list (application details) -------------------------- */
-
-  .yii-debug-dl {
-    margin: 0;
-    padding: 0;
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface);
-    overflow: hidden;
-  }
-
-  .yii-debug-dl-row {
-    display: grid;
-    grid-template-columns: minmax(160px, 200px) 1fr;
-    gap: var(--yii-debug-space-4);
-    align-items: baseline;
-    padding: 10px var(--yii-debug-space-4);
-    border-bottom: 1px solid var(--yii-debug-panel-border);
-
-    &:last-child {
-      border-bottom: 0;
-    }
-
-    dt {
-      margin: 0;
-      color: var(--yii-debug-panel-muted);
-      font-family: var(--yii-debug-font-mono);
-      font-size: 0.6875rem;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-
-    dd {
-      margin: 0;
-      color: var(--yii-debug-panel-text);
-      font-family: var(--yii-debug-font-mono);
-      font-size: 0.8125rem;
-      overflow-wrap: break-word;
-    }
-  }
-
-  /* -- Composer namespace ledger (installed extensions) --------------- */
-
-  .yii-debug-package-groups {
-    display: grid;
-    gap: var(--yii-debug-space-3);
-  }
-
-  .yii-debug-package-group {
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface);
-    overflow: hidden;
-  }
-
-  .yii-debug-package-group-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--yii-debug-space-3);
-    padding: 9px 12px;
-    border-bottom: var(--yii-debug-border);
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-panel-surface-muted),
-      transparent 18%
-    );
-  }
-
-  .yii-debug-package-vendor {
-    margin: 0;
-    color: var(--yii-debug-panel-primary);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  .yii-debug-package-group-count {
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .yii-debug-package-list {
-    display: grid;
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(min(100%, 220px), 1fr)
-    );
-    margin: 0;
-    padding: 0;
-  }
-
-  .yii-debug-package-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--yii-debug-space-2);
-    align-items: baseline;
-    min-width: 0;
-    padding: 7px 11px;
-    border-right: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border), transparent 28%);
-    border-bottom: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border), transparent 28%);
-
-    dt,
-    dd {
-      margin: 0;
-      font-family: var(--yii-debug-font-mono);
-      font-size: 0.6875rem;
-      line-height: 1.35;
-    }
-  }
-
-  .yii-debug-package-name {
-    min-width: 0;
-    color: var(--yii-debug-panel-text);
-    font-weight: 500;
-    overflow-wrap: anywhere;
-  }
-
-  .yii-debug-package-version {
-    color: var(--yii-debug-panel-primary);
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  /* -- Terminal-prompt CTA -------------------------------------------- */
-
-  .yii-debug-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--yii-debug-space-2);
-    padding: 10px 18px 10px 14px;
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface);
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    text-decoration: none;
-    transition:
-      border-color 0.15s ease,
-      color 0.15s ease,
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
-
-    &:hover,
-    &:focus {
-      border-color: var(--yii-debug-panel-primary);
-      color: var(--yii-debug-panel-primary);
-      box-shadow: 0 0 0 3px
-        color-mix(in srgb, var(--yii-debug-panel-primary), transparent 85%);
-      text-decoration: none;
-      transform: translateX(3px);
-
-      .yii-debug-cta-prompt {
-        transform: translateX(2px);
-      }
-    }
-  }
-
-  .yii-debug-cta-prompt {
-    color: var(--yii-debug-panel-primary);
-    font-weight: 700;
-    transition: transform 0.15s ease;
-  }
-
-  .yii-debug-cta-external {
-    margin-left: auto;
-    color: var(--yii-debug-panel-muted);
-    font-size: 0.875rem;
   }
 
   /**

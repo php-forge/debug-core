@@ -21,10 +21,12 @@ use PHPForge\Debug\Panel\Request\Routing\{
     RouteInventoryView,
     RouteTraceRow,
 };
-use PHPUnit\Framework\Attributes\Group;
+use PHPForge\Debug\Tests\Provider\RequestRendererProvider;
+use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
 use function strpos;
+use function substr_count;
 
 /**
  * Unit tests for the composed Request and routing presentation.
@@ -59,7 +61,7 @@ final class RequestRendererTest extends TestCase
             'The three primary metrics must follow route, action, duration order.',
         );
 
-        $labels = ['Input', 'Headers', 'Session', 'Routes (2)', 'Server'];
+        $labels = ['Input', 'Headers', 'Session', 'Server'];
         $offset = -1;
 
         foreach ($labels as $label) {
@@ -77,6 +79,72 @@ final class RequestRendererTest extends TestCase
 
             $offset = $position;
         }
+    }
+    public function testRenderCarriesTheRoutingConstraintsOnTheContextStrip(): void
+    {
+        $html = RequestRenderer::render(
+            self::requestView(),
+            new RequestRoutingView(
+                CurrentRouteView::create(route: 'orders/view')->withDefinition(
+                    RouteDefinition::create(name: 'orders/view', pattern: '/orders/<id>')
+                        ->withMethods(['GET', 'HEAD'])
+                        ->withHosts(['api.example.test'])
+                        ->withMiddlewares(['Auth']),
+                ),
+            ),
+        );
+
+        $chips = [
+            'Pattern' => '/orders/&lt;id&gt;',
+            'Methods' => 'GET, HEAD',
+            'Hosts' => 'api.example.test',
+            'Middleware' => 'Auth',
+        ];
+
+        foreach ($chips as $label => $value) {
+            self::assertStringContainsString(
+                "<span class=\"yii-debug-request-overview-meta-label\">{$label}</span>",
+                $html,
+                "The context strip must label the {$label} chip.",
+            );
+            self::assertStringContainsString(
+                ">{$value}</span>",
+                $html,
+                "The {$label} chip must carry its captured value.",
+            );
+        }
+
+        $wildcards = RequestRenderer::render(
+            self::requestView(),
+            new RequestRoutingView(
+                CurrentRouteView::create(route: 'orders/view')->withDefinition(
+                    RouteDefinition::create(name: 'orders/view', pattern: '/orders')->withMiddlewares([]),
+                ),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '>Any</span>',
+            $wildcards,
+            'A definition without methods or hosts must read as accepting any.',
+        );
+        self::assertStringContainsString(
+            '>None</span>',
+            $wildcards,
+            'An empty middleware stack must read as none.',
+        );
+        self::assertStringNotContainsString(
+            '<span class="yii-debug-request-overview-meta-label">Middleware</span>',
+            RequestRenderer::render(
+                self::requestView(),
+                new RequestRoutingView(
+                    CurrentRouteView::create(route: 'orders/view')->withDefinition(
+                        RouteDefinition::create(name: 'orders/view', pattern: '/orders'),
+                    ),
+                ),
+            ),
+            'A framework that reports no middleware must not show an empty chip.',
+        );
     }
 
     public function testRenderDelegatesToLegacyRendererWithoutRoutingView(): void
@@ -99,7 +167,6 @@ final class RequestRendererTest extends TestCase
             ->withMethods(['G<script>'])
             ->withAction('<img src=x onerror=alert(1)>')
             ->withMiddlewares([]);
-
         $html = RequestRenderer::render(
             self::requestView(),
             new RequestRoutingView(
@@ -133,7 +200,6 @@ final class RequestRendererTest extends TestCase
             RequestHero::create('GET', '/'),
             [new RequestTab(label: 'Parameters', sections: [], id: 'parameters')],
         );
-
         $html = RequestRenderer::render(
             $view,
             new RequestRoutingView(CurrentRouteView::create(), RouteInventoryView::create(routes: [])),
@@ -174,7 +240,10 @@ final class RequestRendererTest extends TestCase
             ],
         );
 
-        $html = RequestRenderer::render($view, self::routingView());
+        $html = RequestRenderer::render(
+            $view,
+            self::routingView(),
+        );
 
         self::assertStringContainsString(
             'Legacy headers',
@@ -203,6 +272,43 @@ final class RequestRendererTest extends TestCase
         );
     }
 
+    public function testRenderFallsBackToTheMatchedDefinitionForRouteAndAction(): void
+    {
+        $html = RequestRenderer::render(
+            self::requestView(),
+            new RequestRoutingView(
+                CurrentRouteView::create()->withDefinition(
+                    RouteDefinition::create(name: 'definition-name')->withAction('DefinitionAction'),
+                ),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<dd title="definition-name">' . "\n" . '<span>definition-name</span>',
+            $html,
+            'An unresolved request must fall back to the definition name.',
+        );
+        self::assertStringContainsString(
+            '<dd title="DefinitionAction">' . "\n" . 'DefinitionAction' . "\n" . '</dd>',
+            $html,
+            'An unresolved request must fall back to the definition action.',
+        );
+        self::assertStringContainsString(
+            '<dd title="CurrentAction">' . "\n" . 'CurrentAction' . "\n" . '</dd>',
+            RequestRenderer::render(
+                self::requestView(),
+                new RequestRoutingView(
+                    CurrentRouteView::create(route: 'orders/view')
+                        ->withAction('CurrentAction')
+                        ->withDefinition(
+                            RouteDefinition::create(name: 'orders/view')->withAction('DefinitionAction'),
+                        ),
+                ),
+            ),
+            'A dispatched action must win over the definition action.',
+        );
+    }
+
     public function testRenderGivesEveryPopulatedInputSectionItsOwnFilter(): void
     {
         $html = RequestRenderer::render(
@@ -216,7 +322,9 @@ final class RequestRendererTest extends TestCase
             self::routingView(parameters: ['id' => '42']),
         );
 
-        foreach (['Route parameters', 'Get', 'Post', 'Files', 'Cookies', 'Request Body'] as $caption) {
+        $captions = ['Route parameters', 'Get', 'Post', 'Files', 'Cookies', 'Request Body'];
+
+        foreach ($captions as $caption) {
             self::assertStringContainsString(
                 "aria-label=\"Filter {$caption}\"",
                 $html,
@@ -225,69 +333,109 @@ final class RequestRendererTest extends TestCase
         }
     }
 
-    public function testRenderKeepsYiiTwoMetadataInCommonRouteDetails(): void
+    public function testRenderKeepsGenericSectionsWhenHeaderSemanticsRepeatOrAreUnknown(): void
     {
-        $definition = RouteDefinition::create(pattern: 'post/<id:\\d+>')
-            ->withMethods(['GET'])
-            ->withTarget('post/view')
-            ->withAction(null)
-            ->withMiddlewares(null)
-            ->withSuffix('.html')
-            ->withMode('BOTH')
-            ->withType('yii\\web\\UrlRule');
-
-        $html = RequestRenderer::render(
-            self::requestView(),
-            new RequestRoutingView(
-                current: CurrentRouteView::create(route: 'post/view')
-                    ->withAction('PostController::actionView()'),
-                inventory: RouteInventoryView::create(routes: [$definition]),
-            ),
+        $view = new RequestView(
+            hero: self::hero(),
+            tabs: [
+                new RequestTab(
+                    label: 'Headers',
+                    sections: [
+                        new RequestSection('First inbound', ['Accept' => 'text/html'], id: 'request-headers'),
+                        new RequestSection('Second inbound', ['Host' => 'example.test'], id: 'request-headers'),
+                        new RequestSection('Outbound', ['Vary' => 'Accept'], id: 'response-headers'),
+                    ],
+                    id: 'headers',
+                ),
+            ],
         );
 
-        $table = self::routeLedger($html);
+        $html = RequestRenderer::render(
+            $view,
+            self::routingView(),
+        );
 
-        foreach (['Methods', 'Pattern', 'Route', 'Details'] as $heading) {
-            self::assertMatchesRegularExpression(
-                "~<span>{$heading}</span>~",
-                $table,
-                "Yii 2 route inventories must include the '{$heading}' column.",
-            );
-        }
+        self::assertStringNotContainsString(
+            'yii-debug-header-exchange',
+            $html,
+            'A repeated inbound bucket must not consume data through the exchange renderer.',
+        );
+        self::assertStringContainsString(
+            'Second inbound',
+            $html,
+            'A repeated inbound bucket must stay visible through the generic path.',
+        );
 
-        foreach (['Name', 'Target', 'Hosts', 'Action', 'Middleware', 'Suffix', 'Mode', 'Type'] as $heading) {
-            self::assertDoesNotMatchRegularExpression(
-                "~<span>{$heading}</span>~",
-                $table,
-                "Unsupported '{$heading}' metadata must not create an empty Yii 2 column.",
-            );
-        }
+        $unknown = new RequestView(
+            hero: self::hero(),
+            tabs: [
+                new RequestTab(
+                    label: 'Headers',
+                    sections: [
+                        new RequestSection('Unknown', ['Accept' => 'text/html'], id: 'trailers'),
+                        new RequestSection('Inbound', ['Host' => 'example.test'], id: 'request-headers'),
+                        new RequestSection('Outbound', ['Vary' => 'Accept'], id: 'response-headers'),
+                    ],
+                    id: 'headers',
+                ),
+            ],
+        );
+
+        self::assertStringNotContainsString(
+            'yii-debug-header-exchange',
+            RequestRenderer::render($unknown, self::routingView()),
+            'An unknown bucket must abandon the exchange renderer for the whole tab.',
+        );
     }
 
-    public function testRenderMarksCapturedDynamicRuleAndOmitsUnavailableOverviewMetadata(): void
+
+    public function testRenderLiftsTheRoutingConfigurationIntoTheOverview(): void
     {
-        $definition = RouteDefinition::create(pattern: 'post/<action>')
-            ->withTarget('post/<action>');
         $html = RequestRenderer::render(
             self::requestView(),
             new RequestRoutingView(
-                current: CurrentRouteView::create(route: 'post/view')
-                    ->withDefinition($definition),
-                inventory: RouteInventoryView::create(routes: [$definition]),
+                CurrentRouteView::create(),
+                RouteInventoryView::create(routes: [])->withBadges(
+                    [
+                        new RouteBadge('Pretty URL Enabled', 'success'),
+                        new RouteBadge('Strict Parsing Disabled', 'muted'),
+                        new RouteBadge('Unknown', 'custom'),
+                    ],
+                ),
             ),
         );
 
-        self::assertStringContainsString(
-            'data-yii-debug-route-match="true"',
+        self::assertMatchesRegularExpression(
+            '~yii-debug-request-overview-meta".*yii-debug-badge yii-debug-badge-success">Pretty URL Enabled~s',
             $html,
-            'The selected dynamic rule must be marked.',
+            'The routing configuration must read on the overview context strip.',
+        );
+        self::assertStringContainsString(
+            'yii-debug-badge yii-debug-badge-muted">Strict Parsing Disabled',
+            $html,
+            'Every configuration badge must keep its own tone.',
+        );
+        self::assertStringContainsString(
+            'yii-debug-badge yii-debug-badge-muted">Unknown',
+            $html,
+            'An unknown variant must degrade to the muted vocabulary.',
         );
         self::assertStringNotContainsString(
-            'yii-debug-request-overview-meta-label">Middleware',
+            'Routes (',
             $html,
-            'Unsupported metadata must not add placeholder noise.',
+            'The route inventory must not reopen a tab that repeats the overview.',
+        );
+        self::assertStringNotContainsString(
+            'No application routes registered.',
+            RequestRenderer::render(
+                self::requestView(),
+                new RequestRoutingView(CurrentRouteView::create(), RouteInventoryView::create(routes: [])),
+            ),
+            'An empty inventory must not render an empty ledger.',
         );
     }
+
+
 
     public function testRenderMovesRouteParametersIntoInputAndRemovesLegacyRoutingSection(): void
     {
@@ -313,64 +461,6 @@ final class RequestRendererTest extends TestCase
         );
     }
 
-    public function testRenderOmitsTheResolutionMessageWhenOnlyATraceWasCaptured(): void
-    {
-        $routing = new RequestRoutingView(
-            CurrentRouteView::create(route: 'home')->withTrace([new RouteTraceRow('fallback', matched: true)]),
-            RouteInventoryView::create(routes: []),
-        );
-
-        $html = RequestRenderer::render(self::requestView(), $routing);
-
-        self::assertStringContainsString(
-            'Routing resolution (1 rules tested)',
-            $html,
-            'A trace without a resolver message must still open the disclosure.',
-        );
-        self::assertStringNotContainsString(
-            'yii-debug-route-resolution-message',
-            $html,
-            'No paragraph must be rendered for an absent message.',
-        );
-    }
-
-    public function testRenderOmitsUnsupportedAndShowsEmptyRouteInventories(): void
-    {
-        $withoutInventory = RequestRenderer::render(
-            self::requestView(),
-            new RequestRoutingView(CurrentRouteView::create()),
-        );
-        $emptyInventory = RequestRenderer::render(
-            self::requestView(),
-            new RequestRoutingView(
-                CurrentRouteView::create(),
-                RouteInventoryView::create(routes: [])->withLive(false),
-            ),
-        );
-
-        self::assertStringNotContainsString(
-            'Live configuration may differ from this capture.',
-            $emptyInventory,
-            'Captured inventories must not carry the live-drift warning.',
-        );
-
-        self::assertStringNotContainsString(
-            'Routes (',
-            $withoutInventory,
-            'Unsupported route enumeration must not add an empty Routes tab.',
-        );
-        self::assertStringContainsString(
-            'No application routes registered.',
-            $emptyInventory,
-            'A supported empty route collection must be distinguished from unavailable enumeration.',
-        );
-        self::assertStringContainsString(
-            'Routes (0)',
-            $emptyInventory,
-            'The Routes tab must retain an explicit zero count.',
-        );
-    }
-
     public function testRenderOpensPopulatedInputAndCollapsesEmptyBuckets(): void
     {
         $view = new RequestView(
@@ -393,7 +483,10 @@ final class RequestRendererTest extends TestCase
             ],
         );
 
-        $html = RequestRenderer::render($view, self::routingView());
+        $html = RequestRenderer::render(
+            $view,
+            self::routingView(),
+        );
 
         self::assertSame(
             2,
@@ -406,9 +499,9 @@ final class RequestRendererTest extends TestCase
             'Input disclosures must preserve bucket registration order.',
         );
         self::assertSame(
-            4,
+            2,
             substr_count($html, 'data-yii-debug-hint="collapsed">click to expand'),
-            'Input buckets and route details must expose the shared disclosure affordance.',
+            'Every Input bucket must expose the shared disclosure affordance.',
         );
         self::assertMatchesRegularExpression(
             '~<details class="yii-debug-disclosure" open>.*yii-debug-disclosure-title">Get</span>~s',
@@ -432,73 +525,55 @@ final class RequestRendererTest extends TestCase
         );
     }
 
-    public function testRenderPreservesSpecificMetadataInsideSearchableDetails(): void
+    public function testRenderReplacesMissingIdentityWithExplicitLabels(): void
     {
-        $definition = RouteDefinition::create(name: 'post', pattern: '/post')
-            ->withTarget('post/view')
-            ->withHosts(['one.example.test', 'two.example.test'])
-            ->withAction('Post::<view>')
-            ->withMiddlewares(['Auth', 'Session'])
-            ->withSuffix('.html')
-            ->withMode('BOTH')
-            ->withType('GROUP');
-
-        $html = self::routeLedger(
-            RequestRenderer::render(
-                self::requestView(),
-                new RequestRoutingView(
-                    current: CurrentRouteView::create(),
-                    inventory: RouteInventoryView::create(routes: [$definition]),
-                ),
-            ),
+        $html = RequestRenderer::render(
+            new RequestView(hero: RequestHero::create(method: '', url: ''), tabs: []),
+            new RequestRoutingView(CurrentRouteView::create()),
         );
 
-        foreach (
-            [
-                'post/view',
-                'one.example.test',
-                'two.example.test',
-                'Post::&lt;view&gt;',
-                'Auth',
-                'Session',
-                '.html',
-                'BOTH',
-                'GROUP',
-            ] as $value) {
-            self::assertStringContainsString(
-                $value,
-                $html,
-                'Route metadata must remain inspectable and escaped.',
-            );
-        }
-
         self::assertStringContainsString(
-            'data-yii-debug-filter-details="true"',
+            'URL unavailable',
             $html,
-            'Filtering must reveal metadata.',
+            'A capture without URL must say so instead of rendering a blank line.',
         );
         self::assertStringContainsString(
-            'data-yii-debug-filter-unit="routes"',
-            RequestRenderer::render(
-                self::requestView(),
-                new RequestRoutingView(
-                    current: CurrentRouteView::create(),
-                    inventory: RouteInventoryView::create(routes: [$definition]),
-                ),
-            ),
-            'The filter must count routes rather than metadata fields.',
+            '<dd title="Unresolved">' . "\n" . 'Unresolved' . "\n" . '</dd>',
+            $html,
+            'A capture without route must say so.',
+        );
+        self::assertSame(
+            2,
+            substr_count($html, '<dd title="Unavailable">'),
+            'A capture without action or duration must say so for both.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-request-hero-method',
+            $html,
+            'A capture without method must not render an empty pill.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-request-overview-status',
+            $html,
+            'A capture without status must not render an empty badge.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-request-overview-meta-label',
+            $html,
+            'A capture without context must not render empty chips.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-route-match',
+            $html,
+            'A request that matched no route must not be marked as matched.',
         );
         self::assertStringContainsString(
-            'No routes match this filter.',
+            'class="yii-debug-request-overview yii-debug-verb-other"',
             $html,
-            'An unmatched filter must explain the empty result.',
-        );
-        self::assertDoesNotMatchRegularExpression(
-            '~<details[^>]* open~',
-            $html,
-            'Metadata must start collapsed.',
+            'A capture without method must fall back to the neutral verb vocabulary.',
         );
     }
+
 
     public function testRenderSelectsSpecializedHeaderAndServerLedgersBySemanticIds(): void
     {
@@ -540,7 +615,10 @@ final class RequestRendererTest extends TestCase
             ],
         );
 
-        $html = RequestRenderer::render($view, self::routingView());
+        $html = RequestRenderer::render(
+            $view,
+            self::routingView(),
+        );
 
         self::assertStringContainsString(
             'yii-debug-header-exchange',
@@ -554,154 +632,123 @@ final class RequestRendererTest extends TestCase
         );
     }
 
-    public function testRenderSessionDisclosuresFollowTheirOwnDataAndFilterScope(): void
+    /**
+     * @param array{SESSION: array<string, mixed>, flashes: array<string, mixed>} $data Captured session buckets.
+     */
+    #[DataProviderExternal(RequestRendererProvider::class, 'sessionCaptures')]
+    public function testRenderSessionDisclosuresFollowTheirOwnDataAndFilterScope(array $data): void
     {
-        foreach ([
-            ['SESSION' => ['user' => 1], 'flashes' => []],
-            ['SESSION' => [], 'flashes' => ['notice' => 'Saved']],
-            ['SESSION' => ['user' => 1], 'flashes' => ['notice' => 'Saved']],
-            ['SESSION' => [], 'flashes' => []],
-        ] as $data) {
-            $html = RequestRenderer::render(
-                RequestDataNormalizer::fromPanelData($data, null),
-                new RequestRoutingView(current: CurrentRouteView::create()),
+        $captions = ['SESSION' => 'Session', 'flashes' => 'Flashes'];
+
+        $html = RequestRenderer::render(
+            RequestDataNormalizer::fromPanelData($data, null),
+            new RequestRoutingView(current: CurrentRouteView::create()),
+        );
+
+        preg_match_all('~<details class="yii-debug-disclosure"[^>]*>.*?</details>~s', $html, $matches);
+
+        self::assertCount(
+            2,
+            $matches[0],
+            'Session and Flashes must each have a disclosure.',
+        );
+
+        foreach ($captions as $key => $caption) {
+            $index = $key === 'SESSION' ? 0 : 1;
+
+            $section = $matches[0][$index] ?? null;
+
+            self::assertNotNull(
+                $section,
+                'The section disclosure must exist.',
+            );
+            self::assertStringContainsString(
+                'yii-debug-disclosure-title">' . $caption . '</span>',
+                $section,
+                'The section heading must identify its data.',
+            );
+            self::assertStringContainsString(
+                'click to expand',
+                $section,
+                'The shared affordance must remain visible.',
             );
 
-            preg_match_all('~<details class="yii-debug-disclosure"[^>]*>.*?</details>~s', $html, $matches);
-
-            self::assertCount(
-                2,
-                $matches[0],
-                'Session and Flashes must each have a disclosure.',
-            );
-
-            foreach (['SESSION' => 'Session', 'flashes' => 'Flashes'] as $key => $caption) {
-                $index = $key === 'SESSION' ? 0 : 1;
-
-                $section = $matches[0][$index] ?? null;
-
-                self::assertNotNull(
-                    $section,
-                    'The section disclosure must exist.',
-                );
-                self::assertStringContainsString(
-                    'yii-debug-disclosure-title">' . $caption . '</span>',
-                    $section,
-                    'The section heading must identify its data.',
-                );
-                self::assertStringContainsString(
-                    'click to expand',
-                    $section,
-                    'The shared affordance must remain visible.',
-                );
-
-                if ($data[$key] === []) {
-                    self::assertStringStartsWith(
-                        '<details class="yii-debug-disclosure">',
-                        $section,
-                        'Empty sections must start closed.',
-                    );
-                    self::assertStringContainsString(
-                        'No data',
-                        $section,
-                        'Empty sections must explain their state.',
-                    );
-                    self::assertStringNotContainsString(
-                        '<input',
-                        $section,
-                        'Empty sections must not show an unusable filter.',
-                    );
-
-                    continue;
-                }
-
+            if ($data[$key] === []) {
                 self::assertStringStartsWith(
-                    '<details class="yii-debug-disclosure" open>',
+                    '<details class="yii-debug-disclosure">',
                     $section,
-                    'Populated sections must start open.',
+                    'Empty sections must start closed.',
                 );
                 self::assertStringContainsString(
-                    "aria-label=\"Filter {$caption}\"",
+                    'No data',
                     $section,
-                    'Filters must identify their own section.',
+                    'Empty sections must explain their state.',
                 );
-                self::assertSame(
-                    1,
-                    substr_count($section, 'data-yii-debug-filter="true"'),
-                    'Each section must have exactly one filter.',
+                self::assertStringNotContainsString(
+                    '<input',
+                    $section,
+                    'Empty sections must not show an unusable filter.',
                 );
-                self::assertSame(
-                    1,
-                    substr_count($section, 'data-yii-debug-filter-target="true"'),
-                    'Each disclosure must scope its own filter target.',
-                );
+
+                continue;
             }
+
+            self::assertStringStartsWith(
+                '<details class="yii-debug-disclosure" open>',
+                $section,
+                'Populated sections must start open.',
+            );
+            self::assertStringContainsString(
+                "aria-label=\"Filter {$caption}\"",
+                $section,
+                'Filters must identify their own section.',
+            );
+            self::assertSame(
+                1,
+                substr_count($section, 'data-yii-debug-filter="true"'),
+                'Each section must have exactly one filter.',
+            );
+            self::assertSame(
+                1,
+                substr_count($section, 'data-yii-debug-filter-target="true"'),
+                'Each disclosure must scope its own filter target.',
+            );
         }
     }
 
-    public function testRenderSurfacesIndependentErrorsAndCollapsedResolutionTrace(): void
+    public function testRenderShowsTheRoutingResolutionUnderTheOverview(): void
     {
-        $routing = new RequestRoutingView(
-            current: CurrentRouteView::create(route: 'home')
-                ->withMessage('No matching URL rule; default parsing was used.')
-                ->withTrace(
-                    [
-                        new RouteTraceRow('fallback', matched: true),
-                        new RouteTraceRow('site/<action>', parent: 'group', matched: false),
-                    ],
-                )
-                ->withError('Captured route metadata could not be read.'),
-            inventory: RouteInventoryView::create(
-                routes: [
-                    RouteDefinition::create(name: 'home', pattern: '/')->withMiddlewares([]),
-                ]
-            )
-            ->withBadges(
-                [
-                    new RouteBadge('Pretty URLs enabled', 'success'),
-                    new RouteBadge('Unknown', 'custom'),
-                ],
-            )
-            ->withSource('Current application configuration.')
-            ->withLive(true)
-            ->withError('Current route configuration could not be read.'),
+        $html = RequestRenderer::render(
+            self::requestView(),
+            new RequestRoutingView(
+                CurrentRouteView::create(route: 'home')
+                    ->withMessage('No matching URL rule; default parsing was used.')
+                    ->withTrace(
+                        [
+                            new RouteTraceRow('fallback', matched: true),
+                            new RouteTraceRow('site/<action>', parent: 'group'),
+                        ],
+                    ),
+            ),
         );
 
-        $html = RequestRenderer::render(self::requestView(), $routing);
-
-        self::assertStringContainsString(
-            'yii-debug-request-routing-error',
+        self::assertMatchesRegularExpression(
+            '~yii-debug-request-overview-meta".*yii-debug-route-resolution~s',
             $html,
-            'Captured routing errors must remain attached to the request overview.',
-        );
-        self::assertStringContainsString(
-            'yii-debug-route-inventory-error',
-            $html,
-            'Live inventory errors must not suppress the current request diagnostics.',
-        );
-        self::assertStringContainsString(
-            'Source: Current application configuration. Live configuration may differ from this capture.',
-            $html,
-            'Live inventory provenance must warn when it may differ from a historical capture.',
-        );
-        self::assertStringContainsString(
-            '<details class="yii-debug-disclosure">',
-            $html,
-            'Resolver messages and traces must stay available in a collapsed disclosure.',
+            'The resolution must read under the overview, not inside a tab.',
         );
         self::assertStringContainsString(
             'Routing resolution (2 rules tested)',
             $html,
-            'Resolution disclosure must report the trace size.',
+            'The disclosure title must report the trace size.',
         );
         self::assertStringContainsString(
-            'yii-debug-badge yii-debug-badge-muted">Unknown',
+            'yii-debug-route-resolution-message',
             $html,
-            'Unknown badge variants must degrade to the safe muted vocabulary.',
+            'The resolver message must stay attached to the trace.',
         );
         self::assertStringContainsString(
             <<<HTML
-            <table class="yii-debug-table yii-debug-route-trace">
             <thead>
             <tr>
             <th scope="col">
@@ -740,52 +787,111 @@ final class RequestRendererTest extends TestCase
             </td><td>
             group
             </td><td>
-            <span class="yii-debug-badge yii-debug-badge-muted">Not matched</span>
+            <span class="yii-debug-badge yii-debug-badge-warning">Not matched</span>
             </td>
             </tr>
             </tbody>
             HTML,
             $html,
-            'Trace rows must number from 1, fall back to an em dash without a parent, and badge the match result.',
+            'Rules must number from 1, fall back to a placeholder parent, and badge the result.',
+        );
+        self::assertStringContainsString(
+            'Routing resolution</span>',
+            RequestRenderer::render(
+                self::requestView(),
+                new RequestRoutingView(CurrentRouteView::create(route: 'home')->withMessage('Default parsing.')),
+            ),
+            'A traceless resolution must drop the rule count.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-route-resolution-message',
+            RequestRenderer::render(
+                self::requestView(),
+                new RequestRoutingView(
+                    CurrentRouteView::create(route: 'home')->withTrace([new RouteTraceRow('fallback', matched: true)]),
+                ),
+            ),
+            'A messageless trace must not emit an empty paragraph.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-route-resolution',
+            RequestRenderer::render(
+                self::requestView(),
+                new RequestRoutingView(CurrentRouteView::create(route: 'home')->withMessage('')),
+            ),
+            'A capture without message or trace must not open a resolution.',
         );
     }
 
-    public function testRenderUsesCommonColumnsVocabularyMethodsAndAccessibleMatch(): void
+    public function testRenderStampsTheCapturedStatusAndVerbOnTheOverview(): void
     {
         $html = RequestRenderer::render(self::requestView(), self::routingView());
 
-        $table = self::routeLedger($html);
-
-        foreach (['Methods', 'Pattern', 'Route', 'Details'] as $heading) {
-            self::assertMatchesRegularExpression(
-                "~<span>{$heading}</span>~",
-                $table,
-                "Yii 3 route inventories must include the '{$heading}' column.",
-            );
-        }
-
-        foreach (['Name', 'Hosts', 'Action', 'Middleware', 'Target', 'Suffix', 'Mode', 'Type'] as $heading) {
-            self::assertDoesNotMatchRegularExpression(
-                "~<span>{$heading}</span>~",
-                $table,
-                "Unsupported '{$heading}' metadata must not create an empty column.",
-            );
-        }
-
-        self::assertStringContainsString(
-            'yii-debug-route-method yii-debug-verb-get',
+        self::assertStringStartsWith(
+            '<section class="yii-debug-request-overview yii-debug-verb-get" aria-label="Request overview">',
             $html,
-            'HTTP methods must use the shared semantic verb vocabulary.',
+            'The overview must lead the composed view, never trail its tabs.',
         );
         self::assertStringContainsString(
-            'data-yii-debug-route-match="true"',
+            '<span class="yii-debug-request-hero-method yii-debug-verb-get">GET</span>',
             $html,
-            'The resolved route row must expose a non-color match marker.',
+            'The request line must open with the verb pill.',
+        );
+        self::assertStringContainsString(
+            'class="yii-debug-request-overview-status-value yii-debug-snapshot-status yii-debug-status-2xx">200</span>',
+            $html,
+            'The status badge must carry the captured class.',
         );
         self::assertMatchesRegularExpression(
-            '~yii-debug-route-match[^>]*>Matched</span>~',
+            '~<dt>\s*Route\s*</dt><dd title="home">\s*<span>home</span>'
+            . '<span class="yii-debug-badge yii-debug-badge-success yii-debug-route-match">Matched</span>~',
             $html,
-            'The matched state must be expressed as visible text.',
+            'A request that reached a known route must be marked as matched.',
+        );
+
+        $chips = ['IP', 'Time'];
+
+        foreach ($chips as $label) {
+            self::assertStringContainsString(
+                "<span class=\"yii-debug-request-overview-meta-label\">{$label}</span>",
+                $html,
+                "The context strip must label the {$label} chip.",
+            );
+        }
+    }
+
+    public function testRenderSurfacesCapturedAndLiveRoutingFailuresIndependently(): void
+    {
+        $html = RequestRenderer::render(
+            self::requestView(),
+            new RequestRoutingView(
+                current: CurrentRouteView::create(route: 'home')
+                    ->withError('Captured route metadata could not be read.'),
+                inventory: RouteInventoryView::create(routes: [])
+                    ->withError('Current route configuration could not be read.'),
+            ),
+        );
+
+        self::assertSame(
+            2,
+            substr_count($html, 'yii-debug-request-routing-error'),
+            'Each routing failure must open its own callout.',
+        );
+        self::assertMatchesRegularExpression(
+            '~Captured route metadata could not be read\..*Current route configuration could not be read\.~s',
+            $html,
+            'The captured failure must lead the live one.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-request-routing-error',
+            RequestRenderer::render(
+                self::requestView(),
+                new RequestRoutingView(
+                    CurrentRouteView::create(route: 'home')->withError(''),
+                    RouteInventoryView::create(routes: []),
+                ),
+            ),
+            'A blank failure must not open an empty callout.',
         );
     }
 
@@ -816,35 +922,6 @@ final class RequestRendererTest extends TestCase
         );
     }
 
-    public function testRenderUsesIdenticalInventoryMarkupForEquivalentAdapterRoutes(): void
-    {
-        $tables = [];
-
-        foreach (
-            [
-                RouteDefinition::create(name: 'post/view', pattern: '/posts')
-                    ->withMethods(['GET']),
-                RouteDefinition::create(pattern: '/posts')
-                    ->withTarget('post/view')
-                    ->withMethods(['GET']),
-            ] as $definition) {
-            $tables[] = self::routeLedger(
-                RequestRenderer::render(
-                    self::requestView(),
-                    new RequestRoutingView(
-                        current: CurrentRouteView::create(route: 'post/view'),
-                        inventory: RouteInventoryView::create(routes: [$definition]),
-                    ),
-                )
-            );
-        }
-
-        self::assertSame(
-            $tables[0],
-            $tables[1],
-            'Equivalent adapter data must produce identical inventory markup.',
-        );
-    }
 
     private static function hero(): RequestHero
     {
@@ -902,17 +979,6 @@ final class RequestRendererTest extends TestCase
         return new RequestView(hero: self::hero(), tabs: $tabs);
     }
 
-    private static function routeLedger(string $html): string
-    {
-        $start = strpos($html, '<div class="yii-debug-route-ledger"');
-
-        self::assertNotFalse(
-            $start,
-            'The route inventory ledger must be present.',
-        );
-
-        return substr($html, $start);
-    }
 
     /**
      * @param array<array-key, mixed> $parameters

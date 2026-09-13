@@ -6,7 +6,7 @@ namespace PHPForge\Debug\Tests\Panel;
 
 use JsonException;
 use PHPForge\Debug\{ColumnStyle, PanelView, Tone};
-use PHPForge\Debug\Helper\CellMore;
+use PHPForge\Debug\Helper\{CellMore, Trace};
 use PHPForge\Debug\Panel\PanelRenderer;
 use PHPForge\Debug\Tests\Provider\PanelRendererProvider;
 use PHPUnit\Framework\Attributes\DataProviderExternal;
@@ -19,17 +19,168 @@ use PHPUnit\Framework\TestCase;
  */
 final class PanelRendererTest extends TestCase
 {
+    public function testCapturedFramesRenderThroughTheAdapterFrameRenderer(): void
+    {
+        $view = PanelView::create()->paragraph(
+            PanelView::trace([['file' => '/app/src/Site.php', 'line' => 42], ['internal' => 'call_user_func']]),
+        );
+
+        self::assertStringContainsString(
+            '<ul class="yii-debug-trace">',
+            PanelRenderer::render('Custom', $view),
+            'Frames must reuse the existing trace list markup.',
+        );
+        self::assertStringContainsString(
+            'ide://open?url=file:///app/src/Site.php&amp;line=42',
+            PanelRenderer::render('Custom', $view),
+            'The default frame renderer must keep its editor deep link.',
+        );
+        self::assertStringContainsString(
+            '<li>' . "\n" . '/app/src/Site.php:42' . "\n" . '</li>',
+            PanelRenderer::render('Custom', $view, Trace::create()->withTemplate(false)),
+            'An adapter-configured frame renderer must replace the default one.',
+        );
+        self::assertStringContainsString(
+            'internal',
+            PanelRenderer::render('Custom', $view),
+            'A frame without file or line must still be inspectable.',
+        );
+    }
     #[DataProviderExternal(PanelRendererProvider::class, 'nonCollapsingTables')]
     public function testCollapseRequiresOptInAndMoreRowsThanThreshold(int $count, bool $collapsible): void
     {
         $view = PanelView::create()->table(['Value'], array_fill(0, $count, ['short']), $collapsible);
 
-        $html = PanelRenderer::render('Custom', $view);
+        $html = PanelRenderer::render(
+            'Custom',
+            $view,
+        );
 
         self::assertStringNotContainsString(
             'class="yii-debug-cell-more"',
             $html,
             'No disclosure control must be rendered.',
+        );
+    }
+
+    public function testFilterableTablesReuseTheExistingRowFilter(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->table(['Name', 'Value'], [['HTTP_HOST', 'example.test']], filterable: true),
+        );
+
+        self::assertStringContainsString(
+            'data-yii-debug-filter-scope="true"',
+            $html,
+            'The filter must be paired with its table through an explicit scope.',
+        );
+        self::assertStringContainsString(
+            '<input class="yii-debug-filter-input" type="search" aria-label="Filter Name, Value"'
+            . ' data-yii-debug-filter="true" placeholder="Filter…">',
+            $html,
+            'The filter input must carry the hook the shared row filter listens to.',
+        );
+        self::assertStringContainsString(
+            'data-yii-debug-filter-target="true"',
+            $html,
+            'The table must declare itself as the filter target.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-filter-scope',
+            PanelRenderer::render('Custom', PanelView::create()->table(['Name'], [['x']])),
+            'An ordinary table must not request the row filter.',
+        );
+    }
+
+    public function testFilterableTablesStayCollapsibleAboveTheRowThreshold(): void
+    {
+        $rows = array_fill(0, CellMore::ROW_THRESHOLD + 1, ['x']);
+
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->table(['Name'], $rows, collapsible: true, filterable: true),
+        );
+
+        self::assertStringContainsString(
+            'yii-debug-cell-more-toggle',
+            $html,
+            'Filtering must not remove the collapse control.',
+        );
+        self::assertStringContainsString(
+            'data-yii-debug-filter-scope="true"',
+            $html,
+            'Collapsing must not remove the filter scope.',
+        );
+    }
+
+    public function testFrontendContractPinsOrderSeparatorsAndColumnTreatments(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()
+                ->summary(' first', 1)
+                ->summary(' second', 2)
+                ->heading('Section', true)
+                ->heading('Plain')
+                ->table(
+                    ['Pill', 'Badge', 'Plain'],
+                    [['queued', PanelView::badge('done', Tone::SUCCESS), 'text']],
+                    styles: [0 => ColumnStyle::PILL, 1 => ColumnStyle::PILL],
+                ),
+        );
+
+        self::assertStringContainsString(
+            '<span><strong>1</strong> first</span>'
+            . '<span class="yii-debug-grid-summary-sep">·</span>'
+            . '<span><strong>2</strong> second</span>',
+            $html,
+            'Exactly one separator must sit between the two metrics, never before the first.',
+        );
+        self::assertStringStartsWith(
+            '<h1 class="yii-debug-sr-only">' . "\n" . 'Custom' . "\n" . '</h1><header class="yii-debug-grid-summary">',
+            $html,
+            'Order: accessible heading, summary strip, then content.',
+        );
+        self::assertStringContainsString(
+            '<div class="yii-debug-section-header">' . "\n" . '<h2>' . "\n" . 'Section' . "\n" . '</h2>',
+            $html,
+            'Only the section heading may use the section wrapper.',
+        );
+        self::assertStringContainsString(
+            '</div><h2>' . "\n" . 'Plain' . "\n" . '</h2>',
+            $html,
+            'An ordinary heading must stay a bare level-two heading.',
+        );
+        self::assertStringContainsString(
+            '<table class="yii-debug-table yii-debug-table-mono yii-debug-table-overview">',
+            PanelRenderer::render('Custom', PanelView::create()->overview(['Key' => 'value'], true)),
+            'The compact overview must request the overview table treatment.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-table-overview',
+            PanelRenderer::render('Custom', PanelView::create()->overview(['Key' => 'value'])),
+            'An ordinary overview must not request the compact treatment.',
+        );
+        self::assertStringContainsString(
+            '<td class="yii-debug-cell-pill">' . "\n" . '<span>queued</span>',
+            $html,
+            'Plain text in a pill column must be wrapped for the reader.',
+        );
+        self::assertStringContainsString(
+            '<td class="yii-debug-cell-pill">' . "\n" . '<span class="yii-debug-badge',
+            $html,
+            'A badge in a pill column must not be wrapped twice.',
+        );
+        self::assertStringContainsString(
+            '<td>' . "\n" . 'text',
+            $html,
+            'A column without style must stay class-free.',
+        );
+        self::assertStringContainsString(
+            'tabindex="0"',
+            $html,
+            'The table region must stay keyboard reachable.',
         );
     }
 
@@ -71,6 +222,80 @@ final class PanelRendererTest extends TestCase
             $value,
             $html,
             'Collapsing must not truncate captured values.',
+        );
+    }
+
+    public function testLinkLabelsAndTargetsAreEscaped(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->paragraph(
+                PanelView::link('<script>alert("x")</script>', '/debug?q="><script>alert(1)</script>'),
+            ),
+        );
+
+        self::assertStringNotContainsString(
+            '<script>',
+            $html,
+            'Neither the label nor the target may inject HTML.',
+        );
+        self::assertStringContainsString(
+            '&lt;script&gt;',
+            $html,
+            'Escaped link text must remain inspectable.',
+        );
+    }
+
+    public function testLinksRenderAsAnchorsAndIsolateExternalTargets(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->overview(
+                [
+                    'Internal' => PanelView::link('View full phpinfo', '/debug/php-info?tag=1&panel=config'),
+                    'External' => PanelView::link('Docs', 'https://example.test/docs', true),
+                ],
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<a href="/debug/php-info?tag=1&amp;panel=config">View full phpinfo</a>',
+            $html,
+            'An internal target must stay in the same browsing context.',
+        );
+        self::assertStringContainsString(
+            'rel="noopener"',
+            $html,
+            'An external target must not leak the opener.',
+        );
+        self::assertStringContainsString(
+            'target="_blank"',
+            $html,
+            'An external target must open in a new browsing context.',
+        );
+    }
+
+    public function testPanelsWithoutSummaryMetricsOmitTheSummaryStrip(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->paragraph('Nothing captured.'),
+        );
+
+        self::assertStringNotContainsString(
+            'yii-debug-grid-summary',
+            $html,
+            'An empty summary must not leave a bare strip above the content.',
+        );
+        self::assertStringContainsString(
+            '<h1 class="yii-debug-sr-only">',
+            $html,
+            'The accessible heading must survive an empty summary.',
+        );
+        self::assertStringContainsString(
+            'yii-debug-grid-summary',
+            PanelRenderer::render('Custom', PanelView::create()->summary(' items', 1)),
+            'A captured metric must still render the summary strip.',
         );
     }
 
@@ -138,6 +363,25 @@ final class PanelRendererTest extends TestCase
             '<span>—</span>',
             $html,
             'Empty pills must match the existing Vite presentation.',
+        );
+    }
+
+    public function testSqlStatementsAreHighlightedAndEscaped(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->paragraph(PanelView::sql("SELECT * FROM t WHERE a = '<x>'")),
+        );
+
+        self::assertStringContainsString(
+            '<span class="yii-debug-sql-kw">SELECT</span>',
+            $html,
+            'Statements must reuse the shared SQL token spans.',
+        );
+        self::assertStringNotContainsString(
+            "'<x>'",
+            $html,
+            'A statement literal must never inject HTML.',
         );
     }
 

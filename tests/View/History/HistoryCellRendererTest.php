@@ -32,7 +32,10 @@ final class HistoryCellRendererTest extends TestCase
             ],
         );
 
-        $options = HistoryCellRenderer::buildRowAttributes($row, false);
+        $options = HistoryCellRenderer::buildRowAttributes(
+            $row,
+            false,
+        );
 
         self::assertSame(
             [
@@ -62,7 +65,10 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testBuildRowAttributesFlagsCriticalStatusCodesWithDangerHighlight(): void
     {
-        $options = HistoryCellRenderer::buildRowAttributes(self::row(['statusCode' => 500]), true);
+        $options = HistoryCellRenderer::buildRowAttributes(
+            self::row(['statusCode' => 500]),
+            true,
+        );
 
         self::assertIsString(
             $options['class'] ?? null,
@@ -77,8 +83,14 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testCursorMemoryPreservesUnavailableValues(): void
     {
-        $captured = HistoryCellRenderer::buildRowAttributes(self::row(['peakMemory' => 7 * 1024 * 1024]), false);
-        $missing = HistoryCellRenderer::buildRowAttributes(self::row(['peakMemory' => null]), false);
+        $captured = HistoryCellRenderer::buildRowAttributes(
+            self::row(['peakMemory' => 7 * 1024 * 1024]),
+            false,
+        );
+        $missing = HistoryCellRenderer::buildRowAttributes(
+            self::row(['peakMemory' => null]),
+            false,
+        );
 
         self::assertSame(
             '7.00 MB',
@@ -122,7 +134,10 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderDurationCellScalesGaugeAgainstPageMaximum(): void
     {
-        $html = HistoryCellRenderer::renderDurationCell(self::row(['processingTime' => 0.125]), 0.25);
+        $html = HistoryCellRenderer::renderDurationCell(
+            self::row(['processingTime' => 0.125]),
+            0.25,
+        );
 
         self::assertSame(
             <<<HTML
@@ -284,6 +299,26 @@ final class HistoryCellRendererTest extends TestCase
 
     }
 
+    public function testRenderSqlCountCellSeparatesBothWarningsWithALineBreak(): void
+    {
+        $row = self::row(
+            [
+                'tag' => 'flood',
+                'sqlCount' => 500,
+                'excessiveCallersCount' => 2,
+            ],
+        );
+
+        self::assertSame(
+            <<<HTML
+            <a href="/db" title="Executed 500 database queries.">500 <span title="Too many queries. Allowed count is 100
+            2 callers are making too many calls.">⚠</span></a>
+            HTML,
+            HistoryCellRenderer::renderSqlCountCell($row, '/db', true, 100),
+            'Both warnings must stack on separate tooltip lines.',
+        );
+    }
+
     public function testRenderSqlCountCellSingularizesSingleExcessiveCaller(): void
     {
         $row = self::row(
@@ -354,7 +389,6 @@ final class HistoryCellRendererTest extends TestCase
             ],
             statusCodeFilter: null,
         );
-
         $html = HistoryCellRenderer::renderSummary(
             $summary,
             [
@@ -454,3 +488,5 @@ final class HistoryCellRendererTest extends TestCase
         return HistoryRow::fromSummary(RequestSummaryFixture::create($overrides));
     }
 }
+
+
