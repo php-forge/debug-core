@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Event;
 
 use PHPForge\Debug\Helper\{Badge, Format, Fqcn};
+use PHPForge\Debug\Tone;
 
 /**
  * Renders the typed cells of the events grid for the Event debug panel.
@@ -36,7 +37,7 @@ final class EventCellRenderer
             return '—';
         }
 
-        return Badge::render('static', 'muted')->render();
+        return Badge::render('static', Tone::MUTED)->render();
     }
 
     /**

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\View\Grid;
 
+use PHPForge\Debug\Theme\Css;
+
 use function in_array;
 
 /**
@@ -26,6 +28,6 @@ final class RowClass
             return [];
         }
 
-        return ['class' => "yii-debug-row-{$normalized}"];
+        return ['class' => Css::row($normalized)];
     }
 }

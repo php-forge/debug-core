@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Phrasing\{Span, Strong};
 
 use function strrpos;
@@ -54,7 +55,7 @@ final class Fqcn
             ->html(
                 $namespace !== ''
                     ? Span::tag()
-                        ->class('yii-debug-muted')
+                        ->class(Css::MUTED)
                         ->content("{$namespace}\\")
                         ->render() . '<wbr>'
                     : '',

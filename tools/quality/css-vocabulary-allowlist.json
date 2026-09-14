@@ -1,0 +1,32 @@
+{
+    "$comment": "Names the PHP renderers emit without a matching frontend rule. `deliberate` entries are settled decisions and stay silent. `pendingReview` entries are reported on every run until someone either styles the name or moves it to `deliberate` with a reason. Remove an entry as soon as the frontend defines the name; the check fails on a stale entry so the list cannot rot.",
+    "deliberate": {
+        "yii-debug-callout-muted": "Muted is the neutral base: the four toned variants only override `border-left-color`, so muted needs no rule.",
+        "yii-debug-gauge-value": "Structural label for the readout inside a micro-gauge; the rail and the bar carry the styling.",
+        "yii-debug-tab-content": "Structural label for the container holding the tab panels; each panel carries the styling."
+    },
+    "pendingReview": {
+        "yii-debug-brand-chip-yii": "Every sibling chip variant is styled; this one is not.",
+        "yii-debug-db-explain-label": "Label inside the EXPLAIN disclosure.",
+        "yii-debug-event-permalink": "Permalink control of an event row.",
+        "yii-debug-event-phase": "Phase marker of an event row.",
+        "yii-debug-header-exchange": "Request and response header exchange shell.",
+        "yii-debug-header-exchange-body": "Body of the header exchange shell.",
+        "yii-debug-header-exchange-title": "Title of the header exchange shell.",
+        "yii-debug-header-raw-row": "Raw header row.",
+        "yii-debug-indent": "Depth indent of a profiling row.",
+        "yii-debug-main-bare": "Shell variant rendering the page without the sidebar.",
+        "yii-debug-panel-title": "Panel heading of the standalone snapshot view.",
+        "yii-debug-phpinfo-filter": "Filter control of the PHP Info page.",
+        "yii-debug-phpinfo-results": "Result region of the PHP Info filter.",
+        "yii-debug-route-match": "Modifier marking the matched route badge.",
+        "yii-debug-route-trace-wrap": "Scroll wrapper of the route trace table.",
+        "yii-debug-server-environment": "Server environment section.",
+        "yii-debug-server-environment-title": "Title of the server environment section.",
+        "yii-debug-server-group-disclosure": "Disclosure grouping server variables.",
+        "yii-debug-server-row": "Server variable row.",
+        "yii-debug-snapshot-time": "Time chip of the sidebar snapshot card.",
+        "yii-debug-tl-memory-gradient": "Gradient fill of the timeline memory footer.",
+        "yii-debug-tl-row-": "Timeline span category. The `--yii-debug-cat-*` tokens exist per category, but no rule maps the variant class to them, so every bar and dot renders in the database hue."
+    }
+}

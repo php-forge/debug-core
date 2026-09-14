@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Helper;
 
 use InvalidArgumentException;
 use PHPForge\Debug\Exception\Message;
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\List\{Li, Ul};
 use UIAwesome\Html\Palpable\A;
@@ -45,7 +46,7 @@ final class Tabs
             $panelId = "{$id}-panel-{$index}";
 
             $items[] = Li::tag()
-                ->class('yii-debug-tab')
+                ->class(Css::TAB)
                 ->addAttribute('role', 'presentation')
                 ->html(
                     A::tag()
@@ -55,7 +56,7 @@ final class Tabs
                         ->addAttribute('data-yii-debug-toggle', 'tab')
                         ->addAttribute('role', 'tab')
                         ->addAttribute('tabindex', $active ? '0' : '-1')
-                        ->class($active ? 'yii-debug-tab-link is-active' : 'yii-debug-tab-link')
+                        ->class($active ? Css::TAB_LINK . ' is-active' : Css::TAB_LINK)
                         ->content($tab['label'])
                         ->href("#{$panelId}"),
                 );
@@ -64,7 +65,7 @@ final class Tabs
                 ->id($panelId)
                 ->addAriaAttribute('labelledby', $tabId)
                 ->addAttribute('role', 'tabpanel')
-                ->class($active ? 'yii-debug-tab-panel is-active' : 'yii-debug-tab-panel')
+                ->class($active ? Css::TAB_PANEL . ' is-active' : Css::TAB_PANEL)
                 ->html($tab['content']);
 
             if ($active === false) {
@@ -75,13 +76,13 @@ final class Tabs
         }
 
         $tabList = Ul::tag()
-            ->class('yii-debug-tabs')
+            ->class(Css::TABS)
             ->addAriaAttribute('label', $ariaLabel)
             ->addAttribute('role', 'tablist')
             ->html(...$items)
             ->render();
         $content = Div::tag()
-            ->class('yii-debug-tab-content')
+            ->class(Css::TAB_CONTENT)
             ->html(...$panels)
             ->render();
 

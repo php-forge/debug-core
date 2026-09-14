@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Db;
 
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Phrasing\{Span, Strong};
 use UIAwesome\Html\Root\Header;
 
@@ -26,7 +27,7 @@ final class DbSummaryRenderer
     public static function render(DbSummary $summary, string|null $pageSize = null): string
     {
         $separator = Span::tag()
-            ->class('yii-debug-grid-summary-sep')
+            ->class(Css::GRID_SUMMARY_SEP)
             ->content('·');
 
         $items = [
@@ -47,7 +48,7 @@ final class DbSummaryRenderer
             $items[] = $separator;
 
             $items[] = Span::tag()
-                ->class('yii-debug-grid-summary-stat-warn')
+                ->class(Css::summaryStat('warn'))
                 ->html(
                     Strong::tag()->content((string) $summary->duplicates),
                     DbMessage::DUPLICATE_SUFFIX,
@@ -59,7 +60,7 @@ final class DbSummaryRenderer
         }
 
         return Header::tag()
-            ->class('yii-debug-grid-summary')
+            ->class(Css::GRID_SUMMARY)
             ->html(...$items)
             ->render();
     }

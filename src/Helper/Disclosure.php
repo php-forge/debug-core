@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Interactive\{Details, Summary};
 use UIAwesome\Html\Phrasing\Span;
@@ -25,7 +26,7 @@ final class Disclosure
     {
         return Span::tag()
             ->addAriaAttribute('hidden', 'true')
-            ->class('yii-debug-disclosure-hint')
+            ->class(Css::DISCLOSURE_HINT)
             ->html(
                 Span::tag()
                     ->addDataAttribute('yii-debug-hint', 'collapsed')
@@ -49,18 +50,18 @@ final class Disclosure
     {
         return Details::tag()
             ->open($open)
-            ->class('yii-debug-disclosure')
+            ->class(Css::DISCLOSURE)
             ->html(
                 Summary::tag()
-                    ->class('yii-debug-disclosure-summary')
+                    ->class(Css::DISCLOSURE_SUMMARY)
                     ->html(
                         Span::tag()
-                            ->class('yii-debug-disclosure-title')
+                            ->class(Css::DISCLOSURE_TITLE)
                             ->content($title),
                         self::hint(),
                     ),
                 Div::tag()
-                    ->class('yii-debug-disclosure-body')
+                    ->class(Css::DISCLOSURE_BODY)
                     ->html($body),
             )
             ->render();

@@ -7,6 +7,7 @@ namespace PHPForge\Debug\Panel\Event;
 use Closure;
 use PHPForge\Debug\Helper\Fqcn;
 use PHPForge\Debug\Panel\PanelMessage;
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\{Div, P, Pre};
 use UIAwesome\Html\Interactive\{Details, Summary};
 use UIAwesome\Html\List\{Dd, Dl, Dt};
@@ -28,6 +29,22 @@ use function str_repeat;
 final class EventInspectorRenderer
 {
     /**
+     * Class list of the capture-coverage disclosure.
+     */
+    private const string COVERAGE_CLASS = 'yii-debug-event-coverage ' . Css::MUTED;
+    /**
+     * Class list of the event identity cell.
+     */
+    private const string IDENTITY_CLASS = 'yii-debug-event-identity ' . Css::CELL_MONO;
+    /**
+     * Class list of the elapsed-time readout.
+     */
+    private const string TIME_CLASS = 'yii-debug-event-time ' . Css::CELL_MONO;
+    /**
+     * Class list of the timing qualifier shown after the elapsed time.
+     */
+    private const string TIMING_CLASS = 'yii-debug-event-timing ' . Css::MUTED;
+    /**
      * Renders whole-capture shortcuts and capture guidance without repeating event rows.
      *
      * @param list<EventRow> $allRows Complete capture, in observation order.
@@ -43,7 +60,7 @@ final class EventInspectorRenderer
             ->class('yii-debug-event-controls')
             ->html(
                 P::tag()
-                    ->class('yii-debug-muted')
+                    ->class(Css::MUTED)
                     ->content(EventMessage::INSPECTION_GUIDANCE),
                 Details::tag()
                     ->class('yii-debug-event-coverage')
@@ -53,7 +70,7 @@ final class EventInspectorRenderer
                         self::groups($allRows, $filterUrl, 'senderClass', EventMessage::GROUP_BY_SOURCE),
                     ),
                 Details::tag()
-                    ->class('yii-debug-event-coverage yii-debug-muted')
+                    ->class(self::COVERAGE_CLASS)
                     ->html(
                         Summary::tag()->content(EventMessage::CAPTURE_COVERAGE),
                         P::tag()->content($coverage),
@@ -129,7 +146,7 @@ final class EventInspectorRenderer
                             ->content("Link to event #{$index}"),
                         ...$phase === '' ? [] : [
                             Span::tag()
-                                ->class('yii-debug-muted')
+                                ->class(Css::MUTED)
                                 ->content(
                                     $inspection?->getPairId() === null
                                     ? EventMessage::UNMATCHED_ENTRY
@@ -179,13 +196,13 @@ final class EventInspectorRenderer
                     ->addAriaAttribute('controls', "event-{$index}-detail")
                     ->html(
                         Span::tag()
-                            ->class('yii-debug-event-identity yii-debug-cell-mono')
+                            ->class(self::IDENTITY_CLASS)
                             ->html(
                                 Span::tag()
                                     ->class('yii-debug-event-name')
                                     ->html($name),
                                 ...$phase === '' ? [] : [
-                                    Span::tag()->class('yii-debug-event-phase yii-debug-muted')->content(
+                                    Span::tag()->class('yii-debug-event-phase ' . Css::MUTED)->content(
                                         str_repeat('  ', min(8, $inspection?->getDepth() ?? 0))
                                         . $phase . ' / nesting level ' . ($inspection?->getDepth() ?? 0),
                                     ),
@@ -212,11 +229,11 @@ final class EventInspectorRenderer
             ->class('yii-debug-event-clock')
             ->html(
                 Span::tag()
-                    ->class('yii-debug-event-time yii-debug-cell-mono')
+                    ->class(self::TIME_CLASS)
                     ->title('Observed at ' . EventCellRenderer::renderTimeCell($row))
                     ->content(sprintf('%+.3f ms', $sequence->elapsed($row))),
                 Span::tag()
-                    ->class('yii-debug-event-timing yii-debug-muted')
+                    ->class(self::TIMING_CLASS)
                     ->content($timing),
             )
             ->render();

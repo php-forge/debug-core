@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\View\Sidebar;
 
 use PHPForge\Debug\Helper\{Icon, Vocabulary};
+use PHPForge\Debug\Theme\Css;
 use PHPForge\Debug\View\ViewMessage;
 use UIAwesome\Html\Core\Component\{Item, Menu};
 use UIAwesome\Html\Flow\Div;
@@ -62,7 +63,7 @@ final class SidebarRenderer
                     ->class('yii-debug-snapshot-line')
                     ->html(
                         Span::tag()
-                            ->class('yii-debug-snapshot-method yii-debug-verb-' . Vocabulary::verb($snapshot->method))
+                            ->class('yii-debug-snapshot-method ' . Css::verb(Vocabulary::verb($snapshot->method)))
                             ->addDataAttribute('snapshot-field', 'method')
                             ->content($snapshot->method),
                         Span::tag()
@@ -103,7 +104,7 @@ final class SidebarRenderer
             ->class('yii-debug-snapshot-meta')
             ->html(
                 Span::tag()
-                    ->class('yii-debug-snapshot-status yii-debug-status-' . $snapshot->statusVariant)
+                    ->class('yii-debug-snapshot-status ' . Css::status($snapshot->statusVariant))
                     ->addDataAttribute('snapshot-field', 'status')
                     ->content($snapshot->statusCode > 0 ? (string) $snapshot->statusCode : '–'),
                 $time,

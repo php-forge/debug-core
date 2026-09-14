@@ -25,6 +25,26 @@ enum ConfigMessage: string
     case APPLICATION_VERSION = 'Application version';
 
     /**
+     * Caption of the readout card reporting the debug flag.
+     */
+    case CAPTION_DEBUG = 'debug %s';
+
+    /**
+     * Caption of the readout card naming the framework.
+     */
+    case CAPTION_FRAMEWORK = 'framework';
+
+    /**
+     * Caption of the readout card naming the application instance.
+     */
+    case CAPTION_INSTANCE = 'instance';
+
+    /**
+     * Caption of the readout card naming the PHP runtime.
+     */
+    case CAPTION_RUNTIME = 'runtime';
+
+    /**
      * Overview field label of the application charset.
      */
     case CHARSET = 'Charset';
@@ -95,9 +115,24 @@ enum ConfigMessage: string
     case INSTALLED = 'Installed extensions (%d)';
 
     /**
+     * Title of the installed-extension section.
+     */
+    case INSTALLED_TITLE = 'Installed extensions';
+
+    /**
      * `sprintf()` template annotating a BCP-47 tag with its English display name.
      */
     case LANGUAGE_ANNOTATION = '%s (%s)';
+
+    /**
+     * Glyph marking a section that continues the identity readouts.
+     */
+    case MARK_CONTINUATION = '//';
+
+    /**
+     * Glyph marking a primary section.
+     */
+    case MARK_PRIMARY = '::';
 
     /**
      * Label of the APCu extension in the runtime overview.

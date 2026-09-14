@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\View\History;
 
 use PHPForge\Debug\Helper\{Format, Gauge, Vocabulary};
+use PHPForge\Debug\Theme\Css;
 use PHPForge\Debug\View\Grid\RowClass;
 use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\{Span, Strong};
@@ -62,7 +63,7 @@ final class HistoryCellRenderer
     {
         if ($row->processingTime === null) {
             return Span::tag()
-                ->class('yii-debug-not-set')
+                ->class(Css::NOT_SET)
                 ->content('(not set)')
                 ->render();
         }
@@ -85,7 +86,7 @@ final class HistoryCellRenderer
     {
         if ($row->peakMemory === null) {
             return Span::tag()
-                ->class('yii-debug-not-set')
+                ->class(Css::NOT_SET)
                 ->content('(not set)')
                 ->render();
         }
@@ -107,7 +108,7 @@ final class HistoryCellRenderer
         }
 
         return Span::tag()
-            ->class('yii-debug-method yii-debug-verb-' . Vocabulary::verb($row->method))
+            ->class('yii-debug-method ' . Css::verb(Vocabulary::verb($row->method)))
             ->content($row->method)
             ->render();
     }
@@ -167,7 +168,7 @@ final class HistoryCellRenderer
         $statusCode = $row->statusCode === 0 ? 200 : $row->statusCode;
 
         return Span::tag()
-            ->class('yii-debug-badge yii-debug-status-' . Vocabulary::statusClass($statusCode))
+            ->class(Css::BADGE . ' ' . Css::status(Vocabulary::statusClass($statusCode)))
             ->content((string) $statusCode)
             ->render();
     }
@@ -199,17 +200,17 @@ final class HistoryCellRenderer
 
         foreach ($summary->statusBuckets as $bucket) {
             $children[] = Span::tag()
-                ->class('yii-debug-grid-summary-sep')
+                ->class(Css::GRID_SUMMARY_SEP)
                 ->content('·');
             $children[] = A::tag()
-                ->class("yii-debug-grid-summary-stat-{$bucket->variant}")
+                ->class(Css::summaryStat($bucket->variant))
                 ->href($bucketUrls[$bucket->label] ?? '')
                 ->title("Filter to {$bucket->label} responses (sample {$bucket->sampleCode})")
                 ->html(Strong::tag()->content((string) $bucket->count), " {$bucket->label}");
         }
 
         return Header::tag()
-            ->class('yii-debug-grid-summary')
+            ->class(Css::GRID_SUMMARY)
             ->html(...$children, ...[$pageSizeHtml])
             ->render();
     }
@@ -236,7 +237,7 @@ final class HistoryCellRenderer
     {
         if ($row->time === 0.0) {
             return Span::tag()
-                ->class('yii-debug-not-set')
+                ->class(Css::NOT_SET)
                 ->content('(not set)')
                 ->render();
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Form\Button;
 use UIAwesome\Html\Form\Values\ButtonType;
@@ -53,15 +54,15 @@ final class CellMore
     public static function wrap(string $content): string
     {
         return Div::tag()
-            ->class('yii-debug-cell-more')
+            ->class(Css::CELL_MORE)
             ->html(
                 Div::tag()
-                    ->class('yii-debug-cell-more-body')
+                    ->class(Css::CELL_MORE_BODY)
                     ->html($content),
                 Button::tag()
                     ->addAriaAttribute('expanded', 'false')
                     ->addAttribute('data-yii-debug-toggle', 'cell-more')
-                    ->class('yii-debug-cell-more-toggle')
+                    ->class(Css::CELL_MORE_TOGGLE)
                     ->content('Show more')
                     ->type(ButtonType::BUTTON),
             )
