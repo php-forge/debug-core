@@ -4,204 +4,183 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Mail;
 
-use DateTimeInterface;
-use PHPForge\Debug\Helper\Coerce;
-use PHPForge\Debug\Storage\{PanelRow, Payload};
-
-use function array_filter;
-use function array_map;
-use function array_values;
-use function explode;
-use function is_int;
-use function is_string;
-use function strtotime;
-
 /**
- * Typed view-model for a single mail message rendered in the Mail panel detail view.
+ * Identity, formats, and presentation text of the Mail panel, shared by every adapter that renders it.
  */
-final readonly class MailMessage implements PanelRow
+enum MailMessage: string
 {
-    public function __construct(
-        /**
-         * Sender address as captured (typically `name@example.com` or `Name <name@example.com>`).
-         */
-        public string $from,
-        /**
-         * @var list<string> Primary recipients split out of the comma-separated `to` field, with empty entries dropped.
-         */
-        public array $to,
-        /**
-         * @var list<string> Carbon-copy recipients split out of the comma-separated `cc` field.
-         */
-        public array $cc,
-        /**
-         * @var list<string> Blind carbon-copy recipients split out of the comma-separated `bcc` field.
-         */
-        public array $bcc,
-        /**
-         * @var list<string> Reply-to addresses split out of the comma-separated `reply` field.
-         */
-        public array $replyTo,
-        /**
-         * Subject line as captured.
-         */
-        public string $subject,
-        /**
-         * Plain-text body as captured, or `''` when the message had no body.
-         */
-        public string $body,
-        /**
-         * Raw RFC-5322 headers as captured by the mailer, joined with line breaks.
-         */
-        public string $headers,
-        /**
-         * Charset declared on the message, or `''` when none was set.
-         */
-        public string $charset,
-        /**
-         * Path to the persisted `.eml` file, or `''` when the mailer does not expose one.
-         */
-        public string $file,
-        /**
-         * `true` when the mailer reported the message as sent, `false` when it reported a failure.
-         */
-        public bool $isSuccessful,
-        /**
-         * Capture timestamp as a Unix-epoch second, or `null` when the original payload had no parseable time.
-         */
-        public int|null $time,
-    ) {}
+    /**
+     * Detail field label of the blind carbon copy recipients.
+     */
+    case BCC = 'Bcc';
 
     /**
-     * @param list<self> $models Captured messages.
+     * Disclosure label of the message body.
      */
-    public static function failedCount(array $models): int
-    {
-        $failed = 0;
-
-        foreach ($models as $model) {
-            if ($model->isSuccessful === false) {
-                $failed++;
-            }
-        }
-
-        return $failed;
-    }
-
-    public static function fromArray(mixed $data, string $path): self
-    {
-        $payload = Payload::object($data, $path)
-            ->shape(
-                [
-                    'from',
-                    'to',
-                    'cc',
-                    'bcc',
-                    'replyTo',
-                    'subject',
-                    'body',
-                    'headers',
-                    'charset',
-                    'file',
-                    'isSuccessful',
-                    'time',
-                ],
-            );
-
-        return new self(
-            from: $payload->string('from'),
-            to: Coerce::stringList($payload->list('to')),
-            cc: Coerce::stringList($payload->list('cc')),
-            bcc: Coerce::stringList($payload->list('bcc')),
-            replyTo: Coerce::stringList($payload->list('replyTo')),
-            subject: $payload->string('subject'),
-            body: $payload->string('body'),
-            headers: $payload->string('headers'),
-            charset: $payload->string('charset'),
-            file: $payload->string('file'),
-            isSuccessful: $payload->bool('isSuccessful'),
-            time: $payload->nullableInt('time'),
-        );
-    }
+    case BODY = 'Body';
 
     /**
-     * Narrows one captured `EVENT_AFTER_SEND` payload into a typed message.
-     *
-     * @param array<array-key, mixed> $row Captured payload.
+     * Detail field label of the carbon copy recipients.
      */
-    public static function fromCapture(array $row): self
-    {
-        return new self(
-            from: self::scalar($row, 'from'),
-            to: self::splitAddresses(self::scalar($row, 'to')),
-            cc: self::splitAddresses(self::scalar($row, 'cc')),
-            bcc: self::splitAddresses(self::scalar($row, 'bcc')),
-            replyTo: self::splitAddresses(self::scalar($row, 'reply')),
-            subject: self::scalar($row, 'subject'),
-            body: self::scalar($row, 'body'),
-            headers: self::scalar($row, 'headers'),
-            charset: self::scalar($row, 'charset'),
-            file: Coerce::string($row['file'] ?? null),
-            isSuccessful: ($row['isSuccessful'] ?? false) === true,
-            time: self::normalizeTime($row['time'] ?? null),
-        );
-    }
+    case CC = 'Cc';
 
     /**
-     * @return array<string, mixed>
+     * Detail field label of the message charset.
      */
-    public function jsonSerialize(): array
-    {
-        return [
-            'from' => $this->from,
-            'to' => $this->to,
-            'cc' => $this->cc,
-            'bcc' => $this->bcc,
-            'replyTo' => $this->replyTo,
-            'subject' => $this->subject,
-            'body' => $this->body,
-            'headers' => $this->headers,
-            'charset' => $this->charset,
-            'file' => $this->file,
-            'isSuccessful' => $this->isSuccessful,
-            'time' => $this->time,
-        ];
-    }
-
-    private static function normalizeTime(mixed $value): int|null
-    {
-        if ($value instanceof DateTimeInterface) {
-            return $value->getTimestamp();
-        }
-
-        if (is_int($value)) {
-            return $value;
-        }
-
-        if (is_string($value) && $value !== '') {
-            $parsed = strtotime($value);
-
-            return $parsed === false ? null : $parsed;
-        }
-
-        return null;
-    }
+    case CHARSET = 'Charset';
 
     /**
-     * @param array<array-key, mixed> $row
+     * `date()` format of the absolute timestamp in the detail overview.
      */
-    private static function scalar(array $row, string $key): string
-    {
-        return Coerce::stringOrNull($row[$key] ?? null) ?? '';
-    }
+    case DATE_FORMAT = 'M j, Y · H:i:s';
 
     /**
-     * @return list<string>
+     * Suffix appended to a single captured message in the summary header.
      */
-    private static function splitAddresses(string $raw): array
-    {
-        $parts = array_map(trim(...), explode(',', $raw));
+    case EMAIL_SUFFIX = ' email';
 
-        return array_values(array_filter($parts, static fn(string $address): bool => $address !== ''));
-    }
+    /**
+     * Suffix appended to the captured message count in the summary header.
+     */
+    case EMAILS_SUFFIX = ' emails';
+
+    /**
+     * Middle sentence of the empty-state call to action, preceding the mailer call.
+     */
+    case EMPTY_CAPTURE = ' is the capture hook; only requests that call ';
+
+    /**
+     * Explanation of the empty state when the request dispatched no message.
+     */
+    case EMPTY_EXPLANATION = 'This request did not dispatch any messages through the mailer, so the inbox is empty.';
+
+    /**
+     * Headline of the empty state when the mailer captured no message.
+     */
+    case EMPTY_HEADLINE = 'No emails sent in this request';
+
+    /**
+     * Capture hook named in the empty state, which records a sent message.
+     */
+    case EMPTY_HOOK = 'BaseMailer::EVENT_AFTER_SEND';
+
+    /**
+     * Closing sentence of the empty-state call to action, following the mailer call.
+     */
+    case EMPTY_POPULATE = ' populate this view.';
+
+    /**
+     * Mailer call named in the empty state, whose invocation populates the panel.
+     */
+    case EMPTY_SEND = '$mailer->send()';
+
+    /**
+     * Suffix appended to the rejected message count in the summary header.
+     */
+    case FAILED_SUFFIX = ' failed';
+
+    /**
+     * Header of the sender column, also used as its detail field label.
+     */
+    case FROM = 'From';
+
+    /**
+     * Disclosure label of the raw message headers.
+     */
+    case HEADERS = 'Raw headers';
+
+    /**
+     * Stable identifier associating the panel with the captured payload, also used as its icon key.
+     */
+    case ID = 'mail';
+
+    /**
+     * `sprintf()` template of the detail group label of one message.
+     */
+    case MESSAGE_GROUP = 'Message %d';
+
+    /**
+     * `sprintf()` template of the heading preceding each detail group.
+     */
+    case MESSAGE_HEADING = '%d. %s';
+
+    /**
+     * Note of the detail group when the mailer captured no body.
+     */
+    case NO_BODY = 'The mailer captured no body for this message.';
+
+    /**
+     * Header of the position column, which sorts by send order.
+     */
+    case NUMBER = '#';
+
+    /**
+     * Placeholder shown wherever the capture left a field empty.
+     */
+    case PLACEHOLDER = '—';
+
+    /**
+     * Detail field label of the reply-to recipients.
+     */
+    case REPLY_TO = 'Reply-To';
+
+    /**
+     * Detail field label of the absolute send time.
+     */
+    case SENT_AT = 'Sent at';
+
+    /**
+     * Header of the delivery status column, also used as its detail field label.
+     */
+    case STATUS = 'Status';
+
+    /**
+     * Badge label of a message the mailer rejected.
+     */
+    case STATUS_FAILED = 'Failed';
+
+    /**
+     * Badge label of a message the mailer delivered.
+     */
+    case STATUS_SENT = 'Sent';
+
+    /**
+     * Detail field label of the stored message file.
+     */
+    case STORED_FILE = 'Stored file';
+
+    /**
+     * Header of the subject column, also used as its detail field label.
+     */
+    case SUBJECT = 'Subject';
+
+    /**
+     * Subject shown when the mailer captured none.
+     */
+    case SUBJECT_FALLBACK = '(no subject)';
+
+    /**
+     * Header of the send-time column.
+     */
+    case TIME = 'Time';
+
+    /**
+     * `date()` format of the clock-only timestamp in the summary table.
+     */
+    case TIME_FORMAT = 'H:i:s';
+
+    /**
+     * Panel title used in the debugger navigation.
+     */
+    case TITLE = 'Mail';
+
+    /**
+     * Header of the recipient column, also used as its detail field label.
+     */
+    case TO = 'To';
+
+    /**
+     * Label of the toolbar metric counting the captured messages.
+     */
+    case TOOLBAR = 'Emails';
 }

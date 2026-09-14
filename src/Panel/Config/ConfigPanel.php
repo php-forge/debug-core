@@ -19,13 +19,6 @@ use function sprintf;
  *
  * Adapters own the phpinfo route, so they supply it with {@see self::phpInfoUrl()} before presenting.
  *
- * Usage example:
- * ```php
- * $view = (new \PHPForge\Debug\Panel\Config\ConfigPanel())
- *     ->phpInfoUrl('/debug/php-info')
- *     ->present($snapshot->jsonSerialize());
- * ```
- *
  * @phpstan-import-type BadgeInline from PanelView
  */
 final class ConfigPanel extends Panel
@@ -33,32 +26,25 @@ final class ConfigPanel extends Panel
     /**
      * @var string Icon key shared with the built-in Configuration navigation entry.
      */
-    protected const string ICON = 'config';
-
+    protected const string ICON = ConfigMessage::ID->value;
     /**
      * @var string Stable identifier associating the panel with the captured configuration payload.
      */
-    protected const string ID = 'config';
-
+    protected const string ID = ConfigMessage::ID->value;
     /**
      * @var string Panel title used in the debugger navigation.
      */
-    protected const string TITLE = 'Configuration';
+    protected const string TITLE = ConfigMessage::TITLE->value;
 
     /**
-     * @var array<string, string> Bundled PHP extensions reported as loaded or missing, keyed by payload field.
+     * @var array<string, ConfigMessage> Bundled PHP extensions reported as loaded or missing, keyed by payload field.
      */
     private const array PHP_EXTENSIONS = [
-        'xdebug' => 'Xdebug',
-        'apcu' => 'APCu',
-        'memcache' => 'Memcache',
-        'memcached' => 'Memcached',
+        'xdebug' => ConfigMessage::PACKAGE_XDEBUG,
+        'apcu' => ConfigMessage::PACKAGE_APCU,
+        'memcache' => ConfigMessage::PACKAGE_MEMCACHE,
+        'memcached' => ConfigMessage::PACKAGE_MEMCACHED,
     ];
-
-    /**
-     * @var string Placeholder shown wherever the capture left a field empty.
-     */
-    private const string PLACEHOLDER = '—';
 
     /**
      * @var string Adapter-owned phpinfo URL, or `''` when the adapter exposes no phpinfo page.
@@ -101,17 +87,38 @@ final class ConfigPanel extends Panel
         $version = self::text($php, 'version');
 
         $view = PanelView::create()
-            ->summary('', $yii === '' ? self::PLACEHOLDER : "Yii {$yii}")
-            ->summary('', $version === '' ? self::PLACEHOLDER : "PHP {$version}", false)
-            ->summary($count === 1 ? ' extension' : ' extensions', $count)
+            ->summary(
+                '',
+                $yii === ''
+                    ? ConfigMessage::PLACEHOLDER->value
+                    : sprintf(ConfigMessage::YII_SUMMARY->value, $yii),
+            )
+            ->summary(
+                '',
+                $version === ''
+                    ? ConfigMessage::PLACEHOLDER->value
+                    : sprintf(ConfigMessage::PHP_SUMMARY->value, $version),
+                false,
+            )
+            ->summary(
+                $count === 1 ? ConfigMessage::EXTENSION_SUFFIX->value : ConfigMessage::EXTENSIONS_SUFFIX->value,
+                $count,
+            )
             ->overview(
                 [
-                    'Yii' => self::orPlaceholder($yii),
-                    'PHP' => self::orPlaceholder($version),
-                    'Environment' => self::orPlaceholder(self::text($application, 'env')),
-                    'Debug mode' => self::flag($application, 'debug', 'on', 'off'),
-                    'Application' => self::orPlaceholder(self::text($application, 'name')),
-                    'Application version' => self::orPlaceholder(self::text($application, 'version')),
+                    ConfigMessage::YII->value => self::orPlaceholder($yii),
+                    ConfigMessage::PHP->value => self::orPlaceholder($version),
+                    ConfigMessage::ENVIRONMENT->value => self::orPlaceholder(self::text($application, 'env')),
+                    ConfigMessage::DEBUG_MODE->value => self::flag(
+                        $application,
+                        'debug',
+                        ConfigMessage::DEBUG_ON,
+                        ConfigMessage::DEBUG_OFF,
+                    ),
+                    ConfigMessage::APPLICATION->value => self::orPlaceholder(self::text($application, 'name')),
+                    ConfigMessage::APPLICATION_VERSION->value => self::orPlaceholder(
+                        self::text($application, 'version'),
+                    ),
                 ],
                 true,
             );
@@ -119,30 +126,37 @@ final class ConfigPanel extends Panel
         $runtime = [];
 
         foreach (self::PHP_EXTENSIONS as $key => $label) {
-            $runtime[$label] = self::flag($php, $key, 'loaded', 'missing');
+            $runtime[$label->value] = self::flag(
+                $php,
+                $key,
+                ConfigMessage::EXTENSION_LOADED,
+                ConfigMessage::EXTENSION_MISSING,
+            );
         }
 
         $view = $view
-            ->heading('PHP extensions', true)
+            ->heading(ConfigMessage::PHP_EXTENSIONS->value, true)
             ->overview($runtime, true)
-            ->heading('Application details', true)
+            ->heading(ConfigMessage::APPLICATION_DETAILS->value, true)
             ->overview(
                 [
-                    'Charset' => self::orPlaceholder(self::text($application, 'charset')),
-                    'Current language' => self::language(self::text($application, 'language')),
-                    'Source language' => self::language(self::text($application, 'sourceLanguage')),
+                    ConfigMessage::CHARSET->value => self::orPlaceholder(self::text($application, 'charset')),
+                    ConfigMessage::CURRENT_LANGUAGE->value => self::language(self::text($application, 'language')),
+                    ConfigMessage::SOURCE_LANGUAGE->value => self::language(
+                        self::text($application, 'sourceLanguage'),
+                    ),
                 ],
                 true,
             )
-            ->heading(sprintf('Installed extensions (%d)', $count), true);
+            ->heading(sprintf(ConfigMessage::INSTALLED->value, $count), true);
 
         $view = $count === 0
             ? $view->emptyState(
-                'No installed extensions recorded',
-                'The capture carried no Composer package roster for this request.',
+                ConfigMessage::EMPTY_HEADLINE->value,
+                ConfigMessage::EMPTY_EXPLANATION->value,
             )
             : $view->table(
-                ['Package', 'Version'],
+                [ConfigMessage::PACKAGE_NAME->value, ConfigMessage::VERSION->value],
                 self::rows($extensions),
                 true,
                 [
@@ -153,7 +167,7 @@ final class ConfigPanel extends Panel
 
         return $this->phpInfoUrl === ''
             ? $view
-            : $view->paragraph(PanelView::link('View full phpinfo', $this->phpInfoUrl, true));
+            : $view->paragraph(PanelView::link(ConfigMessage::PHP_INFO_LINK->value, $this->phpInfoUrl, true));
     }
 
     /**
@@ -192,16 +206,16 @@ final class ConfigPanel extends Panel
      *
      * @param array<array-key, mixed> $slice Decoded payload slice holding the flag.
      * @param string $key Flag to read.
-     * @param string $enabled Badge label used when the flag is `true`.
-     * @param string $disabled Badge label used when the flag is `false`.
+     * @param ConfigMessage $enabled Badge label used when the flag is `true`.
+     * @param ConfigMessage $disabled Badge label used when the flag is `false`.
      *
      * @return BadgeInline Success badge when enabled, muted badge otherwise.
      */
-    private static function flag(array $slice, string $key, string $enabled, string $disabled): array
+    private static function flag(array $slice, string $key, ConfigMessage $enabled, ConfigMessage $disabled): array
     {
         return ($slice[$key] ?? false) === true
-            ? PanelView::badge($enabled, Tone::SUCCESS)
-            : PanelView::badge($disabled, Tone::MUTED);
+            ? PanelView::badge($enabled->value, Tone::SUCCESS)
+            : PanelView::badge($disabled->value, Tone::MUTED);
     }
 
     /**
@@ -216,7 +230,7 @@ final class ConfigPanel extends Panel
     private static function language(string $locale): string
     {
         if ($locale === '') {
-            return self::PLACEHOLDER;
+            return ConfigMessage::PLACEHOLDER->value;
         }
 
         $candidates = [
@@ -232,9 +246,7 @@ final class ConfigPanel extends Panel
             }
         }
 
-        $annotation = implode(', ', $parts);
-
-        return "{$locale} ({$annotation})";
+        return sprintf(ConfigMessage::LANGUAGE_ANNOTATION->value, $locale, implode(', ', $parts));
     }
 
     /**
@@ -246,7 +258,7 @@ final class ConfigPanel extends Panel
      */
     private static function orPlaceholder(string $value): string
     {
-        return $value === '' ? self::PLACEHOLDER : $value;
+        return $value === '' ? ConfigMessage::PLACEHOLDER->value : $value;
     }
 
     /**

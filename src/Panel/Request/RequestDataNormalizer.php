@@ -22,10 +22,10 @@ final class RequestDataNormalizer
      * @var array<string, string> Boolean flags surfaced as chips on the hero meta strip, in display order.
      */
     private const array FLAG_LABELS = [
-        'isAjax' => 'AJAX',
-        'isPjax' => 'PJAX',
-        'isFlash' => 'Flash',
-        'isSecureConnection' => 'HTTPS',
+        'isAjax' => RequestMessage::AJAX->value,
+        'isPjax' => RequestMessage::PJAX->value,
+        'isFlash' => RequestMessage::FLASH->value,
+        'isSecureConnection' => RequestMessage::HTTPS->value,
     ];
 
     /**
@@ -103,13 +103,21 @@ final class RequestDataNormalizer
     private static function buildTabs(array $data): array
     {
         $tabs = [
-            new RequestTab(label: 'Parameters', sections: self::parameterSections($data), id: 'parameters'),
-            new RequestTab(label: 'Headers', sections: self::headerSections($data), id: 'headers'),
+            new RequestTab(
+                label: RequestMessage::PARAMETERS->value,
+                sections: self::parameterSections($data),
+                id: 'parameters',
+            ),
+            new RequestTab(
+                label: RequestMessage::HEADERS->value,
+                sections: self::headerSections($data),
+                id: 'headers',
+            ),
         ];
 
         if (array_key_exists('SESSION', $data) && array_key_exists('flashes', $data)) {
             $tabs[] = new RequestTab(
-                label: 'Session',
+                label: RequestMessage::SESSION->value,
                 sections: self::sessionSections($data),
                 id: 'session',
             );
@@ -117,10 +125,10 @@ final class RequestDataNormalizer
 
         if (array_key_exists('SERVER', $data)) {
             $tabs[] = new RequestTab(
-                label: 'Server',
+                label: RequestMessage::SERVER->value,
                 sections: [
                     new RequestSection(
-                        caption: 'Server',
+                        caption: RequestMessage::SERVER->value,
                         entries: self::asEntries($data['SERVER']),
                         filterable: true,
                         id: 'server',
@@ -144,13 +152,13 @@ final class RequestDataNormalizer
     {
         return [
             new RequestSection(
-                caption: 'Request Headers',
+                caption: RequestMessage::REQUEST_HEADERS_CAPTION->value,
                 entries: self::asEntries($data['requestHeaders'] ?? []),
                 filterable: true,
                 id: 'request-headers',
             ),
             new RequestSection(
-                caption: 'Response Headers',
+                caption: RequestMessage::RESPONSE_HEADERS_CAPTION->value,
                 entries: self::asEntries($data['responseHeaders'] ?? []),
                 filterable: true,
                 id: 'response-headers',
@@ -169,11 +177,11 @@ final class RequestDataNormalizer
     {
         $sections = [
             new RequestSection(
-                caption: 'Routing',
+                caption: RequestMessage::ROUTING->value,
                 entries: [
-                    'Route' => $data['route'] ?? null,
-                    'Action' => $data['action'] ?? null,
-                    'Parameters' => $data['actionParams'] ?? null,
+                    RequestMessage::ROUTE->value => $data['route'] ?? null,
+                    RequestMessage::ACTION->value => $data['action'] ?? null,
+                    RequestMessage::PARAMETERS->value => $data['actionParams'] ?? null,
                 ],
                 id: 'routing',
             ),
@@ -181,7 +189,7 @@ final class RequestDataNormalizer
 
         if (array_key_exists('GET', $data)) {
             $sections[] = new RequestSection(
-                caption: 'Get',
+                caption: RequestMessage::GET->value,
                 entries: self::asEntries($data['GET']),
                 filterable: true,
                 id: 'get',
@@ -190,7 +198,7 @@ final class RequestDataNormalizer
 
         if (array_key_exists('POST', $data)) {
             $sections[] = new RequestSection(
-                caption: 'Post',
+                caption: RequestMessage::POST->value,
                 entries: self::asEntries($data['POST']),
                 filterable: true,
                 id: 'post',
@@ -199,7 +207,7 @@ final class RequestDataNormalizer
 
         if (array_key_exists('FILES', $data)) {
             $sections[] = new RequestSection(
-                caption: 'Files',
+                caption: RequestMessage::FILES->value,
                 entries: self::asEntries($data['FILES']),
                 filterable: true,
                 id: 'files',
@@ -208,7 +216,7 @@ final class RequestDataNormalizer
 
         if (array_key_exists('COOKIE', $data)) {
             $sections[] = new RequestSection(
-                caption: 'Cookies',
+                caption: RequestMessage::COOKIES->value,
                 entries: self::asEntries($data['COOKIE']),
                 filterable: true,
                 id: 'cookies',
@@ -216,7 +224,7 @@ final class RequestDataNormalizer
         }
 
         $sections[] = new RequestSection(
-            caption: 'Request Body',
+            caption: RequestMessage::REQUEST_BODY->value,
             entries: self::asEntries($data['requestBody'] ?? []),
             filterable: true,
             id: 'request-body',
@@ -236,13 +244,13 @@ final class RequestDataNormalizer
     {
         return [
             new RequestSection(
-                caption: 'Session',
+                caption: RequestMessage::SESSION->value,
                 entries: self::asEntries($data['SESSION'] ?? []),
                 filterable: true,
                 id: 'session',
             ),
             new RequestSection(
-                caption: 'Flashes',
+                caption: RequestMessage::FLASHES->value,
                 entries: self::asEntries($data['flashes'] ?? []),
                 filterable: true,
                 id: 'flashes',
@@ -255,8 +263,6 @@ final class RequestDataNormalizer
      */
     private static function statusVariant(int $statusCode): string
     {
-        return Vocabulary::statusClass(
-            $statusCode,
-        );
+        return Vocabulary::statusClass($statusCode);
     }
 }

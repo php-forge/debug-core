@@ -15,7 +15,7 @@ use function is_array;
 final readonly class MailSnapshot implements PanelSnapshot
 {
     /**
-     * @param list<MailMessage> $entries
+     * @param list<MailEntry> $entries Captured messages in send order.
      */
     public function __construct(private array $entries) {}
 
@@ -23,6 +23,8 @@ final readonly class MailSnapshot implements PanelSnapshot
      * Narrows the captured `EVENT_AFTER_SEND` payloads into typed messages.
      *
      * @param array<array-key, mixed> $messages Captured payloads in send order; non-array entries are dropped.
+     *
+     * @return self Snapshot carrying the typed messages.
      */
     public static function capture(array $messages): self
     {
@@ -30,7 +32,7 @@ final readonly class MailSnapshot implements PanelSnapshot
 
         foreach ($messages as $message) {
             if (is_array($message)) {
-                $entries[] = MailMessage::fromCapture($message);
+                $entries[] = MailEntry::fromCapture($message);
             }
         }
 
@@ -38,29 +40,41 @@ final readonly class MailSnapshot implements PanelSnapshot
     }
 
     /**
-     * @return list<MailMessage> Captured messages in send order.
+     * Returns the captured messages.
+     *
+     * @return list<MailEntry> Captured messages in send order.
      */
     public function entries(): array
     {
         return $this->entries;
     }
 
+    /**
+     * Narrows the persisted mail payload into a typed snapshot.
+     *
+     * @param mixed $data Persisted payload, expected to be an object carrying an `entries` list.
+     * @param string $path JSON path of the payload, used to report a malformed capture.
+     *
+     * @return self Snapshot carrying the persisted messages.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         return new self(
             Payload::object($data, $path)
                 ->shape(['entries'])
-                ->mapList('entries', MailMessage::fromArray(...)),
+                ->mapList('entries', MailEntry::fromArray(...)),
         );
     }
 
     /**
-     * @return array<string, mixed>
+     * Serializes the snapshot into its persisted payload.
+     *
+     * @return array<string, mixed> Payload carrying the messages under the `entries` key.
      */
     public function jsonSerialize(): array
     {
         return [
-            'entries' => array_map(static fn(MailMessage $row): array => $row->jsonSerialize(), $this->entries),
+            'entries' => array_map(static fn(MailEntry $row): array => $row->jsonSerialize(), $this->entries),
         ];
     }
 }

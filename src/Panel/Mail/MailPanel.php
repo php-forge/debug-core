@@ -21,37 +21,15 @@ final class MailPanel extends Panel
     /**
      * @var string Icon key shared with the built-in Mail navigation entry.
      */
-    protected const string ICON = 'mail';
-
+    protected const string ICON = MailMessage::ID->value;
     /**
      * @var string Stable identifier associating the panel with the captured mail payload.
      */
-    protected const string ID = 'mail';
-
+    protected const string ID = MailMessage::ID->value;
     /**
      * @var string Panel title used in the debugger navigation.
      */
-    protected const string TITLE = 'Mail';
-
-    /**
-     * @var string Absolute timestamp format of the detail overview.
-     */
-    private const string DATE_FORMAT = 'M j, Y · H:i:s';
-
-    /**
-     * @var string Placeholder shown wherever the capture left a field empty.
-     */
-    private const string PLACEHOLDER = '—';
-
-    /**
-     * @var string Subject shown when the mailer captured none.
-     */
-    private const string SUBJECT_FALLBACK = '(no subject)';
-
-    /**
-     * @var string Clock-only timestamp format of the summary table.
-     */
-    private const string TIME_FORMAT = 'H:i:s';
+    protected const string TITLE = MailMessage::TITLE->value;
 
     /**
      * Builds the panel view from the decoded mail capture.
@@ -70,29 +48,39 @@ final class MailPanel extends Panel
 
         if ($count === 0) {
             return $view->emptyState(
-                'No emails sent in this request',
-                'This request did not dispatch any messages through the mailer, so the inbox is empty.',
+                MailMessage::EMPTY_HEADLINE->value,
+                MailMessage::EMPTY_EXPLANATION->value,
                 [
-                    PanelView::code('BaseMailer::EVENT_AFTER_SEND'),
-                    ' is the capture hook; only requests that call ',
-                    PanelView::code('$mailer->send()'),
-                    ' populate this view.',
+                    PanelView::code(MailMessage::EMPTY_HOOK->value),
+                    MailMessage::EMPTY_CAPTURE->value,
+                    PanelView::code(MailMessage::EMPTY_SEND->value),
+                    MailMessage::EMPTY_POPULATE->value,
                 ],
             );
         }
 
-        $failed = MailMessage::failedCount($messages);
+        $failed = MailEntry::failedCount($messages);
 
         $view = $view
-            ->summary($count === 1 ? ' email' : ' emails', $count)
-            ->toolbar('Emails', $count);
+            ->summary(
+                $count === 1 ? MailMessage::EMAIL_SUFFIX->value : MailMessage::EMAILS_SUFFIX->value,
+                $count,
+            )
+            ->toolbar(MailMessage::TOOLBAR->value, $count);
 
         if ($failed > 0) {
-            $view = $view->summary(' failed', $failed);
+            $view = $view->summary(MailMessage::FAILED_SUFFIX->value, $failed);
         }
 
         $view = $view->table(
-            ['#', 'From', 'Subject', 'To', 'Status', 'Time'],
+            [
+                MailMessage::NUMBER->value,
+                MailMessage::FROM->value,
+                MailMessage::SUBJECT->value,
+                MailMessage::TO->value,
+                MailMessage::STATUS->value,
+                MailMessage::TIME->value,
+            ],
             self::rows($messages),
             styles: [
                 0 => ColumnStyle::NUMBER,
@@ -105,8 +93,14 @@ final class MailPanel extends Panel
             $position = $index + 1;
 
             $view = $view
-                ->heading(sprintf('%d. %s', $position, self::subject($message)), true)
-                ->group(sprintf('Message %d', $position), self::detail($message));
+                ->heading(
+                    sprintf(MailMessage::MESSAGE_HEADING->value, $position, self::subject($message)),
+                    true,
+                )
+                ->group(
+                    sprintf(MailMessage::MESSAGE_GROUP->value, $position),
+                    self::detail($message),
+                );
         }
 
         return $view;
@@ -121,60 +115,64 @@ final class MailPanel extends Panel
      */
     private static function addresses(array $addresses): string
     {
-        return $addresses === [] ? self::PLACEHOLDER : implode(', ', $addresses);
+        return $addresses === [] ? MailMessage::PLACEHOLDER->value : implode(', ', $addresses);
     }
 
     /**
      * Builds the detail group of one message: envelope overview, body, and raw headers.
      *
-     * @param MailMessage $message Captured message to describe.
+     * @param MailEntry $message Captured message to describe.
      *
      * @return PanelView Child view holding only the detail blocks of the message.
      */
-    private static function detail(MailMessage $message): PanelView
+    private static function detail(MailEntry $message): PanelView
     {
         $fields = [
-            'From' => $message->from === '' ? self::PLACEHOLDER : $message->from,
-            'To' => self::addresses($message->to),
+            MailMessage::FROM->value => $message->getFrom() === ''
+                ? MailMessage::PLACEHOLDER->value
+                : $message->getFrom(),
+            MailMessage::TO->value => self::addresses($message->getTo()),
         ];
 
-        if ($message->cc !== []) {
-            $fields['Cc'] = self::addresses($message->cc);
+        if ($message->getCc() !== []) {
+            $fields[MailMessage::CC->value] = self::addresses($message->getCc());
         }
 
-        if ($message->bcc !== []) {
-            $fields['Bcc'] = self::addresses($message->bcc);
+        if ($message->getBcc() !== []) {
+            $fields[MailMessage::BCC->value] = self::addresses($message->getBcc());
         }
 
-        if ($message->replyTo !== []) {
-            $fields['Reply-To'] = self::addresses($message->replyTo);
+        if ($message->getReplyTo() !== []) {
+            $fields[MailMessage::REPLY_TO->value] = self::addresses($message->getReplyTo());
         }
 
-        $fields['Subject'] = self::subject($message);
-        $fields['Status'] = self::status($message);
-        $fields['Sent at'] = self::timestamp($message, self::DATE_FORMAT);
+        $fields[MailMessage::SUBJECT->value] = self::subject($message);
+        $fields[MailMessage::STATUS->value] = self::status($message);
+        $fields[MailMessage::SENT_AT->value] = self::timestamp($message, MailMessage::DATE_FORMAT);
 
-        if ($message->charset !== '') {
-            $fields['Charset'] = $message->charset;
+        if ($message->getCharset() !== '') {
+            $fields[MailMessage::CHARSET->value] = $message->getCharset();
         }
 
-        if ($message->file !== '') {
-            $fields['Stored file'] = PanelView::code($message->file);
+        if ($message->getFile() !== '') {
+            $fields[MailMessage::STORED_FILE->value] = PanelView::code($message->getFile());
         }
 
         $view = PanelView::create()->overview($fields, true);
 
-        $view = $message->body === ''
-            ? $view->callout(Tone::MUTED, 'The mailer captured no body for this message.')
-            : $view->disclosure('Body', $message->body);
+        $view = $message->getBody() === ''
+            ? $view->callout(Tone::MUTED, MailMessage::NO_BODY->value)
+            : $view->disclosure(MailMessage::BODY->value, $message->getBody());
 
-        return $message->headers === '' ? $view : $view->disclosure('Raw headers', $message->headers);
+        return $message->getHeaders() === ''
+            ? $view
+            : $view->disclosure(MailMessage::HEADERS->value, $message->getHeaders());
     }
 
     /**
      * Builds the summary table rows in capture order.
      *
-     * @param list<MailMessage> $messages Captured messages in send order.
+     * @param list<MailEntry> $messages Captured messages in send order.
      *
      * @return list<list<mixed>> One row per message, matching the declared column order.
      */
@@ -185,11 +183,11 @@ final class MailPanel extends Panel
         foreach ($messages as $index => $message) {
             $rows[] = [
                 $index + 1,
-                $message->from === '' ? self::PLACEHOLDER : $message->from,
+                $message->getFrom() === '' ? MailMessage::PLACEHOLDER->value : $message->getFrom(),
                 PanelView::strong(self::subject($message)),
-                self::addresses($message->to),
+                self::addresses($message->getTo()),
                 self::status($message),
-                self::timestamp($message, self::TIME_FORMAT),
+                self::timestamp($message, MailMessage::TIME_FORMAT),
             ];
         }
 
@@ -199,39 +197,41 @@ final class MailPanel extends Panel
     /**
      * Builds the delivery badge reported by the mailer.
      *
-     * @param MailMessage $message Captured message to describe.
+     * @param MailEntry $message Captured message to describe.
      *
      * @return BadgeInline Success badge for a delivered message, danger badge for a rejected one.
      */
-    private static function status(MailMessage $message): array
+    private static function status(MailEntry $message): array
     {
-        return $message->isSuccessful
-            ? PanelView::badge('Sent', Tone::SUCCESS)
-            : PanelView::badge('Failed', Tone::DANGER);
+        return $message->isSuccessful()
+            ? PanelView::badge(MailMessage::STATUS_SENT->value, Tone::SUCCESS)
+            : PanelView::badge(MailMessage::STATUS_FAILED->value, Tone::DANGER);
     }
 
     /**
      * Returns the captured subject, falling back to an explicit placeholder when the mailer captured none.
      *
-     * @param MailMessage $message Captured message to describe.
+     * @param MailEntry $message Captured message to describe.
      *
      * @return string Captured subject, or the subject fallback when empty.
      */
-    private static function subject(MailMessage $message): string
+    private static function subject(MailEntry $message): string
     {
-        return $message->subject === '' ? self::SUBJECT_FALLBACK : $message->subject;
+        return $message->getSubject() === '' ? MailMessage::SUBJECT_FALLBACK->value : $message->getSubject();
     }
 
     /**
      * Formats the capture time, falling back to the placeholder when the payload carried no parseable time.
      *
-     * @param MailMessage $message Captured message to describe.
-     * @param string $format Date format applied to the capture timestamp.
+     * @param MailEntry $message Captured message to describe.
+     * @param MailMessage $format Date format applied to the capture timestamp.
      *
      * @return string Formatted timestamp, or the placeholder when the message has no time.
      */
-    private static function timestamp(MailMessage $message, string $format): string
+    private static function timestamp(MailEntry $message, MailMessage $format): string
     {
-        return $message->time === null ? self::PLACEHOLDER : date($format, $message->time);
+        return $message->getTime() === null
+            ? MailMessage::PLACEHOLDER->value
+            : date($format->value, $message->getTime());
     }
 }

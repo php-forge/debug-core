@@ -20,22 +20,15 @@ final class AssetPanel extends Panel
     /**
      * @var string Icon key shared with the built-in Asset Bundles navigation entry.
      */
-    protected const string ICON = 'asset';
-
+    protected const string ICON = AssetMessage::ID->value;
     /**
      * @var string Stable identifier associating the panel with the captured asset payload.
      */
-    protected const string ID = 'asset';
-
+    protected const string ID = AssetMessage::ID->value;
     /**
      * @var string Panel title used in the debugger navigation.
      */
-    protected const string TITLE = 'Asset Bundles';
-
-    /**
-     * @var string Placeholder shown wherever the capture left a field empty.
-     */
-    private const string PLACEHOLDER = '—';
+    protected const string TITLE = AssetMessage::TITLE->value;
 
     /**
      * Builds the panel view from the decoded asset capture.
@@ -68,11 +61,17 @@ final class AssetPanel extends Panel
 
         $view = PanelView::create()
             ->active($count > 0 || $vite !== null)
-            ->summary($count === 1 ? ' bundle' : ' bundles', $count)
-            ->summary(' css', $css)
-            ->summary(' js', $js)
-            ->summary($depends === 1 ? ' link' : ' links', $depends)
-            ->toolbar('Bundles', $count);
+            ->summary(
+                $count === 1 ? AssetMessage::BUNDLE_SUFFIX->value : AssetMessage::BUNDLES_SUFFIX->value,
+                $count,
+            )
+            ->summary(AssetMessage::CSS_SUFFIX->value, $css)
+            ->summary(AssetMessage::JS_SUFFIX->value, $js)
+            ->summary(
+                $depends === 1 ? AssetMessage::LINK_SUFFIX->value : AssetMessage::LINKS_SUFFIX->value,
+                $depends,
+            )
+            ->toolbar(AssetMessage::TOOLBAR->value, $count);
 
         if ($vite !== null) {
             $view = self::vite($view, $vite);
@@ -80,29 +79,35 @@ final class AssetPanel extends Panel
 
         if ($count === 0) {
             return $view->emptyState(
-                'No asset bundles loaded',
+                AssetMessage::EMPTY_HEADLINE->value,
                 [
-                    'This request did not register any ',
-                    PanelView::code('yii\\web\\AssetBundle'),
-                    ' via ',
-                    PanelView::code('register()'),
-                    ', so the inventory is empty.',
+                    AssetMessage::EMPTY_REGISTER->value,
+                    PanelView::code(AssetMessage::BUNDLE_CLASS->value),
+                    AssetMessage::EMPTY_VIA->value,
+                    PanelView::code(AssetMessage::REGISTER_CALL->value),
+                    AssetMessage::EMPTY_INVENTORY->value,
                 ],
                 [
-                    'Bundles appear here when something in the request actively pulls them in, typically a layout or ',
-                    'view that calls a bundle\'s ',
-                    PanelView::code('register()'),
-                    ', or any bundle reached transitively through the ',
-                    PanelView::code('depends'),
-                    ' chain.',
+                    AssetMessage::EMPTY_TRIGGER->value,
+                    AssetMessage::EMPTY_TRIGGER_CALL->value,
+                    PanelView::code(AssetMessage::REGISTER_CALL->value),
+                    AssetMessage::EMPTY_TRANSITIVE_REACH->value,
+                    PanelView::code(AssetMessage::DEPENDS_PROPERTY->value),
+                    AssetMessage::EMPTY_TRANSITIVE->value,
                 ],
             );
         }
 
         $view = $view
-            ->heading('Registered bundles', true)
+            ->heading(AssetMessage::REGISTERED->value, true)
             ->table(
-                ['#', 'Bundle', 'CSS', 'JS', 'Depends'],
+                [
+                    AssetMessage::NUMBER->value,
+                    AssetMessage::BUNDLE->value,
+                    AssetMessage::CSS->value,
+                    AssetMessage::JS->value,
+                    AssetMessage::DEPENDS->value,
+                ],
                 self::inventory($bundles),
                 true,
                 [
@@ -116,7 +121,10 @@ final class AssetPanel extends Panel
 
         foreach ($bundles as $index => $bundle) {
             $view = $view
-                ->heading(sprintf('%d. %s', $index + 1, Fqcn::shortName($bundle->name)), true)
+                ->heading(
+                    sprintf(AssetMessage::BUNDLE_HEADING->value, $index + 1, Fqcn::shortName($bundle->name)),
+                    true,
+                )
                 ->group($bundle->name, self::detail($bundle));
         }
 
@@ -136,11 +144,13 @@ final class AssetPanel extends Panel
 
         $view = PanelView::create()->overview(
             [
-                'Class' => PanelView::code($bundle->name),
-                'Namespace' => $namespace === '' ? self::PLACEHOLDER : $namespace,
-                'Source path' => self::orPlaceholder($bundle->sourcePath),
-                'Base path' => self::orPlaceholder($bundle->basePath),
-                'Base URL' => self::orPlaceholder($bundle->baseUrl),
+                AssetMessage::CLASS_NAME->value => PanelView::code($bundle->name),
+                AssetMessage::NAMESPACE_PART->value => $namespace === ''
+                    ? AssetMessage::PLACEHOLDER->value
+                    : $namespace,
+                AssetMessage::SOURCE_PATH->value => self::orPlaceholder($bundle->sourcePath),
+                AssetMessage::BASE_PATH->value => self::orPlaceholder($bundle->basePath),
+                AssetMessage::BASE_URL->value => self::orPlaceholder($bundle->baseUrl),
             ],
             true,
         );
@@ -148,17 +158,17 @@ final class AssetPanel extends Panel
         $files = [];
 
         foreach ($bundle->css as $file) {
-            $files[] = [PanelView::badge('css', Tone::INFO), $file];
+            $files[] = [PanelView::badge(AssetMessage::CSS_BADGE->value, Tone::INFO), $file];
         }
 
         foreach ($bundle->js as $file) {
-            $files[] = [PanelView::badge('js', Tone::WARNING), $file];
+            $files[] = [PanelView::badge(AssetMessage::JS_BADGE->value, Tone::WARNING), $file];
         }
 
         $view = $files === []
-            ? $view->paragraph('This bundle declares no CSS or JavaScript files.')
+            ? $view->paragraph(AssetMessage::NO_FILES->value)
             : $view->table(
-                ['Type', 'File'],
+                [AssetMessage::TYPE->value, AssetMessage::FILE->value],
                 $files,
                 true,
                 [
@@ -177,7 +187,7 @@ final class AssetPanel extends Panel
             $rows[] = [$depend];
         }
 
-        return $view->table(['Depends on'], $rows, true, [0 => ColumnStyle::IDENTIFIER]);
+        return $view->table([AssetMessage::DEPENDS_ON->value], $rows, true, [0 => ColumnStyle::IDENTIFIER]);
     }
 
     /**
@@ -213,7 +223,7 @@ final class AssetPanel extends Panel
      */
     private static function orPlaceholder(string $value): string
     {
-        return $value === '' ? self::PLACEHOLDER : $value;
+        return $value === '' ? AssetMessage::PLACEHOLDER->value : $value;
     }
 
     /**
@@ -229,26 +239,24 @@ final class AssetPanel extends Panel
         $server = $vite->devServerUrl;
 
         $mode = match (true) {
-            $vite->devMode && $server !== null => "Dev server ({$server})",
-            $vite->devMode => 'Dev server',
-            default => 'Build manifest',
+            $vite->devMode && $server !== null => sprintf(AssetMessage::MODE_DEV_SERVER->value, $server),
+            $vite->devMode => AssetMessage::MODE_DEV->value,
+            default => AssetMessage::MODE_BUILD->value,
         };
 
         $view = $view
-            ->heading('Vite', true)
+            ->heading(AssetMessage::VITE->value, true)
             ->overview(
                 [
-                    'Mode' => $mode,
-                    'Base URL' => self::orPlaceholder($vite->baseUrl),
-                    'Manifest' => self::orPlaceholder($vite->manifestPath),
+                    AssetMessage::MODE->value => $mode,
+                    AssetMessage::BASE_URL->value => self::orPlaceholder($vite->baseUrl),
+                    AssetMessage::MANIFEST->value => self::orPlaceholder($vite->manifestPath),
                 ],
                 true,
             );
 
         if ($vite->chunks === []) {
-            return $vite->devMode
-                ? $view
-                : $view->paragraph('The Vite manifest is missing or empty; run the front-end build to populate it.');
+            return $vite->devMode ? $view : $view->paragraph(AssetMessage::VITE_EMPTY->value);
         }
 
         $rows = [];
@@ -260,12 +268,21 @@ final class AssetPanel extends Panel
                 self::orPlaceholder($chunk->file),
                 $chunk->cssCount,
                 $chunk->imports,
-                $chunk->isEntry ? PanelView::badge('entry', Tone::SUCCESS) : self::PLACEHOLDER,
+                $chunk->isEntry
+                    ? PanelView::badge(AssetMessage::ENTRY_BADGE->value, Tone::SUCCESS)
+                    : AssetMessage::PLACEHOLDER->value,
             ];
         }
 
         return $view->table(
-            ['#', 'Chunk', 'Output', 'CSS', 'Imports', 'Entry'],
+            [
+                AssetMessage::NUMBER->value,
+                AssetMessage::CHUNK->value,
+                AssetMessage::OUTPUT->value,
+                AssetMessage::CSS->value,
+                AssetMessage::IMPORTS->value,
+                AssetMessage::ENTRY->value,
+            ],
             $rows,
             true,
             [

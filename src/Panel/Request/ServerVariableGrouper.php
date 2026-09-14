@@ -14,16 +14,27 @@ use function strtoupper;
  */
 final class ServerVariableGrouper
 {
+    /**
+     * @var array<string, array{string, bool}> Heading and collapsed state of every group, in display order.
+     */
     private const array DEFINITIONS = [
-        'request-context' => ['Request context', false],
-        'network-transport' => ['Network & transport', false],
-        'runtime-paths' => ['Runtime & paths', false],
-        'header-mirrors' => ['Header mirrors', true],
-        'environment-other' => ['Environment & other', false],
+        'request-context' => [RequestMessage::REQUEST_CONTEXT->value, false],
+        'network-transport' => [RequestMessage::NETWORK_TRANSPORT->value, false],
+        'runtime-paths' => [RequestMessage::RUNTIME_PATHS->value, false],
+        'header-mirrors' => [RequestMessage::HEADER_MIRRORS->value, true],
+        'environment-other' => [RequestMessage::ENVIRONMENT_OTHER->value, false],
     ];
-
-    private const array HEADER_MIRRORS = ['CONTENT_TYPE', 'CONTENT_LENGTH', 'CONTENT_MD5'];
-
+    /**
+     * @var list<string> Variables mirroring a content header, grouped apart from the request context.
+     */
+    private const array HEADER_MIRRORS = [
+        'CONTENT_TYPE',
+        'CONTENT_LENGTH',
+        'CONTENT_MD5',
+    ];
+    /**
+     * @var list<string> Variables describing the connection, beyond the `REMOTE_` and `SSL_` prefixes.
+     */
     private const array NETWORK_KEYS = [
         'SERVER_ADDR',
         'SERVER_NAME',
@@ -32,9 +43,17 @@ final class ServerVariableGrouper
         'HTTPS',
         'GATEWAY_INTERFACE',
     ];
-
-    private const array REQUEST_KEYS = ['QUERY_STRING', 'PATH_INFO', 'ORIG_PATH_INFO'];
-
+    /**
+     * @var list<string> Variables describing the request, beyond the `REQUEST_` prefix.
+     */
+    private const array REQUEST_KEYS = [
+        'QUERY_STRING',
+        'PATH_INFO',
+        'ORIG_PATH_INFO',
+    ];
+    /**
+     * @var list<string> Variables describing the runtime and its paths, beyond the handled prefixes.
+     */
     private const array RUNTIME_KEYS = [
         'SERVER_SOFTWARE',
         'DOCUMENT_ROOT',
@@ -43,9 +62,11 @@ final class ServerVariableGrouper
     ];
 
     /**
-     * @param array<int|string, mixed> $entries
+     * Partitions the captured variables into the declared groups, dropping the groups that stay empty.
      *
-     * @return list<ServerVariableGroup>
+     * @param array<int|string, mixed> $entries Captured server variables, keyed by variable name.
+     *
+     * @return list<ServerVariableGroup> Non-empty groups in display order.
      */
     public static function group(array $entries): array
     {
@@ -72,6 +93,13 @@ final class ServerVariableGrouper
         return $groups;
     }
 
+    /**
+     * Resolves the group a captured variable belongs to.
+     *
+     * @param int|string $key Captured variable name; a non-string key falls back to the catch-all group.
+     *
+     * @return string Identifier of the group claiming the variable.
+     */
     private static function classify(int|string $key): string
     {
         if (!is_string($key)) {

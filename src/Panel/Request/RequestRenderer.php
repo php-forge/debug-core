@@ -5,12 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Request;
 
 use PHPForge\Debug\Helper\{Badge, Disclosure, EmptyState, Table, Tabs, Vocabulary};
-use PHPForge\Debug\Panel\Request\Routing\{
-    CurrentRouteView,
-    RequestRoutingView,
-    RouteInventoryView,
-    RouteTraceRow,
-};
+use PHPForge\Debug\Panel\Request\Routing\{CurrentRouteView, RequestRoutingView, RouteInventoryView, RouteTraceRow};
 use PHPForge\Debug\View\Grid\RowClass;
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\List\{Dd, Dl, Dt};
@@ -22,6 +17,7 @@ use UIAwesome\Html\Table\{Td, Tr};
 use function count;
 use function implode;
 use function in_array;
+use function sprintf;
 
 /**
  * Composes request and routing diagnostics into one framework-neutral detail view.
@@ -47,7 +43,11 @@ final class RequestRenderer
     }
 
     /**
-     * @param list<RequestSection> $sections
+     * Reports whether any section carried a captured entry.
+     *
+     * @param list<RequestSection> $sections Sections to inspect.
+     *
+     * @return bool `true` when at least one section holds an entry.
      */
     private static function hasSectionData(array $sections): bool
     {
@@ -61,7 +61,12 @@ final class RequestRenderer
     }
 
     /**
-     * @param list<string> $values
+     * Joins a constraint list into a single line, falling back to an explicit value when it is empty.
+     *
+     * @param list<string> $values Constraint values in declaration order.
+     * @param string $empty Value shown when the list is empty.
+     *
+     * @return string Comma-separated values, or the empty fallback.
      */
     private static function listValue(array $values, string $empty): string
     {
@@ -69,7 +74,11 @@ final class RequestRenderer
     }
 
     /**
-     * @param list<RequestSection> $sections
+     * Renders each section as its own disclosure, skipping the ones the capture left empty.
+     *
+     * @param list<RequestSection> $sections Sections to render.
+     *
+     * @return string Concatenated disclosure markup.
      */
     private static function renderDisclosureSections(array $sections): string
     {
@@ -82,6 +91,13 @@ final class RequestRenderer
         return $content;
     }
 
+    /**
+     * Renders the header exchange of the headers tab, or nothing when the capture recorded no header.
+     *
+     * @param RequestTab|null $tab Headers tab, or `null` when the capture declared none.
+     *
+     * @return string Header exchange markup, or `''` when there is nothing to show.
+     */
     private static function renderHeaders(RequestTab|null $tab): string
     {
         if ($tab === null) {
@@ -117,6 +133,14 @@ final class RequestRenderer
         );
     }
 
+    /**
+     * Renders one labeled item of the hero meta strip.
+     *
+     * @param string $label Item label.
+     * @param string $value Item value.
+     *
+     * @return Span Meta strip item.
+     */
     private static function renderMetaItem(string $label, string $value): Span
     {
         return Span::tag()
@@ -132,6 +156,15 @@ final class RequestRenderer
             );
     }
 
+    /**
+     * Renders one metric of the request overview, optionally followed by a badge.
+     *
+     * @param string $label Metric label.
+     * @param string $value Metric value, also used as the title of the value cell.
+     * @param Span|null $marker Badge appended after the value, or `null` to omit it.
+     *
+     * @return Div Overview metric.
+     */
     private static function renderMetric(string $label, string $value, Span|null $marker = null): Div
     {
         $value_ = Dd::tag()->title($value);
@@ -146,6 +179,15 @@ final class RequestRenderer
             );
     }
 
+    /**
+     * Renders the request overview: resolved route, dispatched action, duration, and the route definition.
+     *
+     * @param RequestHero $hero Typed request header carrying the timing and client data.
+     * @param CurrentRouteView $current Route resolved for the request.
+     * @param RouteInventoryView|null $inventory Routing trace, or `null` when the adapter captured none.
+     *
+     * @return string Request overview markup.
+     */
     private static function renderOverview(
         RequestHero $hero,
         CurrentRouteView $current,
@@ -155,7 +197,7 @@ final class RequestRenderer
         $route = $current->getRoute() !== '' ? $current->getRoute() : ($definition?->getName() ?? '');
         $action = $current->getAction() ?? $definition?->getAction() ?? '';
         $method = $hero->getMethod();
-        $url = $hero->getUrl() !== '' ? $hero->getUrl() : 'URL unavailable';
+        $url = $hero->getUrl() !== '' ? $hero->getUrl() : RequestMessage::URL_UNAVAILABLE->value;
 
         $identity = [];
 
@@ -185,19 +227,30 @@ final class RequestRenderer
 
         $meta = [];
 
-        foreach (['IP' => $hero->getIp(), 'Time' => $hero->getTime()] as $label => $value) {
+        $fields = [RequestMessage::IP->value => $hero->getIp(), RequestMessage::TIME->value => $hero->getTime()];
+
+        foreach ($fields as $label => $value) {
             if ($value !== '') {
                 $meta[] = self::renderMetaItem($label, $value);
             }
         }
 
         if ($definition !== null) {
-            $meta[] = self::renderMetaItem('Pattern', $definition->getPattern());
-            $meta[] = self::renderMetaItem('Methods', self::listValue($definition->getMethods(), 'Any'));
-            $meta[] = self::renderMetaItem('Hosts', self::listValue($definition->getHosts(), 'Any'));
+            $meta[] = self::renderMetaItem(RequestMessage::PATTERN->value, $definition->getPattern());
+            $meta[] = self::renderMetaItem(
+                RequestMessage::METHODS->value,
+                self::listValue($definition->getMethods(), RequestMessage::ANY->value),
+            );
+            $meta[] = self::renderMetaItem(
+                RequestMessage::HOSTS->value,
+                self::listValue($definition->getHosts(), RequestMessage::ANY->value),
+            );
 
             if ($definition->getMiddlewares() !== null) {
-                $meta[] = self::renderMetaItem('Middleware', self::listValue($definition->getMiddlewares(), 'None'));
+                $meta[] = self::renderMetaItem(
+                    RequestMessage::MIDDLEWARE->value,
+                    self::listValue($definition->getMiddlewares(), RequestMessage::NONE->value),
+                );
             }
         }
 
@@ -235,7 +288,7 @@ final class RequestRenderer
         $callouts[] = self::renderResolution($current);
 
         return Section::tag()
-            ->addAriaAttribute('label', 'Request overview')
+            ->addAriaAttribute('label', RequestMessage::REQUEST_OVERVIEW->value)
             ->class('yii-debug-request-overview yii-debug-verb-' . Vocabulary::verb($method))
             ->html(
                 Header::tag()
@@ -254,19 +307,19 @@ final class RequestRenderer
                     ->class('yii-debug-request-overview-metrics')
                     ->html(
                         self::renderMetric(
-                            'Route',
-                            $route !== '' ? $route : 'Unresolved',
+                            RequestMessage::ROUTE->value,
+                            $route !== '' ? $route : RequestMessage::UNRESOLVED->value,
                             $definition === null
                                 ? null
-                                : Badge::render('Matched', 'success', 'yii-debug-route-match'),
+                                : Badge::render(RequestMessage::MATCHED->value, 'success', 'yii-debug-route-match'),
                         ),
                         self::renderMetric(
-                            'Action',
-                            $action !== '' ? $action : 'Unavailable',
+                            RequestMessage::ACTION->value,
+                            $action !== '' ? $action : RequestMessage::UNAVAILABLE->value,
                         ),
                         self::renderMetric(
-                            'Duration',
-                            $hero->getDurationMs() !== '' ? $hero->getDurationMs() : 'Unavailable',
+                            RequestMessage::DURATION->value,
+                            $hero->getDurationMs() !== '' ? $hero->getDurationMs() : RequestMessage::UNAVAILABLE->value,
                         ),
                     ),
                 Div::tag()
@@ -303,7 +356,9 @@ final class RequestRenderer
 
         $count = count($current->getTrace());
 
-        $title = $count === 0 ? 'Routing resolution' : "Routing resolution ({$count} rules tested)";
+        $title = $count === 0
+            ? RequestMessage::ROUTING_RESOLUTION->value
+            : sprintf(RequestMessage::ROUTING_RESOLUTION_COUNT->value, $count);
 
         return Div::tag()
             ->class('yii-debug-route-resolution')
@@ -312,7 +367,11 @@ final class RequestRenderer
     }
 
     /**
-     * @param list<RequestSection> $sections
+     * Renders each section as a captioned block, skipping the ones the capture left empty.
+     *
+     * @param list<RequestSection> $sections Sections to render.
+     *
+     * @return string Concatenated section markup.
      */
     private static function renderSections(array $sections): string
     {
@@ -325,6 +384,14 @@ final class RequestRenderer
         return $content;
     }
 
+    /**
+     * Renders the server tab, grouping the captured variables and deriving the ones the capture missed.
+     *
+     * @param RequestTab $tab Server tab holding the captured variables.
+     * @param RequestView $view Typed request view, used to derive the missing variables.
+     *
+     * @return string Server tab markup.
+     */
     private static function renderServer(RequestTab $tab, RequestView $view): string
     {
         if (count($tab->sections) !== 1 || $tab->sections[0]->id !== 'server') {
@@ -337,6 +404,14 @@ final class RequestRenderer
         );
     }
 
+    /**
+     * Renders the tab strip, folding the routing trace into the input tab.
+     *
+     * @param RequestView $view Typed request view carrying the captured tabs.
+     * @param RequestRoutingView $routing Typed routing view carrying the trace and the route inventory.
+     *
+     * @return string Tab strip markup.
+     */
     private static function renderTabs(RequestView $view, RequestRoutingView $routing): string
     {
         $tabs = [];
@@ -347,7 +422,7 @@ final class RequestRenderer
 
         if ($routing->current->getParameters() !== []) {
             $inputSections[] = new RequestSection(
-                caption: 'Route parameters',
+                caption: RequestMessage::ROUTE_PARAMETERS->value,
                 entries: $routing->current->getParameters(),
                 filterable: true,
                 id: 'route-parameters',
@@ -363,7 +438,7 @@ final class RequestRenderer
         }
 
         $tabs[] = [
-            'label' => 'Input',
+            'label' => RequestMessage::INPUT->value,
             'content' => self::hasSectionData($inputSections)
                 ? self::renderDisclosureSections($inputSections)
                 : EmptyState::card('No input data captured.'),
@@ -372,7 +447,7 @@ final class RequestRenderer
         $headers = self::tab($view->tabs, 'headers');
 
         $tabs[] = [
-            'label' => 'Headers',
+            'label' => RequestMessage::HEADERS->value,
             'content' => self::renderHeaders($headers),
         ];
 
@@ -380,7 +455,7 @@ final class RequestRenderer
 
         if ($session !== null) {
             $tabs[] = [
-                'label' => 'Session',
+                'label' => RequestMessage::SESSION->value,
                 'content' => self::renderDisclosureSections($session->sections),
             ];
         }
@@ -389,14 +464,14 @@ final class RequestRenderer
 
         if ($server !== null) {
             $tabs[] = [
-                'label' => 'Server',
+                'label' => RequestMessage::SERVER->value,
                 'content' => self::renderServer($server, $view),
             ];
         }
 
         return Div::tag()
             ->class('yii-debug-request-tabs')
-            ->html(Tabs::render('request', 'Request data', $tabs))
+            ->html(Tabs::render('request', RequestMessage::REQUEST_DATA->value, $tabs))
             ->render();
     }
 
@@ -439,7 +514,12 @@ final class RequestRenderer
     }
 
     /**
-     * @param list<RequestTab> $tabs
+     * Returns the tab carrying the requested identifier.
+     *
+     * @param list<RequestTab> $tabs Captured tabs in display order.
+     * @param string $id Identifier to look up.
+     *
+     * @return RequestTab|null Matching tab, or `null` when the capture declared none.
      */
     private static function tab(array $tabs, string $id): RequestTab|null
     {

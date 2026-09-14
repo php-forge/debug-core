@@ -27,6 +27,10 @@ final class EventMessageProvider
             . 'context and argument-free source traces. Existing snapshots cannot recover missing data. '
             . 'Listeners, their durations, and final propagation results are not captured.',
         ];
+        yield 'classes_suffix' => [
+            EventMessage::CLASSES_SUFFIX,
+            ' classes',
+        ];
         yield 'context_captured' => [
             EventMessage::CONTEXT_CAPTURED,
             'Selected context at observation time',
@@ -42,6 +46,10 @@ final class EventMessageProvider
         yield 'context_unsupported' => [
             EventMessage::CONTEXT_UNSUPPORTED,
             'No context extractor for this event type',
+        ];
+        yield 'event' => [
+            EventMessage::EVENT,
+            'Event',
         ];
         yield 'empty_call_to_action' => [
             EventMessage::EMPTY_CALL_TO_ACTION,
@@ -59,6 +67,10 @@ final class EventMessageProvider
         yield 'empty_headline' => [
             EventMessage::EMPTY_HEADLINE,
             'No events dispatched in this request',
+        ];
+        yield 'events_suffix' => [
+            EventMessage::EVENTS_SUFFIX,
+            ' events',
         ];
         yield 'first_observation' => [
             EventMessage::FIRST_OBSERVATION,
@@ -84,6 +96,18 @@ final class EventMessageProvider
         yield 'no_match_headline' => [
             EventMessage::NO_MATCH_HEADLINE,
             'No events match the active filters',
+        ];
+        yield 'number' => [
+            EventMessage::NUMBER,
+            '#',
+        ];
+        yield 'static_suffix' => [
+            EventMessage::STATIC_SUFFIX,
+            ' static',
+        ];
+        yield 'time' => [
+            EventMessage::TIME,
+            'Time',
         ];
         yield 'timing_guidance' => [
             EventMessage::TIMING_GUIDANCE,

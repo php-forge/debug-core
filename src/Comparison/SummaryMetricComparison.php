@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Comparison;
 
 use PHPForge\Debug\Helper\Format;
 use PHPForge\Debug\Storage\RequestSummary;
+use PHPForge\Debug\View\ViewMessage;
 
 use function number_format;
 
@@ -50,17 +51,17 @@ final readonly class SummaryMetricComparison
                 self::status($target->statusCode),
             ),
             self::textMetric(
-                'Method',
+                ViewMessage::METHOD->value,
                 $baseline->method,
                 $target->method,
             ),
             self::textMetric(
-                'AJAX',
+                ViewMessage::AJAX->value,
                 self::yesNo($baseline->ajax),
                 self::yesNo($target->ajax),
             ),
             self::nullableFloatMetric(
-                'Duration',
+                ViewMessage::DURATION->value,
                 $baseline->processingTime,
                 $target->processingTime,
                 Format::MILLISECONDS_PER_SECOND,
@@ -68,7 +69,7 @@ final readonly class SummaryMetricComparison
                 'profiling',
             ),
             self::nullableFloatMetric(
-                'Peak memory',
+                ViewMessage::PEAK_MEMORY->value,
                 $baseline->peakMemory,
                 $target->peakMemory,
                 1 / Format::BYTES_PER_MB,
@@ -275,7 +276,7 @@ final readonly class SummaryMetricComparison
             label: $label,
             baseline: $baseline,
             target: $target,
-            delta: $baseline === $target ? 'No change' : 'Changed',
+            delta: $baseline === $target ? ViewMessage::NO_CHANGE->value : ViewMessage::CHANGED->value,
             trend: 'neutral',
         );
     }

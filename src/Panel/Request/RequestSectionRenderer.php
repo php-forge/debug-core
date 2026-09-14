@@ -26,7 +26,7 @@ final class RequestSectionRenderer
         if ($section->entries === []) {
             $content = P::tag()
                 ->class('yii-debug-table-empty')
-                ->content('No data')
+                ->content(RequestMessage::NO_DATA->value)
                 ->render();
         } else {
             $filter = self::renderFilter($section);
@@ -72,7 +72,13 @@ final class RequestSectionRenderer
 
         $meta = [];
 
-        foreach (['IP' => $hero->getIp(), 'Time' => $hero->getTime(), 'Duration' => $hero->getDurationMs()] as $label => $value) {
+        $fields = [
+            RequestMessage::IP->value => $hero->getIp(),
+            RequestMessage::TIME->value => $hero->getTime(),
+            RequestMessage::DURATION->value => $hero->getDurationMs(),
+        ];
+
+        foreach ($fields as $label => $value) {
             if ($value !== '') {
                 $meta[] = Span::tag()
                     ->class('yii-debug-request-hero-meta-item')
@@ -155,11 +161,18 @@ final class RequestSectionRenderer
 
         return Tabs::render(
             'request',
-            'Request data',
+            RequestMessage::REQUEST_DATA->value,
             $items,
         );
     }
 
+    /**
+     * Renders the filter input of a section, or nothing when the section declares itself unfilterable.
+     *
+     * @param RequestSection $section Section to filter.
+     *
+     * @return InputSearch|null Filter input, or `null` when the section is not filterable.
+     */
     private static function renderFilter(RequestSection $section): InputSearch|null
     {
         if ($section->filterable === false) {
@@ -227,8 +240,7 @@ final class RequestSectionRenderer
             $rows[] = self::renderRow($name, $value);
         }
 
-        $wrap = Div::tag()
-            ->class('yii-debug-table-wrap');
+        $wrap = Div::tag()->class('yii-debug-table-wrap');
 
         if ($section->filterable) {
             $wrap = $wrap->addDataAttribute('yii-debug-filter-target', true);
@@ -236,7 +248,11 @@ final class RequestSectionRenderer
 
         return $wrap
             ->html(
-                Table::build(['Name', 'Value'], $rows, 'yii-debug-table yii-debug-table-mono')
+                Table::build(
+                    [RequestMessage::NAME->value, RequestMessage::VALUE->value],
+                    $rows,
+                    'yii-debug-table yii-debug-table-mono',
+                )
                     ->style(['table-layout' => 'fixed']),
             )
             ->render();
