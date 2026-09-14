@@ -46,9 +46,12 @@ final class RequestServerRenderer
     }
 
     /**
-     * @param array<int|string, mixed> $entries
+     * Derives the variables the capture did not record, reconstructing them from the captured URL and headers.
      *
-     * @return array<int|string, mixed>
+     * @param array<int|string, mixed> $entries Captured server variables, keyed by variable name.
+     * @param RequestView $view Typed request view carrying the hero and its headers.
+     *
+     * @return array<int|string, mixed> Captured variables completed with the derived ones.
      */
     private static function additionalEntries(array $entries, RequestView $view): array
     {
@@ -110,6 +113,13 @@ final class RequestServerRenderer
         return $entries;
     }
 
+    /**
+     * Renders one variable group as a disclosure carrying its own filter and ledger.
+     *
+     * @param ServerVariableGroup $group Group to render.
+     *
+     * @return string Group markup.
+     */
     private static function renderGroup(ServerVariableGroup $group): string
     {
         $description = $group->id === 'raw'
@@ -147,7 +157,7 @@ final class RequestServerRenderer
                             ->class('yii-debug-mini-toolbar')
                             ->html(
                                 InputSearch::tag()
-                                    ->addAriaAttribute('label', 'Filter ' . $group->label)
+                                    ->addAriaAttribute('label', RequestMessage::FILTER_PREFIX->value . $group->label)
                                     ->addDataAttribute('yii-debug-filter', true)
                                     ->class('yii-debug-filter-input')
                                     ->placeholder('Filter variables…'),
@@ -170,7 +180,11 @@ final class RequestServerRenderer
     }
 
     /**
-     * @param array<int|string, mixed> $entries
+     * Renders a group of server variables as a diagnostic ledger.
+     *
+     * @param array<int|string, mixed> $entries Server variables, keyed by variable name.
+     *
+     * @return string Ledger markup.
      */
     private static function renderLedger(array $entries): string
     {
@@ -184,12 +198,19 @@ final class RequestServerRenderer
             );
         }
 
-        return RequestDiagnosticLedger::render('yii-debug-server-ledger', ...$rows);
+        return RequestDiagnosticLedger::render(
+            'yii-debug-server-ledger',
+            ...$rows,
+        );
     }
 
     /**
-     * @param array<int|string, mixed> $entries
-     * @param array<int|string, mixed> $additional
+     * Renders the grouped variables followed by the raw table holding every captured one.
+     *
+     * @param array<int|string, mixed> $entries Captured server variables, keyed by variable name.
+     * @param array<int|string, mixed> $additional Captured variables completed with the derived ones.
+     *
+     * @return string Server section markup.
      */
     private static function renderView(array $entries, array $additional): string
     {
@@ -199,7 +220,9 @@ final class RequestServerRenderer
             $groups .= self::renderGroup(
                 new ServerVariableGroup(
                     $group->id,
-                    $group->id === 'header-mirrors' ? 'Additional header variables' : $group->label,
+                    $group->id === 'header-mirrors'
+                        ? RequestMessage::ADDITIONAL_HEADER_VARIABLES->value
+                        : $group->label,
                     $group->entries,
                 ),
             );
@@ -224,7 +247,7 @@ final class RequestServerRenderer
                             ->html(
                                 H2::tag()
                                     ->id('yii-debug-server-environment-title')
-                                    ->content('Server details'),
+                                    ->content(RequestMessage::SERVER_DETAILS->value),
                                 Span::tag()
                                     ->class('yii-debug-diagnostic-total')
                                     ->content(count($additional) . ' additional / ' . count($entries) . ' captured'),
@@ -235,7 +258,7 @@ final class RequestServerRenderer
                     ->html($groups),
                 $entries === [] ? '' : self::renderGroup(new ServerVariableGroup(
                     'raw',
-                    'Raw server variables',
+                    RequestMessage::RAW_SERVER_VARIABLES->value,
                     $entries,
                     true,
                 )),

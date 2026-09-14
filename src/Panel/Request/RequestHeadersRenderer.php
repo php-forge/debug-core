@@ -20,8 +20,12 @@ use function is_int;
 final class RequestHeadersRenderer
 {
     /**
-     * @param array<int|string, mixed> $request
-     * @param array<int|string, mixed> $response
+     * Renders the request and response headers side by side, with a shared filter above both lanes.
+     *
+     * @param array<int|string, mixed> $request Captured request headers, keyed by header name.
+     * @param array<int|string, mixed> $response Captured response headers, keyed by header name.
+     *
+     * @return string Header exchange markup.
      */
     public static function render(array $request, array $response): string
     {
@@ -35,7 +39,7 @@ final class RequestHeadersRenderer
             ->html(
                 H2::tag()
                     ->id('yii-debug-header-exchange-title')
-                    ->content('Header exchange'),
+                    ->content(RequestMessage::HEADER_EXCHANGE->value),
                 Div::tag()
                     ->class('yii-debug-diagnostic-counts')
                     ->html(
@@ -48,7 +52,7 @@ final class RequestHeadersRenderer
 
         if ($total > 0) {
             $headerChildren[] = InputSearch::tag()
-                ->addAriaAttribute('label', 'Filter request and response headers')
+                ->addAriaAttribute('label', RequestMessage::HEADERS_FILTER->value)
                 ->addDataAttribute('yii-debug-filter', true)
                 ->class('yii-debug-filter-input yii-debug-diagnostic-filter')
                 ->placeholder('Filter headers…');
@@ -71,14 +75,14 @@ final class RequestHeadersRenderer
                             ->html(
                                 self::renderLane(
                                     id: 'request',
-                                    direction: 'Inbound',
-                                    title: 'Request headers',
+                                    direction: RequestMessage::INBOUND->value,
+                                    title: RequestMessage::REQUEST_HEADERS_TITLE->value,
                                     entries: $request,
                                 ),
                                 self::renderLane(
                                     id: 'response',
-                                    direction: 'Outbound',
-                                    title: 'Response headers',
+                                    direction: RequestMessage::OUTBOUND->value,
+                                    title: RequestMessage::RESPONSE_HEADERS_TITLE->value,
                                     entries: $response,
                                 ),
                             ),
@@ -92,6 +96,14 @@ final class RequestHeadersRenderer
             ->render();
     }
 
+    /**
+     * Renders the header count of one lane, annotated with its direction.
+     *
+     * @param int $count Number of headers captured in the lane.
+     * @param string $direction Direction of the lane, shown after the count.
+     *
+     * @return Span Count element of the lane.
+     */
     private static function renderCount(int $count, string $direction): Span
     {
         return Span::tag()
@@ -105,7 +117,14 @@ final class RequestHeadersRenderer
     }
 
     /**
-     * @param array<int|string, mixed> $entries
+     * Renders one direction of the exchange, replacing its ledger with a note when no header was captured.
+     *
+     * @param string $id Identifier of the lane, used to associate it with the filter.
+     * @param string $direction Direction of the lane, shown next to its count.
+     * @param string $title Heading of the lane.
+     * @param array<int|string, mixed> $entries Captured headers of the lane, keyed by header name.
+     *
+     * @return Section Lane section carrying the heading, count, and ledger.
      */
     private static function renderLane(string $id, string $direction, string $title, array $entries): Section
     {
@@ -144,7 +163,12 @@ final class RequestHeadersRenderer
     }
 
     /**
-     * @param array<int|string, mixed> $entries
+     * Renders the captured headers of one lane as a diagnostic ledger.
+     *
+     * @param array<int|string, mixed> $entries Captured headers, keyed by header name.
+     * @param bool $response Whether the entries belong to the response lane, which labels its raw lines apart.
+     *
+     * @return string Ledger markup.
      */
     private static function renderLedger(array $entries, bool $response): string
     {
@@ -152,7 +176,9 @@ final class RequestHeadersRenderer
 
         foreach ($entries as $name => $value) {
             $label = is_int($name)
-                ? ($response ? 'Raw response line ' : 'Raw header line ') . $name
+                ? ($response
+                    ? RequestMessage::RAW_RESPONSE_LINE->value
+                    : RequestMessage::RAW_HEADER_LINE->value) . $name
                 : $name;
             $rows[] = RequestDiagnosticLedger::row(
                 RequestDiagnosticValueRenderer::escape($label),
@@ -161,6 +187,9 @@ final class RequestHeadersRenderer
             );
         }
 
-        return RequestDiagnosticLedger::render('yii-debug-header-ledger', ...$rows);
+        return RequestDiagnosticLedger::render(
+            'yii-debug-header-ledger',
+            ...$rows,
+        );
     }
 }

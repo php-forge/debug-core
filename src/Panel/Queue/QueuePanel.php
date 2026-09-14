@@ -24,30 +24,23 @@ final class QueuePanel extends Panel
     /**
      * @var string Icon key shared with the built-in Queue navigation entry.
      */
-    protected const string ICON = 'queue';
-
+    protected const string ICON = QueueMessage::ID->value;
     /**
      * @var string Stable identifier associating the panel with the captured queue payload.
      */
-    protected const string ID = 'queue';
-
+    protected const string ID = QueueMessage::ID->value;
     /**
      * @var string Panel title used in the debugger navigation.
      */
-    protected const string TITLE = 'Queue';
+    protected const string TITLE = QueueMessage::TITLE->value;
 
     /**
-     * @var string Placeholder shown wherever the capture left a field empty.
-     */
-    private const string PLACEHOLDER = '—';
-
-    /**
-     * @var array<string, array{label: string, tone: Tone}> Badge describing each captured lifecycle phase.
+     * @var array<string, array{label: QueueMessage, tone: Tone}> Badge describing each captured lifecycle phase.
      */
     private const array STATUS = [
-        JobRecord::TYPE_PUSH => ['label' => 'Queued', 'tone' => Tone::INFO],
-        JobRecord::TYPE_EXEC => ['label' => 'Done', 'tone' => Tone::SUCCESS],
-        JobRecord::TYPE_ERROR => ['label' => 'Failed', 'tone' => Tone::DANGER],
+        JobRecord::TYPE_PUSH => ['label' => QueueMessage::STATUS_QUEUED, 'tone' => Tone::INFO],
+        JobRecord::TYPE_EXEC => ['label' => QueueMessage::STATUS_DONE, 'tone' => Tone::SUCCESS],
+        JobRecord::TYPE_ERROR => ['label' => QueueMessage::STATUS_FAILED, 'tone' => Tone::DANGER],
     ];
 
     /**
@@ -87,26 +80,29 @@ final class QueuePanel extends Panel
 
         $view = PanelView::create()
             ->active($total > 0)
-            ->summary($total === 1 ? ' event' : ' events', $total)
-            ->summary(' queued', $summary->totalPushed())
-            ->summary(' done', $summary->totalExecuted())
-            ->toolbar('Jobs', $total);
+            ->summary(
+                $total === 1 ? QueueMessage::EVENT_SUFFIX->value : QueueMessage::EVENTS_SUFFIX->value,
+                $total,
+            )
+            ->summary(QueueMessage::QUEUED_SUFFIX->value, $summary->totalPushed())
+            ->summary(QueueMessage::DONE_SUFFIX->value, $summary->totalExecuted())
+            ->toolbar(QueueMessage::TOOLBAR->value, $total);
 
         if ($errors > 0) {
-            $view = $view->summary(' failed', $errors);
+            $view = $view->summary(QueueMessage::FAILED_SUFFIX->value, $errors);
         }
 
         if ($total === 0) {
             return $view->emptyState(
-                'No queue activity in this request',
-                'This request pushed no job and ran none, so the lifecycle log is empty.',
+                QueueMessage::EMPTY_HEADLINE->value,
+                QueueMessage::EMPTY_EXPLANATION->value,
                 [
-                    'Events appear here when a queue component emits ',
-                    PanelView::code('afterPush'),
+                    QueueMessage::EMPTY_HOOKS->value,
+                    PanelView::code(QueueMessage::HOOK_AFTER_PUSH->value),
                     ', ',
-                    PanelView::code('afterExec'),
+                    PanelView::code(QueueMessage::HOOK_AFTER_EXEC->value),
                     ', or ',
-                    PanelView::code('afterError'),
+                    PanelView::code(QueueMessage::HOOK_AFTER_ERROR->value),
                     '.',
                 ],
             );
@@ -117,17 +113,26 @@ final class QueuePanel extends Panel
         if ($async !== []) {
             $view = $view->callout(
                 Tone::INFO,
-                PanelView::strong('Async driver: ' . implode(', ', $async) . '.'),
-                ' Push events show here, but jobs run in a separate worker process; see the History sidebar for ',
-                PanelView::strong('CLI'),
-                ' debug snapshots that capture the matching exec and error events.',
+                PanelView::strong(QueueMessage::ASYNC_TITLE->value . implode(', ', $async) . '.'),
+                QueueMessage::ASYNC_WORKER->value,
+                PanelView::strong(QueueMessage::CLI->value),
+                QueueMessage::ASYNC_SNAPSHOTS->value,
             );
         }
 
         $view = $view
-            ->heading('Lifecycle events', true)
+            ->heading(QueueMessage::LIFECYCLE->value, true)
             ->table(
-                ['#', 'Status', 'Job', 'Component', 'Driver', 'Time', 'Attempt', 'Duration'],
+                [
+                    QueueMessage::NUMBER->value,
+                    QueueMessage::STATUS->value,
+                    QueueMessage::JOB->value,
+                    QueueMessage::COMPONENT->value,
+                    QueueMessage::DRIVER->value,
+                    QueueMessage::TIME->value,
+                    QueueMessage::ATTEMPT->value,
+                    QueueMessage::DURATION->value,
+                ],
                 $this->rows($records),
                 true,
                 [
@@ -144,8 +149,14 @@ final class QueuePanel extends Panel
 
         foreach ($records as $index => $record) {
             $view = $view
-                ->heading(sprintf('%d. %s', $index + 1, self::jobClass($record)), true)
-                ->group(sprintf('Event %d', $index + 1), $this->detail($record, $index));
+                ->heading(
+                    sprintf(QueueMessage::RECORD_HEADING->value, $index + 1, self::jobClass($record)),
+                    true,
+                )
+                ->group(
+                    sprintf(QueueMessage::EVENT_GROUP->value, $index + 1),
+                    $this->detail($record, $index),
+                );
         }
 
         return $view;
@@ -163,7 +174,11 @@ final class QueuePanel extends Panel
         $drivers = [];
 
         foreach ($records as $record) {
-            if ($record->isAsync && $record->driverName !== '' && in_array($record->driverName, $drivers, true) === false) {
+            if (
+                $record->isAsync
+                && $record->driverName !== ''
+                && in_array($record->driverName, $drivers, true) === false
+            ) {
                 $drivers[] = $record->driverName;
             }
         }
@@ -182,28 +197,30 @@ final class QueuePanel extends Panel
     private function detail(JobRecord $record, int $index): PanelView
     {
         $fields = [
-            'Job' => PanelView::code(self::jobClass($record)),
-            'Status' => self::status($record),
-            'Component' => self::orPlaceholder($record->componentId),
-            'Driver' => self::orPlaceholder($record->driverName),
-            'Driver class' => $record->driverClass === ''
-                ? self::PLACEHOLDER
+            QueueMessage::JOB->value => PanelView::code(self::jobClass($record)),
+            QueueMessage::STATUS->value => self::status($record),
+            QueueMessage::COMPONENT->value => self::orPlaceholder($record->componentId),
+            QueueMessage::DRIVER->value => self::orPlaceholder($record->driverName),
+            QueueMessage::DRIVER_CLASS->value => $record->driverClass === ''
+                ? QueueMessage::PLACEHOLDER->value
                 : PanelView::code($record->driverClass),
-            'Execution' => $record->isAsync ? 'Worker process' : 'In process',
-            'Job id' => self::orPlaceholder($record->jobId),
-            'Pushed at' => date('M j, Y · H:i:s', (int) $record->time),
-            'TTR' => self::seconds($record->ttr),
-            'Delay' => self::seconds($record->delay),
-            'Priority' => $record->priority === null ? self::PLACEHOLDER : $record->priority,
-            'Attempt' => $record->attempt === null ? self::PLACEHOLDER : $record->attempt,
-            'Duration' => self::duration($record->duration),
+            QueueMessage::EXECUTION->value => $record->isAsync
+                ? QueueMessage::WORKER_PROCESS->value
+                : QueueMessage::IN_PROCESS->value,
+            QueueMessage::JOB_ID->value => self::orPlaceholder($record->jobId),
+            QueueMessage::PUSHED_AT->value => date(QueueMessage::DATE_FORMAT->value, (int) $record->time),
+            QueueMessage::TTR->value => self::seconds($record->ttr),
+            QueueMessage::DELAY->value => self::seconds($record->delay),
+            QueueMessage::PRIORITY->value => $record->priority ?? QueueMessage::PLACEHOLDER->value,
+            QueueMessage::ATTEMPT->value => $record->attempt ?? QueueMessage::PLACEHOLDER->value,
+            QueueMessage::DURATION->value => self::duration($record->duration),
         ];
 
         $url = $this->jobUrls[$index] ?? null;
 
         if ($url !== null) {
-            $fields['Details'] = PanelView::link(
-                'Open job detail',
+            $fields[QueueMessage::DETAILS->value] = PanelView::link(
+                QueueMessage::JOB_LINK->value,
                 $url,
             );
         }
@@ -215,8 +232,8 @@ final class QueuePanel extends Panel
         }
 
         return $record->payloadFields === []
-            ? $view->paragraph('The event carried no job payload.')
-            : $view->overview(['Payload' => PanelView::value($record->payloadFields)]);
+            ? $view->paragraph(QueueMessage::NO_PAYLOAD->value)
+            : $view->overview([QueueMessage::PAYLOAD->value => PanelView::value($record->payloadFields)]);
     }
 
     /**
@@ -228,7 +245,7 @@ final class QueuePanel extends Panel
      */
     private static function duration(float|null $duration): string
     {
-        return $duration === null ? self::PLACEHOLDER : Format::milliseconds($duration, 1);
+        return $duration === null ? QueueMessage::PLACEHOLDER->value : Format::milliseconds($duration, 1);
     }
 
     /**
@@ -240,7 +257,7 @@ final class QueuePanel extends Panel
      */
     private static function jobClass(JobRecord $record): string
     {
-        return $record->jobClass === '' ? self::PLACEHOLDER : $record->jobClass;
+        return $record->jobClass === '' ? QueueMessage::PLACEHOLDER->value : $record->jobClass;
     }
 
     /**
@@ -252,7 +269,7 @@ final class QueuePanel extends Panel
      */
     private static function orPlaceholder(string $value): string
     {
-        return $value === '' ? self::PLACEHOLDER : $value;
+        return $value === '' ? QueueMessage::PLACEHOLDER->value : $value;
     }
 
     /**
@@ -273,8 +290,8 @@ final class QueuePanel extends Panel
                 self::jobClass($record),
                 self::orPlaceholder($record->componentId),
                 self::orPlaceholder($record->driverName),
-                date('H:i:s', (int) $record->time),
-                $record->attempt === null ? self::PLACEHOLDER : $record->attempt,
+                date(QueueMessage::TIME_FORMAT->value, (int) $record->time),
+                $record->attempt ?? QueueMessage::PLACEHOLDER->value,
                 self::duration($record->duration),
             ];
         }
@@ -291,7 +308,7 @@ final class QueuePanel extends Panel
      */
     private static function seconds(int|null $value): string
     {
-        return $value === null ? self::PLACEHOLDER : "{$value}s";
+        return $value === null ? QueueMessage::PLACEHOLDER->value : "{$value}s";
     }
 
     /**
@@ -308,7 +325,7 @@ final class QueuePanel extends Panel
         $status = self::STATUS[$record->eventType] ?? self::STATUS[JobRecord::TYPE_PUSH];
 
         return PanelView::badge(
-            $status['label'],
+            $status['label']->value,
             $status['tone'],
         );
     }

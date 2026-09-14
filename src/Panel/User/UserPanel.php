@@ -23,28 +23,15 @@ final class UserPanel extends Panel
     /**
      * @var string Icon key shared with the built-in User navigation entry.
      */
-    protected const string ICON = 'user';
-
+    protected const string ICON = UserMessage::ID->value;
     /**
      * @var string Stable identifier associating the panel with the captured identity payload.
      */
-    protected const string ID = 'user';
-
+    protected const string ID = UserMessage::ID->value;
     /**
      * @var string Panel title used in the debugger navigation.
      */
-    protected const string TITLE = 'User';
-
-    /**
-     * @var string Absolute timestamp format of the RBAC tables.
-     */
-    private const string DATE_FORMAT = 'M j, Y · H:i:s';
-
-    /**
-     * @var string Placeholder shown wherever the capture left a field empty.
-     */
-    private const string PLACEHOLDER = '—';
-
+    protected const string TITLE = UserMessage::TITLE->value;
     /**
      * @var array<string, Tone> Tone applied to each status variant the normalizer resolves.
      */
@@ -71,20 +58,20 @@ final class UserPanel extends Panel
             return PanelView::create()
                 ->active(false)
                 ->emptyState(
-                    'No authenticated user',
-                    'This request ran as a guest, so the debugger captured no identity to inspect.',
+                    UserMessage::EMPTY_HEADLINE->value,
+                    UserMessage::EMPTY_EXPLANATION->value,
                     [
-                        'Sign in and reload the page; the identity appears here as soon as ',
-                        PanelView::code('Yii::$app->user->identity'),
-                        ' resolves.',
+                        UserMessage::EMPTY_SIGN_IN->value,
+                        PanelView::code(UserMessage::EMPTY_IDENTITY->value),
+                        UserMessage::EMPTY_RESOLVES->value,
                     ],
                 );
         }
 
         $view = self::identity(self::strings($identity), $payload['attributes'] ?? null);
-        $view = self::rbac($view, 'Roles', $payload['roles'] ?? null);
+        $view = self::rbac($view, UserMessage::ROLES, $payload['roles'] ?? null);
 
-        return self::rbac($view, 'Permissions', $payload['permissions'] ?? null);
+        return self::rbac($view, UserMessage::PERMISSIONS, $payload['permissions'] ?? null);
     }
 
     /**
@@ -97,7 +84,7 @@ final class UserPanel extends Panel
     private static function attribute(UserAttribute $attribute): mixed
     {
         return match ($attribute->kind) {
-            UserAttribute::KIND_EMPTY => self::PLACEHOLDER,
+            UserAttribute::KIND_EMPTY => UserMessage::PLACEHOLDER->value,
             UserAttribute::KIND_SECURITY => PanelView::preview($attribute->displayValue),
             UserAttribute::KIND_TIMESTAMP => self::timestampLabel($attribute),
             default => $attribute->displayValue,
@@ -125,13 +112,17 @@ final class UserPanel extends Panel
 
         $view = PanelView::create()
             ->summary('', $hero->username)
-            ->toolbar('User', $hero->username)
+            ->toolbar(UserMessage::TITLE->value, $hero->username)
             ->overview(
                 [
-                    'User' => $hero->username,
-                    'Email' => $hero->email === '' ? self::PLACEHOLDER : $hero->email,
-                    'User ID' => $hero->idValue === '' ? self::PLACEHOLDER : $hero->idValue,
-                    'Status' => self::status($hero),
+                    UserMessage::TITLE->value => $hero->username,
+                    UserMessage::EMAIL->value => $hero->email === ''
+                        ? UserMessage::PLACEHOLDER->value
+                        : $hero->email,
+                    UserMessage::USER_ID->value => $hero->idValue === ''
+                        ? UserMessage::PLACEHOLDER->value
+                        : $hero->idValue,
+                    UserMessage::STATUS->value => self::status($hero),
                 ],
                 true,
             );
@@ -182,12 +173,12 @@ final class UserPanel extends Panel
      * Appends one RBAC section, explaining the absence when the auth manager exposed no item.
      *
      * @param PanelView $view View to extend.
-     * @param string $label Section label, either roles or permissions.
+     * @param UserMessage $label Section label, either roles or permissions.
      * @param mixed $rows Captured RBAC rows, or `null` when the auth manager exposed none.
      *
      * @return PanelView View completed with the RBAC section.
      */
-    private static function rbac(PanelView $view, string $label, mixed $rows): PanelView
+    private static function rbac(PanelView $view, UserMessage $label, mixed $rows): PanelView
     {
         $items = [];
 
@@ -197,10 +188,15 @@ final class UserPanel extends Panel
             }
         }
 
-        $view = $view->heading(sprintf('%s (%d)', $label, count($items)), true);
+        $view = $view->heading(
+            sprintf(UserMessage::RBAC_HEADING->value, $label->value, count($items)),
+            true,
+        );
 
         if ($items === []) {
-            return $view->paragraph('The auth manager granted no ' . strtolower($label) . ' to this identity.');
+            return $view->paragraph(
+                sprintf(UserMessage::RBAC_EMPTY->value, strtolower($label->value)),
+            );
         }
 
         $table = [];
@@ -208,17 +204,25 @@ final class UserPanel extends Panel
         foreach ($items as $index => $item) {
             $table[] = [
                 $index + 1,
-                $item->name === '' ? self::PLACEHOLDER : $item->name,
-                $item->description === '' ? self::PLACEHOLDER : $item->description,
-                $item->ruleName === '' ? self::PLACEHOLDER : $item->ruleName,
-                $item->data === '' ? self::PLACEHOLDER : $item->data,
+                $item->name === '' ? UserMessage::PLACEHOLDER->value : $item->name,
+                $item->description === '' ? UserMessage::PLACEHOLDER->value : $item->description,
+                $item->ruleName === '' ? UserMessage::PLACEHOLDER->value : $item->ruleName,
+                $item->data === '' ? UserMessage::PLACEHOLDER->value : $item->data,
                 self::timestamp($item->createdAt),
                 self::timestamp($item->updatedAt),
             ];
         }
 
         return $view->table(
-            ['#', 'Name', 'Description', 'Rule', 'Data', 'Created', 'Updated'],
+            [
+                UserMessage::NUMBER->value,
+                UserMessage::NAME->value,
+                UserMessage::DESCRIPTION->value,
+                UserMessage::RULE->value,
+                UserMessage::DATA->value,
+                UserMessage::CREATED->value,
+                UserMessage::UPDATED->value,
+            ],
             $table,
             true,
             [
@@ -243,7 +247,7 @@ final class UserPanel extends Panel
      */
     private static function status(UserIdentityHero $hero): array
     {
-        $label = $hero->statusLabel === '' ? 'Unknown' : $hero->statusLabel;
+        $label = $hero->statusLabel === '' ? UserMessage::STATUS_UNKNOWN->value : $hero->statusLabel;
 
         return PanelView::badge(
             $label,
@@ -280,7 +284,9 @@ final class UserPanel extends Panel
      */
     private static function timestamp(int|null $timestamp): string
     {
-        return $timestamp === null ? self::PLACEHOLDER : date(self::DATE_FORMAT, $timestamp);
+        return $timestamp === null
+            ? UserMessage::PLACEHOLDER->value
+            : date(UserMessage::DATE_FORMAT->value, $timestamp);
     }
 
     /**
@@ -298,6 +304,8 @@ final class UserPanel extends Panel
         $absolute = $attribute->timestampAbs;
         $relative = $attribute->timestampRel;
 
-        return $relative === $absolute ? $absolute : "{$absolute} · {$relative}";
+        return $relative === $absolute
+            ? $absolute
+            : sprintf(UserMessage::TIMESTAMP_JOIN->value, $absolute, $relative);
     }
 }

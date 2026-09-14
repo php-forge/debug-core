@@ -22,6 +22,11 @@ enum EventMessage: string
         . 'missing data. Listeners, their durations, and final propagation results are not captured.';
 
     /**
+     * Suffix appended to the distinct event-class count in the summary header.
+     */
+    case CLASSES_SUFFIX = ' classes';
+
+    /**
      * Status of the context section in the event detail when context was captured.
      */
     case CONTEXT_CAPTURED = 'Selected context at observation time';
@@ -63,6 +68,16 @@ enum EventMessage: string
     case EMPTY_HEADLINE = 'No events dispatched in this request';
 
     /**
+     * Header of the event column, also used as its filter label.
+     */
+    case EVENT = 'Event';
+
+    /**
+     * Suffix appended to the captured event count in the summary header.
+     */
+    case EVENTS_SUFFIX = ' events';
+
+    /**
      * Timing label of the time cell for the first observation of the capture.
      */
     case FIRST_OBSERVATION = 'First observation';
@@ -92,6 +107,21 @@ enum EventMessage: string
      * Headline of the no-match state when the active filters exclude every captured event.
      */
     case NO_MATCH_HEADLINE = 'No events match the active filters';
+
+    /**
+     * Header of the position column, which sorts by observation order.
+     */
+    case NUMBER = '#';
+
+    /**
+     * Suffix appended to the static-event count in the summary header.
+     */
+    case STATIC_SUFFIX = ' static';
+
+    /**
+     * Header of the capture-time column.
+     */
+    case TIME = 'Time';
 
     /**
      * Guidance inside the capture coverage disclosure about offsets, gaps, and lifecycle intervals.

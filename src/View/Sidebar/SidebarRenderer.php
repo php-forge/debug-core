@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\View\Sidebar;
 
 use PHPForge\Debug\Helper\{Icon, Vocabulary};
+use PHPForge\Debug\View\ViewMessage;
 use UIAwesome\Html\Core\Component\{Item, Menu};
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Form\Button;
@@ -94,7 +95,7 @@ final class SidebarRenderer
         $ajax = Span::tag()
             ->class('yii-debug-snapshot-tag')
             ->addDataAttribute('snapshot-field', 'ajax')
-            ->content('AJAX');
+            ->content(ViewMessage::AJAX->value);
 
         if ($snapshot->isAjax === false) {
             $ajax = $ajax->addAttribute('hidden', true);
@@ -188,8 +189,8 @@ final class SidebarRenderer
                     'newest',
                     $snapshot->isNewest,
                     $snapshot->newestUrl,
-                    'Newest request',
-                    'Newest captured request',
+                    ViewMessage::NEWEST_REQUEST->value,
+                    ViewMessage::NEWEST_CAPTURED_REQUEST->value,
                     $iconNewest,
                 ),
                 self::renderNavButton(
@@ -286,7 +287,9 @@ final class SidebarRenderer
         }
 
         return $section->html(
-            Header::tag()->class('yii-debug-side-section-title')->content($snapshot->title),
+            Header::tag()
+                ->class('yii-debug-side-section-title')
+                ->content($snapshot->title),
             self::renderHistoryCard($snapshot),
         );
     }

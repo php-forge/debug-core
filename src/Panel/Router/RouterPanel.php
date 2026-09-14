@@ -15,15 +15,6 @@ use function sprintf;
  * URL rules and action routes are read from live framework services, so the adapter supplies them with
  * {@see self::rules()}, {@see self::actionRoutes()}, and {@see self::urlManager()} before presenting.
  *
- * Usage example:
- * ```php
- * $view = (new \PHPForge\Debug\Panel\Router\RouterPanel())
- *     ->urlManager(true, false, '')
- *     ->rules($ruleRows)
- *     ->actionRoutes($actionRows)
- *     ->present($snapshot->jsonSerialize());
- * ```
- *
  * @phpstan-import-type BadgeInline from PanelView
  */
 final class RouterPanel extends Panel
@@ -31,43 +22,32 @@ final class RouterPanel extends Panel
     /**
      * @var string Icon key shared with the built-in Router navigation entry.
      */
-    protected const string ICON = 'router';
-
+    protected const string ICON = RouterMessage::ID->value;
     /**
      * @var string Stable identifier associating the panel with the captured routing payload.
      */
-    protected const string ID = 'router';
-
+    protected const string ID = RouterMessage::ID->value;
     /**
      * @var string Panel title used in the debugger navigation.
      */
-    protected const string TITLE = 'Router';
-
-    /**
-     * @var string Placeholder shown wherever the capture left a field empty.
-     */
-    private const string PLACEHOLDER = '—';
+    protected const string TITLE = RouterMessage::TITLE->value;
 
     /**
      * @var list<ActionRouteRow> Discovered action routes in display order.
      */
     private array $actionRows = [];
-
     /**
      * @var bool Whether the URL manager generates and parses pretty URLs.
      */
     private bool $prettyUrl = false;
-
     /**
      * @var list<RouterRuleRow> Configured URL rules in display order.
      */
     private array $ruleRows = [];
-
     /**
      * @var bool Whether the URL manager only accepts requests matching a configured rule.
      */
     private bool $strictParsing = false;
-
     /**
      * @var string Global URL suffix, or `''` when the URL manager declares none.
      */
@@ -97,7 +77,10 @@ final class RouterPanel extends Panel
      */
     public function present(array $data): PanelView
     {
-        $snapshot = RouterSnapshot::fromArray($data, '$.router');
+        $snapshot = RouterSnapshot::fromArray(
+            $data,
+            '$.router',
+        );
 
         $entries = $snapshot->entries();
 
@@ -105,17 +88,28 @@ final class RouterPanel extends Panel
 
         $route = $snapshot->route;
 
+        $label = $route === '' ? RouterMessage::PLACEHOLDER->value : $route;
+
         $view = PanelView::create()
-            ->summary('', $route === '' ? self::PLACEHOLDER : $route)
-            ->summary($tested === 1 ? ' rule tested' : ' rules tested', $tested)
-            ->toolbar('Route', $route === '' ? self::PLACEHOLDER : $route)
+            ->summary('', $label)
+            ->summary(
+                $tested === 1
+                    ? RouterMessage::RULE_TESTED_SUFFIX->value
+                    : RouterMessage::RULES_TESTED_SUFFIX->value,
+                $tested,
+            )
+            ->toolbar(RouterMessage::ROUTE->value, $label)
             ->overview(
                 [
-                    'Route' => $route === '' ? self::PLACEHOLDER : PanelView::code($route),
-                    'Action' => self::action($snapshot),
-                    'Pretty URL' => self::flag($this->prettyUrl),
-                    'Strict parsing' => self::flag($this->strictParsing),
-                    'Global suffix' => $this->suffix === '' ? self::PLACEHOLDER : PanelView::code($this->suffix),
+                    RouterMessage::ROUTE->value => $route === ''
+                        ? RouterMessage::PLACEHOLDER->value
+                        : PanelView::code($route),
+                    RouterMessage::ACTION->value => self::action($snapshot),
+                    RouterMessage::PRETTY_URL->value => self::flag($this->prettyUrl),
+                    RouterMessage::STRICT_PARSING->value => self::flag($this->strictParsing),
+                    RouterMessage::GLOBAL_SUFFIX->value => $this->suffix === ''
+                        ? RouterMessage::PLACEHOLDER->value
+                        : PanelView::code($this->suffix),
                 ],
                 true,
             );
@@ -127,7 +121,7 @@ final class RouterPanel extends Panel
         $view = $view->heading(self::testedHeading($tested, $snapshot->hasMatch()), true);
 
         if ($entries === []) {
-            $view = $view->paragraph('The router captured no rule trace for this request.');
+            $view = $view->paragraph(RouterMessage::NO_TRACE->value);
         } else {
             $rows = [];
 
@@ -135,15 +129,20 @@ final class RouterPanel extends Panel
                 $rows[] = [
                     $index + 1,
                     $entry->rule,
-                    $entry->parent === '' ? self::PLACEHOLDER : $entry->parent,
+                    $entry->parent === '' ? RouterMessage::PLACEHOLDER->value : $entry->parent,
                     $entry->match
-                        ? PanelView::badge('match', Tone::SUCCESS)
-                        : PanelView::badge('no match', Tone::MUTED),
+                        ? PanelView::badge(RouterMessage::MATCH_RESULT->value, Tone::SUCCESS)
+                        : PanelView::badge(RouterMessage::NO_MATCH_RESULT->value, Tone::MUTED),
                 ];
             }
 
             $view = $view->table(
-                ['#', 'Rule', 'Parent', 'Result'],
+                [
+                    RouterMessage::NUMBER->value,
+                    RouterMessage::RULE->value,
+                    RouterMessage::PARENT_RULE->value,
+                    RouterMessage::RESULT->value,
+                ],
                 $rows,
                 true,
                 [
@@ -155,12 +154,20 @@ final class RouterPanel extends Panel
             );
         }
 
-        $view = $view->heading(sprintf('URL rules (%d)', count($this->ruleRows)), true);
+        $view = $view->heading(sprintf(RouterMessage::URL_RULES->value, count($this->ruleRows)), true);
 
         $view = $this->ruleRows === []
-            ? $view->paragraph('The URL manager declares no rules.')
+            ? $view->paragraph(RouterMessage::URL_RULES_EMPTY->value)
             : $view->table(
-                ['#', 'Name', 'Route', 'Verb', 'Suffix', 'Mode', 'Type'],
+                [
+                    RouterMessage::NUMBER->value,
+                    RouterMessage::NAME->value,
+                    RouterMessage::ROUTE->value,
+                    RouterMessage::VERB->value,
+                    RouterMessage::SUFFIX->value,
+                    RouterMessage::MODE->value,
+                    RouterMessage::TYPE->value,
+                ],
                 self::ruleRows($this->ruleRows),
                 true,
                 [
@@ -172,12 +179,18 @@ final class RouterPanel extends Panel
                 ],
             );
 
-        $view = $view->heading(sprintf('Action routes (%d)', count($this->actionRows)), true);
+        $view = $view->heading(sprintf(RouterMessage::ACTION_ROUTES->value, count($this->actionRows)), true);
 
         return $this->actionRows === []
-            ? $view->paragraph('No actions are configured.')
+            ? $view->paragraph(RouterMessage::NO_ACTIONS->value)
             : $view->table(
-                ['#', 'Action', 'Route', 'First matching rule', 'Rules tested'],
+                [
+                    RouterMessage::NUMBER->value,
+                    RouterMessage::ACTION->value,
+                    RouterMessage::ROUTE->value,
+                    RouterMessage::FIRST_RULE->value,
+                    RouterMessage::RULES_TESTED->value,
+                ],
                 self::actions($this->actionRows),
                 true,
                 [
@@ -235,7 +248,7 @@ final class RouterPanel extends Panel
     {
         $action = $snapshot->action;
 
-        return $action === null || $action === '' ? self::PLACEHOLDER : $action;
+        return $action === null || $action === '' ? RouterMessage::PLACEHOLDER->value : $action;
     }
 
     /**
@@ -253,8 +266,8 @@ final class RouterPanel extends Panel
             $result[] = [
                 $index + 1,
                 $row->action,
-                $row->route === '' ? self::PLACEHOLDER : $row->route,
-                $row->rule === '' ? self::PLACEHOLDER : $row->rule,
+                $row->route === '' ? RouterMessage::PLACEHOLDER->value : $row->route,
+                $row->rule === '' ? RouterMessage::PLACEHOLDER->value : $row->rule,
                 $row->count,
             ];
         }
@@ -272,8 +285,8 @@ final class RouterPanel extends Panel
     private static function flag(bool $enabled): array
     {
         return $enabled
-            ? PanelView::badge('enabled', Tone::SUCCESS)
-            : PanelView::badge('disabled', Tone::MUTED);
+            ? PanelView::badge(RouterMessage::ENABLED->value, Tone::SUCCESS)
+            : PanelView::badge(RouterMessage::DISABLED->value, Tone::MUTED);
     }
 
     /**
@@ -291,11 +304,11 @@ final class RouterPanel extends Panel
             $result[] = [
                 $index + 1,
                 $row->name,
-                $row->route === '' ? self::PLACEHOLDER : $row->route,
-                $row->verb === '' ? self::PLACEHOLDER : $row->verb,
-                $row->suffix === '' ? self::PLACEHOLDER : $row->suffix,
-                $row->mode === '' ? self::PLACEHOLDER : $row->mode,
-                $row->type === '' ? self::PLACEHOLDER : $row->type,
+                $row->route === '' ? RouterMessage::PLACEHOLDER->value : $row->route,
+                $row->verb === '' ? RouterMessage::PLACEHOLDER->value : $row->verb,
+                $row->suffix === '' ? RouterMessage::PLACEHOLDER->value : $row->suffix,
+                $row->mode === '' ? RouterMessage::PLACEHOLDER->value : $row->mode,
+                $row->type === '' ? RouterMessage::PLACEHOLDER->value : $row->type,
             ];
         }
 
@@ -313,14 +326,14 @@ final class RouterPanel extends Panel
     private static function testedHeading(int $tested, bool $matched): string
     {
         if ($tested === 0) {
-            return 'Rules tested';
+            return RouterMessage::RULES_TESTED->value;
         }
 
         return sprintf(
-            'Tested %d %s%s',
+            RouterMessage::TESTED_HEADING->value,
             $tested,
-            $tested === 1 ? 'rule' : 'rules',
-            $matched ? ' before match' : '',
+            $tested === 1 ? RouterMessage::RULE_NOUN->value : RouterMessage::RULES_NOUN->value,
+            $matched ? RouterMessage::TESTED_BEFORE_MATCH->value : '',
         );
     }
 }

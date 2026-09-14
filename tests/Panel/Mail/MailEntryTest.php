@@ -5,26 +5,26 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Panel\Mail;
 
 use DateTimeImmutable;
-use PHPForge\Debug\Panel\Mail\MailMessage;
+use PHPForge\Debug\Panel\Mail\MailEntry;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Stringable;
 
 /**
- * Unit tests for {@see MailMessage} covering payload narrowing, address splitting, time parsing, the scalar-to-string
+ * Unit tests for {@see MailEntry} covering payload narrowing, address splitting, time parsing, the scalar-to-string
  * coercion of header/body fields, and the failed-send aggregate.
  */
 #[Group('panel')]
 #[Group('mail')]
-final class MailMessageTest extends TestCase
+final class MailEntryTest extends TestCase
 {
     public function testFailedCountCountsUnsuccessfulMessages(): void
     {
-        $count = MailMessage::failedCount(
+        $count = MailEntry::failedCount(
             [
-                MailMessage::fromCapture(['isSuccessful' => true]),
-                MailMessage::fromCapture(['isSuccessful' => false]),
-                MailMessage::fromCapture(['no-flag' => 'missing counts as failed']),
+                MailEntry::fromCapture(['isSuccessful' => true]),
+                MailEntry::fromCapture(['isSuccessful' => false]),
+                MailEntry::fromCapture(['no-flag' => 'missing counts as failed']),
             ],
         );
 
@@ -39,30 +39,28 @@ final class MailMessageTest extends TestCase
     {
         self::assertSame(
             0,
-            MailMessage::failedCount([]),
+            MailEntry::failedCount([]),
             'Empty list must yield zero.',
         );
     }
 
     public function testFromCaptureCoercesScalarHeaderFieldsToStrings(): void
     {
-        $message = MailMessage::fromCapture(
-            ['from' => 42, 'subject' => true, 'charset' => 1.5],
-        );
+        $message = MailEntry::fromCapture(['from' => 42, 'subject' => true, 'charset' => 1.5]);
 
         self::assertSame(
             '42',
-            $message->from,
+            $message->getFrom(),
             'Int sender must coerce to string.',
         );
         self::assertSame(
             '1',
-            $message->subject,
+            $message->getSubject(),
             'Bool subject must coerce to string.',
         );
         self::assertSame(
             '1.5',
-            $message->charset,
+            $message->getCharset(),
             'Float charset must coerce to string.',
         );
     }
@@ -76,13 +74,11 @@ final class MailMessageTest extends TestCase
             }
         };
 
-        $message = MailMessage::fromCapture(
-            ['subject' => $stringable],
-        );
+        $message = MailEntry::fromCapture(['subject' => $stringable]);
 
         self::assertSame(
             'rendered',
-            $message->subject,
+            $message->getSubject(),
             "Stringable subject must coerce via '__toString()'.",
         );
     }
@@ -91,7 +87,7 @@ final class MailMessageTest extends TestCase
     {
         self::assertSame(
             '',
-            MailMessage::fromCapture(['file' => 42])->file,
+            MailEntry::fromCapture(['file' => 42])->getFile(),
             "Non-string `file` must collapse to ''.",
         );
     }
@@ -99,53 +95,46 @@ final class MailMessageTest extends TestCase
     public function testFromCaptureCollapsesUnparseableTimeToNull(): void
     {
         self::assertNull(
-            MailMessage::fromCapture(['time' => 'not a date'])->time,
+            MailEntry::fromCapture(['time' => 'not a date'])->getTime(),
             "Garbage string must collapse to 'null'.",
         );
         self::assertNull(
-            MailMessage::fromCapture(['time' => ''])->time,
+            MailEntry::fromCapture(['time' => ''])->getTime(),
             "Empty string must collapse to 'null'.",
         );
         self::assertNull(
-            MailMessage::fromCapture(['time' => null])->time,
+            MailEntry::fromCapture(['time' => null])->getTime(),
             "'null' must collapse to 'null'.",
         );
         self::assertNull(
-            MailMessage::fromCapture(['time' => ['nested']])->time,
+            MailEntry::fromCapture(['time' => ['nested']])->getTime(),
             "Array must collapse to 'null'.",
         );
     }
 
     public function testFromCaptureDropsEmptySegmentsBetweenCommas(): void
     {
-        $message = MailMessage::fromCapture(
-            ['to' => 'a@example.com,, ,b@example.com,'],
-        );
+        $message = MailEntry::fromCapture(['to' => 'a@example.com,, ,b@example.com,']);
 
         self::assertSame(
             ['a@example.com', 'b@example.com'],
-            $message->to,
+            $message->getTo(),
             'Empty segments must be dropped.',
         );
     }
 
     public function testFromCaptureFallsBackToEmptyWhenStringFieldsAreNonScalar(): void
     {
-        $message = MailMessage::fromCapture(
-            [
-                'from' => ['nested'],
-                'subject' => null,
-            ],
-        );
+        $message = MailEntry::fromCapture(['from' => ['nested'], 'subject' => null]);
 
         self::assertSame(
             '',
-            $message->from,
+            $message->getFrom(),
             'Array `from` must collapse to `\'\'`.',
         );
         self::assertSame(
             '',
-            $message->subject,
+            $message->getSubject(),
             'Null `subject` must collapse to `\'\'`.',
         );
     }
@@ -154,7 +143,7 @@ final class MailMessageTest extends TestCase
     {
         self::assertSame(
             1_700_000_000,
-            MailMessage::fromCapture(['time' => 1_700_000_000])->time,
+            MailEntry::fromCapture(['time' => 1_700_000_000])->getTime(),
             'Int time must round-trip unchanged.',
         );
     }
@@ -162,23 +151,23 @@ final class MailMessageTest extends TestCase
     public function testFromCaptureMapsTruthyIsSuccessfulOnlyWhenStrictlyTrue(): void
     {
         self::assertTrue(
-            MailMessage::fromCapture(['isSuccessful' => true])->isSuccessful,
+            MailEntry::fromCapture(['isSuccessful' => true])->isSuccessful(),
             "'true' must round-trip.",
         );
         self::assertFalse(
-            MailMessage::fromCapture(['isSuccessful' => 1])->isSuccessful,
+            MailEntry::fromCapture(['isSuccessful' => 1])->isSuccessful(),
             "'1' must not be accepted (strict comparison)."
         );
         self::assertFalse(
-            MailMessage::fromCapture(['isSuccessful' => 'true'])->isSuccessful,
+            MailEntry::fromCapture(['isSuccessful' => 'true'])->isSuccessful(),
             "'true' must not be accepted."
         );
         self::assertFalse(
-            MailMessage::fromCapture(['isSuccessful' => false])->isSuccessful,
+            MailEntry::fromCapture(['isSuccessful' => false])->isSuccessful(),
             "'false' must yield 'false'."
         );
         self::assertFalse(
-            MailMessage::fromCapture([])->isSuccessful,
+            MailEntry::fromCapture([])->isSuccessful(),
             "Missing flag must default to 'false'."
         );
     }
@@ -187,97 +176,93 @@ final class MailMessageTest extends TestCase
     {
         $datetime = new DateTimeImmutable('2024-06-15T12:34:56+00:00');
 
-        $message = MailMessage::fromCapture(
-            ['time' => $datetime],
-        );
+        $message = MailEntry::fromCapture(['time' => $datetime]);
 
         self::assertSame(
             $datetime->getTimestamp(),
-            $message->time,
+            $message->getTime(),
             'DateTimeInterface must yield its Unix timestamp.',
         );
     }
 
     public function testFromCaptureParsesStringTimeViaStrtotime(): void
     {
-        $message = MailMessage::fromCapture(
-            ['time' => '2024-06-15T12:34:56+00:00'],
-        );
+        $message = MailEntry::fromCapture(['time' => '2024-06-15T12:34:56+00:00']);
 
         self::assertSame(
             strtotime('2024-06-15T12:34:56+00:00'),
-            $message->time,
+            $message->getTime(),
             'Parseable string must coerce via `strtotime`.',
         );
     }
 
     public function testFromCaptureReturnsAllEmptyDefaultsForAnEmptyPayload(): void
     {
-        $message = MailMessage::fromCapture([]);
+        $message = MailEntry::fromCapture([]);
 
         self::assertSame(
             '',
-            $message->from,
+            $message->getFrom(),
             "Non-array input must yield empty 'from'.",
         );
         self::assertSame(
             [],
-            $message->to,
+            $message->getTo(),
             "Non-array input must yield empty 'to'.",
         );
         self::assertSame(
             [],
-            $message->cc,
+            $message->getCc(),
             "Non-array input must yield empty 'cc'.",
         );
         self::assertSame(
             [],
-            $message->bcc,
+            $message->getBcc(),
             "Non-array input must yield empty 'bcc'.",
         );
         self::assertSame(
             [],
-            $message->replyTo,
+            $message->getReplyTo(),
             "Non-array input must yield empty 'replyTo'.",
         );
         self::assertSame(
             '',
-            $message->subject,
+            $message->getSubject(),
             "Non-array input must yield empty 'subject'.",
         );
         self::assertSame(
             '',
-            $message->body,
+            $message->getBody(),
             "Non-array input must yield empty 'body'.",
         );
         self::assertSame(
             '',
-            $message->headers,
+            $message->getHeaders(),
             "Non-array input must yield empty 'headers'.",
         );
         self::assertSame(
             '',
-            $message->charset,
+            $message->getCharset(),
             "Non-array input must yield empty 'charset'.",
         );
         self::assertSame(
             '',
-            $message->file,
+            $message->getFile(),
             "Non-array input must yield empty 'file'.",
         );
         self::assertFalse(
-            $message->isSuccessful,
+            $message->isSuccessful(),
             "Non-array input must yield 'isSuccessful = false'.",
         );
         self::assertNull(
-            $message->time,
+            $message->getTime(),
             "Non-array input must yield 'null' 'time'.",
         );
     }
 
     public function testFromCaptureRoundTripsTypedFields(): void
     {
-        $message = MailMessage::fromCapture(
+        $message = MailEntry::fromCapture(
             [
                 'from' => 'sender@example.com',
                 'subject' => 'Hello',
@@ -291,43 +276,43 @@ final class MailMessageTest extends TestCase
 
         self::assertSame(
             'sender@example.com',
-            $message->from,
+            $message->getFrom(),
             'From must round-trip.',
         );
         self::assertSame(
             'Hello',
-            $message->subject,
+            $message->getSubject(),
             'Subject must round-trip.',
         );
         self::assertSame(
             'Body content.',
-            $message->body,
+            $message->getBody(),
             'Body must round-trip.',
         );
         self::assertSame(
             'X-Foo: bar',
-            $message->headers,
+            $message->getHeaders(),
             'Headers must round-trip.',
         );
         self::assertSame(
             'UTF-8',
-            $message->charset,
+            $message->getCharset(),
             'Charset must round-trip.',
         );
         self::assertSame(
             '/tmp/mail.eml',
-            $message->file,
+            $message->getFile(),
             'File path must round-trip.',
         );
         self::assertTrue(
-            $message->isSuccessful,
+            $message->isSuccessful(),
             '`isSuccessful = true` must round-trip.',
         );
     }
 
     public function testFromCaptureSplitsCommaSeparatedRecipients(): void
     {
-        $message = MailMessage::fromCapture(
+        $message = MailEntry::fromCapture(
             [
                 'to' => 'a@example.com, b@example.com,c@example.com',
                 'cc' => 'cc@example.com',
@@ -338,22 +323,22 @@ final class MailMessageTest extends TestCase
 
         self::assertSame(
             ['a@example.com', 'b@example.com', 'c@example.com'],
-            $message->to,
+            $message->getTo(),
             'TO must split on commas and trim.',
         );
         self::assertSame(
             ['cc@example.com'],
-            $message->cc,
+            $message->getCc(),
             'Single CC must yield a one-element list.',
         );
         self::assertSame(
             [],
-            $message->bcc,
+            $message->getBcc(),
             'Empty BCC string must yield `[]`.',
         );
         self::assertSame(
             ['reply1@example.com', 'reply2@example.com'],
-            $message->replyTo,
+            $message->getReplyTo(),
             'Reply-to must split on commas.',
         );
     }
