@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Phrasing\Span;
 
 use function max;
@@ -32,14 +33,14 @@ final class Gauge
         $percent = max(0.0, min(100.0, $current / $max * 100));
 
         return Span::tag()
-            ->class('yii-debug-gauge')
+            ->class(Css::GAUGE)
             ->style(['--yii-debug-gauge' => Format::cssPercent($percent)])
             ->html(
                 Span::tag()
-                    ->class('yii-debug-gauge-value')
+                    ->class(Css::GAUGE_VALUE)
                     ->content($value),
                 Span::tag()
-                    ->class('yii-debug-gauge-bar')
+                    ->class(Css::GAUGE_BAR)
                     ->addAttribute('aria-hidden', 'true'),
             )
             ->render();

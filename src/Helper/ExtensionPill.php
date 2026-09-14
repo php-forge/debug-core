@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Phrasing\Span;
 
 /**
@@ -26,23 +27,23 @@ final class ExtensionPill
         $children = [
             Span::tag()
                 ->addAriaAttribute('hidden', 'true')
-                ->class('yii-debug-ext-pill-dot'),
+                ->class(Css::EXT_PILL_DOT),
             Span::tag()
-                ->class('yii-debug-ext-pill-label')
+                ->class(Css::EXT_PILL_LABEL)
                 ->content($label),
             Span::tag()
-                ->class('yii-debug-ext-pill-state')
+                ->class(Css::EXT_PILL_STATE)
                 ->content($state),
         ];
 
         if ($summary !== '') {
             $children[] = Span::tag()
-                ->class('yii-debug-sr-only')
+                ->class(Css::SR_ONLY)
                 ->content($summary);
         }
 
         return Span::tag()
-            ->class('yii-debug-ext-pill ' . ($enabled ? 'is-on' : 'is-off'))
+            ->class(Css::EXT_PILL . ' ' . ($enabled ? 'is-on' : 'is-off'))
             ->html(...$children);
     }
 }

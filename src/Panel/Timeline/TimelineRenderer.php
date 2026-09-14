@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Timeline;
 
 use PHPForge\Debug\Helper\{Format, Fqcn};
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Form\{Button, Form, InputHidden, InputNumber, InputText};
 use UIAwesome\Html\Palpable\A;
@@ -147,7 +148,7 @@ final class TimelineRenderer
     public static function renderSummary(float $duration, int $memory, int $spanCount): string
     {
         return Header::tag()
-            ->class('yii-debug-grid-summary')
+            ->class(Css::GRID_SUMMARY)
             ->html(
                 Span::tag()
                     ->html(
@@ -155,7 +156,7 @@ final class TimelineRenderer
                         ' ms total',
                     ),
                 Span::tag()
-                    ->class('yii-debug-grid-summary-sep')
+                    ->class(Css::GRID_SUMMARY_SEP)
                     ->content('·'),
                 Span::tag()
                     ->html(
@@ -163,7 +164,7 @@ final class TimelineRenderer
                         ' peak memory',
                     ),
                 Span::tag()
-                    ->class('yii-debug-grid-summary-sep')
+                    ->class(Css::GRID_SUMMARY_SEP)
                     ->content('·'),
                 Span::tag()
                     ->html(

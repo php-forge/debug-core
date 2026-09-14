@@ -7,6 +7,7 @@ namespace PHPForge\Debug\Panel\Log;
 use Closure;
 use PHPForge\Debug\Helper\{CellMore, Format, Fqcn, LogLevel, Vocabulary};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Helper\Encode;
 use UIAwesome\Html\List\{Li, Ul};
@@ -51,7 +52,7 @@ final class LogCellRenderer
         ];
 
         if ($variant !== null) {
-            $options['class'] = "yii-debug-row-{$variant}";
+            $options['class'] = Css::row($variant);
         }
 
         return $options;
@@ -108,7 +109,7 @@ final class LogCellRenderer
             $row->trace,
         );
 
-        $trace = Ul::tag()->class('yii-debug-trace')->html(...$items)->render();
+        $trace = Ul::tag()->class(Css::TRACE)->html(...$items)->render();
 
         return "{$body}{$trace}";
     }

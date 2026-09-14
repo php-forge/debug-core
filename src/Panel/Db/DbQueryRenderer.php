@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Panel\Db;
 
 use Closure;
 use PHPForge\Debug\Helper\{Format, Vocabulary};
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Interactive\{Details, Summary};
 use UIAwesome\Html\List\{Li, Ul};
@@ -89,7 +90,7 @@ final class DbQueryRenderer
                     ->addAriaAttribute('atomic', 'true')
                     ->addAriaAttribute('live', 'polite')
                     ->addDataAttribute('yii-debug-n1-status', true)
-                    ->class('yii-debug-sr-only'),
+                    ->class(Css::SR_ONLY),
             )
             ->role('region')
             ->render();
@@ -157,7 +158,7 @@ final class DbQueryRenderer
                             Span::tag()->content(DbMessage::TRACE),
                         ),
                     Ul::tag()
-                        ->class('yii-debug-trace')
+                        ->class(Css::TRACE)
                         ->html(...$items),
                 );
         }
@@ -221,7 +222,7 @@ final class DbQueryRenderer
         $variant = Vocabulary::sqlVerb($row->getType());
 
         return Span::tag()
-            ->class("yii-debug-db-type yii-debug-verb-{$variant}")
+            ->class('yii-debug-db-type ' . Css::verb($variant))
             ->content($row->getType())
             ->render();
     }

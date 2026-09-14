@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Request;
 
 use PHPForge\Debug\Helper\{Disclosure, PhpHighlighter, Table, Tabs, Vocabulary};
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\Form\InputSearch;
 use UIAwesome\Html\Heading\H2;
@@ -62,7 +63,7 @@ final class RequestSectionRenderer
 
         if ($hero->getStatusCode() > 0) {
             $line[] = Span::tag()
-                ->class("yii-debug-snapshot-status yii-debug-status-{$hero->getStatusVariant()}")
+                ->class('yii-debug-snapshot-status ' . Css::status($hero->getStatusVariant()))
                 ->content((string) $hero->getStatusCode());
         }
 
@@ -118,7 +119,7 @@ final class RequestSectionRenderer
     public static function renderMethodPill(string $method): Span
     {
         return Span::tag()
-            ->class('yii-debug-request-hero-method yii-debug-verb-' . Vocabulary::verb($method))
+            ->class('yii-debug-request-hero-method ' . Css::verb(Vocabulary::verb($method)))
             ->content($method);
     }
 
@@ -216,7 +217,7 @@ final class RequestSectionRenderer
         }
 
         return Header::tag()
-            ->class('yii-debug-section-header')
+            ->class(Css::SECTION_HEADER)
             ->html(...$children)
             ->render();
     }
@@ -232,7 +233,7 @@ final class RequestSectionRenderer
             $rows[] = self::renderRow($name, $value);
         }
 
-        $wrap = Div::tag()->class('yii-debug-table-wrap');
+        $wrap = Div::tag()->class(Css::TABLE_WRAP);
 
         if ($section->filterable) {
             $wrap = $wrap->addDataAttribute('yii-debug-filter-target', true);

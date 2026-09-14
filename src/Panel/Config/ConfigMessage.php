@@ -25,6 +25,26 @@ enum ConfigMessage: string
     case APPLICATION_VERSION = 'Application version';
 
     /**
+     * Caption of the readout card reporting the debug flag.
+     */
+    case CAPTION_DEBUG = 'debug %s';
+
+    /**
+     * Caption of the readout card naming the framework.
+     */
+    case CAPTION_FRAMEWORK = 'framework';
+
+    /**
+     * Caption of the readout card naming the application instance.
+     */
+    case CAPTION_INSTANCE = 'instance';
+
+    /**
+     * Caption of the readout card naming the PHP runtime.
+     */
+    case CAPTION_RUNTIME = 'runtime';
+
+    /**
      * Overview field label of the application charset.
      */
     case CHARSET = 'Charset';
@@ -33,21 +53,6 @@ enum ConfigMessage: string
      * Overview field label of the active language.
      */
     case CURRENT_LANGUAGE = 'Current language';
-
-    /**
-     * Overview field label of the debug flag.
-     */
-    case DEBUG_MODE = 'Debug mode';
-
-    /**
-     * Badge label of a disabled debug flag.
-     */
-    case DEBUG_OFF = 'off';
-
-    /**
-     * Badge label of an enabled debug flag.
-     */
-    case DEBUG_ON = 'on';
 
     /**
      * Explanation of the empty state when the capture carried no package roster.
@@ -65,16 +70,6 @@ enum ConfigMessage: string
     case ENVIRONMENT = 'Environment';
 
     /**
-     * Badge label of a bundled PHP extension reported as loaded.
-     */
-    case EXTENSION_LOADED = 'loaded';
-
-    /**
-     * Badge label of a bundled PHP extension reported as missing.
-     */
-    case EXTENSION_MISSING = 'missing';
-
-    /**
      * Suffix appended to a single installed extension in the summary header.
      */
     case EXTENSION_SUFFIX = ' extension';
@@ -90,14 +85,24 @@ enum ConfigMessage: string
     case ID = 'config';
 
     /**
-     * `sprintf()` template of the heading above the installed-package roster.
+     * Title of the installed-extension section.
      */
-    case INSTALLED = 'Installed extensions (%d)';
+    case INSTALLED_TITLE = 'Installed extensions';
 
     /**
      * `sprintf()` template annotating a BCP-47 tag with its English display name.
      */
     case LANGUAGE_ANNOTATION = '%s (%s)';
+
+    /**
+     * Glyph marking a section that continues the identity readouts.
+     */
+    case MARK_CONTINUATION = '//';
+
+    /**
+     * Glyph marking a primary section.
+     */
+    case MARK_PRIMARY = '::';
 
     /**
      * Label of the APCu extension in the runtime overview.
@@ -113,11 +118,6 @@ enum ConfigMessage: string
      * Label of the Memcached extension in the runtime overview.
      */
     case PACKAGE_MEMCACHED = 'Memcached';
-
-    /**
-     * Header of the package name column.
-     */
-    case PACKAGE_NAME = 'Package';
 
     /**
      * Label of the Xdebug extension in the runtime overview.
@@ -155,14 +155,19 @@ enum ConfigMessage: string
     case SOURCE_LANGUAGE = 'Source language';
 
     /**
+     * Negative state, shown as the debug-flag caption and on the pill of a PHP extension the runtime did not load.
+     */
+    case STATE_OFF = 'off';
+
+    /**
+     * Positive state, shown as the debug-flag caption and on the pill of a PHP extension the runtime loaded.
+     */
+    case STATE_ON = 'on';
+
+    /**
      * Panel title used in the debugger navigation.
      */
     case TITLE = 'Configuration';
-
-    /**
-     * Header of the package version column.
-     */
-    case VERSION = 'Version';
 
     /**
      * Overview field label of the framework version.

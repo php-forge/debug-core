@@ -6,6 +6,8 @@ namespace PHPForge\Debug\Panel\Request;
 
 use PHPForge\Debug\Helper\{Badge, Disclosure, EmptyState, Table, Tabs, Vocabulary};
 use PHPForge\Debug\Panel\Request\Routing\{CurrentRouteView, RequestRoutingView, RouteInventoryView, RouteTraceRow};
+use PHPForge\Debug\Theme\Css;
+use PHPForge\Debug\Tone;
 use PHPForge\Debug\View\Grid\RowClass;
 use UIAwesome\Html\Flow\{Div, P};
 use UIAwesome\Html\List\{Dd, Dl, Dt};
@@ -16,7 +18,6 @@ use UIAwesome\Html\Table\{Td, Tr};
 
 use function count;
 use function implode;
-use function in_array;
 use function sprintf;
 
 /**
@@ -25,9 +26,9 @@ use function sprintf;
 final class RequestRenderer
 {
     /**
-     * @var list<string> Badge variants the shared vocabulary accepts.
+     * Class list of the scroll wrapper around the route trace table.
      */
-    private const array BADGE_VARIANTS = ['danger', 'info', 'muted', 'success', 'warning'];
+    private const string ROUTE_TRACE_WRAP_CLASS = Css::TABLE_WRAP . ' yii-debug-route-trace-wrap';
 
     /**
      * Preserves the legacy Request presentation when no routing view is supplied.
@@ -216,7 +217,7 @@ final class RequestRenderer
                     Span::tag()
                         ->class(
                             'yii-debug-request-overview-status-value yii-debug-snapshot-status '
-                            . "yii-debug-status-{$hero->getStatusVariant()}",
+                            . Css::status($hero->getStatusVariant()),
                         )
                         ->content((string) $hero->getStatusCode()),
                 );
@@ -262,7 +263,7 @@ final class RequestRenderer
         foreach ($inventory?->getBadges() ?? [] as $badge) {
             $configuration[] = Badge::render(
                 $badge->label,
-                in_array($badge->variant, self::BADGE_VARIANTS, true) ? $badge->variant : 'muted',
+                Tone::tryFrom($badge->variant) ?? Tone::MUTED,
             );
         }
 
@@ -286,7 +287,7 @@ final class RequestRenderer
 
         return Section::tag()
             ->addAriaAttribute('label', RequestMessage::REQUEST_OVERVIEW->value)
-            ->class('yii-debug-request-overview yii-debug-verb-' . Vocabulary::verb($method))
+            ->class('yii-debug-request-overview ' . Css::verb(Vocabulary::verb($method)))
             ->html(
                 Header::tag()
                     ->class('yii-debug-request-overview-header')
@@ -308,7 +309,7 @@ final class RequestRenderer
                             $route !== '' ? $route : RequestMessage::UNRESOLVED->value,
                             $definition === null
                                 ? null
-                                : Badge::render(RequestMessage::MATCHED->value, 'success', 'yii-debug-route-match'),
+                                : Badge::render(RequestMessage::MATCHED->value, Tone::SUCCESS, 'yii-debug-route-match'),
                         ),
                         self::renderMetric(
                             RequestMessage::ACTION->value,
@@ -482,8 +483,8 @@ final class RequestRenderer
 
         foreach ($trace as $index => $entry) {
             $result = $entry->matched
-                ? Badge::render('Matched', 'success')
-                : Badge::render('Not matched', 'warning');
+                ? Badge::render('Matched', Tone::SUCCESS)
+                : Badge::render('Not matched', Tone::WARNING);
             $row = Tr::tag()
                 ->html(
                     Td::tag()->content((string) ($index + 1)),
@@ -503,7 +504,7 @@ final class RequestRenderer
             ['#', 'Rule', 'Parent', 'Result'],
             $rows,
             'yii-debug-table yii-debug-route-trace',
-            'yii-debug-table-wrap yii-debug-route-trace-wrap',
+            self::ROUTE_TRACE_WRAP_CLASS,
         );
     }
 

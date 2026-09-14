@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Table\{Table as HtmlTable, Tbody, Th, Thead, Tr};
 
@@ -24,7 +25,7 @@ final class Table
      *
      * @return HtmlTable Table element.
      */
-    public static function build(array $headers, array $rows, string $class = 'yii-debug-table'): HtmlTable
+    public static function build(array $headers, array $rows, string $class = Css::TABLE): HtmlTable
     {
         $table = HtmlTable::tag()->class($class);
 
@@ -59,8 +60,8 @@ final class Table
     public static function render(
         array $headers,
         array $rows,
-        string $tableClass = 'yii-debug-table',
-        string $wrapClass = 'yii-debug-table-wrap',
+        string $tableClass = Css::TABLE,
+        string $wrapClass = Css::TABLE_WRAP,
     ): string {
         return Div::tag()
             ->class($wrapClass)

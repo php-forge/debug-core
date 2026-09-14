@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Config;
 
 use Locale;
-use PHPForge\Debug\{ColumnStyle, Panel, PanelView, Tone};
+use PHPForge\Debug\{Panel, PanelView};
 
 use function count;
 use function implode;
@@ -13,6 +13,8 @@ use function is_array;
 use function is_string;
 use function ksort;
 use function sprintf;
+use function strpos;
+use function substr;
 
 /**
  * Presents the captured application identity, PHP runtime, and installed-extension roster.
@@ -37,13 +39,16 @@ final class ConfigPanel extends Panel
     protected const string TITLE = ConfigMessage::TITLE->value;
 
     /**
-     * @var array<string, ConfigMessage> Bundled PHP extensions reported as loaded or missing, keyed by payload field.
+     * Bundled PHP extensions reported as loaded or missing, keyed by payload field and listed alphabetically by label,
+     * matching the installed-extension roster below them.
+     *
+     * @var array<string, ConfigMessage>
      */
     private const array PHP_EXTENSIONS = [
-        'xdebug' => ConfigMessage::PACKAGE_XDEBUG,
         'apcu' => ConfigMessage::PACKAGE_APCU,
         'memcache' => ConfigMessage::PACKAGE_MEMCACHE,
         'memcached' => ConfigMessage::PACKAGE_MEMCACHED,
+        'xdebug' => ConfigMessage::PACKAGE_XDEBUG,
     ];
 
     /**
@@ -86,6 +91,10 @@ final class ConfigPanel extends Panel
         $yii = self::text($application, 'yii');
         $version = self::text($php, 'version');
 
+        $debug = ($application['debug'] ?? false) === true
+            ? ConfigMessage::STATE_ON->value
+            : ConfigMessage::STATE_OFF->value;
+
         $view = PanelView::create()
             ->summary(
                 '',
@@ -104,70 +113,79 @@ final class ConfigPanel extends Panel
                 $count === 1 ? ConfigMessage::EXTENSION_SUFFIX->value : ConfigMessage::EXTENSIONS_SUFFIX->value,
                 $count,
             )
-            ->overview(
-                [
-                    ConfigMessage::YII->value => self::orPlaceholder($yii),
-                    ConfigMessage::PHP->value => self::orPlaceholder($version),
-                    ConfigMessage::ENVIRONMENT->value => self::orPlaceholder(self::text($application, 'env')),
-                    ConfigMessage::DEBUG_MODE->value => self::flag(
-                        $application,
-                        'debug',
-                        ConfigMessage::DEBUG_ON,
-                        ConfigMessage::DEBUG_OFF,
-                    ),
-                    ConfigMessage::APPLICATION->value => self::orPlaceholder(self::text($application, 'name')),
-                    ConfigMessage::APPLICATION_VERSION->value => self::orPlaceholder(
-                        self::text($application, 'version'),
-                    ),
-                ],
-                true,
+            ->readouts(
+                PanelView::readout(
+                    ConfigMessage::YII->value,
+                    self::orPlaceholder($yii),
+                    ConfigMessage::CAPTION_FRAMEWORK->value,
+                ),
+                PanelView::readout(
+                    ConfigMessage::PHP->value,
+                    self::orPlaceholder($version),
+                    ConfigMessage::CAPTION_RUNTIME->value,
+                ),
+                PanelView::readout(
+                    ConfigMessage::ENVIRONMENT->value,
+                    self::orPlaceholder(self::text($application, 'env')),
+                    sprintf(ConfigMessage::CAPTION_DEBUG->value, $debug),
+                ),
+                PanelView::readout(
+                    ConfigMessage::APPLICATION->value,
+                    self::orPlaceholder(self::text($application, 'name')),
+                    ConfigMessage::CAPTION_INSTANCE->value,
+                ),
             );
 
-        $runtime = [];
+        $pills = [];
 
         foreach (self::PHP_EXTENSIONS as $key => $label) {
-            $runtime[$label->value] = self::flag(
-                $php,
-                $key,
-                ConfigMessage::EXTENSION_LOADED,
-                ConfigMessage::EXTENSION_MISSING,
+            $loaded = ($php[$key] ?? false) === true;
+
+            $pills[] = PanelView::pill(
+                $label->value,
+                $loaded ? ConfigMessage::STATE_ON->value : ConfigMessage::STATE_OFF->value,
+                $loaded,
             );
         }
 
         $view = $view
-            ->heading(ConfigMessage::PHP_EXTENSIONS->value, true)
-            ->overview($runtime, true)
-            ->heading(ConfigMessage::APPLICATION_DETAILS->value, true)
-            ->overview(
-                [
-                    ConfigMessage::CHARSET->value => self::orPlaceholder(self::text($application, 'charset')),
-                    ConfigMessage::CURRENT_LANGUAGE->value => self::language(self::text($application, 'language')),
-                    ConfigMessage::SOURCE_LANGUAGE->value => self::language(
-                        self::text($application, 'sourceLanguage'),
+            ->section(
+                ConfigMessage::MARK_CONTINUATION->value,
+                ConfigMessage::APPLICATION_DETAILS->value,
+                PanelView::create()->facts(
+                    PanelView::fact(
+                        ConfigMessage::CHARSET->value,
+                        self::orPlaceholder(self::text($application, 'charset')),
                     ),
-                ],
-                true,
+                    PanelView::fact(
+                        ConfigMessage::CURRENT_LANGUAGE->value,
+                        self::language(self::text($application, 'language')),
+                    ),
+                    PanelView::fact(
+                        ConfigMessage::SOURCE_LANGUAGE->value,
+                        self::language(self::text($application, 'sourceLanguage')),
+                    ),
+                    PanelView::fact(
+                        ConfigMessage::APPLICATION_VERSION->value,
+                        self::orPlaceholder(self::text($application, 'version')),
+                    ),
+                ),
             )
-            ->heading(sprintf(ConfigMessage::INSTALLED->value, $count), true);
-
-        $view = $count === 0
-            ? $view->emptyState(
-                ConfigMessage::EMPTY_HEADLINE->value,
-                ConfigMessage::EMPTY_EXPLANATION->value,
+            ->section(
+                ConfigMessage::MARK_PRIMARY->value,
+                ConfigMessage::PHP_EXTENSIONS->value,
+                PanelView::create()->pills(...$pills),
             )
-            : $view->table(
-                [ConfigMessage::PACKAGE_NAME->value, ConfigMessage::VERSION->value],
-                self::rows($extensions),
-                true,
-                [
-                    0 => ColumnStyle::IDENTIFIER,
-                    1 => ColumnStyle::MONOSPACE,
-                ],
+            ->section(
+                ConfigMessage::MARK_PRIMARY->value,
+                ConfigMessage::INSTALLED_TITLE->value,
+                self::roster($extensions),
+                $count,
             );
 
         return $this->phpInfoUrl === ''
             ? $view
-            : $view->paragraph(PanelView::link(ConfigMessage::PHP_INFO_LINK->value, $this->phpInfoUrl, true));
+            : $view->paragraph(PanelView::link(ConfigMessage::PHP_INFO_LINK->value, $this->phpInfoUrl));
     }
 
     /**
@@ -199,23 +217,6 @@ final class ConfigPanel extends Panel
         ksort($packages);
 
         return $packages;
-    }
-
-    /**
-     * Builds the badge reporting whether a captured flag was enabled.
-     *
-     * @param array<array-key, mixed> $slice Decoded payload slice holding the flag.
-     * @param string $key Flag to read.
-     * @param ConfigMessage $enabled Badge label used when the flag is `true`.
-     * @param ConfigMessage $disabled Badge label used when the flag is `false`.
-     *
-     * @return BadgeInline Success badge when enabled, muted badge otherwise.
-     */
-    private static function flag(array $slice, string $key, ConfigMessage $enabled, ConfigMessage $disabled): array
-    {
-        return ($slice[$key] ?? false) === true
-            ? PanelView::badge($enabled->value, Tone::SUCCESS)
-            : PanelView::badge($disabled->value, Tone::MUTED);
     }
 
     /**
@@ -262,21 +263,38 @@ final class ConfigPanel extends Panel
     }
 
     /**
-     * Builds the roster table rows in package order.
+     * Builds the installed-extension roster, one manifest per vendor in package order.
      *
-     * @param array<string, string> $packages Installed versions keyed by package name.
+     * @param array<string, string> $extensions Installed versions keyed by package name, sorted alphabetically.
      *
-     * @return list<list<string>> One row per package, matching the declared column order.
+     * @return PanelView Vendor manifests, or the empty state when the capture carried no roster.
      */
-    private static function rows(array $packages): array
+    private static function roster(array $extensions): PanelView
     {
-        $rows = [];
-
-        foreach ($packages as $name => $version) {
-            $rows[] = [$name, $version];
+        if ($extensions === []) {
+            return PanelView::create()->emptyState(
+                ConfigMessage::EMPTY_HEADLINE->value,
+                ConfigMessage::EMPTY_EXPLANATION->value,
+            );
         }
 
-        return $rows;
+        $vendors = [];
+
+        foreach ($extensions as $name => $version) {
+            $separator = strpos($name, '/');
+            $vendor = $separator === false ? $name : substr($name, 0, $separator) . '/';
+            $short = $separator === false ? $name : substr($name, $separator + 1);
+
+            $vendors[$vendor][] = PanelView::package($short, "v{$version}");
+        }
+
+        $view = PanelView::create();
+
+        foreach ($vendors as $vendor => $packages) {
+            $view = $view->manifest($vendor, ...$packages);
+        }
+
+        return $view;
     }
 
     /**

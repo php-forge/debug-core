@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel;
 
 use PHPForge\Debug\{ColumnStyle, PanelView};
-use PHPForge\Debug\Helper\{Badge, CellMore, Disclosure, EmptyState, Format, Table, Trace};
+use PHPForge\Debug\Helper\{Badge, CellMore, Disclosure, EmptyState, ExtensionPill, Format, Table, Trace};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\{Div, P, Pre};
 use UIAwesome\Html\Form\InputSearch;
 use UIAwesome\Html\Heading\{H1, H2};
 use UIAwesome\Html\Helper\Encode;
-use UIAwesome\Html\List\{Li, Ul};
+use UIAwesome\Html\List\{Dd, Dl, Dt, Li, Ul};
 use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\{Code, Span, Strong};
 use UIAwesome\Html\Root\Header;
-use UIAwesome\Html\Sectioning\Section;
+use UIAwesome\Html\Sectioning\{Article, Section};
 use UIAwesome\Html\Table\{Td, Th, Tr};
 
 use function array_map;
@@ -37,12 +38,34 @@ use const JSON_UNESCAPED_UNICODE;
  * @phpstan-import-type Inline from PanelView
  * @phpstan-import-type LinkInline from PanelView
  * @phpstan-import-type TraceInline from PanelView
+ * @phpstan-import-type FactsBlock from PanelView
+ * @phpstan-import-type ManifestBlock from PanelView
  * @phpstan-import-type OverviewBlock from PanelView
+ * @phpstan-import-type PillsBlock from PanelView
+ * @phpstan-import-type ReadoutsBlock from PanelView
+ * @phpstan-import-type SectionBlock from PanelView
  * @phpstan-import-type ParagraphBlock from PanelView
  * @phpstan-import-type TableBlock from PanelView
  */
 final class PanelRenderer
 {
+    /**
+     * Class list of a cell holding a short machine name that must stay on one line.
+     */
+    private const string CELL_IDENTIFIER_CLASS = Css::CELL_MONO . ' ' . Css::CELL_NOWRAP;
+    /**
+     * Class list of a cell holding serialized payload text.
+     */
+    private const string CELL_PAYLOAD_CLASS = Css::CELL_MONO . ' ' . Css::CELL_PAYLOAD;
+    /**
+     * Class list of a data grid laid out as a label and value overview.
+     */
+    private const string TABLE_COMPACT_CLASS = Css::TABLE . ' ' . Css::TABLE_MONO . ' ' . Css::TABLE_OVERVIEW;
+    /**
+     * Class list of a data grid rendered in the monospace face.
+     */
+    private const string TABLE_MONO_CLASS = Css::TABLE . ' ' . Css::TABLE_MONO;
+
     /**
      * @param Trace $trace Renderer applied to every captured source frame.
      */
@@ -100,19 +123,24 @@ final class PanelRenderer
             ),
             'group' => Section::tag()
                 ->addAriaAttribute('label', $block['label'])
-                ->class('yii-debug-panel-group')
+                ->class(Css::PANEL_GROUP)
                 ->html($this->blocks($block['content']->blocks()))
                 ->render(),
             'heading' => $block['section']
                 ? Div::tag()
-                    ->class('yii-debug-section-header')
+                    ->class(Css::SECTION_HEADER)
                     ->html(H2::tag()->content($block['title']))
                     ->render()
                 : H2::tag()
                     ->content($block['title'])
                     ->render(),
+            'facts' => self::facts($block),
+            'manifest' => self::manifest($block),
             'overview' => $this->overview($block),
             'paragraph' => $this->paragraph($block),
+            'pills' => self::pills($block),
+            'readouts' => self::readouts($block),
+            'section' => $this->section($block),
             'table' => $this->table($block),
         };
     }
@@ -123,6 +151,37 @@ final class PanelRenderer
     private function blocks(array $blocks): string
     {
         return implode('', array_map($this->block(...), $blocks));
+    }
+
+    /**
+     * Renders the compact strip of label and value pairs.
+     *
+     * @param FactsBlock $block Validated fact strip.
+     *
+     * @return string Rendered fact strip.
+     */
+    private static function facts(array $block): string
+    {
+        $facts = [];
+
+        foreach ($block['facts'] as $fact) {
+            $facts[] = Div::tag()
+                ->class(Css::FACT)
+                ->html(
+                    Dt::tag()
+                        ->class(Css::FACT_LABEL)
+                        ->content($fact['label']),
+                    Dd::tag()
+                        ->class(Css::FACT_VALUE)
+                        ->title($fact['value'])
+                        ->content($fact['value']),
+                );
+        }
+
+        return Dl::tag()
+            ->class(Css::FACT_STRIP)
+            ->html(...$facts)
+            ->render();
     }
 
     /**
@@ -140,14 +199,14 @@ final class PanelRenderer
         $input = InputSearch::tag()
             ->addAriaAttribute('label', "Filter {$label}")
             ->addDataAttribute('yii-debug-filter', true)
-            ->class('yii-debug-filter-input')
+            ->class(Css::FILTER_INPUT)
             ->placeholder('Filter…');
 
         return Div::tag()
             ->addDataAttribute('yii-debug-filter-scope', true)
             ->html(
                 Header::tag()
-                    ->class('yii-debug-section-header')
+                    ->class(Css::SECTION_HEADER)
                     ->html($input)
                     ->render(),
                 $table,
@@ -171,7 +230,7 @@ final class PanelRenderer
         }
 
         return Ul::tag()
-            ->class('yii-debug-trace')
+            ->class(Css::TRACE)
             ->html(...$items)
             ->render();
     }
@@ -182,7 +241,7 @@ final class PanelRenderer
     private function inline(array $inline): string
     {
         return match ($inline['kind']) {
-            'badge' => Badge::render($inline['label'], $inline['tone']->value)->render(),
+            'badge' => Badge::render($inline['label'], $inline['tone'])->render(),
             'link' => $this->anchor($inline),
             'trace' => $this->frames($inline),
             'text' => match ($inline['style']) {
@@ -209,6 +268,51 @@ final class PanelRenderer
     }
 
     /**
+     * Renders the vendor-grouped package roster.
+     *
+     * @param ManifestBlock $block Validated manifest block.
+     *
+     * @return string Rendered manifest card.
+     */
+    private static function manifest(array $block): string
+    {
+        $items = [];
+
+        foreach ($block['packages'] as $package) {
+            $items[] = Div::tag()
+                ->class(Css::MANIFEST_ITEM)
+                ->html(
+                    Span::tag()
+                        ->class(Css::MANIFEST_NAME)
+                        ->content($package['name']),
+                    Span::tag()
+                        ->class(Css::MANIFEST_VERSION)
+                        ->content($package['version']),
+                );
+        }
+
+        $total = count($items);
+
+        return Section::tag()
+            ->addAriaAttribute('label', $block['label'])
+            ->class(Css::MANIFEST)
+            ->html(
+                Header::tag()
+                    ->class(Css::MANIFEST_HEAD)
+                    ->html(
+                        Span::tag()->content($block['label']),
+                        Span::tag()
+                            ->class(Css::MANIFEST_COUNT)
+                            ->content($total === 1 ? '1 package' : "{$total} packages"),
+                    ),
+                Div::tag()
+                    ->class(Css::MANIFEST_GRID)
+                    ->html(...$items),
+            )
+            ->render();
+    }
+
+    /**
      * @param OverviewBlock $block
      */
     private function overview(array $block): string
@@ -226,7 +330,7 @@ final class PanelRenderer
         return Table::render(
             [],
             $rows,
-            'yii-debug-table yii-debug-table-mono' . ($block['compact'] ? ' yii-debug-table-overview' : ''),
+            $block['compact'] ? self::TABLE_COMPACT_CLASS : self::TABLE_MONO_CLASS,
         );
     }
 
@@ -245,7 +349,7 @@ final class PanelRenderer
         foreach ($view->summaryMetrics() as $metric) {
             if ($summary !== []) {
                 $summary[] = Span::tag()
-                    ->class('yii-debug-grid-summary-sep')
+                    ->class(Css::GRID_SUMMARY_SEP)
                     ->content('·');
             }
 
@@ -253,14 +357,14 @@ final class PanelRenderer
         }
 
         $heading = H1::tag()
-            ->class('yii-debug-sr-only')
+            ->class(Css::SR_ONLY)
             ->content($name)
             ->render();
 
         $strip = $summary === []
             ? ''
             : Header::tag()
-                ->class('yii-debug-grid-summary')
+                ->class(Css::GRID_SUMMARY)
                 ->html(...$summary)
                 ->render();
 
@@ -276,11 +380,32 @@ final class PanelRenderer
 
         if ($block['tone'] !== null) {
             $paragraph = $paragraph
-                ->class('yii-debug-callout yii-debug-callout-' . $block['tone']->value)
+                ->class(Css::callout($block['tone']))
                 ->role('status');
         }
 
         return $paragraph->render();
+    }
+
+    /**
+     * Renders the strip of status pills.
+     *
+     * @param PillsBlock $block Validated pill strip.
+     *
+     * @return string Rendered pill strip.
+     */
+    private static function pills(array $block): string
+    {
+        $pills = [];
+
+        foreach ($block['pills'] as $pill) {
+            $pills[] = ExtensionPill::render($pill['label'], $pill['state'], $pill['enabled']);
+        }
+
+        return Div::tag()
+            ->class(Css::EXT_STRIP)
+            ->html(...$pills)
+            ->render();
     }
 
     private function preview(mixed $value): string
@@ -288,6 +413,78 @@ final class PanelRenderer
         $json = json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         return CellMore::clamp(Encode::content($json), $json);
+    }
+
+    /**
+     * Renders the row of headline readout cards.
+     *
+     * @param ReadoutsBlock $block Validated readout row.
+     *
+     * @return string Rendered readout row.
+     */
+    private static function readouts(array $block): string
+    {
+        $cards = [];
+
+        foreach ($block['readouts'] as $readout) {
+            $parts = [
+                Span::tag()
+                    ->class(Css::READOUT_LABEL)
+                    ->content($readout['label']),
+                Span::tag()
+                    ->class(Css::READOUT_VALUE)
+                    ->content($readout['value']),
+            ];
+
+            if ($readout['caption'] !== '') {
+                $parts[] = Span::tag()
+                    ->class(Css::READOUT_META)
+                    ->content($readout['caption']);
+            }
+
+            $cards[] = Article::tag()
+                ->class(Css::READOUT_CARD)
+                ->html(...$parts);
+        }
+
+        return Div::tag()
+            ->class(Css::READOUT_GRID)
+            ->html(...$cards)
+            ->render();
+    }
+
+    /**
+     * Renders a titled section wrapping its own blocks.
+     *
+     * @param SectionBlock $block Validated section.
+     *
+     * @return string Rendered section.
+     */
+    private function section(array $block): string
+    {
+        $title = [
+            Span::tag()
+                ->class(Css::SECTION_MARK)
+                ->content($block['mark']),
+            Encode::content($block['title']),
+        ];
+
+        if ($block['count'] !== null) {
+            $title[] = Span::tag()
+                ->class(Css::SECTION_COUNT)
+                ->content((string) $block['count']);
+        }
+
+        return Section::tag()
+            ->addAriaAttribute('label', $block['title'])
+            ->class(Css::SECTION)
+            ->html(
+                H2::tag()
+                    ->class(Css::SECTION_TITLE)
+                    ->html(...$title),
+                $this->blocks($block['content']->blocks()),
+            )
+            ->render();
     }
 
     /**
@@ -305,11 +502,11 @@ final class PanelRenderer
 
                 $class = match ($style) {
                     ColumnStyle::PLAIN => '',
-                    ColumnStyle::MONOSPACE => 'yii-debug-cell-mono',
-                    ColumnStyle::IDENTIFIER => 'yii-debug-cell-mono yii-debug-cell-nowrap',
-                    ColumnStyle::NUMBER => 'yii-debug-cell-numeric',
-                    ColumnStyle::PILL => 'yii-debug-cell-pill',
-                    ColumnStyle::PAYLOAD => 'yii-debug-cell-mono yii-debug-cell-payload',
+                    ColumnStyle::MONOSPACE => Css::CELL_MONO,
+                    ColumnStyle::IDENTIFIER => self::CELL_IDENTIFIER_CLASS,
+                    ColumnStyle::NUMBER => Css::CELL_NUMERIC,
+                    ColumnStyle::PILL => Css::CELL_PILL,
+                    ColumnStyle::PAYLOAD => self::CELL_PAYLOAD_CLASS,
                 };
 
                 $value = $this->inline($inline);
@@ -333,7 +530,7 @@ final class PanelRenderer
         $wrap = Div::tag()
             ->addAriaAttribute('label', $label)
             ->addAttribute('tabindex', 0)
-            ->class('yii-debug-table-wrap')
+            ->class(Css::TABLE_WRAP)
             ->role('region')
             ->html(Table::build($block['headers'], $rows));
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\PhpInfo;
 
 use PHPForge\Debug\Helper\{Disclosure, ExtensionPill, Icon};
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\{Div, Pre};
 use UIAwesome\Html\Form\{Button, InputSearch};
 use UIAwesome\Html\Interactive\{Details, Summary};
@@ -240,7 +241,7 @@ final class PhpInfoRenderer
                     ->class('yii-debug-phpinfo-search-control')
                     ->html(
                         Label::tag()
-                            ->class('yii-debug-sr-only')
+                            ->class(Css::SR_ONLY)
                             ->for('yii-debug-phpinfo-filter')
                             ->content('Filter PHP modules and settings'),
                         Span::tag()

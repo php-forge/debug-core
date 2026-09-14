@@ -4753,6 +4753,162 @@
     text-transform: lowercase;
   }
 
+  /* -- Readout card grid container ------------------------------------ */
+
+  .yii-debug-readout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: var(--yii-debug-space-3);
+    margin-bottom: var(--yii-debug-space-6);
+  }
+
+  /*
+   * Overview tables inside a schematic section drop the dashboard card look and
+   * adopt the manifest rhythm: mono type, a muted label column, and hairline
+   * row rules instead of a heavy surface.
+   */
+  .yii-debug-section .yii-debug-table-wrap {
+    border-radius: var(--yii-debug-radius-md);
+  }
+
+  .yii-debug-section .yii-debug-table-overview {
+    th,
+    td {
+      padding: 9px var(--yii-debug-space-4);
+      border-bottom: 1px solid
+        color-mix(in srgb, var(--yii-debug-panel-border), transparent 45%);
+      font-family: var(--yii-debug-font-mono);
+      font-size: var(--yii-debug-fs-xs);
+      text-align: left;
+      vertical-align: baseline;
+    }
+
+    th {
+      width: 34%;
+      color: var(--yii-debug-panel-muted);
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    td {
+      color: var(--yii-debug-panel-text);
+    }
+
+    tr:last-child {
+      th,
+      td {
+        border-bottom: 0;
+      }
+    }
+  }
+
+  /*
+   * Fact strip: label and value pairs spread across the full width, one hairline
+   * apart. The 1px grid gap exposes the container colour as the rule, so the
+   * separators survive the wrap to a second row on narrow viewports.
+   */
+  .yii-debug-fact-strip {
+    display: grid;
+    overflow: hidden;
+    margin: 0;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    border: var(--yii-debug-border);
+    border-radius: var(--yii-debug-radius-md);
+    background: var(--yii-debug-panel-border);
+    gap: 1px;
+  }
+
+  .yii-debug-fact {
+    min-width: 0;
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
+    background: var(--yii-debug-panel-surface-muted);
+  }
+
+  .yii-debug-fact-label {
+    margin-bottom: 2px;
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-sans);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .yii-debug-fact-value {
+    overflow: hidden;
+    margin: 0;
+    color: var(--yii-debug-panel-text);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-sm);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* -- Package manifest ------------------------------------------------ */
+
+  .yii-debug-manifest {
+    display: flex;
+    flex-direction: column;
+    border: var(--yii-debug-border);
+    border-radius: var(--yii-debug-radius-md);
+    background: var(--yii-debug-panel-surface);
+    overflow: hidden;
+  }
+
+  .yii-debug-manifest-head {
+    display: flex;
+    align-items: center;
+    gap: var(--yii-debug-space-2);
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
+    border-bottom: var(--yii-debug-border);
+    color: var(--yii-debug-panel-primary);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .yii-debug-manifest-count {
+    margin-left: auto;
+    color: var(--yii-debug-panel-muted);
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Dense, typewriter-flavored roster: as many columns as the width allows. */
+  .yii-debug-manifest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  }
+
+  .yii-debug-manifest-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--yii-debug-space-3);
+    min-width: 0;
+    padding: 7px var(--yii-debug-space-4);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--yii-debug-panel-border), transparent 45%);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+  }
+
+  .yii-debug-manifest-name {
+    color: var(--yii-debug-panel-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .yii-debug-manifest-version {
+    flex: none;
+    color: var(--yii-debug-panel-primary);
+  }
+
   /* -- Extension status strip ----------------------------------------- */
 
   .yii-debug-ext-strip {

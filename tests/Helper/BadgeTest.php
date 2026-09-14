@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Helper;
 
 use PHPForge\Debug\Helper\Badge;
+use PHPForge\Debug\Tone;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see Badge} covering the variant class and the optional extra modifier.
+ * Unit tests for {@see Badge} covering the tone class and the optional extra modifier.
  */
 #[Group('badge')]
 #[Group('helpers')]
@@ -21,7 +22,7 @@ final class BadgeTest extends TestCase
             <<<HTML
             <span class="yii-debug-badge yii-debug-badge-success yii-debug-route-match">Matched</span>
             HTML,
-            Badge::render('Matched', 'success', 'yii-debug-route-match')->render(),
+            Badge::render('Matched', Tone::SUCCESS, 'yii-debug-route-match')->render(),
             'Modifier must follow the variant class.',
         );
     }
@@ -32,7 +33,7 @@ final class BadgeTest extends TestCase
             <<<HTML
             <span class="yii-debug-badge yii-debug-badge-muted">Not matched</span>
             HTML,
-            Badge::render('Not matched', 'muted')->render(),
+            Badge::render('Not matched', Tone::MUTED)->render(),
             'Chip must carry the base and variant classes only.',
         );
     }

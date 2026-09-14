@@ -18,6 +18,8 @@
     "check:size": "node tools/check-asset-size.mjs",
     "check:contrast": "node tools/check-token-contrast.mjs",
     "check:contrast:strict": "node tools/check-token-contrast.mjs --strict",
+    "check:css-vocabulary": "node tools/check-css-vocabulary.mjs",
+    "contact-sheet": "node tools/contact-sheet.mjs",
     "test:events": "DEBUG_UI_SEED_FIXTURES=0 playwright test e2e/events.spec.js",
     "test:e2e": "playwright test e2e/smoke.spec.js e2e/security.spec.js e2e/db-controls.spec.js e2e/history-layout.spec.js",
     "test:e2e:list": "DEBUG_UI_SEED_FIXTURES=0 playwright test --list",

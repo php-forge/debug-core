@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Panel\Dump;
 
 use Closure;
 use PHPForge\Debug\Helper\{Coerce, Format};
+use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\List\{Li, Ul};
 use UIAwesome\Html\Phrasing\Span;
@@ -111,7 +112,7 @@ final class DumpCardRenderer
         );
 
         $trace = Ul::tag()
-            ->class('yii-debug-trace')
+            ->class(Css::TRACE)
             ->html(...$items)
             ->render();
 

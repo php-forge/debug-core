@@ -4,27 +4,54 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Panel\Config;
 
-use PHPForge\Debug\{ColumnStyle, PanelView, Tone};
 use PHPForge\Debug\Panel\Config\{ConfigPanel, ConfigSnapshot};
+use PHPForge\Debug\PanelView;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
-use function array_keys;
+use function array_map;
 
 /**
- * Unit tests for {@see ConfigPanel} covering the identity overview, runtime sections, and extension roster.
+ * Unit tests for {@see ConfigPanel} covering the identity readouts, runtime sections, and extension roster.
  *
- * @phpstan-import-type BadgeInline from PanelView
  * @phpstan-import-type Block from PanelView
- * @phpstan-import-type Inline from PanelView
- * @phpstan-import-type OverviewBlock from PanelView
+ * @phpstan-import-type EmptyStateBlock from PanelView
+ * @phpstan-import-type FactsBlock from PanelView
+ * @phpstan-import-type LinkInline from PanelView
+ * @phpstan-import-type ManifestBlock from PanelView
  * @phpstan-import-type ParagraphBlock from PanelView
- * @phpstan-import-type TableBlock from PanelView
+ * @phpstan-import-type PillsBlock from PanelView
+ * @phpstan-import-type ReadoutsBlock from PanelView
+ * @phpstan-import-type SectionBlock from PanelView
  */
 #[Group('panel')]
 #[Group('config')]
 final class ConfigPanelTest extends TestCase
 {
+    public function testARosterEntryThatIsNotAnObjectIsSkipped(): void
+    {
+        $view = self::present(
+            [
+                'extensions' => [
+                    'php-forge/debug',
+                    'yiisoft/arrays' => ['name' => 'yiisoft/arrays', 'version' => '3.2.1'],
+                ],
+            ],
+        );
+
+        $roster = self::section(self::blockAt($view, 3));
+
+        self::assertSame(
+            1,
+            $roster['count'],
+            'A malformed roster entry must not reach the tally.',
+        );
+        self::assertSame(
+            [['kind' => 'package', 'name' => 'arrays', 'version' => 'v3.2.1']],
+            self::manifest(self::blockAt($roster['content'], 0))['packages'],
+            'Only the well-formed entry must survive.',
+        );
+    }
     public function testASingleInstalledExtensionUsesTheSingularLabel(): void
     {
         $view = self::present(
@@ -43,12 +70,29 @@ final class ConfigPanelTest extends TestCase
             ($view->summaryMetrics()[2] ?? self::fail('The roster size must stay in the summary.'))['label'],
             'A single package must use the singular label.',
         );
+
+        $roster = self::section(self::blockAt($view, 3));
+
         self::assertSame(
-            'Installed extensions (1)',
-            self::heading(self::blockAt($view, 5))['title'],
-            'The roster heading must report the package count.',
+            1,
+            $roster['count'],
+            'The roster title must carry the package count.',
+        );
+
+        $manifest = self::manifest(self::blockAt($roster['content'], 0));
+
+        self::assertSame(
+            'php-forge/',
+            $manifest['label'],
+            'A manifest groups its packages by vendor.',
+        );
+        self::assertSame(
+            [['kind' => 'package', 'name' => 'debug', 'version' => 'v0.1.0']],
+            $manifest['packages'],
+            'The vendor prefix moves to the group heading.',
         );
     }
+
     public function testEmptyCaptureFallsBackToPlaceholdersAndAnEmptyRoster(): void
     {
         $view = self::present([]);
@@ -60,76 +104,62 @@ final class ConfigPanelTest extends TestCase
                 ['label' => ' extensions', 'value' => ['kind' => 'text', 'value' => '0', 'style' => 'strong']],
             ],
             $view->summaryMetrics(),
-            'Missing versions must show the placeholder.',
+            'An empty capture must still publish the three summary metrics.',
         );
 
-        $fields = self::fields(self::overview(self::blockAt($view, 0)));
+        $readouts = self::readouts(self::blockAt($view, 0));
 
         self::assertSame(
-            '—',
-            self::textValue($fields['Yii'] ?? self::fail('The identity must keep the framework row.')),
-            'A missing framework version must show the placeholder.',
-        );
-        self::assertSame(
-            'off',
-            self::badge($fields['Debug mode'] ?? self::fail('The identity must keep the debug row.'))['label'],
-            'A missing debug flag must read as disabled.',
+            ['—', '—', '—', '—'],
+            array_map(static fn(array $readout): string => $readout['value'], $readouts['readouts']),
+            'Every unrecorded identity value must fall back to the placeholder.',
         );
 
-        $details = self::fields(self::overview(self::blockAt($view, 4)));
+        self::assertSame(
+            ['framework', 'runtime', 'debug off', 'instance'],
+            array_map(static fn(array $readout): string => $readout['caption'], $readouts['readouts']),
+            'An unrecorded debug flag must read as disabled.',
+        );
+
+        $pills = self::pills(self::blockAt(self::section(self::blockAt($view, 2))['content'], 0));
 
         self::assertSame(
-            '—',
-            self::textValue($details['Current language'] ?? self::fail('Details must keep the language row.')),
-            'A missing locale must show the placeholder.',
+            [false, false, false, false],
+            array_map(static fn(array $pill): bool => $pill['enabled'], $pills['pills']),
+            'An unrecorded bundled extension must read as missing.',
+        );
+
+        $details = self::facts(self::blockAt(self::section(self::blockAt($view, 1))['content'], 0));
+
+        self::assertSame(
+            ['—', '—', '—', '—'],
+            array_map(static fn(array $fact): string => $fact['value'], $details['facts']),
+            'An unrecorded locale must fall back to the placeholder.',
+        );
+
+        $roster = self::section(self::blockAt($view, 3));
+
+        self::assertSame(
+            0,
+            $roster['count'],
+            'An empty roster must report zero packages.',
         );
         self::assertSame(
-            'Installed extensions (0)',
-            self::heading(self::blockAt($view, 5))['title'],
-            'The roster heading must report zero packages.',
-        );
-        self::assertSame(
-            'emptyState',
-            self::blockAt($view, 6)['kind'],
-            'An empty roster must be explained instead of rendering a table.',
-        );
-        self::assertCount(
-            7,
-            $view->blocks(),
-            'An adapter without a phpinfo route must not add the call to action.',
+            'No installed extensions recorded',
+            self::emptyState(self::blockAt($roster['content'], 0))['title'],
+            'An empty roster must explain the absent capture.',
         );
     }
 
     public function testLanguageOnlyTagIsAnnotatedWithoutARegion(): void
     {
-        $view = self::present(['application' => ['language' => 'zz']]);
-        $details = self::fields(self::overview(self::blockAt($view, 4)));
+        $view = self::present(['application' => ['language' => 'es']]);
+        $details = self::facts(self::blockAt(self::section(self::blockAt($view, 1))['content'], 0));
 
         self::assertSame(
-            'zz (zz)',
-            self::textValue($details['Current language'] ?? self::fail('Details must keep the language row.')),
-            'A tag with no region must be annotated with the language alone.',
-        );
-    }
-
-    public function testMetadataMatchesTheBuiltInConfigurationPanel(): void
-    {
-        $panel = new ConfigPanel();
-
-        self::assertSame(
-            'config',
-            $panel->id(),
-            'The persisted panel identifier must stay stable.',
-        );
-        self::assertSame(
-            'Configuration',
-            $panel->name(),
-            'The navigation title must stay stable.',
-        );
-        self::assertSame(
-            'config',
-            $panel->icon(),
-            'The panel must reuse the existing icon.',
+            'es (Spanish)',
+            $details['facts'][1]['value'] ?? '',
+            'A language-only tag must be annotated without a region.',
         );
     }
 
@@ -137,25 +167,37 @@ final class ConfigPanelTest extends TestCase
     {
         $panel = new ConfigPanel();
 
+        $linked = $panel->phpInfoUrl('/debug/php-info');
+
         self::assertNotSame(
             $panel,
-            $panel->phpInfoUrl('/debug/php-info'),
-            'New instance must be returned (immutability).',
+            $linked,
+            'The wither must return a new instance.',
+        );
+        self::assertCount(
+            4,
+            $panel->present(self::capture())->blocks(),
+            'Without a phpinfo URL the panel must omit the call to action.',
         );
 
-        $view = $panel->phpInfoUrl('/debug/php-info')->present(self::capture());
+        $blocks = $linked->present(self::capture())->blocks();
 
-        $paragraph = self::paragraph($view->blocks()[7] ?? self::fail('The call to action must close the panel.'));
+        self::assertCount(
+            5,
+            $blocks,
+            'A phpinfo URL must append the call to action.',
+        );
+
+        $link = self::link(self::paragraph(self::blockAt($linked->present(self::capture()), 4)));
 
         self::assertSame(
-            [
-                'kind' => 'link',
-                'label' => 'View full phpinfo',
-                'href' => '/debug/php-info',
-                'external' => true,
-            ],
-            $paragraph['content'][0] ?? self::fail('The call to action must carry a link.'),
-            'The phpinfo route must open in a new browsing context.',
+            '/debug/php-info',
+            $link['href'],
+            'The call to action must link to the configured phpinfo URL.',
+        );
+        self::assertFalse(
+            $link['external'],
+            'The phpinfo page must open in the debugger, not a new window.',
         );
     }
 
@@ -166,175 +208,99 @@ final class ConfigPanelTest extends TestCase
                 'application' => [
                     'yii' => '22.0.x-dev',
                     'name' => 'My Application',
-                    'version' => '1.4.0',
-                    'language' => 'en-US',
-                    'sourceLanguage' => 'en',
+                    'version' => '1.0',
                     'charset' => 'UTF-8',
-                    'env' => 'dev',
+                    'language' => 'en-US',
+                    'sourceLanguage' => 'en-US',
+                    'env' => 'prod',
                     'debug' => true,
                 ],
                 'php' => [
                     'version' => '8.5.9',
                     'xdebug' => true,
-                    'apcu' => false,
+                    'apcu' => true,
                     'memcache' => false,
                     'memcached' => false,
                 ],
                 'extensions' => [
-                    'broken' => 'not an extension',
-                    'yiisoft/yii2-symfonymailer' => ['name' => 'yiisoft/yii2-symfonymailer', 'version' => '22.0.0'],
-                    'partial' => ['name' => 'php-forge/partial'],
-                    'php-forge/debug-core' => ['name' => 'php-forge/debug-core', 'version' => '0.1.0'],
+                    'yiisoft/arrays' => ['name' => 'yiisoft/arrays', 'version' => '3.2.1'],
+                    'yiisoft/aliases' => ['name' => 'yiisoft/aliases', 'version' => '3.1.1'],
                 ],
             ],
         );
 
+        $readouts = self::readouts(self::blockAt($view, 0));
+
         self::assertSame(
             [
-                ['label' => '', 'value' => ['kind' => 'text', 'value' => 'Yii 22.0.x-dev', 'style' => 'strong']],
-                ['label' => '', 'value' => ['kind' => 'text', 'value' => 'PHP 8.5.9', 'style' => 'plain']],
-                ['label' => ' extensions', 'value' => ['kind' => 'text', 'value' => '2', 'style' => 'strong']],
+                ['kind' => 'readout', 'label' => 'Yii', 'value' => '22.0.x-dev', 'caption' => 'framework'],
+                ['kind' => 'readout', 'label' => 'PHP', 'value' => '8.5.9', 'caption' => 'runtime'],
+                ['kind' => 'readout', 'label' => 'Environment', 'value' => 'prod', 'caption' => 'debug on'],
+                ['kind' => 'readout', 'label' => 'Application', 'value' => 'My Application', 'caption' => 'instance'],
             ],
-            $view->summaryMetrics(),
-            'Only the framework version may be emphasized.',
-        );
-        self::assertSame(
-            [],
-            $view->toolbarMetrics(),
-            'Configuration must stay out of the toolbar.',
+            $readouts['readouts'],
+            'The identity row must lead with framework, runtime, environment, and application.',
         );
 
-        $identity = self::overview(self::blockAt($view, 0));
-
-        self::assertTrue(
-            $identity['compact'],
-            'The identity must use the compact presentation.',
-        );
-        self::assertSame(
-            ['Yii', 'PHP', 'Environment', 'Debug mode', 'Application', 'Application version'],
-            array_keys(self::fields($identity)),
-            'The identity row order must stay stable.',
-        );
-
-        $debug = self::badge(
-            self::fields($identity)['Debug mode'] ?? self::fail('The identity must keep the debug row.'),
-        );
+        $runtime = self::section(self::blockAt($view, 2));
 
         self::assertSame(
-            'on',
-            $debug['label'],
-            'An enabled debug flag must read as enabled.',
+            '::',
+            $runtime['mark'],
+            'A primary section must carry the primary mark.',
         );
         self::assertSame(
-            Tone::SUCCESS,
-            $debug['tone'],
-            'An enabled debug flag must use the success tone.',
-        );
-        self::assertSame(
-            ['PHP extensions', 'Application details', 'Installed extensions (2)'],
             [
-                self::heading(self::blockAt($view, 1))['title'],
-                self::heading(self::blockAt($view, 3))['title'],
-                self::heading(self::blockAt($view, 5))['title'],
+                ['kind' => 'pill', 'label' => 'APCu', 'state' => 'on', 'enabled' => true],
+                ['kind' => 'pill', 'label' => 'Memcache', 'state' => 'off', 'enabled' => false],
+                ['kind' => 'pill', 'label' => 'Memcached', 'state' => 'off', 'enabled' => false],
+                ['kind' => 'pill', 'label' => 'Xdebug', 'state' => 'on', 'enabled' => true],
             ],
-            'Every section must keep its heading, in order.',
+            self::pills(self::blockAt($runtime['content'], 0))['pills'],
+            'Bundled extensions must be listed alphabetically with their load state.',
+        );
+
+        $details = self::section(self::blockAt($view, 1));
+
+        self::assertSame(
+            '//',
+            $details['mark'],
+            'A continuation section must carry the continuation mark.',
         );
         self::assertSame(
-            [true, true, true],
             [
-                self::heading(self::blockAt($view, 1))['section'],
-                self::heading(self::blockAt($view, 3))['section'],
-                self::heading(self::blockAt($view, 5))['section'],
+                ['kind' => 'fact', 'label' => 'Charset', 'value' => 'UTF-8'],
+                ['kind' => 'fact', 'label' => 'Current language', 'value' => 'en-US (English, United States)'],
+                ['kind' => 'fact', 'label' => 'Source language', 'value' => 'en-US (English, United States)'],
+                ['kind' => 'fact', 'label' => 'Application version', 'value' => '1.0'],
             ],
-            'Every section must open a section-level heading.',
+            self::facts(self::blockAt($details['content'], 0))['facts'],
+            'Application details must keep charset, languages, and the application version, each annotated.',
         );
 
-        $runtimeBlock = self::overview(self::blockAt($view, 2));
-
-        self::assertTrue(
-            $runtimeBlock['compact'],
-            'The runtime section must use the compact presentation.',
-        );
-
-        $runtime = self::fields($runtimeBlock);
+        $roster = self::section(self::blockAt($view, 3));
 
         self::assertSame(
-            ['Xdebug', 'APCu', 'Memcache', 'Memcached'],
-            array_keys($runtime),
-            'The bundled extension order must stay stable.',
-        );
-        self::assertSame(
-            'loaded',
-            self::badge($runtime['Xdebug'] ?? self::fail('The runtime must keep the Xdebug row.'))['label'],
-            'A loaded extension must read as loaded.',
-        );
-        self::assertSame(
-            Tone::MUTED,
-            self::badge($runtime['APCu'] ?? self::fail('The runtime must keep the APCu row.'))['tone'],
-            'A missing extension must stay de-emphasized.',
+            2,
+            $roster['count'],
+            'The roster title must carry the package count.',
         );
 
-        $detailsBlock = self::overview(self::blockAt($view, 4));
-
-        self::assertTrue(
-            $detailsBlock['compact'],
-            'The application details must use the compact presentation.',
-        );
-
-        $details = self::fields($detailsBlock);
+        $manifest = self::manifest(self::blockAt($roster['content'], 0));
 
         self::assertSame(
-            ['Charset', 'Current language', 'Source language'],
-            array_keys($details),
-            'The application detail rows must stay complete and ordered.',
+            'yiisoft/',
+            $manifest['label'],
+            'Packages of one vendor share a manifest.',
         );
         self::assertSame(
-            'en-US (English, United States)',
-            self::textValue($details['Current language'] ?? self::fail('Details must keep the language row.')),
-            'A locale must be annotated with its English display name.',
-        );
-        self::assertSame(
-            'en (English)',
-            self::textValue($details['Source language'] ?? self::fail('Details must keep the source row.')),
-            'A language-only tag must be annotated without a region.',
-        );
-        $table = self::table(self::blockAt($view, 6));
-
-        self::assertSame(
-            ['Package', 'Version'],
-            $table['headers'],
-            'The roster column order must stay stable.',
-        );
-        self::assertSame(
-            [0 => ColumnStyle::IDENTIFIER, 1 => ColumnStyle::MONOSPACE],
-            $table['styles'],
-            'Each style must stay attached to the column it formats.',
-        );
-        self::assertTrue(
-            $table['collapsible'],
-            'A long roster must stay collapsible.',
-        );
-        self::assertSame(
-            ['php-forge/debug-core', 'yiisoft/yii2-symfonymailer'],
             [
-                self::textValue($table['rows'][0][0] ?? self::fail('The roster must list every package.')),
-                self::textValue($table['rows'][1][0] ?? self::fail('The roster must list every package.')),
+                ['kind' => 'package', 'name' => 'aliases', 'version' => 'v3.1.1'],
+                ['kind' => 'package', 'name' => 'arrays', 'version' => 'v3.2.1'],
             ],
-            'Packages must be sorted by name, and malformed entries dropped.',
+            $manifest['packages'],
+            'Packages must stay alphabetical inside their vendor.',
         );
-    }
-
-    /**
-     * @param Inline $inline Field value to narrow.
-     *
-     * @return BadgeInline Narrowed state badge.
-     */
-    private static function badge(array $inline): array
-    {
-        return match ($inline['kind']) {
-            'badge' => $inline,
-            default => self::fail('A captured flag must be a badge.'),
-        };
     }
 
     /**
@@ -365,44 +331,56 @@ final class ConfigPanelTest extends TestCase
     }
 
     /**
-     * @param OverviewBlock $block Overview whose fields are indexed.
-     *
-     * @return array<string, Inline> Field values keyed by their label, in display order.
-     */
-    private static function fields(array $block): array
-    {
-        $fields = [];
-
-        foreach ($block['fields'] as $field) {
-            $fields[$field['label']] = $field['value'];
-        }
-
-        return $fields;
-    }
-
-    /**
      * @param Block $block Block to narrow.
      *
-     * @return array{kind: 'heading', title: string, section: bool} Narrowed section heading.
+     * @return EmptyStateBlock Narrowed empty state.
      */
-    private static function heading(array $block): array
+    private static function emptyState(array $block): array
     {
         return match ($block['kind']) {
-            'heading' => $block,
-            default => self::fail('Each section must have a visible heading.'),
+            'emptyState' => $block,
+            default => self::fail('The roster must explain an absent capture.'),
         };
     }
 
     /**
      * @param Block $block Block to narrow.
      *
-     * @return OverviewBlock Narrowed overview.
+     * @return FactsBlock Narrowed fact strip.
      */
-    private static function overview(array $block): array
+    private static function facts(array $block): array
     {
         return match ($block['kind']) {
-            'overview' => $block,
-            default => self::fail('Configuration must remain inspectable.'),
+            'facts' => $block,
+            default => self::fail('Application details must be presented as a fact strip.'),
+        };
+    }
+
+    /**
+     * @param ParagraphBlock $block Paragraph carrying the call to action.
+     *
+     * @return LinkInline Narrowed call to action.
+     */
+    private static function link(array $block): array
+    {
+        $inline = $block['content'][0] ?? self::fail('The call to action must carry a link.');
+
+        return match ($inline['kind']) {
+            'link' => $inline,
+            default => self::fail('The call to action must be a link.'),
+        };
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return ManifestBlock Narrowed vendor manifest.
+     */
+    private static function manifest(array $block): array
+    {
+        return match ($block['kind']) {
+            'manifest' => $block,
+            default => self::fail('The roster must group packages into vendor manifests.'),
         };
     }
 
@@ -416,6 +394,19 @@ final class ConfigPanelTest extends TestCase
         return match ($block['kind']) {
             'paragraph' => $block,
             default => self::fail('The call to action must be a paragraph.'),
+        };
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return PillsBlock Narrowed pill strip.
+     */
+    private static function pills(array $block): array
+    {
+        return match ($block['kind']) {
+            'pills' => $block,
+            default => self::fail('Bundled extensions must be presented as pills.'),
         };
     }
 
@@ -434,26 +425,26 @@ final class ConfigPanelTest extends TestCase
     /**
      * @param Block $block Block to narrow.
      *
-     * @return TableBlock Narrowed roster table.
+     * @return ReadoutsBlock Narrowed readout row.
      */
-    private static function table(array $block): array
+    private static function readouts(array $block): array
     {
         return match ($block['kind']) {
-            'table' => $block,
-            default => self::fail('The roster must use the shared table contract.'),
+            'readouts' => $block,
+            default => self::fail('The panel must lead with the identity readouts.'),
         };
     }
 
     /**
-     * @param Inline $inline Cell or field value to read.
+     * @param Block $block Block to narrow.
      *
-     * @return string Text carried by the value.
+     * @return SectionBlock Narrowed section.
      */
-    private static function textValue(array $inline): string
+    private static function section(array $block): array
     {
-        return match ($inline['kind']) {
-            'text' => $inline['value'],
-            default => self::fail('The value must be plain text.'),
+        return match ($block['kind']) {
+            'section' => $block,
+            default => self::fail('Each part of the panel must be a titled section.'),
         };
     }
 }

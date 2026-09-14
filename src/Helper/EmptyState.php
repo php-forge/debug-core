@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use PHPForge\Debug\Theme\Css;
 use Stringable;
 use UIAwesome\Html\Flow\Div;
 use UIAwesome\Html\Heading\H2;
@@ -26,7 +27,7 @@ final class EmptyState
     public static function card(string $headline, string|Stringable ...$body): string
     {
         return Div::tag()
-            ->class('yii-debug-empty-state')
+            ->class(Css::EMPTY_STATE)
             ->html(
                 H2::tag()->content($headline),
                 ...$body,
