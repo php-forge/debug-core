@@ -10,6 +10,14 @@ namespace PHPForge\Debug\Panel\Db;
 enum DbMessage: string
 {
     /**
+     * Guidance of the empty state, naming the profiler the adapter must wire so statements are captured.
+     *
+     * Format: "Configure the development connection with %s. ..."
+     */
+    case CAPTURE_GUIDANCE = 'Configure the development connection with %s. Rows are shown only when the driver '
+        . 'reports them. After a redirect, open the previous request from History.';
+
+    /**
      * Header of the column counting how many times the exact same statement ran.
      */
     case DUPLICATE = 'Dup';

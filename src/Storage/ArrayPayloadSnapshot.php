@@ -26,9 +26,7 @@ trait ArrayPayloadSnapshot
      */
     public static function capture(array $values): self
     {
-        return new self(
-            DebugArray::capture($values),
-        );
+        return new self(DebugArray::capture($values));
     }
 
     /**

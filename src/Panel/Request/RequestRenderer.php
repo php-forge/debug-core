@@ -127,10 +127,7 @@ final class RequestRenderer
             return self::renderSections($tab->sections);
         }
 
-        return RequestHeadersRenderer::render(
-            $request->entries,
-            $response->entries,
-        );
+        return RequestHeadersRenderer::render($request->entries, $response->entries);
     }
 
     /**
@@ -398,10 +395,7 @@ final class RequestRenderer
             return self::renderSections($tab->sections);
         }
 
-        return RequestServerRenderer::renderForRequest(
-            $tab->sections[0]->entries,
-            $view,
-        );
+        return RequestServerRenderer::renderForRequest($tab->sections[0]->entries, $view);
     }
 
     /**

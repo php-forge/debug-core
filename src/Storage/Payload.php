@@ -300,10 +300,7 @@ final readonly class Payload
         }
 
         /** @var array<string, mixed> $value */
-        return new self(
-            $value,
-            $path,
-        );
+        return new self($value, $path);
     }
 
     /**

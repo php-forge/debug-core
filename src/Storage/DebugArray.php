@@ -28,9 +28,7 @@ final readonly class DebugArray implements JsonSerializable
      */
     public static function capture(#[SensitiveParameter] array $value): self
     {
-        return new self(
-            DebugValue::capture($value),
-        );
+        return new self(DebugValue::capture($value));
     }
 
     /**
@@ -52,9 +50,7 @@ final readonly class DebugArray implements JsonSerializable
             );
         }
 
-        return new self(
-            $debugValue,
-        );
+        return new self($debugValue);
     }
 
     /**

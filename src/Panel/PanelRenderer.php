@@ -264,7 +264,7 @@ final class PanelRenderer
                 ->html(...$summary)
                 ->render();
 
-        return $heading . $strip . $this->blocks($view->blocks());
+        return "{$heading}{$strip}" . $this->blocks($view->blocks());
     }
 
     /**

@@ -12,12 +12,16 @@ use Throwable;
  */
 final readonly class PanelFailure implements JsonSerializable
 {
+    /**
+     * Lifecycle stage indicating the panel was captured.
+     */
     public const string CAPTURE = 'capture';
+    /**
+     * Lifecycle stage indicating the panel was hydrated.
+     */
     public const string HYDRATE = 'hydrate';
 
     /**
-     * Creates a failure record for a panel lifecycle stage.
-     *
      * @param 'capture'|'hydrate' $stage Lifecycle stage the panel failed in.
      * @param ExceptionSnapshot $exception Captured panel exception.
      */
@@ -33,13 +37,7 @@ final readonly class PanelFailure implements JsonSerializable
      */
     public static function fromArray(mixed $data, string $path): self
     {
-        $payload = Payload::object($data, $path)
-            ->shape(
-                [
-                    'stage',
-                    'exception',
-                ],
-            );
+        $payload = Payload::object($data, $path)->shape(['stage', 'exception']);
 
         $stage = $payload->string('stage');
 
@@ -50,10 +48,7 @@ final readonly class PanelFailure implements JsonSerializable
             );
         }
 
-        return new self(
-            $stage,
-            ExceptionSnapshot::fromArray($payload->raw('exception'), "{$path}.exception"),
-        );
+        return new self($stage, ExceptionSnapshot::fromArray($payload->raw('exception'), "{$path}.exception"));
     }
 
     /**
@@ -66,10 +61,7 @@ final readonly class PanelFailure implements JsonSerializable
      */
     public static function fromThrowable(string $stage, Throwable $throwable): self
     {
-        return new self(
-            $stage,
-            ExceptionSnapshot::fromThrowable($throwable),
-        );
+        return new self($stage, ExceptionSnapshot::fromThrowable($throwable));
     }
 
     /**

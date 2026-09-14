@@ -97,7 +97,18 @@ final class SidebarRendererTest extends TestCase
             </div><div class="yii-debug-snapshot-meta">
             <span class="yii-debug-snapshot-status yii-debug-status-2xx" data-snapshot-field="status">200</span><span class="yii-debug-snapshot-time" data-snapshot-field="time">12:34:56</span><span class="yii-debug-snapshot-tag" data-snapshot-field="ajax">AJAX</span>
             </div><div class="yii-debug-request-nav-row" role="group">
-            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request" data-yii-debug-cursor="newest"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request" data-yii-debug-cursor="newer"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" type="button" title="Older request" aria-label="Older captured request" data-yii-debug-cursor="older"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" type="button" title="Oldest request" aria-label="Oldest captured request" data-yii-debug-cursor="oldest"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg></button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request" data-yii-debug-cursor="newest">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request" data-yii-debug-cursor="newer">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" type="button" title="Older request" aria-label="Older captured request" data-yii-debug-cursor="older">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" type="button" title="Oldest request" aria-label="Oldest captured request" data-yii-debug-cursor="oldest">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg>
+            </button>
             </div>
             </div>
             </section>
@@ -124,7 +135,18 @@ final class SidebarRendererTest extends TestCase
             </div><div class="yii-debug-snapshot-meta">
             <span class="yii-debug-snapshot-status yii-debug-status-2xx" data-snapshot-field="status">200</span><span class="yii-debug-snapshot-time" data-snapshot-field="time">12:34:56</span><span class="yii-debug-snapshot-tag" data-snapshot-field="ajax">AJAX</span>
             </div><div class="yii-debug-request-nav-row" role="group">
-            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request" data-yii-debug-cursor="newest"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request" data-yii-debug-cursor="newer"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" type="button" title="Older request" aria-label="Older captured request" data-yii-debug-cursor="older"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" type="button" title="Oldest request" aria-label="Oldest captured request" data-yii-debug-cursor="oldest"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg></button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request" data-yii-debug-cursor="newest">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request" data-yii-debug-cursor="newer">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" type="button" title="Older request" aria-label="Older captured request" data-yii-debug-cursor="older">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" type="button" title="Oldest request" aria-label="Oldest captured request" data-yii-debug-cursor="oldest">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg>
+            </button>
             </div>
             </div>
             </section>
@@ -255,7 +277,18 @@ final class SidebarRendererTest extends TestCase
             </div><div class="yii-debug-snapshot-meta">
             <span class="yii-debug-snapshot-status yii-debug-status-2xx" data-snapshot-field="status">–</span><span class="yii-debug-snapshot-time" data-snapshot-field="time">12:34:56</span><span class="yii-debug-snapshot-tag" data-snapshot-field="ajax">AJAX</span>
             </div><div class="yii-debug-request-nav-row" role="group">
-            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg></button><a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=older" title="Older request" aria-label="Older captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg></a><a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=oldest" title="Oldest request" aria-label="Oldest captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg></a>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg>
+            </button>
+            <a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=older" title="Older request" aria-label="Older captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg>
+            </a>
+            <a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=oldest" title="Oldest request" aria-label="Oldest captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg>
+            </a>
             </div>
             </div>
             </section>
@@ -323,7 +356,18 @@ final class SidebarRendererTest extends TestCase
             </div><div class="yii-debug-snapshot-meta">
             <span class="yii-debug-snapshot-status yii-debug-status-2xx" data-snapshot-field="status">200</span><span class="yii-debug-snapshot-time" data-snapshot-field="time">12:34:56</span><span class="yii-debug-snapshot-tag" data-snapshot-field="ajax">AJAX</span>
             </div><div class="yii-debug-request-nav-row" role="group">
-            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg></button><a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=older" title="Older request" aria-label="Older captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg></a><a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=oldest" title="Oldest request" aria-label="Oldest captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg></a>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg>
+            </button>
+            <a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=older" title="Older request" aria-label="Older captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg>
+            </a>
+            <a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=oldest" title="Oldest request" aria-label="Oldest captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg>
+            </a>
             </div>
             </div>
             </section>
@@ -345,7 +389,18 @@ final class SidebarRendererTest extends TestCase
             </div><div class="yii-debug-snapshot-meta">
             <span class="yii-debug-snapshot-status yii-debug-status-5xx" data-snapshot-field="status">500</span><span class="yii-debug-snapshot-time" data-snapshot-field="time">12:34:56</span><span class="yii-debug-snapshot-tag" data-snapshot-field="ajax">AJAX</span>
             </div><div class="yii-debug-request-nav-row" role="group">
-            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg></button><a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=older" title="Older request" aria-label="Older captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg></a><a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=oldest" title="Oldest request" aria-label="Oldest captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg></a>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg>
+            </button>
+            <a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=older" title="Older request" aria-label="Older captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg>
+            </a>
+            <a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=oldest" title="Oldest request" aria-label="Oldest captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg>
+            </a>
             </div>
             </div>
             </section>
@@ -374,7 +429,18 @@ final class SidebarRendererTest extends TestCase
             </div><div class="yii-debug-snapshot-meta">
             <span class="yii-debug-snapshot-status yii-debug-status-2xx" data-snapshot-field="status">200</span><span class="yii-debug-snapshot-time" data-snapshot-field="time">12:34:56</span><span class="yii-debug-snapshot-tag" data-snapshot-field="ajax">AJAX</span>
             </div><div class="yii-debug-request-nav-row" role="group">
-            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg></button><button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg></button><a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=older" title="Older request" aria-label="Older captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg></a><a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=oldest" title="Oldest request" aria-label="Oldest captured request"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg></a>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg>
+            </button>
+            <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newer request" disabled aria-label="Newer captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 15l6-6l6 6"/></g></svg>
+            </button>
+            <a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=older" title="Older request" aria-label="Older captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m6 9l6 6l6-6"/></g></svg>
+            </a>
+            <a class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon" href="/debug/view?tag=oldest" title="Oldest request" aria-label="Oldest captured request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 7l5 5l5-5"/><path d="m7 13l5 5l5-5"/></g></svg>
+            </a>
             </div>
             </div>
             </section>

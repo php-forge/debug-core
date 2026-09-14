@@ -37,10 +37,7 @@ final class Trace
      */
     public static function create(): self
     {
-        return new self(
-            self::DEFAULT_TEMPLATE,
-            [],
-        );
+        return new self(self::DEFAULT_TEMPLATE, []);
     }
 
     /**
@@ -69,6 +66,7 @@ final class Trace
         }
 
         $file = $this->mapPath(str_replace('\\', '/', $file));
+
         $template = $this->template;
 
         if ($template === false) {
@@ -122,10 +120,7 @@ final class Trace
             $normalized[self::normalizePrefix((string) $remote)] = self::normalizePrefix($target);
         }
 
-        return new self(
-            template: $this->template,
-            pathMappings: $normalized,
-        );
+        return new self(template: $this->template, pathMappings: $normalized);
     }
 
     /**
@@ -140,10 +135,7 @@ final class Trace
      */
     public function withTemplate(Closure|string|false $template): self
     {
-        return new self(
-            template: $template,
-            pathMappings: $this->pathMappings,
-        );
+        return new self(template: $template, pathMappings: $this->pathMappings);
     }
 
     /**

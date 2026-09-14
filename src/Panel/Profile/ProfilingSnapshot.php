@@ -56,12 +56,7 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
             $entries[] = ProfileRow::fromTiming($timing, count($entries));
         }
 
-        return new self(
-            $memory,
-            $time,
-            $entries,
-            $samples,
-        );
+        return new self($memory, $time, $entries, $samples);
     }
 
     /**

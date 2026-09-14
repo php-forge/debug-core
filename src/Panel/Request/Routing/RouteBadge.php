@@ -9,8 +9,9 @@ namespace PHPForge\Debug\Panel\Request\Routing;
  */
 final readonly class RouteBadge
 {
-    public function __construct(
-        public string $label,
-        public string $variant = 'muted',
-    ) {}
+    /**
+     * @param string $label Badge label.
+     * @param string $variant Badge variant, defaults to 'muted'.
+     */
+    public function __construct(public string $label, public string $variant = 'muted') {}
 }

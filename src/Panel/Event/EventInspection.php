@@ -57,7 +57,10 @@ final class EventInspection implements PanelRow
 
         foreach ($payload->map('context') as $key => $value) {
             if (!is_string($value) || strlen($value) > 2048 || strlen($key) > 128) {
-                throw HydrationException::at("{$path}.context.{$key}", 'bounded text');
+                throw HydrationException::at(
+                    "{$path}.context.{$key}",
+                    'bounded text',
+                );
             }
 
             $context[$key] = $value;
@@ -67,7 +70,10 @@ final class EventInspection implements PanelRow
 
         foreach ($payload->list('trace') as $index => $value) {
             if (!is_string($value) || strlen($value) > 2048) {
-                throw HydrationException::at("{$path}.trace[{$index}]", 'bounded text');
+                throw HydrationException::at(
+                    "{$path}.trace[{$index}]",
+                    'bounded text',
+                );
             }
 
             $trace[] = $value;

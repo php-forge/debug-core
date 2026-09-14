@@ -8,9 +8,7 @@ use PHPForge\Debug\Helper\{Icon, Vocabulary};
 use PHPForge\Debug\View\ViewMessage;
 use UIAwesome\Html\Core\Component\{Item, Menu};
 use UIAwesome\Html\Flow\Div;
-use UIAwesome\Html\Form\Button;
 use UIAwesome\Html\Interop\Inline;
-use UIAwesome\Html\Palpable\A;
 use UIAwesome\Html\Phrasing\Span;
 use UIAwesome\Html\Root\Header;
 use UIAwesome\Html\Sectioning\{Aside, Section};
@@ -95,7 +93,7 @@ final class SidebarRenderer
         $ajax = Span::tag()
             ->class('yii-debug-snapshot-tag')
             ->addDataAttribute('snapshot-field', 'ajax')
-            ->content(ViewMessage::AJAX->value);
+            ->content(ViewMessage::AJAX);
 
         if ($snapshot->isAjax === false) {
             $ajax = $ajax->addAttribute('hidden', true);
@@ -114,47 +112,12 @@ final class SidebarRenderer
     }
 
     /**
-     * Renders one navigator button (either an anchor link or a cursor `<button>` depending on cursor mode).
-     */
-    private static function renderNavButton(
-        bool $isCursor,
-        string $cursorTarget,
-        bool $isDisabled,
-        string $url,
-        string $title,
-        string $ariaLabel,
-        string $icon,
-    ): A|Button {
-        $disabledClass = $isDisabled ? ' is-disabled' : '';
-
-        $class = self::ICON_BTN_CLASS;
-
-        $class = "{$class}{$disabledClass}";
-
-        if ($isCursor || $isDisabled) {
-            $button = Button::tag()
-                ->type('button')
-                ->class($class)
-                ->disabled($isDisabled)
-                ->title($title)
-                ->addAriaAttribute('label', $ariaLabel)
-                ->html($icon);
-
-            return $isCursor ? $button->addDataAttribute('yii-debug-cursor', $cursorTarget) : $button;
-        }
-
-        return A::tag()
-            ->class($class)
-            ->href($url)
-            ->title($title)
-            ->addAriaAttribute('label', $ariaLabel)
-            ->html($icon);
-    }
-
-    /**
      * Renders one labeled navigation group after the primary panel menu.
      *
+     * @param string $label Group heading announced as the section label.
      * @param list<SidebarNavItem> $items Navigation entries belonging to the group.
+     *
+     * @return Section Rendered group section.
      */
     private static function renderNavGroup(string $label, array $items): Section
     {
@@ -170,57 +133,69 @@ final class SidebarRenderer
     }
 
     /**
-     * Renders the navigator row (Newest | Newer | Older | Oldest), branching between cursor-mode buttons and
-     * navigation-mode anchor links.
+     * Renders the navigator row (Newest | Newer | Older | Oldest) as a {@see Menu} of {@see Item} entries.
+     *
+     * The row is a flat grid of controls, so the list wrappers are switched off and each entry renders its control
+     * directly. An entry links to its target capture, except in cursor mode and when the target does not exist, where
+     * it renders as a button the history script drives.
+     *
+     * @param SidebarSnapshot $snapshot Capture the navigator moves away from.
+     *
+     * @return string Rendered navigator row.
      */
-    private static function renderNavRow(SidebarSnapshot $snapshot): Div
+    private static function renderNavRow(SidebarSnapshot $snapshot): string
     {
-        $iconNewest = Icon::render('chevrons-up');
-        $iconNewer = Icon::render('chevron-up');
-        $iconOlder = Icon::render('chevron-down');
-        $iconOldest = Icon::render('chevrons-down');
+        $entries = [
+            [
+                'newest', $snapshot->isNewest, $snapshot->newestUrl, ViewMessage::NEWEST_REQUEST->value,
+                ViewMessage::NEWEST_CAPTURED_REQUEST->value, 'chevrons-up',
+            ],
+            [
+                'newer', $snapshot->hasNewer === false, $snapshot->newerUrl, 'Newer request',
+                'Newer captured request', 'chevron-up',
+            ],
+            [
+                'older', $snapshot->hasOlder === false, $snapshot->olderUrl, 'Older request',
+                'Older captured request', 'chevron-down',
+            ],
+            [
+                'oldest', $snapshot->isOldest, $snapshot->oldestUrl, 'Oldest request',
+                'Oldest captured request', 'chevrons-down',
+            ],
+        ];
 
-        return Div::tag()
+        $items = [];
+
+        foreach ($entries as [$target, $isDisabled, $url, $title, $ariaLabel, $icon]) {
+            $asButton = $snapshot->isCursor || $isDisabled;
+
+            $attributes = $asButton ? ['type' => 'button', 'title' => $title] : ['title' => $title];
+
+            if ($asButton && $isDisabled) {
+                $attributes['disabled'] = true;
+            }
+
+            $attributes['aria-label'] = $ariaLabel;
+
+            if ($asButton && $snapshot->isCursor) {
+                $attributes['data-yii-debug-cursor'] = $target;
+            }
+
+            $items[] = Item::tag()
+                ->label(Icon::render($icon), false)
+                ->link($asButton ? '' : $url)
+                ->linkAttributes($attributes)
+                ->linkClass($isDisabled ? self::ICON_BTN_CLASS . ' is-disabled' : self::ICON_BTN_CLASS)
+                ->linkTag($asButton ? 'button' : Inline::A);
+        }
+
+        return Menu::tag()
             ->class('yii-debug-request-nav-row')
             ->addAttribute('role', 'group')
-            ->html(
-                self::renderNavButton(
-                    $snapshot->isCursor,
-                    'newest',
-                    $snapshot->isNewest,
-                    $snapshot->newestUrl,
-                    ViewMessage::NEWEST_REQUEST->value,
-                    ViewMessage::NEWEST_CAPTURED_REQUEST->value,
-                    $iconNewest,
-                ),
-                self::renderNavButton(
-                    $snapshot->isCursor,
-                    'newer',
-                    $snapshot->hasNewer === false,
-                    $snapshot->newerUrl,
-                    'Newer request',
-                    'Newer captured request',
-                    $iconNewer,
-                ),
-                self::renderNavButton(
-                    $snapshot->isCursor,
-                    'older',
-                    $snapshot->hasOlder === false,
-                    $snapshot->olderUrl,
-                    'Older request',
-                    'Older captured request',
-                    $iconOlder,
-                ),
-                self::renderNavButton(
-                    $snapshot->isCursor,
-                    'oldest',
-                    $snapshot->isOldest,
-                    $snapshot->oldestUrl,
-                    'Oldest request',
-                    'Oldest captured request',
-                    $iconOldest,
-                ),
-            );
+            ->listItemTag(false)
+            ->listType(false)
+            ->items(...$items)
+            ->render();
     }
 
     /**

@@ -29,13 +29,7 @@ final readonly class Manifest implements JsonSerializable
      */
     public static function fromArray(mixed $data): self
     {
-        $payload = Payload::object($data)
-            ->shape(
-                [
-                    'version',
-                    'entries',
-                ],
-            );
+        $payload = Payload::object($data)->shape(['version', 'entries']);
 
         if ($payload->int('version') !== DebugSnapshot::VERSION) {
             throw HydrationException::at(
@@ -59,9 +53,7 @@ final readonly class Manifest implements JsonSerializable
             $entries[$tag] = $summary;
         }
 
-        return new self(
-            $entries,
-        );
+        return new self($entries);
     }
 
     /**

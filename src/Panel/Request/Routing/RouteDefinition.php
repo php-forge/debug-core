@@ -12,6 +12,7 @@ use function array_is_list;
 use function array_key_exists;
 use function array_keys;
 use function array_values;
+use function is_array;
 use function is_string;
 
 /**
@@ -22,32 +23,59 @@ use function is_string;
  */
 final class RouteDefinition
 {
-    private string|null $action = null;
-
     /**
+     * Handler the route dispatches to, or `null` when unsupported.
+     */
+    private string|null $action = null;
+    /**
+     * Hosts the route is restricted to; empty when it is unrestricted.
+     *
      * @var list<string>
      */
     private array $hosts = [];
     /**
+     * HTTP methods the route accepts; empty when it accepts any.
+     *
      * @var list<string>
      */
     private array $methods = [];
-
     /**
+     * Middleware labels applied to the route; empty when it has none, or `null` when unsupported.
+     *
      * @var list<string>|null
      */
     private array|null $middlewares = null;
-
+    /**
+     * Parsing mode the rule runs in, or `null` when unsupported.
+     */
     private string|null $mode = null;
-
+    /**
+     * URL suffix the rule appends, or `null` when unsupported.
+     */
     private string|null $suffix = null;
-
+    /**
+     * Route the rule resolves to, or `null` when unsupported.
+     */
     private string|null $target = null;
-
+    /**
+     * Rule class or category reported by the adapter, or `null` when unsupported.
+     */
     private string|null $type = null;
 
+    /**
+     * @param string $name Route name as the application declares it.
+     * @param string $pattern URL pattern the route matches.
+     */
     public function __construct(private string $name = '', private string $pattern = '') {}
 
+    /**
+     * Creates a route definition ready for immutable enrichment.
+     *
+     * @param string $name Route name as the application declares it.
+     * @param string $pattern URL pattern the route matches.
+     *
+     * @return self Definition carrying only the route identity.
+     */
     public static function create(string $name = '', string $pattern = ''): self
     {
         return new self($name, $pattern);
@@ -60,6 +88,11 @@ final class RouteDefinition
      * optional so old snapshots keep hydrating without schema migration.
      *
      * @param array<array-key, mixed> $data Persisted route definition.
+     *
+     * @throws InvalidArgumentException when a required field is missing, a field is declared but unknown, or a value
+     * does not match its persisted type.
+     *
+     * @return self Definition restored from the persisted shape.
      */
     public static function fromArray(array $data): self
     {
@@ -104,13 +137,20 @@ final class RouteDefinition
             ->withType(self::optionalNullableString($data, 'type'));
     }
 
+    /**
+     * Returns the handler the route dispatches to.
+     *
+     * @return string|null Handler the route dispatches to, or `null` when unsupported.
+     */
     public function getAction(): string|null
     {
         return $this->action;
     }
 
     /**
-     * @return list<string>
+     * Returns the hosts the route is restricted to.
+     *
+     * @return list<string> Hosts the route is restricted to; empty when it is unrestricted.
      */
     public function getHosts(): array
     {
@@ -118,7 +158,9 @@ final class RouteDefinition
     }
 
     /**
-     * @return list<string>
+     * Returns the HTTP methods the route accepts.
+     *
+     * @return list<string> HTTP methods the route accepts; empty when it accepts any.
      */
     public function getMethods(): array
     {
@@ -126,38 +168,71 @@ final class RouteDefinition
     }
 
     /**
-     * @return list<string>|null
+     * Returns the middleware chain applied to the route.
+     *
+     * @return list<string>|null Middleware labels applied to the route; empty when it has none, or `null`
+     * when unsupported.
      */
     public function getMiddlewares(): array|null
     {
         return $this->middlewares;
     }
 
+    /**
+     * Returns the parsing mode the rule runs in.
+     *
+     * @return string|null Parsing mode the rule runs in, or `null` when unsupported.
+     */
     public function getMode(): string|null
     {
         return $this->mode;
     }
 
+    /**
+     * Returns the route name.
+     *
+     * @return string Route name as the application declares it.
+     */
     public function getName(): string
     {
         return $this->name;
     }
 
+    /**
+     * Returns the URL pattern the route matches.
+     *
+     * @return string URL pattern the route matches.
+     */
     public function getPattern(): string
     {
         return $this->pattern;
     }
 
+    /**
+     * Returns the URL suffix the rule appends.
+     *
+     * @return string|null URL suffix the rule appends, or `null` when unsupported.
+     */
     public function getSuffix(): string|null
     {
         return $this->suffix;
     }
 
+    /**
+     * Returns the route the rule resolves to.
+     *
+     * @return string|null Route the rule resolves to, or `null` when unsupported.
+     */
     public function getTarget(): string|null
     {
         return $this->target;
     }
 
+    /**
+     * Returns the rule class or category.
+     *
+     * @return string|null Rule class or category reported by the adapter, or `null` when unsupported.
+     */
     public function getType(): string|null
     {
         return $this->type;
@@ -177,7 +252,7 @@ final class RouteDefinition
      *     suffix?: string,
      *     mode?: string,
      *     type?: string
-     * }
+     * } Route fields; the optional ones appear only when the adapter exposed them.
      */
     public function toArray(): array
     {
@@ -199,6 +274,13 @@ final class RouteDefinition
         return $data;
     }
 
+    /**
+     * Returns a copy carrying another action.
+     *
+     * @param string|null $action Handler the route dispatches to, or `null` when unsupported.
+     *
+     * @return self Definition with the action applied.
+     */
     public function withAction(string|null $action): self
     {
         $clone = clone $this;
@@ -208,7 +290,11 @@ final class RouteDefinition
     }
 
     /**
-     * @param list<string> $hosts
+     * Returns a copy restricted to another set of hosts.
+     *
+     * @param list<string> $hosts Hosts the route is restricted to; empty to leave it unrestricted.
+     *
+     * @return self Definition with the hosts applied.
      */
     public function withHosts(array $hosts): self
     {
@@ -219,7 +305,11 @@ final class RouteDefinition
     }
 
     /**
-     * @param list<string> $methods
+     * Returns a copy accepting another set of HTTP methods.
+     *
+     * @param list<string> $methods HTTP methods the route accepts; empty to accept any.
+     *
+     * @return self Definition with the methods applied.
      */
     public function withMethods(array $methods): self
     {
@@ -230,7 +320,12 @@ final class RouteDefinition
     }
 
     /**
-     * @param list<string>|null $middlewares
+     * Returns a copy carrying another middleware chain.
+     *
+     * @param list<string>|null $middlewares Middleware labels applied to the route; empty when it has none,
+     * or `null` when unsupported.
+     *
+     * @return self Definition with the middlewares applied.
      */
     public function withMiddlewares(array|null $middlewares): self
     {
@@ -240,6 +335,13 @@ final class RouteDefinition
         return $clone;
     }
 
+    /**
+     * Returns a copy carrying another mode.
+     *
+     * @param string|null $mode Parsing mode the rule runs in, or `null` when unsupported.
+     *
+     * @return self Definition with the mode applied.
+     */
     public function withMode(string|null $mode): self
     {
         $clone = clone $this;
@@ -248,6 +350,13 @@ final class RouteDefinition
         return $clone;
     }
 
+    /**
+     * Returns a copy carrying another suffix.
+     *
+     * @param string|null $suffix URL suffix the rule appends, or `null` when unsupported.
+     *
+     * @return self Definition with the suffix applied.
+     */
     public function withSuffix(string|null $suffix): self
     {
         $clone = clone $this;
@@ -256,6 +365,13 @@ final class RouteDefinition
         return $clone;
     }
 
+    /**
+     * Returns a copy carrying another target.
+     *
+     * @param string|null $target Route the rule resolves to, or `null` when unsupported.
+     *
+     * @return self Definition with the target applied.
+     */
     public function withTarget(string|null $target): self
     {
         $clone = clone $this;
@@ -264,6 +380,13 @@ final class RouteDefinition
         return $clone;
     }
 
+    /**
+     * Returns a copy carrying another type.
+     *
+     * @param string|null $type Rule class or category reported by the adapter, or `null` when unsupported.
+     *
+     * @return self Definition with the type applied.
+     */
     public function withType(string|null $type): self
     {
         $clone = clone $this;
@@ -272,6 +395,13 @@ final class RouteDefinition
         return $clone;
     }
 
+    /**
+     * Names the persisted type a field must carry, for the failure message.
+     *
+     * @param string $key Field the value belongs to, named in the failure message.
+     *
+     * @return string Human-readable description of the expected type.
+     */
     private static function expectedFor(string $key): string
     {
         return match ($key) {
@@ -283,6 +413,14 @@ final class RouteDefinition
         };
     }
 
+    /**
+     * Builds the failure raised when a persisted field is missing, unknown, or of the wrong type.
+     *
+     * @param string $key Field the value belongs to, named in the failure message.
+     * @param string $expected Description of the type the field must carry.
+     *
+     * @return InvalidArgumentException Failure naming the field and the expected type.
+     */
     private static function invalid(string $key, string $expected): InvalidArgumentException
     {
         return new InvalidArgumentException(
@@ -290,6 +428,16 @@ final class RouteDefinition
         );
     }
 
+    /**
+     * Narrows a persisted value to a nullable string.
+     *
+     * @param mixed $value Persisted value of unknown type.
+     * @param string $key Field the value belongs to, named in the failure message.
+     *
+     * @throws InvalidArgumentException when the value is neither a `string` nor `null`.
+     *
+     * @return string|null Value as persisted.
+     */
     private static function nullableString(mixed $value, string $key): string|null
     {
         if ($value !== null && !is_string($value)) {
@@ -300,7 +448,14 @@ final class RouteDefinition
     }
 
     /**
-     * @param array<array-key, mixed> $data
+     * Narrows an optional persisted field to a nullable string, treating an absent field as `null`.
+     *
+     * @param array<array-key, mixed> $data Persisted route definition.
+     * @param string $key Field the value belongs to, named in the failure message.
+     *
+     * @throws InvalidArgumentException when the field is present and is neither a `string` nor `null`.
+     *
+     * @return string|null Value as persisted, or `null` when the field is absent.
      */
     private static function optionalNullableString(array $data, string $key): string|null
     {
@@ -308,7 +463,14 @@ final class RouteDefinition
     }
 
     /**
-     * @return list<string>
+     * Narrows a persisted value to a list of strings.
+     *
+     * @param mixed $value Persisted value of unknown type.
+     * @param string $key Field the value belongs to, named in the failure message.
+     *
+     * @throws InvalidArgumentException when the value is not a list, or any entry is not a `string`.
+     *
+     * @return list<string> Value as persisted.
      */
     private static function stringList(mixed $value, string $key): array
     {

@@ -10,7 +10,10 @@ namespace PHPForge\Debug\Panel\Request;
 final readonly class ServerVariableGroup
 {
     /**
-     * @param array<int|string, mixed> $entries
+     * @param string $id Identifier for the server variable group.
+     * @param string $label Human-readable label for the server variable group.
+     * @param array<int|string, mixed> $entries Captured server variables within the group.
+     * @param bool $collapsed Whether the group should be initially collapsed.
      */
     public function __construct(
         public string $id,

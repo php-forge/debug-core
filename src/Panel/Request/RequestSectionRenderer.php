@@ -26,7 +26,7 @@ final class RequestSectionRenderer
         if ($section->entries === []) {
             $content = P::tag()
                 ->class('yii-debug-table-empty')
-                ->content(RequestMessage::NO_DATA->value)
+                ->content(RequestMessage::NO_DATA)
                 ->render();
         } else {
             $filter = self::renderFilter($section);
@@ -41,11 +41,7 @@ final class RequestSectionRenderer
             $content = $toolbar . self::renderSectionTable($section);
         }
 
-        return Disclosure::render(
-            $section->caption,
-            $content,
-            $section->entries !== [],
-        );
+        return Disclosure::render($section->caption, $content, $section->entries !== []);
     }
 
     /**
@@ -159,11 +155,7 @@ final class RequestSectionRenderer
             $items[] = ['label' => $tab->label, 'content' => $content];
         }
 
-        return Tabs::render(
-            'request',
-            RequestMessage::REQUEST_DATA->value,
-            $items,
-        );
+        return Tabs::render('request', RequestMessage::REQUEST_DATA->value, $items);
     }
 
     /**

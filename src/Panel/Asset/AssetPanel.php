@@ -39,10 +39,7 @@ final class AssetPanel extends Panel
      */
     public function present(array $data): PanelView
     {
-        $snapshot = AssetSnapshot::fromArray(
-            $data,
-            '$.asset',
-        );
+        $snapshot = AssetSnapshot::fromArray($data, '$.asset');
 
         $bundles = $snapshot->bundles();
         $vite = $snapshot->vite();

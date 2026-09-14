@@ -16,8 +16,6 @@ final readonly class DebugSnapshot implements JsonSerializable
     public const int VERSION = 4;
 
     /**
-     * Creates an envelope from request metadata, panel payloads, and capture failures.
-     *
      * @param RequestSummary $summary Captured request metadata.
      * @param array<string, array<string, mixed>> $panels Serialized panel payloads indexed by panel ID.
      * @param array<string, PanelFailure> $failures Panel failures indexed by panel ID.
@@ -33,15 +31,7 @@ final readonly class DebugSnapshot implements JsonSerializable
      */
     public static function fromArray(mixed $data): self
     {
-        $payload = Payload::object($data)
-            ->shape(
-                [
-                    'version',
-                    'summary',
-                    'panels',
-                    'failures',
-                ],
-            );
+        $payload = Payload::object($data)->shape(['version', 'summary', 'panels', 'failures']);
 
         if ($payload->int('version') !== self::VERSION) {
             throw HydrationException::at(
@@ -53,8 +43,7 @@ final readonly class DebugSnapshot implements JsonSerializable
         $panels = [];
 
         foreach ($payload->map('panels') as $id => $panel) {
-            $panels[$id] = Payload::object($panel, "$.panels.{$id}")
-                ->all();
+            $panels[$id] = Payload::object($panel, "$.panels.{$id}")->all();
         }
 
         $failures = [];

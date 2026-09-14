@@ -9,8 +9,9 @@ namespace PHPForge\Debug\Panel\Request\Routing;
  */
 final readonly class RequestRoutingView
 {
-    public function __construct(
-        public CurrentRouteView $current,
-        public RouteInventoryView|null $inventory = null,
-    ) {}
+    /**
+     * @param CurrentRouteView $current Current route view.
+     * @param RouteInventoryView|null $inventory Route inventory view, or null if not available.
+     */
+    public function __construct(public CurrentRouteView $current, public RouteInventoryView|null $inventory = null) {}
 }

@@ -198,10 +198,7 @@ final class RequestServerRenderer
             );
         }
 
-        return RequestDiagnosticLedger::render(
-            'yii-debug-server-ledger',
-            ...$rows,
-        );
+        return RequestDiagnosticLedger::render('yii-debug-server-ledger', ...$rows);
     }
 
     /**
@@ -247,7 +244,7 @@ final class RequestServerRenderer
                             ->html(
                                 H2::tag()
                                     ->id('yii-debug-server-environment-title')
-                                    ->content(RequestMessage::SERVER_DETAILS->value),
+                                    ->content(RequestMessage::SERVER_DETAILS),
                                 Span::tag()
                                     ->class('yii-debug-diagnostic-total')
                                     ->content(count($additional) . ' additional / ' . count($entries) . ' captured'),

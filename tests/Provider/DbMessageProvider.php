@@ -17,6 +17,11 @@ final class DbMessageProvider
     public static function messages(): array
     {
         return [
+            'CAPTURE_GUIDANCE' => [
+                DbMessage::CAPTURE_GUIDANCE,
+                'Configure the development connection with %s. Rows are shown only when the driver reports '
+                . 'them. After a redirect, open the previous request from History.',
+            ],
             'DUPLICATE' => [
                 DbMessage::DUPLICATE,
                 'Dup',

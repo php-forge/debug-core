@@ -313,10 +313,7 @@ final class SnapshotStore
 
             $this->removeStaleSnapshots($entries);
 
-            return new SnapshotWriteResult(
-                array_reverse($entries, true),
-                $removed,
-            );
+            return new SnapshotWriteResult(array_reverse($entries, true), $removed);
         } finally {
             fclose($lock);
         }

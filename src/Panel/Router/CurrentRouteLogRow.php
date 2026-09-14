@@ -33,14 +33,7 @@ final readonly class CurrentRouteLogRow implements PanelRow
 
     public static function fromArray(mixed $data, string $path): self
     {
-        $payload = Payload::object($data, $path)
-            ->shape(
-                [
-                    'rule',
-                    'parent',
-                    'match',
-                ],
-            );
+        $payload = Payload::object($data, $path)->shape(['rule', 'parent', 'match']);
 
         return new self(
             $payload->string('rule'),
@@ -67,11 +60,7 @@ final readonly class CurrentRouteLogRow implements PanelRow
 
         $parent = $message['parent'] ?? null;
 
-        return new self(
-            $message['rule'],
-            Coerce::string($parent),
-            $message['match'],
-        );
+        return new self($message['rule'],Coerce::string($parent), $message['match']);
     }
 
     /**

@@ -49,13 +49,7 @@ final readonly class ToolbarData implements JsonSerializable
      */
     public static function create(string $tag, string $title): self
     {
-        return new self(
-            tag: $tag,
-            title: $title,
-            indexUrl: '',
-            configUrl: '',
-            items: [],
-        );
+        return new self(tag: $tag, title: $title, indexUrl: '', configUrl: '', items: []);
     }
 
     /**
