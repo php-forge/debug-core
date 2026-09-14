@@ -12,6 +12,9 @@ use PHPForge\Debug\Tests\Provider\PanelRendererProvider;
 use PHPUnit\Framework\Attributes\DataProviderExternal;
 use PHPUnit\Framework\TestCase;
 
+use function array_fill;
+use function substr_count;
+
 /**
  * Unit tests for {@see PanelRenderer} rendering provider-owned declarative panels through the debugger frontend.
  *
@@ -60,6 +63,33 @@ final class PanelRendererTest extends TestCase
             'class="yii-debug-cell-more"',
             $html,
             'No disclosure control must be rendered.',
+        );
+    }
+
+    public function testFactStripRendersEveryPairAsADefinitionList(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->facts(
+                PanelView::fact('Charset', 'UTF-8'),
+                PanelView::fact('Current language', 'en'),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<dl class="yii-debug-fact-strip">',
+            $html,
+            'Strip must be a definition list.',
+        );
+        self::assertStringContainsString(
+            "<dt class=\"yii-debug-fact-label\">\nCharset\n</dt>",
+            $html,
+            'Label must be the term of its pair.',
+        );
+        self::assertStringContainsString(
+            '<dd class="yii-debug-fact-value" title="UTF-8">',
+            $html,
+            'Value must carry the untruncated text as its title.',
         );
     }
 
@@ -275,6 +305,46 @@ final class PanelRendererTest extends TestCase
         );
     }
 
+    public function testManifestGroupsPackagesUnderTheirVendorWithATally(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->manifest(
+                'yiisoft/',
+                PanelView::package('aliases', 'v3.1.1'),
+                PanelView::package('arrays', 'v3.2.1'),
+            ),
+        );
+
+        self::assertStringContainsString(
+            'class="yii-debug-manifest" aria-label="yiisoft/"',
+            $html,
+            'Manifest must be labelled by its vendor.',
+        );
+        self::assertStringContainsString(
+            '2 packages',
+            $html,
+            'Tally must be pluralised.',
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-manifest-version">v3.1.1</span>',
+            $html,
+            'Version must sit beside its package name.',
+        );
+    }
+
+    public function testManifestTallyUsesTheSingularForOnePackage(): void
+    {
+        self::assertStringContainsString(
+            '1 package',
+            PanelRenderer::render(
+                'Custom',
+                PanelView::create()->manifest('yiisoft/', PanelView::package('aliases', 'v3.1.1')),
+            ),
+            'A single package must use the singular tally.',
+        );
+    }
+
     public function testPanelsWithoutSummaryMetricsOmitTheSummaryStrip(): void
     {
         $html = PanelRenderer::render(
@@ -296,6 +366,60 @@ final class PanelRendererTest extends TestCase
             'yii-debug-grid-summary',
             PanelRenderer::render('Custom', PanelView::create()->summary(' items', 1)),
             'A captured metric must still render the summary strip.',
+        );
+    }
+
+    public function testPillStripRendersEachSubjectWithItsState(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->pills(
+                PanelView::pill('APCu', 'on', true),
+                PanelView::pill('Memcache', 'off', false),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<div class="yii-debug-ext-strip">',
+            $html,
+            'Pills must share one strip.',
+        );
+        self::assertStringContainsString(
+            'yii-debug-ext-pill is-on',
+            $html,
+            'An enabled subject must read as on.',
+        );
+        self::assertStringContainsString(
+            'yii-debug-ext-pill is-off',
+            $html,
+            'A disabled subject must read as off.',
+        );
+    }
+
+    public function testReadoutRowRendersCardsAndDropsAnEmptyCaption(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->readouts(
+                PanelView::readout('Yii', '3', 'framework'),
+                PanelView::readout('PHP', '8.5.9'),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<div class="yii-debug-readout-grid">',
+            $html,
+            'Cards must share one row.',
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-readout-meta">framework</span>',
+            $html,
+            'A caption must follow its value.',
+        );
+        self::assertSame(
+            1,
+            substr_count($html, 'yii-debug-readout-meta'),
+            'A card without a caption must omit the element.',
         );
     }
 
@@ -363,6 +487,52 @@ final class PanelRendererTest extends TestCase
             '<span>—</span>',
             $html,
             'Empty pills must match the existing Vite presentation.',
+        );
+    }
+
+    public function testSectionWithoutATallyOmitsTheCount(): void
+    {
+        self::assertStringNotContainsString(
+            'yii-debug-section-count',
+            PanelRenderer::render(
+                'Custom',
+                PanelView::create()->section('//', 'Application details', PanelView::create()->paragraph('None.')),
+            ),
+            'A section without a tally must omit the count element.',
+        );
+    }
+
+    public function testSectionWrapsItsBlocksUnderAMarkedTitle(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->section(
+                '::',
+                'Installed extensions',
+                PanelView::create()->paragraph('Nothing captured.'),
+                47,
+            ),
+        );
+
+        self::assertStringContainsString(
+            'class="yii-debug-section" aria-label="Installed extensions"',
+            $html,
+            'Section must be labelled by its title.',
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-section-mark">::</span>',
+            $html,
+            'Mark must precede the title.',
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-section-count">47</span>',
+            $html,
+            'Tally must close the title.',
+        );
+        self::assertStringContainsString(
+            'Nothing captured.',
+            $html,
+            'Section must render its own blocks.',
         );
     }
 

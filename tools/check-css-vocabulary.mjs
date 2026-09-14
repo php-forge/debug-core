@@ -68,13 +68,27 @@ function listFiles(directory, extensions) {
 }
 
 /**
+ * Strips comments so prose mentioning a name never counts as defining it.
+ *
+ * A stale comment must not keep a deleted rule alive: without this, removing `.yii-debug-x` while leaving a comment
+ * that names it would still pass the check. Line comments are only stripped when they own the line, so a `//` inside
+ * a URL or a string survives.
+ */
+function withoutComments(content) {
+    return content
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^[ \t]*\/\/.*$/gm, "");
+}
+
+/**
  * Collects every name a set of files mentions, keeping the origin of each one for the report.
  */
-function collect(files, pattern, group = 0) {
+function collect(files, pattern, group = 0, stripComments = false) {
     const found = new Map();
 
     for (const file of files) {
-        const content = readFileSync(file, "utf8");
+        const raw = readFileSync(file, "utf8");
+        const content = stripComments ? withoutComments(raw) : raw;
         const origin = relative(repositoryRoot, file);
 
         for (const match of content.matchAll(pattern)) {
@@ -146,11 +160,12 @@ const definerFiles = DEFINERS.flatMap((source) =>
     listFiles(resolve(repositoryRoot, source), [".css", ".js"]),
 );
 const emitted = collect(emitterFiles, TOKEN);
-const defined = collect(definerFiles, TOKEN);
+const defined = collect(definerFiles, TOKEN, 0, true);
 const cssClasses = collect(
     definerFiles.filter((file) => file.endsWith(".css")),
     CSS_CLASS,
     1,
+    true,
 );
 const known = { ...allowlist.deliberate, ...allowlist.pendingReview };
 const undefinedNames = [...emitted.keys()]

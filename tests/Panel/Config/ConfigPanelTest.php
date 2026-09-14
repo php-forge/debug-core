@@ -28,6 +28,30 @@ use function array_map;
 #[Group('config')]
 final class ConfigPanelTest extends TestCase
 {
+    public function testARosterEntryThatIsNotAnObjectIsSkipped(): void
+    {
+        $view = self::present(
+            [
+                'extensions' => [
+                    'php-forge/debug',
+                    'yiisoft/arrays' => ['name' => 'yiisoft/arrays', 'version' => '3.2.1'],
+                ],
+            ],
+        );
+
+        $roster = self::section(self::blockAt($view, 3));
+
+        self::assertSame(
+            1,
+            $roster['count'],
+            'A malformed roster entry must not reach the tally.',
+        );
+        self::assertSame(
+            [['kind' => 'package', 'name' => 'arrays', 'version' => 'v3.2.1']],
+            self::manifest(self::blockAt($roster['content'], 0))['packages'],
+            'Only the well-formed entry must survive.',
+        );
+    }
     public function testASingleInstalledExtensionUsesTheSingularLabel(): void
     {
         $view = self::present(
@@ -423,5 +447,4 @@ final class ConfigPanelTest extends TestCase
             default => self::fail('Each part of the panel must be a titled section.'),
         };
     }
-
 }

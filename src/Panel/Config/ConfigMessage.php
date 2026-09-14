@@ -55,21 +55,6 @@ enum ConfigMessage: string
     case CURRENT_LANGUAGE = 'Current language';
 
     /**
-     * Overview field label of the debug flag.
-     */
-    case DEBUG_MODE = 'Debug mode';
-
-    /**
-     * Badge label of a disabled debug flag.
-     */
-    case DEBUG_OFF = 'off';
-
-    /**
-     * Badge label of an enabled debug flag.
-     */
-    case DEBUG_ON = 'on';
-
-    /**
      * Explanation of the empty state when the capture carried no package roster.
      */
     case EMPTY_EXPLANATION = 'The capture carried no Composer package roster for this request.';
@@ -85,16 +70,6 @@ enum ConfigMessage: string
     case ENVIRONMENT = 'Environment';
 
     /**
-     * Badge label of a bundled PHP extension reported as loaded.
-     */
-    case EXTENSION_LOADED = 'loaded';
-
-    /**
-     * Badge label of a bundled PHP extension reported as missing.
-     */
-    case EXTENSION_MISSING = 'missing';
-
-    /**
      * Suffix appended to a single installed extension in the summary header.
      */
     case EXTENSION_SUFFIX = ' extension';
@@ -108,11 +83,6 @@ enum ConfigMessage: string
      * Stable identifier associating the panel with the captured payload, also used as its icon key.
      */
     case ID = 'config';
-
-    /**
-     * `sprintf()` template of the heading above the installed-package roster.
-     */
-    case INSTALLED = 'Installed extensions (%d)';
 
     /**
      * Title of the installed-extension section.
@@ -150,11 +120,6 @@ enum ConfigMessage: string
     case PACKAGE_MEMCACHED = 'Memcached';
 
     /**
-     * Header of the package name column.
-     */
-    case PACKAGE_NAME = 'Package';
-
-    /**
      * Label of the Xdebug extension in the runtime overview.
      */
     case PACKAGE_XDEBUG = 'Xdebug';
@@ -190,14 +155,19 @@ enum ConfigMessage: string
     case SOURCE_LANGUAGE = 'Source language';
 
     /**
+     * Negative state, shown as the debug-flag caption and on the pill of a PHP extension the runtime did not load.
+     */
+    case STATE_OFF = 'off';
+
+    /**
+     * Positive state, shown as the debug-flag caption and on the pill of a PHP extension the runtime loaded.
+     */
+    case STATE_ON = 'on';
+
+    /**
      * Panel title used in the debugger navigation.
      */
     case TITLE = 'Configuration';
-
-    /**
-     * Header of the package version column.
-     */
-    case VERSION = 'Version';
 
     /**
      * Overview field label of the framework version.

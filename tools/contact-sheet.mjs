@@ -16,8 +16,8 @@
  * npm run contact-sheet -- --tags=yii2=161a8a4e,yii3=6aa86048
  * ```
  */
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import { relative, resolve } from "node:path";
+import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { chromium } from "@playwright/test";
@@ -104,7 +104,35 @@ function parseApps(value) {
         throw new Error("Option --apps must list at least two applications.");
     }
 
+    const names = new Set();
+
+    for (const app of apps) {
+        assertFileSafe(app.name, "Application name");
+
+        if (names.has(app.name)) {
+            throw new Error(
+                `Option --apps repeats the application name: ${app.name}. Each name keys its own screenshots.`,
+            );
+        }
+
+        names.add(app.name);
+    }
+
     return apps;
+}
+
+/**
+ * Rejects a value that would leave the screenshot directory once it becomes part of a file name.
+ *
+ * Application names come from the command line and panel ids are scraped from a page, so neither is trusted to stay
+ * inside `shotsRoot`.
+ */
+function assertFileSafe(value, label) {
+    if (/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value) === false) {
+        throw new Error(
+            `${label} must use letters, digits, dots, dashes or underscores, and start with a letter or digit: ${value}`,
+        );
+    }
 }
 
 /**
@@ -203,6 +231,23 @@ async function waitForStableUI(page) {
             requestAnimationFrame(() => requestAnimationFrame(done));
         });
     });
+}
+
+/**
+ * Resolves the screenshot path and refuses one that would land outside the screenshot directory.
+ *
+ * Both halves of the name are validated beforehand; this is the belt that proves the result stayed put.
+ */
+function shotPath(shotsRoot, name, panel) {
+    const file = resolve(shotsRoot, `${name}-${panel}.png`);
+
+    if (file.startsWith(shotsRoot + sep) === false) {
+        throw new Error(
+            `Refusing to write a screenshot outside ${shotsRoot}: ${file}`,
+        );
+    }
+
+    return file;
 }
 
 async function capturePanel(page, app, panel, options, file) {
@@ -334,6 +379,32 @@ function panelHtml(row, apps, options) {
  * measured first and the viewport resized to match. Without it every sheet carries dead pixels, and a sheet wider
  * than the viewport loses its right-hand column.
  */
+/**
+ * Deletes the sheets and screenshots a previous run left behind.
+ *
+ * Only files this tool names are removed, never the directory itself: `--out` may point at a directory holding
+ * unrelated work. A narrower run would otherwise leave sheets for panels it no longer captures, and comparing those
+ * against the fresh ones reads as a change that never happened.
+ */
+async function removeStaleArtifacts(outputRoot, shotsRoot) {
+    const targets = [
+        [outputRoot, /^(?:overview|panel-[A-Za-z0-9._-]+)\.png$/],
+        [shotsRoot, /^[A-Za-z0-9._-]+-[A-Za-z0-9._-]+\.png$/],
+    ];
+
+    for (const [directory, pattern] of targets) {
+        const entries = await readdir(directory, { withFileTypes: true }).catch(
+            () => [],
+        );
+
+        for (const entry of entries) {
+            if (entry.isFile() && pattern.test(entry.name)) {
+                await rm(resolve(directory, entry.name), { force: true });
+            }
+        }
+    }
+}
+
 async function composeSheet(page, directory, name, html) {
     const htmlFile = resolve(directory, `${name}.html`);
     const pngFile = resolve(directory, `${name}.png`);
@@ -366,6 +437,7 @@ async function main() {
     const shotsRoot = resolve(outputRoot, "shots");
 
     await mkdir(shotsRoot, { recursive: true });
+    await removeStaleArtifacts(outputRoot, shotsRoot);
 
     const browser = await chromium.launch();
     const context = await browser.newContext({
@@ -435,8 +507,10 @@ async function main() {
         for (const panel of panels) {
             const results = {};
 
+            assertFileSafe(panel, "Panel id");
+
             for (const app of apps) {
-                const file = resolve(shotsRoot, `${app.name}-${panel}.png`);
+                const file = shotPath(shotsRoot, app.name, panel);
                 const outcome = await capturePanel(
                     page,
                     app,

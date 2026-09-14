@@ -92,8 +92,8 @@ final class ConfigPanel extends Panel
         $version = self::text($php, 'version');
 
         $debug = ($application['debug'] ?? false) === true
-            ? ConfigMessage::DEBUG_ON->value
-            : ConfigMessage::DEBUG_OFF->value;
+            ? ConfigMessage::STATE_ON->value
+            : ConfigMessage::STATE_OFF->value;
 
         $view = PanelView::create()
             ->summary(
@@ -143,7 +143,7 @@ final class ConfigPanel extends Panel
 
             $pills[] = PanelView::pill(
                 $label->value,
-                $loaded ? ConfigMessage::DEBUG_ON->value : ConfigMessage::DEBUG_OFF->value,
+                $loaded ? ConfigMessage::STATE_ON->value : ConfigMessage::STATE_OFF->value,
                 $loaded,
             );
         }
