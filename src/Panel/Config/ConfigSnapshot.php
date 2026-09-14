@@ -23,6 +23,11 @@ final readonly class ConfigSnapshot implements PanelSnapshot
         return $this->values();
     }
 
+    /**
+     * Returns the key under which the configuration payload is stored.
+     *
+     * @return string Payload key.
+     */
     protected static function payloadKey(): string
     {
         return 'data';

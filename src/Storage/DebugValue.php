@@ -318,11 +318,17 @@ final readonly class DebugValue implements JsonSerializable
         $payload = self::taggedObject($data, $path, $type);
 
         if (++$nodes > self::MAX_NODES + 1) {
-            throw HydrationException::at($path, 'at most 10000 captured nodes');
+            throw HydrationException::at(
+                $path,
+                'at most 10000 captured nodes',
+            );
         }
 
         if ($depth > self::MAX_DEPTH && $type !== 'truncated') {
-            throw HydrationException::at($path, 'at most 10 nested levels');
+            throw HydrationException::at(
+                $path,
+                'at most 10 nested levels',
+            );
         }
 
         return match ($type) {
@@ -373,7 +379,10 @@ final readonly class DebugValue implements JsonSerializable
             $key = $entry['key'];
 
             if (!is_string($keyType)) {
-                throw HydrationException::at("{$entryPath}.keyType", 'a string');
+                throw HydrationException::at(
+                    "{$entryPath}.keyType",
+                    'a string',
+                );
             }
 
             if (
@@ -390,12 +399,7 @@ final readonly class DebugValue implements JsonSerializable
             $entries[] = [
                 'keyType' => $keyType,
                 'key' => $key,
-                'value' => self::hydrate(
-                    $entry['value'],
-                    "{$entryPath}.value",
-                    $depth + 1,
-                    $nodes,
-                ),
+                'value' => self::hydrate($entry['value'], "{$entryPath}.value", $depth + 1, $nodes),
             ];
         }
 
@@ -419,47 +423,28 @@ final readonly class DebugValue implements JsonSerializable
         SplObjectStorage $objects,
     ): self {
         if (++$nodes > self::MAX_NODES) {
-            return new self(
-                'truncated',
-                value: '*SKIPPED over 10000 nodes*',
-                reason: 'size',
-            );
+            return new self('truncated', value: '*SKIPPED over 10000 nodes*', reason: 'size');
         }
 
         if ($depth > self::MAX_DEPTH) {
-            return new self(
-                'truncated',
-                value: '*DEEP NESTED VALUE*',
-                reason: 'depth',
-            );
+            return new self('truncated', value: '*DEEP NESTED VALUE*', reason: 'depth');
         }
 
         if ($value === null) {
-            return new self(
-                'null',
-            );
+            return new self('null');
         }
 
         if (is_bool($value)) {
-            return new self(
-                'bool',
-                $value,
-            );
+            return new self('bool', $value);
         }
 
         if (is_int($value)) {
-            return new self(
-                'int',
-                $value,
-            );
+            return new self('int', $value);
         }
 
         if (is_float($value)) {
             return is_finite($value)
-                ? new self(
-                    'float',
-                    $value,
-                )
+                ? new self('float', $value)
                 : new self(
                     'special-float',
                     match (true) {
@@ -472,14 +457,8 @@ final readonly class DebugValue implements JsonSerializable
 
         if (is_string($value)) {
             return mb_check_encoding($value, 'UTF-8')
-                ? new self(
-                    'string',
-                    $value,
-                )
-                : new self(
-                    'binary',
-                    $value,
-                );
+                ? new self('string', $value)
+                : new self('binary', $value);
         }
 
         if (is_array($value)) {
@@ -497,19 +476,12 @@ final readonly class DebugValue implements JsonSerializable
                 }
             }
 
-            return new self(
-                'array',
-                entries: $entries,
-            );
+            return new self('array', entries: $entries);
         }
 
         if (is_object($value)) {
             if ($objects->offsetExists($value)) {
-                return new self(
-                    'recursion',
-                    value: $value::class,
-                    reason: 'object-cycle',
-                );
+                return new self('recursion', value: $value::class, reason: 'object-cycle');
             }
 
             $objects->offsetSet($value);
@@ -539,18 +511,11 @@ final readonly class DebugValue implements JsonSerializable
         }
 
         if (is_resource($value)) {
-            return new self(
-                'resource',
-                resourceType: get_resource_type($value),
-            );
+            return new self('resource', resourceType: get_resource_type($value));
         }
 
         // Closed resources report `false` from is_resource(), so they land here rather than in the branch above.
-        return new self(
-            'unsupported',
-            value: '(unsupported)',
-            reason: 'unknown-type',
-        );
+        return new self('unsupported', value: '(unsupported)', reason: 'unknown-type');
     }
 
     /**

@@ -11,28 +11,18 @@ use PHPForge\Debug\Storage\{PanelSnapshot, Payload};
  */
 final readonly class TimelineSnapshot implements PanelSnapshot
 {
-    public function __construct(
-        public float $start,
-        public float $end,
-        public int $memory,
-    ) {}
+    /**
+     * @param float $start The start time of the timeline snapshot.
+     * @param float $end The end time of the timeline snapshot.
+     * @param int $memory The peak memory usage at the time of the snapshot.
+     */
+    public function __construct(public float $start, public float $end, public int $memory) {}
 
     public static function fromArray(mixed $data, string $path): self
     {
-        $payload = Payload::object($data, $path)
-            ->shape(
-                [
-                    'start',
-                    'end',
-                    'memory',
-                ],
-            );
+        $payload = Payload::object($data, $path)->shape(['start', 'end', 'memory']);
 
-        return new self(
-            $payload->number('start'),
-            $payload->number('end'),
-            $payload->int('memory'),
-        );
+        return new self($payload->number('start'), $payload->number('end'), $payload->int('memory'));
     }
 
     /**

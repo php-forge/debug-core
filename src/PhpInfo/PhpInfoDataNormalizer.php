@@ -324,11 +324,7 @@ final class PhpInfoDataNormalizer
                 continue;
             }
 
-            $sections[] = new PhpInfoSection(
-                eyebrow: $spec['eyebrow'],
-                tiles: $tiles,
-                headline: $spec['headline'],
-            );
+            $sections[] = new PhpInfoSection(eyebrow: $spec['eyebrow'], tiles: $tiles, headline: $spec['headline']);
         }
 
         return $sections;
@@ -414,12 +410,7 @@ final class PhpInfoDataNormalizer
             );
         }
 
-        return new PhpInfoTile(
-            label: $label,
-            displayValue: $value,
-            rawValue: $value,
-            kind: PhpInfoTile::KIND_TEXT,
-        );
+        return new PhpInfoTile(label: $label, displayValue: $value, rawValue: $value, kind: PhpInfoTile::KIND_TEXT);
     }
 
     /**
@@ -583,11 +574,7 @@ final class PhpInfoDataNormalizer
             return null;
         }
 
-        return new PhpInfoCompactModule(
-            title: $title,
-            slug: $slug,
-            tiles: $tiles,
-        );
+        return new PhpInfoCompactModule(title: $title, slug: $slug, tiles: $tiles);
     }
 
     /**
@@ -753,7 +740,7 @@ final class PhpInfoDataNormalizer
 
                 $attributes = self::addRowClass($row['attributes'], $class);
 
-                return '<tr ' . $attributes . '>' . self::renderFactStatusPills($row['body']) . '</tr>';
+                return "<tr {$attributes}>" . self::renderFactStatusPills($row['body']) . '</tr>';
             },
             $tableBody,
         );

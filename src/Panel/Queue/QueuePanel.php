@@ -219,10 +219,7 @@ final class QueuePanel extends Panel
         $url = $this->jobUrls[$index] ?? null;
 
         if ($url !== null) {
-            $fields[QueueMessage::DETAILS->value] = PanelView::link(
-                QueueMessage::JOB_LINK->value,
-                $url,
-            );
+            $fields[QueueMessage::DETAILS->value] = PanelView::link(QueueMessage::JOB_LINK->value, $url);
         }
 
         $view = PanelView::create()->overview($fields, true);
@@ -324,9 +321,6 @@ final class QueuePanel extends Panel
     {
         $status = self::STATUS[$record->eventType] ?? self::STATUS[JobRecord::TYPE_PUSH];
 
-        return PanelView::badge(
-            $status['label']->value,
-            $status['tone'],
-        );
+        return PanelView::badge($status['label']->value, $status['tone']);
     }
 }

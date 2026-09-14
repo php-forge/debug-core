@@ -155,14 +155,7 @@ final class SensitiveDataRedactor
 
         [$keyMap, $prefixes, $patterns] = self::rules($sensitiveKeys, $sensitiveKeyPrefixes, $sensitiveKeyPatterns);
 
-        return self::walk(
-            $value,
-            $keyMap,
-            $prefixes,
-            $patterns,
-            0,
-            $nodes,
-        );
+        return self::walk($value, $keyMap, $prefixes, $patterns, 0, $nodes);
     }
 
     /**

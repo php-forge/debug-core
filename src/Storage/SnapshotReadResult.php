@@ -9,8 +9,9 @@ namespace PHPForge\Debug\Storage;
  */
 final readonly class SnapshotReadResult
 {
-    public function __construct(
-        public DebugSnapshot|null $snapshot,
-        public StorageException|null $error,
-    ) {}
+    /**
+     * @param DebugSnapshot|null $snapshot The read snapshot, if available.
+     * @param StorageException|null $error The storage error, if any.
+     */
+    public function __construct(public DebugSnapshot|null $snapshot, public StorageException|null $error) {}
 }

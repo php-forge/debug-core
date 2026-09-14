@@ -87,11 +87,7 @@ final class CollectorCoordinator
             }
         }
 
-        return new DebugSnapshot(
-            $summary,
-            $panels,
-            $failures,
-        );
+        return new DebugSnapshot($summary, $panels, $failures);
     }
 
     /**

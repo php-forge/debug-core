@@ -13,8 +13,5 @@ final readonly class SnapshotWriteResult
      * @param array<string, RequestSummary> $entries Committed manifest entries, newest first.
      * @param list<RequestSummary> $removed Entries evicted from the manifest.
      */
-    public function __construct(
-        public array $entries,
-        public array $removed,
-    ) {}
+    public function __construct(public array $entries, public array $removed) {}
 }

@@ -79,12 +79,7 @@ final class MailEntry implements PanelRow
      */
     public static function create(string $from, array $to, string $subject, bool $isSuccessful): self
     {
-        return new self(
-            $from,
-            $to,
-            $subject,
-            $isSuccessful,
-        );
+        return new self($from, $to, $subject, $isSuccessful);
     }
 
     /**

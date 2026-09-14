@@ -39,7 +39,7 @@ final class RequestHeadersRenderer
             ->html(
                 H2::tag()
                     ->id('yii-debug-header-exchange-title')
-                    ->content(RequestMessage::HEADER_EXCHANGE->value),
+                    ->content(RequestMessage::HEADER_EXCHANGE),
                 Div::tag()
                     ->class('yii-debug-diagnostic-counts')
                     ->html(
@@ -187,9 +187,6 @@ final class RequestHeadersRenderer
             );
         }
 
-        return RequestDiagnosticLedger::render(
-            'yii-debug-header-ledger',
-            ...$rows,
-        );
+        return RequestDiagnosticLedger::render('yii-debug-header-ledger', ...$rows);
     }
 }

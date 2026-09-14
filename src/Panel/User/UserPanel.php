@@ -249,10 +249,7 @@ final class UserPanel extends Panel
     {
         $label = $hero->statusLabel === '' ? UserMessage::STATUS_UNKNOWN->value : $hero->statusLabel;
 
-        return PanelView::badge(
-            $label,
-            self::STATUS_TONES[$hero->statusVariant] ?? Tone::MUTED,
-        );
+        return PanelView::badge($label, self::STATUS_TONES[$hero->statusVariant] ?? Tone::MUTED);
     }
 
     /**

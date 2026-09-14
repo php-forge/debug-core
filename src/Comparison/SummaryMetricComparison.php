@@ -133,21 +133,9 @@ final readonly class SummaryMetricComparison
      *
      * @return self Metric comparison for the two counters.
      */
-    private static function integerMetric(
-        string $label,
-        int $baseline,
-        int $target,
-        string|null $panelId = null,
-    ): self {
-        return self::numericMetric(
-            $label,
-            $baseline,
-            $target,
-            1,
-            '',
-            $panelId,
-            0,
-        );
+    private static function integerMetric(string $label, int $baseline, int $target, string|null $panelId = null): self
+    {
+        return self::numericMetric($label, $baseline, $target, 1, '', $panelId, 0);
     }
 
     /**
@@ -181,15 +169,7 @@ final readonly class SummaryMetricComparison
             );
         }
 
-        return self::numericMetric(
-            $label,
-            $baseline,
-            $target,
-            $scale,
-            $unit,
-            $panelId,
-            2,
-        );
+        return self::numericMetric($label, $baseline, $target, $scale, $unit, $panelId, 2);
     }
 
     /**

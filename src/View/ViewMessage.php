@@ -30,9 +30,24 @@ enum ViewMessage: string
     case COMMAND = 'COMMAND';
 
     /**
+     * Caption of the table comparing the request-summary metrics of both captures.
+     */
+    case COMPARISON_METRICS_CAPTION = 'Request summary comparison';
+
+    /**
+     * Caption of the table comparing the panel payload structure of both captures.
+     */
+    case COMPARISON_PANELS_CAPTION = 'Panel structure comparison';
+
+    /**
      * Explanation returned when the comparison page is opened with fewer than two captures available.
      */
     case COMPARISON_REQUIRES_TWO = 'At least two captured requests are required for comparison.';
+
+    /**
+     * Scope of the overall comparison verdict, listing what the two captures were compared on.
+     */
+    case COMPARISON_SCOPE = 'Summary and panel structure';
 
     /**
      * Action label of the sidebar entry leading to the configuration page.

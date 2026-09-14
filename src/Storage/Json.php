@@ -33,6 +33,7 @@ final class Json
     public static function payload(array $payload): array
     {
         $json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION, self::PAYLOAD_DEPTH);
+
         return Payload::object(json_decode($json, true, self::PAYLOAD_DEPTH, JSON_THROW_ON_ERROR))->all();
     }
 

@@ -46,10 +46,6 @@ final readonly class PanelRenderContext
      */
     public function panelUrl(string|null $panel = null, array|null $queryParams = null): string
     {
-        return $this->urls->panel(
-            $this->tag,
-            $panel ?? $this->panel,
-            $queryParams ?? $this->queryParams,
-        );
+        return $this->urls->panel($this->tag, $panel ?? $this->panel, $queryParams ?? $this->queryParams);
     }
 }
