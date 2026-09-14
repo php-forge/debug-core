@@ -60,7 +60,7 @@ final readonly class CurrentRouteLogRow implements PanelRow
 
         $parent = $message['parent'] ?? null;
 
-        return new self($message['rule'],Coerce::string($parent), $message['match']);
+        return new self($message['rule'], Coerce::string($parent), $message['match']);
     }
 
     /**
