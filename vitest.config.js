@@ -5,11 +5,11 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["resources/src/**/*.js"],
-      exclude: [
-        "resources/src/core/debug.js",
-        "resources/src/toolbar/element.js",
-        "resources/src/toolbar/index.js",
-      ],
+      /**
+       * Nothing is hidden from the report: every file matched by `include` is
+       * measured, bootstraps included.
+       */
+      exclude: [],
       reporter: ["text"],
       reportsDirectory: "runtime/coverage-js",
       thresholds: {
@@ -18,6 +18,11 @@ export default defineConfig({
         lines: 100,
       },
     },
+    /**
+     * `element.js` imports its shadow styles with `?inline`; without CSS
+     * processing Vitest would hand it an empty string.
+     */
+    css: true,
     environment: "node",
     include: ["resources/tests/**/*.test.js"],
     isolate: true,
