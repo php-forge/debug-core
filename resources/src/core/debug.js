@@ -122,15 +122,13 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
   }
 
   function dropdownItems(menu) {
-    return menu
-      ? Array.from(
-          menu.querySelectorAll(
-            'a[href], button:not([disabled]), [role="menuitem"][tabindex]',
-          ),
-        ).filter(function (item) {
-          return !item.hidden && item.getAttribute("aria-hidden") !== "true";
-        })
-      : [];
+    return Array.from(
+      menu.querySelectorAll(
+        'a[href], button:not([disabled]), [role="menuitem"][tabindex]',
+      ),
+    ).filter(function (item) {
+      return !item.hidden && item.getAttribute("aria-hidden") !== "true";
+    });
   }
 
   function prepareCellMoreControls() {
