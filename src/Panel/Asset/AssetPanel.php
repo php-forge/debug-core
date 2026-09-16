@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Asset;
 
 use PHPForge\Debug\{ColumnStyle, Panel, PanelView, Tone};
-use PHPForge\Debug\Helper\{Fqcn, Text};
+use PHPForge\Debug\Helper\Fqcn;
 use PHPForge\Debug\Presenter\{FileEntry, LinkInline};
 
 use function array_map;
@@ -168,7 +168,7 @@ final class AssetPanel extends Panel
         $namespace = Fqcn::namespacePart($bundle->name);
 
         return $view->card(
-            Text::camel2id($bundle->name),
+            Fqcn::anchor($bundle->name),
             AssetMessage::ID->value,
             Fqcn::shortName($bundle->name),
             $namespace === '' ? '' : "{$namespace}\\",
@@ -342,7 +342,7 @@ final class AssetPanel extends Panel
             ...array_map(
                 static fn(string $depend): LinkInline => PanelView::link(
                     Fqcn::shortName($depend),
-                    '#' . Text::camel2id($depend),
+                    '#' . Fqcn::anchor($depend),
                 ),
                 $bundle->depends,
             ),

@@ -88,6 +88,29 @@ export function YiiDebugToolbar() {
   self.boundPointerUp = self.onPointerUp.bind(self);
   self.boundHostThemeRefresh = self.refreshHostThemeControl.bind(self);
   self.boundThemeRefresh = self.refreshTheme.bind(self);
+  /**
+   * A pointer landing anywhere but the menu dismisses it. Built here with the
+   * other bound handlers so the registration can follow the element lifecycle:
+   * `connectedCallback()` attaches it to the document and
+   * `disconnectedCallback()` detaches it again.
+   */
+  self.boundExtensionsPointerDown = function (event) {
+    if (!self.extensionsOpen) {
+      return;
+    }
+
+    /**
+     * Listening on the document means `event.target` is retargeted to the
+     * host element; the composed path still carries the real one.
+     */
+    var path =
+      typeof event.composedPath === "function" ? event.composedPath() : [];
+    var target = path.length > 0 ? path[0] : event.target;
+
+    if (!isInsideExtensions(target, closest)) {
+      self.closeExtensions(false);
+    }
+  };
   self.theme = null;
   self.themeObserver = null;
   self.themeRefreshTimer = null;
@@ -106,6 +129,12 @@ YiiDebugToolbar.prototype.connectedCallback = function () {
   if (toolbars.indexOf(this) === -1) {
     toolbars.push(this);
   }
+
+  document.addEventListener(
+    "pointerdown",
+    this.boundExtensionsPointerDown,
+    false,
+  );
 
   resetHostThemeControlCache();
   this.ownsTheme = !hostHasThemeControl();
@@ -163,6 +192,11 @@ YiiDebugToolbar.prototype.disconnectedCallback = function () {
   this.resizing = false;
   document.removeEventListener("pointermove", this.boundPointerMove, false);
   document.removeEventListener("pointerup", this.boundPointerUp, false);
+  document.removeEventListener(
+    "pointerdown",
+    this.boundExtensionsPointerDown,
+    false,
+  );
 };
 
 YiiDebugToolbar.prototype.setAjaxRequests = function (requests) {
@@ -877,7 +911,7 @@ YiiDebugToolbar.prototype.renderExtensions = function (extensions) {
     (open ? " is-open" : "") +
     '"><button type="button" class="panel extensions-toggle' +
     (active ? " panel-active" : "") +
-    '" aria-haspopup="true" aria-expanded="' +
+    '" aria-expanded="' +
     (open ? "true" : "false") +
     '" aria-controls="extensions-menu" title="Extensions">' +
     this.iconHtml("dots", "panel-icon") +
@@ -1227,37 +1261,6 @@ YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
     event.stopPropagation();
     self.closeDrawer();
   });
-
-  /**
-   * A pointer landing anywhere but the menu dismisses it. Registered once per
-   * element — `ensureShadowSkeleton()` binds the delegates a single time, and
-   * the guard keeps a re-entry from stacking duplicates.
-   */
-  if (!this.boundExtensionsPointerDown) {
-    this.boundExtensionsPointerDown = function (event) {
-      if (!self.extensionsOpen) {
-        return;
-      }
-
-      /**
-       * Listening on the document means `event.target` is retargeted to the
-       * host element; the composed path still carries the real one.
-       */
-      var path =
-        typeof event.composedPath === "function" ? event.composedPath() : [];
-      var target = path.length > 0 ? path[0] : event.target;
-
-      if (!isInsideExtensions(target, closest)) {
-        self.closeExtensions(false);
-      }
-    };
-
-    document.addEventListener(
-      "pointerdown",
-      this.boundExtensionsPointerDown,
-      false,
-    );
-  }
 };
 
 /**

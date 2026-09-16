@@ -53,7 +53,7 @@ final class AssetPanelTest extends TestCase
         );
 
         self::assertSame(
-            'app\\assets\\-empty-asset',
+            'app-assets-emptyasset-e3777dff',
             $card->id,
             'Anchor must survive an empty capture.',
         );
@@ -125,7 +125,7 @@ final class AssetPanelTest extends TestCase
         );
     }
 
-    public function testGlobalNamespaceBundleDropsTheSubtitleAndKeepsItsBareAnchor(): void
+    public function testGlobalNamespaceBundleDropsTheSubtitleAndAnchorsOnItsBareClassName(): void
     {
         $card = self::card(
             self::blockAt(
@@ -135,9 +135,9 @@ final class AssetPanelTest extends TestCase
         );
 
         self::assertSame(
-            'global-asset',
+            'globalasset-762af4c5',
             $card->id,
-            'Anchor must drop to the bare class name.',
+            'Anchor must slug the class name alone.',
         );
         self::assertSame(
             'GlobalAsset',
@@ -179,12 +179,23 @@ final class AssetPanelTest extends TestCase
                 self::bundle(['depends' => ['yii\\web\\YiiAsset', 'yii\\web\\JqueryAsset']]),
                 self::bundle(
                     [
-                        'name' => 'app\\assets\\SecondAsset',
+                        'name' => 'yii\\web\\YiiAsset',
                         'sourcePath' => '',
                         'basePath' => '',
                         'baseUrl' => '',
                         'css' => [],
-                        'js' => ['second.js'],
+                        'js' => ['yii.js'],
+                        'depends' => [],
+                    ],
+                ),
+                self::bundle(
+                    [
+                        'name' => 'yii\\web\\JqueryAsset',
+                        'sourcePath' => '',
+                        'basePath' => '',
+                        'baseUrl' => '',
+                        'css' => [],
+                        'js' => ['jquery.js'],
                         'depends' => [],
                     ],
                 ),
@@ -197,16 +208,16 @@ final class AssetPanelTest extends TestCase
         );
         self::assertEquals(
             [
-                new StatEntry('asset', 'bundles', '2', Tone::MUTED),
+                new StatEntry('asset', 'bundles', '3', Tone::MUTED),
                 new StatEntry('brand-css3', 'css', '1', Tone::INFO),
-                new StatEntry('brand-javascript', 'js', '3', Tone::WARNING),
+                new StatEntry('brand-javascript', 'js', '4', Tone::WARNING),
                 new StatEntry('link', 'links', '2', Tone::SUCCESS),
             ],
             self::stats(self::blockAt($view, 0))->stats,
             'The aggregate tiles must total every bundle.',
         );
         self::assertEquals(
-            [new ToolbarMetric('Bundles', '2')],
+            [new ToolbarMetric('Bundles', '3')],
             $view->toolbarMetrics(),
             'The toolbar must report the bundle count.',
         );
@@ -214,7 +225,7 @@ final class AssetPanelTest extends TestCase
         $card = self::card(self::blockAt($view, 1));
 
         self::assertSame(
-            'app\\assets\\-app-asset',
+            'app-assets-appasset-3c6a8113',
             $card->id,
             'Anchor must derive from the bundle class.',
         );
@@ -288,30 +299,36 @@ final class AssetPanelTest extends TestCase
             $depends->label,
             'The strip must count what it lists.',
         );
+
+        $yii = self::card(self::blockAt($view, 2));
+        $jquery = self::card(self::blockAt($view, 3));
+
+        self::assertSame(
+            ['yii-web-yiiasset-7afeb318', 'yii-web-jqueryasset-2772d8b9'],
+            [$yii->id, $jquery->id],
+            'Every dependency must own a URL-safe card anchor.',
+        );
         self::assertEquals(
             [
-                new LinkInline('YiiAsset', '#yii\\web\\-yii-asset', false),
-                new LinkInline('JqueryAsset', '#yii\\web\\-jquery-asset', false),
+                new LinkInline('YiiAsset', "#{$yii->id}", false),
+                new LinkInline('JqueryAsset', "#{$jquery->id}", false),
             ],
             $depends->links,
             'Each dependency must point at the anchor of its own card.',
         );
-
-        $second = self::card(self::blockAt($view, 2));
-
         self::assertEquals(
             [new BadgeInline('1 js', Tone::WARNING)],
-            $second->meta,
+            $yii->meta,
             'An absent kind must leave no chip behind.',
         );
         self::assertCount(
             1,
-            $second->columns,
+            $yii->columns,
             'A bundle that publishes nothing must keep only its files.',
         );
         self::assertEquals(
-            [new FileEntry('.js', 'second.js', Tone::WARNING)],
-            self::files(self::columnBlockAt(self::column($second, 0), 0))->files,
+            [new FileEntry('.js', 'yii.js', Tone::WARNING)],
+            self::files(self::columnBlockAt(self::column($yii, 0), 0))->files,
             'Scripts alone must still fill the first list.',
         );
     }

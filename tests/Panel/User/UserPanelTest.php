@@ -118,7 +118,7 @@ final class UserPanelTest extends TestCase
             new TextInline('secret-auth-key', TextStyle::PREVIEW),
             self::fields(self::overview(self::blockAt($view, 4)))['Security key']
                 ?? self::fail('The security section must keep the auth key row.'),
-            'A sensitive attribute must stay clamped behind the standard expand control.',
+            'The redacted key must carry the preview style.',
         );
         self::assertSame(
             date('M j, Y · H:i', self::TIME),
