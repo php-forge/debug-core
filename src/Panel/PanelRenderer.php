@@ -5,12 +5,38 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel;
 
 use PHPForge\Debug\{ColumnStyle, PanelView};
-use PHPForge\Debug\Helper\{Badge, CellMore, Disclosure, EmptyState, ExtensionPill, Format, Table, Trace};
+use PHPForge\Debug\Helper\{Badge, CellMore, Disclosure, EmptyState, ExtensionPill, Format, Icon, Table, Trace};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
+use PHPForge\Debug\Presenter\{
+    BadgeInline,
+    Block,
+    CardBlock,
+    DisclosureBlock,
+    EmptyStateBlock,
+    FactsBlock,
+    FilesBlock,
+    GroupBlock,
+    HeadingBlock,
+    Inline,
+    LinkInline,
+    LinksBlock,
+    ManifestBlock,
+    OverviewBlock,
+    ParagraphBlock,
+    PillsBlock,
+    ReadoutsBlock,
+    SectionBlock,
+    StatsBlock,
+    TableBlock,
+    TextInline,
+    TextStyle,
+    TraceInline,
+    ValueInline,
+};
 use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\{Div, P, Pre};
 use UIAwesome\Html\Form\InputSearch;
-use UIAwesome\Html\Heading\{H1, H2};
+use UIAwesome\Html\Heading\{H1, H2, H3};
 use UIAwesome\Html\Helper\Encode;
 use UIAwesome\Html\List\{Dd, Dl, Dt, Li, Ul};
 use UIAwesome\Html\Palpable\A;
@@ -31,21 +57,8 @@ use const JSON_UNESCAPED_UNICODE;
 /**
  * Renders external panel descriptions exclusively through the existing debugger frontend.
  *
- * Dispatch is exhaustive over the shapes {@see PanelView} produces: an unknown kind cannot pass static analysis
- * and a forged one raises `UnhandledMatchError`.
- *
- * @phpstan-import-type Block from PanelView
- * @phpstan-import-type Inline from PanelView
- * @phpstan-import-type LinkInline from PanelView
- * @phpstan-import-type TraceInline from PanelView
- * @phpstan-import-type FactsBlock from PanelView
- * @phpstan-import-type ManifestBlock from PanelView
- * @phpstan-import-type OverviewBlock from PanelView
- * @phpstan-import-type PillsBlock from PanelView
- * @phpstan-import-type ReadoutsBlock from PanelView
- * @phpstan-import-type SectionBlock from PanelView
- * @phpstan-import-type ParagraphBlock from PanelView
- * @phpstan-import-type TableBlock from PanelView
+ * Dispatch narrows the sealed {@see Block} and {@see Inline} unions with `instanceof`, so static analysis proves that
+ * every value {@see PanelView} produces reaches a renderer.
  */
 final class PanelRenderer
 {
@@ -89,16 +102,21 @@ final class PanelRenderer
      * Renders an inline link, opening external targets in a new browsing context.
      *
      * @param LinkInline $inline Validated inline link.
+     * @param string $class Class list of the anchor, or `''` to leave it unstyled.
      *
      * @return string Rendered anchor.
      */
-    private function anchor(array $inline): string
+    private function anchor(LinkInline $inline, string $class): string
     {
         $anchor = A::tag()
-            ->href($inline['href'])
-            ->content($inline['label']);
+            ->href($inline->href)
+            ->content($inline->label);
 
-        if ($inline['external']) {
+        if ($class !== '') {
+            $anchor = $anchor->class($class);
+        }
+
+        if ($inline->external) {
             $anchor = $anchor
                 ->rel('noopener')
                 ->target('_blank');
@@ -108,49 +126,135 @@ final class PanelRenderer
     }
 
     /**
-     * @param Block $block
+     * Renders one content block through the renderer its type selects.
+     *
+     * @param Block $block Block to render.
+     *
+     * @return string Rendered block.
      */
-    private function block(array $block): string
+    private function block(Block $block): string
     {
-        return match ($block['kind']) {
-            'disclosure' => Disclosure::render(
-                $block['title'],
-                Pre::tag()->content($block['content'])->render(),
+        return match (true) {
+            $block instanceof CardBlock => $this->card($block),
+            $block instanceof DisclosureBlock => Disclosure::render(
+                $block->title,
+                Pre::tag()->content($block->content)->render(),
             ),
-            'emptyState' => EmptyState::card(
-                $block['title'],
-                ...array_map($this->paragraph(...), $block['paragraphs']),
+            $block instanceof EmptyStateBlock => EmptyState::card(
+                $block->title,
+                ...array_map($this->paragraph(...), $block->paragraphs),
             ),
-            'group' => Section::tag()
-                ->addAriaAttribute('label', $block['label'])
+            $block instanceof FactsBlock => self::facts($block),
+            $block instanceof FilesBlock => self::files($block),
+            $block instanceof GroupBlock => Section::tag()
+                ->addAriaAttribute('label', $block->label)
                 ->class(Css::PANEL_GROUP)
-                ->html($this->blocks($block['content']->blocks()))
+                ->html($this->blocks($block->content->blocks()))
                 ->render(),
-            'heading' => $block['section']
+            $block instanceof HeadingBlock => $block->section
                 ? Div::tag()
                     ->class(Css::SECTION_HEADER)
-                    ->html(H2::tag()->content($block['title']))
+                    ->html(H2::tag()->content($block->title))
                     ->render()
                 : H2::tag()
-                    ->content($block['title'])
+                    ->content($block->title)
                     ->render(),
-            'facts' => self::facts($block),
-            'manifest' => self::manifest($block),
-            'overview' => $this->overview($block),
-            'paragraph' => $this->paragraph($block),
-            'pills' => self::pills($block),
-            'readouts' => self::readouts($block),
-            'section' => $this->section($block),
-            'table' => $this->table($block),
+            $block instanceof LinksBlock => $this->links($block),
+            $block instanceof ManifestBlock => self::manifest($block),
+            $block instanceof OverviewBlock => $this->overview($block),
+            $block instanceof ParagraphBlock => $this->paragraph($block),
+            $block instanceof PillsBlock => self::pills($block),
+            $block instanceof ReadoutsBlock => self::readouts($block),
+            $block instanceof SectionBlock => $this->section($block),
+            $block instanceof StatsBlock => self::stats($block),
+            $block instanceof TableBlock => $this->table($block),
         };
     }
 
     /**
-     * @param list<Block> $blocks
+     * Renders the content blocks in display order.
+     *
+     * @param list<Block> $blocks Blocks to render.
+     *
+     * @return string Concatenated block markup.
      */
     private function blocks(array $blocks): string
     {
         return implode('', array_map($this->block(...), $blocks));
+    }
+
+    /**
+     * Renders one entity as a card: an identifying header and, when the entity has content, its titled columns.
+     *
+     * @param CardBlock $block Validated card.
+     *
+     * @return string Rendered card.
+     */
+    private function card(CardBlock $block): string
+    {
+        $title = [
+            H2::tag()
+                ->class(Css::ENTITY_NAME)
+                ->content($block->title),
+        ];
+
+        if ($block->subtitle !== '') {
+            $title[] = Span::tag()
+                ->class(Css::ENTITY_SUBTITLE)
+                ->content($block->subtitle);
+        }
+
+        $head = [];
+
+        if ($block->icon !== '') {
+            $head[] = Span::tag()
+                ->addAriaAttribute('hidden', 'true')
+                ->class(Css::ENTITY_ICON)
+                ->html(Icon::render($block->icon));
+        }
+
+        $head[] = Div::tag()
+            ->class(Css::ENTITY_TITLE)
+            ->html(...$title);
+
+        if ($block->meta !== []) {
+            $head[] = Div::tag()
+                ->class(Css::ENTITY_META)
+                ->html(...array_map($this->inline(...), $block->meta));
+        }
+
+        $parts = [
+            Header::tag()
+                ->class(Css::ENTITY_HEAD)
+                ->html(...$head),
+        ];
+
+        if ($block->columns !== []) {
+            $columns = [];
+
+            foreach ($block->columns as $column) {
+                $columns[] = Section::tag()
+                    ->addAriaAttribute('label', $column->title)
+                    ->class(Css::ENTITY_COLUMN)
+                    ->html(
+                        H3::tag()
+                            ->class(Css::ENTITY_COLUMN_TITLE)
+                            ->content($column->title),
+                        $this->blocks($column->content->blocks()),
+                    );
+            }
+
+            $parts[] = Div::tag()
+                ->addDataAttribute('cols', (string) count($columns))
+                ->class(Css::ENTITY_BODY)
+                ->html(...$columns);
+        }
+
+        $card = Article::tag()
+            ->class(Css::ENTITY)
+            ->html(...$parts);
+
+        return ($block->id === '' ? $card : $card->id($block->id))->render();
     }
 
     /**
@@ -160,27 +264,58 @@ final class PanelRenderer
      *
      * @return string Rendered fact strip.
      */
-    private static function facts(array $block): string
+    private static function facts(FactsBlock $block): string
     {
         $facts = [];
 
-        foreach ($block['facts'] as $fact) {
+        foreach ($block->facts as $fact) {
             $facts[] = Div::tag()
                 ->class(Css::FACT)
                 ->html(
                     Dt::tag()
                         ->class(Css::FACT_LABEL)
-                        ->content($fact['label']),
+                        ->content($fact->label),
                     Dd::tag()
                         ->class(Css::FACT_VALUE)
-                        ->title($fact['value'])
-                        ->content($fact['value']),
+                        ->title($fact->value)
+                        ->content($fact->value),
                 );
         }
 
         return Dl::tag()
             ->class(Css::FACT_STRIP)
             ->html(...$facts)
+            ->render();
+    }
+
+    /**
+     * Renders the list of typed file names.
+     *
+     * @param FilesBlock $block Validated file list.
+     *
+     * @return string Rendered file list.
+     */
+    private static function files(FilesBlock $block): string
+    {
+        $items = [];
+
+        foreach ($block->files as $file) {
+            $items[] = Li::tag()
+                ->class(Css::FILE)
+                ->html(
+                    Span::tag()
+                        ->class(Css::fileType($file->tone))
+                        ->content($file->type),
+                    Span::tag()
+                        ->class(Css::FILE_NAME)
+                        ->title($file->name)
+                        ->content($file->name),
+                );
+        }
+
+        return Ul::tag()
+            ->class(Css::FILE_LIST)
+            ->html(...$items)
             ->render();
     }
 
@@ -221,11 +356,11 @@ final class PanelRenderer
      *
      * @return string Rendered frame list.
      */
-    private function frames(array $inline): string
+    private function frames(TraceInline $inline): string
     {
         $items = [];
 
-        foreach ($inline['frames'] as $frame) {
+        foreach ($inline->frames as $frame) {
             $items[] = Li::tag()->html($this->trace->render($frame));
         }
 
@@ -236,35 +371,67 @@ final class PanelRenderer
     }
 
     /**
-     * @param Inline $inline
+     * Renders one inline value through the renderer its type selects.
+     *
+     * @param Inline $inline Value to render.
+     *
+     * @return string Rendered inline markup.
      */
-    private function inline(array $inline): string
+    private function inline(Inline $inline): string
     {
-        return match ($inline['kind']) {
-            'badge' => Badge::render($inline['label'], $inline['tone'])->render(),
-            'link' => $this->anchor($inline),
-            'trace' => $this->frames($inline),
-            'text' => match ($inline['style']) {
-                'code' => Code::tag()
-                    ->content($inline['value'])
+        return match (true) {
+            $inline instanceof BadgeInline => Badge::render($inline->label, $inline->tone)->render(),
+            $inline instanceof LinkInline => $this->anchor($inline, ''),
+            $inline instanceof TextInline => match ($inline->style) {
+                TextStyle::CODE => Code::tag()
+                    ->content($inline->value)
                     ->render(),
-                'plain' => Encode::content($inline['value']),
-                'preview' => CellMore::clamp(
-                    Encode::content($inline['value']),
-                    $inline['value'],
+                TextStyle::PLAIN => Encode::content($inline->value),
+                TextStyle::PREVIEW => CellMore::clamp(
+                    Encode::content($inline->value),
+                    $inline->value,
                 ),
-                'sql' => CellMore::clamp(
-                    SqlHighlighter::highlight($inline['value']),
-                    $inline['value'],
+                TextStyle::SQL => CellMore::clamp(
+                    SqlHighlighter::highlight($inline->value),
+                    $inline->value,
                 ),
-                'strong' => Strong::tag()
-                    ->content($inline['value'])
+                TextStyle::STRONG => Strong::tag()
+                    ->content($inline->value)
                     ->render(),
             },
-            'value' => $inline['typeOnly']
-                ? Encode::content(Format::typeOf($inline['value']))
-                : $this->preview($inline['value']),
+            $inline instanceof TraceInline => $this->frames($inline),
+            $inline instanceof ValueInline => $inline->typeOnly
+                ? Encode::content(Format::typeOf($inline->value))
+                : $this->preview($inline->value),
         };
+    }
+
+    /**
+     * Renders the labeled strip of navigation links as pills.
+     *
+     * @param LinksBlock $block Validated link strip.
+     *
+     * @return string Rendered link strip.
+     */
+    private function links(LinksBlock $block): string
+    {
+        $pills = [];
+
+        foreach ($block->links as $link) {
+            $pills[] = $this->anchor($link, Css::LINK_PILL);
+        }
+
+        return Div::tag()
+            ->class(Css::LINK_STRIP)
+            ->html(
+                Span::tag()
+                    ->class(Css::LINK_STRIP_LABEL)
+                    ->content($block->label),
+                Div::tag()
+                    ->class(Css::LINK_STRIP_LIST)
+                    ->html(...$pills),
+            )
+            ->render();
     }
 
     /**
@@ -274,33 +441,33 @@ final class PanelRenderer
      *
      * @return string Rendered manifest card.
      */
-    private static function manifest(array $block): string
+    private static function manifest(ManifestBlock $block): string
     {
         $items = [];
 
-        foreach ($block['packages'] as $package) {
+        foreach ($block->packages as $package) {
             $items[] = Div::tag()
                 ->class(Css::MANIFEST_ITEM)
                 ->html(
                     Span::tag()
                         ->class(Css::MANIFEST_NAME)
-                        ->content($package['name']),
+                        ->content($package->name),
                     Span::tag()
                         ->class(Css::MANIFEST_VERSION)
-                        ->content($package['version']),
+                        ->content($package->version),
                 );
         }
 
         $total = count($items);
 
         return Section::tag()
-            ->addAriaAttribute('label', $block['label'])
+            ->addAriaAttribute('label', $block->label)
             ->class(Css::MANIFEST)
             ->html(
                 Header::tag()
                     ->class(Css::MANIFEST_HEAD)
                     ->html(
-                        Span::tag()->content($block['label']),
+                        Span::tag()->content($block->label),
                         Span::tag()
                             ->class(Css::MANIFEST_COUNT)
                             ->content($total === 1 ? '1 package' : "{$total} packages"),
@@ -313,24 +480,28 @@ final class PanelRenderer
     }
 
     /**
-     * @param OverviewBlock $block
+     * Renders the labeled fields as a two-column data grid.
+     *
+     * @param OverviewBlock $block Validated overview.
+     *
+     * @return string Rendered overview grid.
      */
-    private function overview(array $block): string
+    private function overview(OverviewBlock $block): string
     {
         $rows = [];
-        foreach ($block['fields'] as $field) {
+        foreach ($block->fields as $field) {
             $rows[] = Tr::tag()
                 ->html(
                     Th::tag()
                         ->scope('row')
-                        ->content($field['label']),
-                    Td::tag()->html($this->inline($field['value'])),
+                        ->content($field->label),
+                    Td::tag()->html($this->inline($field->value)),
                 );
         }
         return Table::render(
             [],
             $rows,
-            $block['compact'] ? self::TABLE_COMPACT_CLASS : self::TABLE_MONO_CLASS,
+            $block->compact ? self::TABLE_COMPACT_CLASS : self::TABLE_MONO_CLASS,
         );
     }
 
@@ -353,7 +524,7 @@ final class PanelRenderer
                     ->content('·');
             }
 
-            $summary[] = Span::tag()->html($this->inline($metric['value']), Encode::content($metric['label']));
+            $summary[] = Span::tag()->html($this->inline($metric->value), Encode::content($metric->label));
         }
 
         $heading = H1::tag()
@@ -372,15 +543,19 @@ final class PanelRenderer
     }
 
     /**
-     * @param ParagraphBlock $block
+     * Renders one paragraph, adding the callout presentation when the block declares a tone.
+     *
+     * @param ParagraphBlock $block Validated paragraph.
+     *
+     * @return string Rendered paragraph.
      */
-    private function paragraph(array $block): string
+    private function paragraph(ParagraphBlock $block): string
     {
-        $paragraph = P::tag()->html(...array_map($this->inline(...), $block['content']));
+        $paragraph = P::tag()->html(...array_map($this->inline(...), $block->content));
 
-        if ($block['tone'] !== null) {
+        if ($block->tone !== null) {
             $paragraph = $paragraph
-                ->class(Css::callout($block['tone']))
+                ->class(Css::callout($block->tone))
                 ->role('status');
         }
 
@@ -394,12 +569,12 @@ final class PanelRenderer
      *
      * @return string Rendered pill strip.
      */
-    private static function pills(array $block): string
+    private static function pills(PillsBlock $block): string
     {
         $pills = [];
 
-        foreach ($block['pills'] as $pill) {
-            $pills[] = ExtensionPill::render($pill['label'], $pill['state'], $pill['enabled']);
+        foreach ($block->pills as $pill) {
+            $pills[] = ExtensionPill::render($pill->label, $pill->state, $pill->enabled);
         }
 
         return Div::tag()
@@ -422,24 +597,24 @@ final class PanelRenderer
      *
      * @return string Rendered readout row.
      */
-    private static function readouts(array $block): string
+    private static function readouts(ReadoutsBlock $block): string
     {
         $cards = [];
 
-        foreach ($block['readouts'] as $readout) {
+        foreach ($block->readouts as $readout) {
             $parts = [
                 Span::tag()
                     ->class(Css::READOUT_LABEL)
-                    ->content($readout['label']),
+                    ->content($readout->label),
                 Span::tag()
                     ->class(Css::READOUT_VALUE)
-                    ->content($readout['value']),
+                    ->content($readout->value),
             ];
 
-            if ($readout['caption'] !== '') {
+            if ($readout->caption !== '') {
                 $parts[] = Span::tag()
                     ->class(Css::READOUT_META)
-                    ->content($readout['caption']);
+                    ->content($readout->caption);
             }
 
             $cards[] = Article::tag()
@@ -460,45 +635,83 @@ final class PanelRenderer
      *
      * @return string Rendered section.
      */
-    private function section(array $block): string
+    private function section(SectionBlock $block): string
     {
         $title = [
             Span::tag()
                 ->class(Css::SECTION_MARK)
-                ->content($block['mark']),
-            Encode::content($block['title']),
+                ->content($block->mark),
+            Encode::content($block->title),
         ];
 
-        if ($block['count'] !== null) {
+        if ($block->count !== null) {
             $title[] = Span::tag()
                 ->class(Css::SECTION_COUNT)
-                ->content((string) $block['count']);
+                ->content((string) $block->count);
         }
 
         return Section::tag()
-            ->addAriaAttribute('label', $block['title'])
+            ->addAriaAttribute('label', $block->title)
             ->class(Css::SECTION)
             ->html(
                 H2::tag()
                     ->class(Css::SECTION_TITLE)
                     ->html(...$title),
-                $this->blocks($block['content']->blocks()),
+                $this->blocks($block->content->blocks()),
             )
             ->render();
     }
 
     /**
-     * @param TableBlock $block
+     * Renders the strip of headline stat tiles.
+     *
+     * @param StatsBlock $block Validated stat strip.
+     *
+     * @return string Rendered stat strip.
      */
-    private function table(array $block): string
+    private static function stats(StatsBlock $block): string
+    {
+        $tiles = [];
+
+        foreach ($block->stats as $stat) {
+            $tiles[] = Div::tag()
+                ->class(Css::stat($stat->tone))
+                ->html(
+                    Span::tag()
+                        ->addAriaAttribute('hidden', 'true')
+                        ->class(Css::STAT_ICON)
+                        ->html(Icon::render($stat->icon)),
+                    Strong::tag()
+                        ->class(Css::STAT_VALUE)
+                        ->content($stat->value),
+                    Span::tag()
+                        ->class(Css::STAT_LABEL)
+                        ->content($stat->label),
+                );
+        }
+
+        return Div::tag()
+            ->class(Css::STAT_STRIP)
+            ->html(...$tiles)
+            ->render();
+    }
+
+    /**
+     * Renders the data grid, applying the declared column style to every cell.
+     *
+     * @param TableBlock $block Validated table.
+     *
+     * @return string Rendered table, wrapped in the filter scope when the table declares one.
+     */
+    private function table(TableBlock $block): string
     {
         $rows = [];
 
-        foreach ($block['rows'] as $row) {
+        foreach ($block->rows as $row) {
             $cells = [];
 
             foreach ($row as $column => $inline) {
-                $style = $block['styles'][$column] ?? ColumnStyle::PLAIN;
+                $style = $block->styles[$column] ?? ColumnStyle::PLAIN;
 
                 $class = match ($style) {
                     ColumnStyle::PLAIN => '',
@@ -511,7 +724,7 @@ final class PanelRenderer
 
                 $value = $this->inline($inline);
 
-                if ($style === ColumnStyle::PILL && $inline['kind'] === 'text') {
+                if ($style === ColumnStyle::PILL && $inline instanceof TextInline) {
                     $value = Span::tag()
                         ->html($value)
                         ->render();
@@ -525,26 +738,26 @@ final class PanelRenderer
             $rows[] = Tr::tag()->html(...$cells);
         }
 
-        $label = implode(', ', $block['headers']);
+        $label = implode(', ', $block->headers);
 
         $wrap = Div::tag()
             ->addAriaAttribute('label', $label)
             ->addAttribute('tabindex', 0)
             ->class(Css::TABLE_WRAP)
             ->role('region')
-            ->html(Table::build($block['headers'], $rows));
+            ->html(Table::build($block->headers, $rows));
 
-        if ($block['filterable']) {
+        if ($block->filterable) {
             $wrap = $wrap->addDataAttribute('yii-debug-filter-target', true);
         }
 
         $html = $wrap->render();
 
-        if ($block['collapsible'] && count($rows) > CellMore::ROW_THRESHOLD) {
+        if ($block->collapsible && count($rows) > CellMore::ROW_THRESHOLD) {
             $html = CellMore::wrap($html);
         }
 
-        return $block['filterable'] ? self::filterScope($label, $html) : $html;
+        return $block->filterable ? self::filterScope($label, $html) : $html;
     }
 
 }

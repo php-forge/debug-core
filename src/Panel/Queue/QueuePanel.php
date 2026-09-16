@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Panel\Queue;
 
 use PHPForge\Debug\{ColumnStyle, Panel, PanelView, Tone};
 use PHPForge\Debug\Helper\Format;
+use PHPForge\Debug\Presenter\BadgeInline;
 
 use function date;
 use function implode;
@@ -16,8 +17,6 @@ use function sprintf;
  * Presents the queue lifecycle events captured during the request as a table with one detail group per event.
  *
  * The per-job detail route belongs to the adapter, so it supplies one URL per event with {@see self::jobUrls()}.
- *
- * @phpstan-import-type BadgeInline from PanelView
  */
 final class QueuePanel extends Panel
 {
@@ -317,7 +316,7 @@ final class QueuePanel extends Panel
      *
      * @return BadgeInline Badge carrying the phase label and tone.
      */
-    private static function status(JobRecord $record): array
+    private static function status(JobRecord $record): BadgeInline
     {
         $status = self::STATUS[$record->eventType] ?? self::STATUS[JobRecord::TYPE_PUSH];
 

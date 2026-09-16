@@ -49,6 +49,95 @@ final class PanelRendererTest extends TestCase
             'A frame without file or line must still be inspectable.',
         );
     }
+
+    public function testCardOmitsEveryOptionalElementItWasNotGiven(): void
+    {
+        $html = PanelRenderer::render('Custom', PanelView::create()->card('', '', 'Bare', '', []));
+
+        self::assertStringContainsString(
+            '<article class="yii-debug-entity">',
+            $html,
+            'An anchorless card must carry no `id`.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-entity-icon',
+            $html,
+            'An iconless card must omit the glyph.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-entity-subtitle',
+            $html,
+            'A card without qualifier must omit the subtitle.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-entity-meta',
+            $html,
+            'A card without counts must omit the meta strip.',
+        );
+        self::assertStringNotContainsString(
+            'yii-debug-entity-body',
+            $html,
+            'A card without columns must omit the body.',
+        );
+    }
+
+    public function testCardRendersItsAnchoredHeaderAndTitledColumns(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->card(
+                'app-asset',
+                'asset',
+                'AppAsset',
+                'app\\assets\\',
+                [PanelView::badge('1 css', Tone::INFO)],
+                PanelView::column(
+                    'Files',
+                    PanelView::create()->files(PanelView::file('.css', 'css/site.css', Tone::INFO)),
+                ),
+                PanelView::column('Wiring', PanelView::create()->facts(PanelView::fact('source', '@app/assets'))),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<article class="yii-debug-entity" id="app-asset">',
+            $html,
+            'Anchor must be reachable by other blocks.',
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-entity-icon" aria-hidden="true"><svg',
+            $html,
+            'Glyph must stay hidden from assistive technology.',
+        );
+        self::assertStringContainsString(
+            '<h2 class="yii-debug-entity-name">' . "\n" . 'AppAsset' . "\n" . '</h2>'
+            . '<span class="yii-debug-entity-subtitle">app\\assets\\</span>',
+            $html,
+            'Qualifier must follow the name inside the title.',
+        );
+        self::assertStringContainsString(
+            '<div class="yii-debug-entity-meta">' . "\n" . '<span class="yii-debug-badge yii-debug-badge-info">',
+            $html,
+            'Counts must close the header.',
+        );
+        self::assertStringContainsString(
+            '<div class="yii-debug-entity-body" data-cols="2">',
+            $html,
+            'Body must declare how many columns it holds.',
+        );
+        self::assertStringContainsString(
+            '<section class="yii-debug-entity-column" aria-label="Files">' . "\n"
+            . '<h3 class="yii-debug-entity-column-title">' . "\n" . 'Files' . "\n" . '</h3>',
+            $html,
+            'Column must be announced by its own title.',
+        );
+        self::assertStringContainsString(
+            '<ul class="yii-debug-file-list">',
+            $html,
+            'Column must render the blocks of its content.',
+        );
+    }
+
     #[DataProviderExternal(PanelRendererProvider::class, 'nonCollapsingTables')]
     public function testCollapseRequiresOptInAndMoreRowsThanThreshold(int $count, bool $collapsible): void
     {
@@ -63,6 +152,40 @@ final class PanelRendererTest extends TestCase
             'class="yii-debug-cell-more"',
             $html,
             'No disclosure control must be rendered.',
+        );
+    }
+
+    public function testEntityFileLinkAndStatTextPositionsAreEscaped(): void
+    {
+        $hostile = '<script>alert("x")</script>';
+
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()
+                ->stats(PanelView::stat('asset', $hostile, $hostile))
+                ->links($hostile, PanelView::link($hostile, '#' . $hostile))
+                ->card(
+                    $hostile,
+                    'asset',
+                    $hostile,
+                    $hostile,
+                    [$hostile],
+                    PanelView::column(
+                        $hostile,
+                        PanelView::create()->files(PanelView::file($hostile, $hostile, Tone::INFO)),
+                    ),
+                ),
+        );
+
+        self::assertStringNotContainsString(
+            '<script>',
+            $html,
+            'No data position may inject HTML.',
+        );
+        self::assertStringContainsString(
+            '&lt;script&gt;',
+            $html,
+            'Escaped diagnostic text must remain inspectable.',
         );
     }
 
@@ -90,6 +213,41 @@ final class PanelRendererTest extends TestCase
             '<dd class="yii-debug-fact-value" title="UTF-8">',
             $html,
             'Value must carry the untruncated text as its title.',
+        );
+    }
+
+    public function testFileListPairsEveryNameWithItsTonedTypePill(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->files(
+                PanelView::file('.css', 'css/site.css', Tone::INFO),
+                PanelView::file('.js', 'js/app.js', Tone::WARNING),
+                PanelView::file('.map', 'js/app.js.map'),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<ul class="yii-debug-file-list">',
+            $html,
+            'Files must share one list.',
+        );
+        self::assertStringContainsString(
+            '<li class="yii-debug-file">'
+            . "\n" . '<span class="yii-debug-file-type yii-debug-file-type-info">.css</span>'
+            . '<span class="yii-debug-file-name" title="css/site.css">css/site.css</span>',
+            $html,
+            'Name must follow its pill and keep the untruncated text as its title.',
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-file-type yii-debug-file-type-warning">.js</span>',
+            $html,
+            'Each kind must keep its own tone.',
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-file-type yii-debug-file-type-muted">.map</span>',
+            $html,
+            'An untoned file must read as neutral.',
         );
     }
 
@@ -305,6 +463,36 @@ final class PanelRendererTest extends TestCase
         );
     }
 
+    public function testLinkStripRendersEveryTargetAsAPillAndIsolatesExternalOnes(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->links(
+                'Depends on 2',
+                PanelView::link('YiiAsset', '#yii-asset'),
+                PanelView::link('Docs', 'https://example.test/docs', true),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<div class="yii-debug-link-strip">'
+            . "\n" . '<span class="yii-debug-link-strip-label">Depends on 2</span>'
+            . '<div class="yii-debug-link-strip-list">',
+            $html,
+            'Label must introduce the list of targets.',
+        );
+        self::assertStringContainsString(
+            '<a class="yii-debug-link-pill" href="#yii-asset">YiiAsset</a>',
+            $html,
+            'A fragment target must stay in the same browsing context.',
+        );
+        self::assertStringContainsString(
+            '<a class="yii-debug-link-pill" href="https://example.test/docs" rel="noopener" target="_blank">Docs</a>',
+            $html,
+            'An external target must not leak the opener.',
+        );
+    }
+
     public function testManifestGroupsPackagesUnderTheirVendorWithATally(): void
     {
         $html = PanelRenderer::render(
@@ -412,9 +600,10 @@ final class PanelRendererTest extends TestCase
             'Cards must share one row.',
         );
         self::assertStringContainsString(
-            '<span class="yii-debug-readout-meta">framework</span>',
+            '<span class="yii-debug-readout-label">Yii</span><span class="yii-debug-readout-value">3</span>'
+            . '<span class="yii-debug-readout-meta">framework</span>',
             $html,
-            'A caption must follow its value.',
+            'Order: label, value, then caption.',
         );
         self::assertSame(
             1,
@@ -552,6 +741,43 @@ final class PanelRendererTest extends TestCase
             "'<x>'",
             $html,
             'A statement literal must never inject HTML.',
+        );
+    }
+
+    public function testStatStripRendersEveryTileWithItsToneIconValueAndLabel(): void
+    {
+        $html = PanelRenderer::render(
+            'Custom',
+            PanelView::create()->stats(
+                PanelView::stat('asset', 'bundles', '2'),
+                PanelView::stat('brand-css3', 'css', '1', Tone::INFO),
+            ),
+        );
+
+        self::assertStringContainsString(
+            '<div class="yii-debug-stat-strip">',
+            $html,
+            'Tiles must share one strip.',
+        );
+        self::assertStringContainsString(
+            '<div class="yii-debug-stat yii-debug-stat-muted">',
+            $html,
+            'An untoned tile must keep the panel accent.',
+        );
+        self::assertStringContainsString(
+            '<div class="yii-debug-stat yii-debug-stat-info">',
+            $html,
+            'A toned tile must carry its tone beside the base class.',
+        );
+        self::assertStringContainsString(
+            '<span class="yii-debug-stat-icon" aria-hidden="true"><svg',
+            $html,
+            'Glyph must stay hidden from assistive technology.',
+        );
+        self::assertStringContainsString(
+            '<strong class="yii-debug-stat-value">2</strong><span class="yii-debug-stat-label">bundles</span>',
+            $html,
+            'Label must follow the headline value.',
         );
     }
 

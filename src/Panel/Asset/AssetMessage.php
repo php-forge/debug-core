@@ -10,19 +10,19 @@ namespace PHPForge\Debug\Panel\Asset;
 enum AssetMessage: string
 {
     /**
-     * Detail field label of the published base path.
+     * Wiring fact label of the path the bundle publishes into.
      */
-    case BASE_PATH = 'Base path';
+    case BASE = 'base';
 
     /**
-     * Detail field label of the published base URL, also used by the Vite overview.
+     * Detail field label of the base URL configured on the Vite bridge.
      */
     case BASE_URL = 'Base URL';
 
     /**
-     * Header of the bundle class column.
+     * Stat label of a single registered bundle.
      */
-    case BUNDLE = 'Bundle';
+    case BUNDLE = 'bundle';
 
     /**
      * Asset bundle base class named in the empty state.
@@ -30,19 +30,9 @@ enum AssetMessage: string
     case BUNDLE_CLASS = 'yii\web\AssetBundle';
 
     /**
-     * `sprintf()` template of the heading preceding each detail group.
+     * Stat label of the registered bundle count.
      */
-    case BUNDLE_HEADING = '%d. %s';
-
-    /**
-     * Suffix appended to a single registered bundle in the summary header.
-     */
-    case BUNDLE_SUFFIX = ' bundle';
-
-    /**
-     * Suffix appended to the registered bundle count in the summary header.
-     */
-    case BUNDLES_SUFFIX = ' bundles';
+    case BUNDLES = 'bundles';
 
     /**
      * Header of the manifest chunk column.
@@ -50,39 +40,49 @@ enum AssetMessage: string
     case CHUNK = 'Chunk';
 
     /**
-     * Detail field label of the fully qualified bundle class.
-     */
-    case CLASS_NAME = 'Class';
-
-    /**
-     * Header of the stylesheet count column.
+     * Header of the stylesheet count column in the manifest table.
      */
     case CSS = 'CSS';
 
     /**
-     * Badge marking a declared stylesheet in the bundle file table.
+     * `sprintf()` template of the stylesheet chip in a bundle card header.
      */
-    case CSS_BADGE = 'css';
+    case CSS_CHIP = '%d css';
 
     /**
-     * Suffix appended to the stylesheet count in the summary header.
+     * Icon key of the stylesheet stat tile.
      */
-    case CSS_SUFFIX = ' css';
+    case CSS_ICON = 'brand-css3';
 
     /**
-     * Header of the dependency count column.
+     * Stat label of the declared stylesheet count.
      */
-    case DEPENDS = 'Depends';
+    case CSS_LABEL = 'css';
 
     /**
-     * Header of the single-column dependency table in a bundle detail.
+     * Kind pill marking a declared stylesheet in a bundle file list.
      */
-    case DEPENDS_ON = 'Depends on';
+    case CSS_TYPE = '.css';
+
+    /**
+     * `sprintf()` template of the chip declaring a single dependency in a bundle card header.
+     */
+    case DEP_CHIP = '%d dep';
+
+    /**
+     * `sprintf()` template of the label introducing the dependency link strip.
+     */
+    case DEPENDS_LABEL = 'Depends on %d';
 
     /**
      * Bundle property named in the empty state, which pulls bundles in transitively.
      */
     case DEPENDS_PROPERTY = 'depends';
+
+    /**
+     * `sprintf()` template of the dependency chip in a bundle card header.
+     */
+    case DEPS_CHIP = '%d deps';
 
     /**
      * Headline of the empty state when the request registered no bundle.
@@ -136,9 +136,9 @@ enum AssetMessage: string
     case ENTRY_BADGE = 'entry';
 
     /**
-     * Header of the declared file column in a bundle detail.
+     * Title of the card column listing the files a bundle declares.
      */
-    case FILE = 'File';
+    case FILES = 'Files';
 
     /**
      * Stable identifier associating the panel with the captured payload, also used as its icon key.
@@ -151,29 +151,34 @@ enum AssetMessage: string
     case IMPORTS = 'Imports';
 
     /**
-     * Header of the script count column.
+     * `sprintf()` template of the script chip in a bundle card header.
      */
-    case JS = 'JS';
+    case JS_CHIP = '%d js';
 
     /**
-     * Badge marking a declared script in the bundle file table.
+     * Icon key of the script stat tile.
      */
-    case JS_BADGE = 'js';
+    case JS_ICON = 'brand-javascript';
 
     /**
-     * Suffix appended to the script count in the summary header.
+     * Stat label of the declared script count.
      */
-    case JS_SUFFIX = ' js';
+    case JS_LABEL = 'js';
 
     /**
-     * Suffix appended to a single dependency link in the summary header.
+     * Kind pill marking a declared script in a bundle file list.
      */
-    case LINK_SUFFIX = ' link';
+    case JS_TYPE = '.js';
 
     /**
-     * Suffix appended to the dependency link count in the summary header.
+     * Icon key of the dependency stat tile, also its label for a single link.
      */
-    case LINKS_SUFFIX = ' links';
+    case LINK = 'link';
+
+    /**
+     * Stat label of the dependency link count.
+     */
+    case LINKS = 'links';
 
     /**
      * Detail field label of the Vite manifest path.
@@ -201,17 +206,7 @@ enum AssetMessage: string
     case MODE_DEV_SERVER = 'Dev server (%s)';
 
     /**
-     * Detail field label of the bundle namespace.
-     */
-    case NAMESPACE_PART = 'Namespace';
-
-    /**
-     * Note of the detail group when the bundle declares no file.
-     */
-    case NO_FILES = 'This bundle declares no CSS or JavaScript files.';
-
-    /**
-     * Header of the position column, which sorts by registration order.
+     * Header of the position column, which sorts by manifest order.
      */
     case NUMBER = '#';
 
@@ -231,14 +226,9 @@ enum AssetMessage: string
     case REGISTER_CALL = 'register()';
 
     /**
-     * Heading above the inventory table.
+     * Wiring fact label of the source path declared by the bundle.
      */
-    case REGISTERED = 'Registered bundles';
-
-    /**
-     * Detail field label of the source path published by the bundle.
-     */
-    case SOURCE_PATH = 'Source path';
+    case SOURCE = 'source';
 
     /**
      * Panel title used in the debugger navigation.
@@ -251,9 +241,9 @@ enum AssetMessage: string
     case TOOLBAR = 'Bundles';
 
     /**
-     * Header of the file kind column in a bundle detail.
+     * Wiring fact label of the URL the bundle publishes under.
      */
-    case TYPE = 'Type';
+    case URL = 'url';
 
     /**
      * Heading above the Vite bridge overview.
@@ -264,4 +254,9 @@ enum AssetMessage: string
      * Note shown when the build manifest carries no chunk outside dev mode.
      */
     case VITE_EMPTY = 'The Vite manifest is missing or empty; run the front-end build to populate it.';
+
+    /**
+     * Title of the card column describing how a bundle resolves its files.
+     */
+    case WIRING = 'Wiring';
 }

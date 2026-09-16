@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Asset;
 
 use PHPForge\Debug\{ColumnStyle, Panel, PanelView, Tone};
-use PHPForge\Debug\Helper\Fqcn;
+use PHPForge\Debug\Helper\{Fqcn, Text};
+use PHPForge\Debug\Presenter\{FileEntry, LinkInline};
 
+use function array_map;
 use function count;
 use function sprintf;
 
 /**
- * Presents the registered asset bundles as an inventory table with one detail group per bundle.
+ * Presents the registered asset bundles as a strip of headline statistics and one card per bundle.
  *
  * The optional Vite bridge snapshot is described first, because it governs how the bundles resolve their URLs.
  */
@@ -35,7 +37,7 @@ final class AssetPanel extends Panel
      *
      * @param array<string, mixed> $data Decoded panel payload with `bundles` and `vite` keys.
      *
-     * @return PanelView Vite overview, bundle inventory, and per-bundle detail groups.
+     * @return PanelView Aggregate statistics, Vite overview, and one card per registered bundle.
      */
     public function present(array $data): PanelView
     {
@@ -58,17 +60,32 @@ final class AssetPanel extends Panel
 
         $view = PanelView::create()
             ->active($count > 0 || $vite !== null)
-            ->summary(
-                $count === 1 ? AssetMessage::BUNDLE_SUFFIX->value : AssetMessage::BUNDLES_SUFFIX->value,
-                $count,
-            )
-            ->summary(AssetMessage::CSS_SUFFIX->value, $css)
-            ->summary(AssetMessage::JS_SUFFIX->value, $js)
-            ->summary(
-                $depends === 1 ? AssetMessage::LINK_SUFFIX->value : AssetMessage::LINKS_SUFFIX->value,
-                $depends,
-            )
-            ->toolbar(AssetMessage::TOOLBAR->value, $count);
+            ->toolbar(AssetMessage::TOOLBAR->value, $count)
+            ->stats(
+                PanelView::stat(
+                    AssetMessage::ID->value,
+                    $count === 1 ? AssetMessage::BUNDLE->value : AssetMessage::BUNDLES->value,
+                    (string) $count,
+                ),
+                PanelView::stat(
+                    AssetMessage::CSS_ICON->value,
+                    AssetMessage::CSS_LABEL->value,
+                    (string) $css,
+                    Tone::INFO,
+                ),
+                PanelView::stat(
+                    AssetMessage::JS_ICON->value,
+                    AssetMessage::JS_LABEL->value,
+                    (string) $js,
+                    Tone::WARNING,
+                ),
+                PanelView::stat(
+                    AssetMessage::LINK->value,
+                    $depends === 1 ? AssetMessage::LINK->value : AssetMessage::LINKS->value,
+                    (string) $depends,
+                    Tone::SUCCESS,
+                ),
+            );
 
         if ($vite !== null) {
             $view = self::vite($view, $vite);
@@ -95,120 +112,109 @@ final class AssetPanel extends Panel
             );
         }
 
-        $view = $view
-            ->heading(AssetMessage::REGISTERED->value, true)
-            ->table(
-                [
-                    AssetMessage::NUMBER->value,
-                    AssetMessage::BUNDLE->value,
-                    AssetMessage::CSS->value,
-                    AssetMessage::JS->value,
-                    AssetMessage::DEPENDS->value,
-                ],
-                self::inventory($bundles),
-                true,
-                [
-                    0 => ColumnStyle::NUMBER,
-                    1 => ColumnStyle::IDENTIFIER,
-                    2 => ColumnStyle::NUMBER,
-                    3 => ColumnStyle::NUMBER,
-                    4 => ColumnStyle::NUMBER,
-                ],
-            );
-
-        foreach ($bundles as $index => $bundle) {
-            $view = $view
-                ->heading(
-                    sprintf(AssetMessage::BUNDLE_HEADING->value, $index + 1, Fqcn::shortName($bundle->name)),
-                    true,
-                )
-                ->group($bundle->name, self::detail($bundle));
+        foreach ($bundles as $bundle) {
+            $view = self::card($view, $bundle);
         }
 
         return $view;
     }
 
     /**
-     * Builds the detail group of one bundle: wiring overview, declared files, and dependencies.
+     * Appends one bundle as a card: identity in the header, declared files and wiring in its columns.
      *
+     * @param PanelView $view View to extend.
      * @param AssetBundleRow $bundle Captured bundle to describe.
      *
-     * @return PanelView Child view holding only the detail blocks of the bundle.
+     * @return PanelView View completed with the bundle card.
      */
-    private static function detail(AssetBundleRow $bundle): PanelView
+    private static function card(PanelView $view, AssetBundleRow $bundle): PanelView
     {
+        $cssCount = count($bundle->css);
+        $jsCount = count($bundle->js);
+        $dependsCount = count($bundle->depends);
+
+        $meta = [];
+
+        if ($cssCount > 0) {
+            $meta[] = PanelView::badge(sprintf(AssetMessage::CSS_CHIP->value, $cssCount), Tone::INFO);
+        }
+
+        if ($jsCount > 0) {
+            $meta[] = PanelView::badge(sprintf(AssetMessage::JS_CHIP->value, $jsCount), Tone::WARNING);
+        }
+
+        if ($dependsCount > 0) {
+            $meta[] = PanelView::badge(
+                sprintf(
+                    $dependsCount === 1 ? AssetMessage::DEP_CHIP->value : AssetMessage::DEPS_CHIP->value,
+                    $dependsCount,
+                ),
+                Tone::SUCCESS,
+            );
+        }
+
+        $columns = [];
+
+        if ($cssCount + $jsCount > 0) {
+            $columns[] = PanelView::column(AssetMessage::FILES->value, self::files($bundle));
+        }
+
+        $wiring = self::wiring($bundle);
+
+        if ($wiring !== null) {
+            $columns[] = PanelView::column(AssetMessage::WIRING->value, $wiring);
+        }
+
         $namespace = Fqcn::namespacePart($bundle->name);
 
-        $view = PanelView::create()->overview(
-            [
-                AssetMessage::CLASS_NAME->value => PanelView::code($bundle->name),
-                AssetMessage::NAMESPACE_PART->value => $namespace === ''
-                    ? AssetMessage::PLACEHOLDER->value
-                    : $namespace,
-                AssetMessage::SOURCE_PATH->value => self::orPlaceholder($bundle->sourcePath),
-                AssetMessage::BASE_PATH->value => self::orPlaceholder($bundle->basePath),
-                AssetMessage::BASE_URL->value => self::orPlaceholder($bundle->baseUrl),
-            ],
-            true,
+        return $view->card(
+            Text::camel2id($bundle->name),
+            AssetMessage::ID->value,
+            Fqcn::shortName($bundle->name),
+            $namespace === '' ? '' : "{$namespace}\\",
+            $meta,
+            ...$columns,
         );
-
-        $files = [];
-
-        foreach ($bundle->css as $file) {
-            $files[] = [PanelView::badge(AssetMessage::CSS_BADGE->value, Tone::INFO), $file];
-        }
-
-        foreach ($bundle->js as $file) {
-            $files[] = [PanelView::badge(AssetMessage::JS_BADGE->value, Tone::WARNING), $file];
-        }
-
-        $view = $files === []
-            ? $view->paragraph(AssetMessage::NO_FILES->value)
-            : $view->table(
-                [AssetMessage::TYPE->value, AssetMessage::FILE->value],
-                $files,
-                true,
-                [
-                    0 => ColumnStyle::PILL,
-                    1 => ColumnStyle::MONOSPACE,
-                ],
-            );
-
-        if ($bundle->depends === []) {
-            return $view;
-        }
-
-        $rows = [];
-
-        foreach ($bundle->depends as $depend) {
-            $rows[] = [$depend];
-        }
-
-        return $view->table([AssetMessage::DEPENDS_ON->value], $rows, true, [0 => ColumnStyle::IDENTIFIER]);
     }
 
     /**
-     * Builds the inventory table rows in registration order.
+     * Builds the `Files` column, keeping the stylesheets in their own list ahead of the scripts.
      *
-     * @param list<AssetBundleRow> $bundles Captured bundles in registration order.
+     * @param AssetBundleRow $bundle Captured bundle to describe.
      *
-     * @return list<list<mixed>> One row per bundle, matching the declared column order.
+     * @return PanelView Child view holding only the file lists of the bundle.
      */
-    private static function inventory(array $bundles): array
+    private static function files(AssetBundleRow $bundle): PanelView
     {
-        $rows = [];
+        $view = PanelView::create();
 
-        foreach ($bundles as $index => $bundle) {
-            $rows[] = [
-                $index + 1,
-                $bundle->name,
-                count($bundle->css),
-                count($bundle->js),
-                count($bundle->depends),
-            ];
+        if ($bundle->css !== []) {
+            $view = $view->files(
+                ...array_map(
+                    static fn(string $file): FileEntry => PanelView::file(
+                        AssetMessage::CSS_TYPE->value,
+                        $file,
+                        Tone::INFO,
+                    ),
+                    $bundle->css,
+                ),
+            );
         }
 
-        return $rows;
+        if ($bundle->js === []) {
+            return $view;
+        }
+
+        return $view->files(
+            ...array_map(
+                static fn(string $file): FileEntry => PanelView::file(
+                    AssetMessage::JS_TYPE->value,
+                    $file,
+                    Tone::WARNING,
+                ),
+                $bundle->js,
+            ),
+        );
     }
 
     /**
@@ -290,6 +296,56 @@ final class AssetPanel extends Panel
                 4 => ColumnStyle::NUMBER,
                 5 => ColumnStyle::PILL,
             ],
+        );
+    }
+
+    /**
+     * Builds the `Wiring` column from the paths the bundle publishes and the bundles it pulls in.
+     *
+     * @param AssetBundleRow $bundle Captured bundle to describe.
+     *
+     * @return PanelView|null Child view holding only the wiring blocks, or `null` when the capture left them all
+     * empty.
+     */
+    private static function wiring(AssetBundleRow $bundle): PanelView|null
+    {
+        $facts = [];
+
+        if ($bundle->sourcePath !== '') {
+            $facts[] = PanelView::fact(AssetMessage::SOURCE->value, $bundle->sourcePath);
+        }
+
+        if ($bundle->basePath !== '') {
+            $facts[] = PanelView::fact(AssetMessage::BASE->value, $bundle->basePath);
+        }
+
+        if ($bundle->baseUrl !== '') {
+            $facts[] = PanelView::fact(AssetMessage::URL->value, $bundle->baseUrl);
+        }
+
+        if ($facts === [] && $bundle->depends === []) {
+            return null;
+        }
+
+        $view = PanelView::create();
+
+        if ($facts !== []) {
+            $view = $view->facts(...$facts);
+        }
+
+        if ($bundle->depends === []) {
+            return $view;
+        }
+
+        return $view->links(
+            sprintf(AssetMessage::DEPENDS_LABEL->value, count($bundle->depends)),
+            ...array_map(
+                static fn(string $depend): LinkInline => PanelView::link(
+                    Fqcn::shortName($depend),
+                    '#' . Text::camel2id($depend),
+                ),
+                $bundle->depends,
+            ),
         );
     }
 }

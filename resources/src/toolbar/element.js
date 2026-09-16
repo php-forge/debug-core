@@ -23,6 +23,12 @@ import {
 } from "./theme.js";
 import { builtinIconUrl } from "./icons.js";
 import {
+  extensionsBadgeStatus,
+  isInsideExtensions,
+  shouldCloseExtensionsMenu,
+  splitToolbarPanels,
+} from "./extensions.js";
+import {
   focusToolbarElement,
   focusToolbarTrigger,
   isToolbarDrawerCloseMessage,
@@ -66,6 +72,8 @@ export function YiiDebugToolbar() {
   self.activeUrl = "";
   self.expanded = readStorageItem(storageKey) === "1";
   self.drawerOpen = false;
+  /* Menu state is per page view: never persisted, never restored. */
+  self.extensionsOpen = false;
   self.restoreFocusUrl = null;
   self.resizing = false;
   self.currentTag = null;
@@ -672,13 +680,15 @@ YiiDebugToolbar.prototype.render = function () {
     return p && p.id === "profiling";
   });
   var profilingChip = profilingPanel ? this.renderPanel(profilingPanel) : "";
+  var split = splitToolbarPanels(this.data.items, ["profiling"]);
 
   this.toolbarRoot.className = classes.join(" ");
   this.barRoot.innerHTML = this.expanded
     ? this.renderBrand() +
       profilingChip +
       this.renderAjaxPanel() +
-      this.renderPanels(["profiling"]) +
+      this.renderPanels(split.inline) +
+      this.renderExtensions(split.extensions) +
       this.renderControls()
     : this.renderCollapsedOpener();
   this.syncDrawer(position);
@@ -828,19 +838,59 @@ YiiDebugToolbar.prototype.renderAjaxPanel = function () {
   );
 };
 
-YiiDebugToolbar.prototype.renderPanels = function (excludeIds) {
+YiiDebugToolbar.prototype.renderPanels = function (panels) {
   var html = "";
-  var items = this.data.items || [];
-  var exclude = excludeIds || [];
 
-  items.forEach(function (panel) {
-    if (!panel || exclude.indexOf(panel.id) !== -1) {
-      return;
-    }
+  panels.forEach(function (panel) {
     html += this.renderPanel(panel);
   }, this);
 
   return '<div class="panels">' + html + "</div>";
+};
+
+/**
+ * Groups the provider-owned panels under a single chip at the end of the bar.
+ *
+ * The menu is rendered OUTSIDE `.panels` on purpose: that strip scrolls
+ * horizontally (`overflow: auto hidden`) and would clip a popup anchored to
+ * one of its children.
+ */
+YiiDebugToolbar.prototype.renderExtensions = function (extensions) {
+  if (extensions.length === 0) {
+    return "";
+  }
+
+  var html = "";
+  var active = false;
+  var open = this.extensionsOpen;
+
+  extensions.forEach(function (panel) {
+    if (this.isPanelActive(panel)) {
+      active = true;
+    }
+
+    html += this.renderPanel(panel);
+  }, this);
+
+  return (
+    '<div class="extensions' +
+    (open ? " is-open" : "") +
+    '"><button type="button" class="panel extensions-toggle' +
+    (active ? " panel-active" : "") +
+    '" aria-haspopup="true" aria-expanded="' +
+    (open ? "true" : "false") +
+    '" aria-controls="extensions-menu" title="Extensions">' +
+    this.iconHtml("dots", "panel-icon") +
+    '<span class="panel-title">Extensions</span>' +
+    '<span class="metric"><span class="metric-value badge-' +
+    escapeHtml(extensionsBadgeStatus(extensions)) +
+    '">' +
+    escapeHtml(extensions.length) +
+    "</span></span></button>" +
+    '<div class="extensions-menu" id="extensions-menu" role="group" aria-label="Extensions">' +
+    html +
+    "</div></div>"
+  );
 };
 
 YiiDebugToolbar.prototype.isPanelActive = function (panel) {
@@ -1136,6 +1186,14 @@ YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
   var self = this;
 
   root.addEventListener("click", function (event) {
+    if (closest(event.target, ".extensions-toggle")) {
+      event.preventDefault();
+      event.stopPropagation();
+      self.toggleExtensions();
+
+      return;
+    }
+
     var target = closest(event.target, "[data-debug-url]");
     var url = target ? target.getAttribute("data-debug-url") : null;
 
@@ -1149,6 +1207,18 @@ YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
   });
 
   root.addEventListener("keydown", function (event) {
+    /**
+     * The menu answers first, so a single Escape never collapses both the
+     * menu and the drawer behind it.
+     */
+    if (shouldCloseExtensionsMenu(event, self.extensionsOpen)) {
+      event.preventDefault();
+      event.stopPropagation();
+      self.closeExtensions(true);
+
+      return;
+    }
+
     if (!shouldCloseToolbarDrawer(event, self.drawerOpen)) {
       return;
     }
@@ -1157,6 +1227,75 @@ YiiDebugToolbar.prototype.bindDelegatedEvents = function () {
     event.stopPropagation();
     self.closeDrawer();
   });
+
+  /**
+   * A pointer landing anywhere but the menu dismisses it. Registered once per
+   * element — `ensureShadowSkeleton()` binds the delegates a single time, and
+   * the guard keeps a re-entry from stacking duplicates.
+   */
+  if (!this.boundExtensionsPointerDown) {
+    this.boundExtensionsPointerDown = function (event) {
+      if (!self.extensionsOpen) {
+        return;
+      }
+
+      /**
+       * Listening on the document means `event.target` is retargeted to the
+       * host element; the composed path still carries the real one.
+       */
+      var path =
+        typeof event.composedPath === "function" ? event.composedPath() : [];
+      var target = path.length > 0 ? path[0] : event.target;
+
+      if (!isInsideExtensions(target, closest)) {
+        self.closeExtensions(false);
+      }
+    };
+
+    document.addEventListener(
+      "pointerdown",
+      this.boundExtensionsPointerDown,
+      false,
+    );
+  }
+};
+
+/**
+ * Flips the menu without re-rendering the bar, so focus stays on the toggle.
+ */
+YiiDebugToolbar.prototype.toggleExtensions = function () {
+  this.extensionsOpen = !this.extensionsOpen;
+  this.syncExtensions();
+
+  if (!this.extensionsOpen) {
+    return;
+  }
+
+  var menu = this.shadowRoot.querySelector(".extensions-menu");
+
+  menu?.querySelector("[data-debug-url], a, button")?.focus?.();
+};
+
+YiiDebugToolbar.prototype.closeExtensions = function (focusToggle) {
+  this.extensionsOpen = false;
+  this.syncExtensions();
+
+  if (focusToggle) {
+    focusToolbarElement(this.shadowRoot, ".extensions-toggle");
+  }
+};
+
+YiiDebugToolbar.prototype.syncExtensions = function () {
+  var wrapper = this.shadowRoot.querySelector(".extensions");
+
+  if (!wrapper) {
+    return;
+  }
+
+  wrapper.classList.toggle("is-open", this.extensionsOpen);
+  wrapper
+    .querySelector(".extensions-toggle")
+    ?.setAttribute("aria-expanded", this.extensionsOpen ? "true" : "false");
 };
 
 YiiDebugToolbar.prototype.bindEvents = function () {
@@ -1222,6 +1361,7 @@ YiiDebugToolbar.prototype.openPanel = function (url) {
 
   this.expanded = true;
   this.drawerOpen = true;
+  this.extensionsOpen = false;
   this.activeUrl = normalizedUrl;
   this.restoreFocusUrl = normalizedUrl;
   writeStorageItem(storageKey, "1");
@@ -1233,6 +1373,7 @@ YiiDebugToolbar.prototype.closeDrawer = function () {
   var restoreFocusUrl = this.restoreFocusUrl;
 
   this.drawerOpen = false;
+  this.extensionsOpen = false;
   this.restoreFocusUrl = null;
   this.render();
 

@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Tests\Panel\User;
 
 use PHPForge\Debug\{ColumnStyle, PanelView, Tone};
 use PHPForge\Debug\Panel\User\{UserPanel, UserSnapshot};
+use PHPForge\Debug\Presenter\{TextInline, TextStyle, ToolbarMetric};
 use PHPForge\Debug\Tests\Support\PanelViewAccessors;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -65,8 +66,8 @@ final class UserPanelTest extends TestCase
             self::metricValues($view->summaryMetrics()),
             'The summary must name the authenticated user.',
         );
-        self::assertSame(
-            [['label' => 'User', 'value' => ['kind' => 'text', 'value' => 'admin', 'style' => 'plain']]],
+        self::assertEquals(
+            [new ToolbarMetric('User', 'admin')],
             $view->toolbarMetrics(),
             'The toolbar must name the authenticated user.',
         );
@@ -74,7 +75,7 @@ final class UserPanelTest extends TestCase
         $hero = self::overview(self::blockAt($view, 0));
 
         self::assertTrue(
-            $hero['compact'],
+            $hero->compact,
             'The identity overview must use the compact presentation.',
         );
         self::assertSame(
@@ -87,34 +88,34 @@ final class UserPanelTest extends TestCase
 
         self::assertSame(
             'Active',
-            $status['label'],
+            $status->label,
             'A known status must be labeled.',
         );
         self::assertSame(
             Tone::SUCCESS,
-            $status['tone'],
+            $status->tone,
             'An active account must use the success tone.',
         );
         self::assertSame(
             ['Identity', 'Security', 'Timestamps', 'Other attributes'],
             [
-                self::heading(self::blockAt($view, 1))['title'],
-                self::heading(self::blockAt($view, 3))['title'],
-                self::heading(self::blockAt($view, 5))['title'],
-                self::heading(self::blockAt($view, 7))['title'],
+                self::heading(self::blockAt($view, 1))->title,
+                self::heading(self::blockAt($view, 3))->title,
+                self::heading(self::blockAt($view, 5))->title,
+                self::heading(self::blockAt($view, 7))->title,
             ],
             'Every populated attribute section must keep its heading, in order.',
         );
         self::assertTrue(
-            self::heading(self::blockAt($view, 1))['section'],
+            self::heading(self::blockAt($view, 1))->section,
             'Each attribute section must open a section-level heading.',
         );
         self::assertTrue(
-            self::overview(self::blockAt($view, 2))['compact'],
+            self::overview(self::blockAt($view, 2))->compact,
             'Each attribute section must use the compact presentation.',
         );
-        self::assertSame(
-            ['kind' => 'text', 'value' => 'secret-auth-key', 'style' => 'preview'],
+        self::assertEquals(
+            new TextInline('secret-auth-key', TextStyle::PREVIEW),
             self::fields(self::overview(self::blockAt($view, 4)))['Security key']
                 ?? self::fail('The security section must keep the auth key row.'),
             'A sensitive attribute must stay clamped behind the standard expand control.',
@@ -173,17 +174,17 @@ final class UserPanelTest extends TestCase
         );
         self::assertSame(
             'No authenticated user',
-            $state['title'],
+            $state->title,
             'The empty state must keep its heading.',
         );
         self::assertSame(
             ['This request ran as a guest, so the debugger captured no identity to inspect.'],
-            self::inlineValues($state['paragraphs'][0] ?? self::fail('The empty state must explain itself.')),
+            self::inlineValues($state->paragraphs[0] ?? self::fail('The empty state must explain itself.')),
             'The first paragraph must describe the guest request.',
         );
         self::assertSame(
             ['Sign in and reload the page; the identity appears here as soon as ', 'Yii::$app->user->identity', ' resolves.'],
-            self::inlineValues($state['paragraphs'][1] ?? self::fail('The empty state must name the resolver.')),
+            self::inlineValues($state->paragraphs[1] ?? self::fail('The empty state must name the resolver.')),
             'The resolver explanation must stay complete and ordered.',
         );
     }
@@ -233,11 +234,11 @@ final class UserPanelTest extends TestCase
 
         self::assertSame(
             'Roles (2)',
-            $rolesHeading['title'],
+            $rolesHeading->title,
             'The roles heading must report the item count.',
         );
         self::assertTrue(
-            $rolesHeading['section'],
+            $rolesHeading->section,
             'The roles section must open a section-level heading.',
         );
 
@@ -245,7 +246,7 @@ final class UserPanelTest extends TestCase
 
         self::assertSame(
             ['#', 'Name', 'Description', 'Rule', 'Data', 'Created', 'Updated'],
-            $roles['headers'],
+            $roles->headers,
             'The RBAC column order must stay stable.',
         );
         self::assertSame(
@@ -257,11 +258,11 @@ final class UserPanelTest extends TestCase
                 5 => ColumnStyle::IDENTIFIER,
                 6 => ColumnStyle::IDENTIFIER,
             ],
-            $roles['styles'],
+            $roles->styles,
             'Each style must stay attached to the column it formats.',
         );
         self::assertTrue(
-            $roles['collapsible'],
+            $roles->collapsible,
             'A long role list must stay collapsible.',
         );
         self::assertSame(
@@ -284,7 +285,7 @@ final class UserPanelTest extends TestCase
         );
         self::assertSame(
             'Permissions (1)',
-            self::heading(self::blockAt($view, 5))['title'],
+            self::heading(self::blockAt($view, 5))->title,
             'The permissions heading must report the item count.',
         );
         self::assertSame(
@@ -310,7 +311,7 @@ final class UserPanelTest extends TestCase
 
         self::assertSame(
             'Unknown',
-            $status['label'],
+            $status->label,
             'An identity without status must read as unknown.',
         );
         self::assertSame(
@@ -323,12 +324,12 @@ final class UserPanelTest extends TestCase
         );
         self::assertSame(
             Tone::MUTED,
-            $status['tone'],
+            $status->tone,
             'An unknown status must stay de-emphasized.',
         );
         self::assertSame(
             'Roles (0)',
-            self::heading(self::blockAt($view, 3))['title'],
+            self::heading(self::blockAt($view, 3))->title,
             'The roles heading must report an empty grant.',
         );
         self::assertSame(

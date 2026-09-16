@@ -4846,6 +4846,495 @@
     white-space: nowrap;
   }
 
+  /**
+   * ===================================================================
+   * Entity inventory — stat tiles, entity cards, file lists, and link
+   * strips.
+   * ===================================================================
+   * A stat strip opens the panel with the headline counts, then one card
+   * per entity pairs a header (glyph, name, outlined tone chips) with up
+   * to two titled columns. Tone reaches the glyph of a tile and the pill
+   * of a file entry; the rest of the card stays neutral so an inventory
+   * reads as one instrument instead of a traffic light.
+   */
+
+  .yii-debug-stat-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--yii-debug-space-3);
+    margin: 0 0 var(--yii-debug-space-4);
+  }
+
+  .yii-debug-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
+    border: var(--yii-debug-border);
+    border-radius: var(--yii-debug-radius-md);
+    background: var(--yii-debug-panel-surface);
+    box-shadow: var(--yii-debug-shadow-sm);
+  }
+
+  .yii-debug-stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex: none;
+    color: var(--yii-debug-panel-primary);
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .yii-debug-stat-value {
+    color: var(--yii-debug-panel-text);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xl);
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .yii-debug-stat-label {
+    margin-left: auto;
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Tone reaches the glyph alone; muted keeps the panel accent. */
+  .yii-debug-stat-danger .yii-debug-stat-icon {
+    color: var(--yii-debug-danger);
+  }
+
+  .yii-debug-stat-info .yii-debug-stat-icon {
+    color: var(--yii-debug-info);
+  }
+
+  .yii-debug-stat-muted .yii-debug-stat-icon {
+    color: var(--yii-debug-panel-primary);
+  }
+
+  .yii-debug-stat-success .yii-debug-stat-icon {
+    color: var(--yii-debug-success);
+  }
+
+  .yii-debug-stat-warning .yii-debug-stat-icon {
+    color: var(--yii-debug-warning);
+  }
+
+  .yii-debug-entity {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--yii-debug-space-4);
+    padding: var(--yii-debug-space-4);
+    border: var(--yii-debug-border);
+    border-radius: var(--yii-debug-radius-md);
+    background: var(--yii-debug-panel-surface);
+    box-shadow: var(--yii-debug-shadow-sm);
+    scroll-margin-top: var(--yii-debug-space-4);
+    transition:
+      transform 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+
+    &:hover {
+      border-color: color-mix(
+        in srgb,
+        var(--yii-debug-panel-primary),
+        transparent 60%
+      );
+      transform: translateY(-1px);
+      box-shadow:
+        var(--yii-debug-shadow-sm),
+        0 12px 32px
+          color-mix(in srgb, var(--yii-debug-panel-primary), transparent 88%);
+    }
+
+    &:target {
+      border-color: var(--yii-debug-panel-primary);
+      box-shadow:
+        0 0 0 3px
+          color-mix(in srgb, var(--yii-debug-panel-primary), transparent 78%),
+        var(--yii-debug-shadow-sm);
+    }
+  }
+
+  /* Cards carry their own rhythm: no list wrapper supplies the gap. */
+  .yii-debug-entity + .yii-debug-entity {
+    margin-top: var(--yii-debug-space-3);
+  }
+
+  .yii-debug-entity-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--yii-debug-space-3);
+    align-items: center;
+  }
+
+  .yii-debug-entity-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex: none;
+    border-radius: var(--yii-debug-radius-md);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--yii-debug-panel-primary), transparent 78%),
+      color-mix(in srgb, var(--yii-debug-info), transparent 78%)
+    );
+    color: var(--yii-debug-panel-primary-strong);
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .yii-debug-entity-title {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .yii-debug-entity-name {
+    margin: 0;
+    color: var(--yii-debug-panel-text);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-lg);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .yii-debug-entity-subtitle {
+    margin: 0;
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    letter-spacing: 0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .yii-debug-entity-meta {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 5px;
+    flex: none;
+  }
+
+  /*
+   * Header chips are outlined, not filled: the solid badge would compete
+   * with the card surface, so the tone moves to the border and the ink
+   * while the fill stays a wash of the same hue.
+   */
+  .yii-debug-entity-meta .yii-debug-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--yii-debug-panel-border);
+    border-radius: var(--yii-debug-radius-pill);
+    background: var(--yii-debug-panel-surface-muted);
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .yii-debug-entity-meta .yii-debug-badge-danger {
+    border-color: color-mix(in srgb, var(--yii-debug-danger), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-danger), transparent 90%);
+    color: var(--yii-debug-danger);
+  }
+
+  .yii-debug-entity-meta .yii-debug-badge-info {
+    border-color: color-mix(in srgb, var(--yii-debug-info), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-info), transparent 90%);
+    color: var(--yii-debug-info);
+  }
+
+  .yii-debug-entity-meta .yii-debug-badge-muted {
+    border-color: color-mix(
+      in srgb,
+      var(--yii-debug-panel-muted),
+      transparent 60%
+    );
+    background: color-mix(
+      in srgb,
+      var(--yii-debug-panel-muted),
+      transparent 90%
+    );
+    color: var(--yii-debug-panel-muted);
+  }
+
+  .yii-debug-entity-meta .yii-debug-badge-success {
+    border-color: color-mix(in srgb, var(--yii-debug-success), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 90%);
+    color: var(--yii-debug-success);
+  }
+
+  .yii-debug-entity-meta .yii-debug-badge-warning {
+    border-color: color-mix(in srgb, var(--yii-debug-warning), transparent 60%);
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 90%);
+    color: var(--yii-debug-warning);
+  }
+
+  .yii-debug-entity-body {
+    display: grid;
+    grid-template-columns: minmax(180px, 2fr) minmax(0, 3fr);
+    gap: var(--yii-debug-space-4);
+  }
+
+  .yii-debug-entity-body[data-cols="1"] {
+    grid-template-columns: 1fr;
+  }
+
+  .yii-debug-entity-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--yii-debug-space-3);
+    min-width: 0;
+  }
+
+  .yii-debug-entity-column-title {
+    margin: 0;
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-sans);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .yii-debug-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    + .yii-debug-file-list {
+      margin-top: 4px;
+    }
+  }
+
+  .yii-debug-file {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 1px solid
+      color-mix(in srgb, var(--yii-debug-panel-border) 60%, transparent);
+    border-radius: var(--yii-debug-radius-md);
+    background: var(--yii-debug-panel-surface-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    min-width: 0;
+  }
+
+  .yii-debug-file-type {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    padding: 0 5px;
+    border-radius: var(--yii-debug-radius-pill);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .yii-debug-file-type-danger {
+    background: color-mix(in srgb, var(--yii-debug-danger), transparent 84%);
+    color: var(--yii-debug-danger);
+  }
+
+  .yii-debug-file-type-info {
+    background: color-mix(in srgb, var(--yii-debug-info), transparent 84%);
+    color: var(--yii-debug-info);
+  }
+
+  .yii-debug-file-type-muted {
+    background: var(--yii-debug-panel-surface-muted);
+    color: var(--yii-debug-panel-muted);
+  }
+
+  .yii-debug-file-type-success {
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 84%);
+    color: var(--yii-debug-success);
+  }
+
+  .yii-debug-file-type-warning {
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 84%);
+    color: var(--yii-debug-warning);
+  }
+
+  .yii-debug-file-name {
+    color: var(--yii-debug-panel-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  /*
+   * A fact strip inside a column stacks instead of spreading: the hairline
+   * grid becomes a column of self-contained rows, each pairing a fixed
+   * label gutter with a value that may wrap mid-token (paths and URLs).
+   */
+  .yii-debug-entity-column .yii-debug-fact-strip {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    margin: 0;
+    gap: 4px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .yii-debug-entity-column .yii-debug-fact {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid
+      color-mix(in srgb, var(--yii-debug-panel-border) 60%, transparent);
+    border-radius: var(--yii-debug-radius-md);
+    background: var(--yii-debug-panel-surface-muted);
+  }
+
+  .yii-debug-entity-column .yii-debug-fact-label {
+    margin: 0;
+    color: var(--yii-debug-panel-muted);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .yii-debug-entity-column .yii-debug-fact-value {
+    overflow: visible;
+    margin: 0;
+    color: var(--yii-debug-panel-text);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 400;
+    text-overflow: clip;
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  .yii-debug-link-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px var(--yii-debug-space-3);
+    border: 1px dashed
+      color-mix(in srgb, var(--yii-debug-success), transparent 50%);
+    border-radius: var(--yii-debug-radius-md);
+    background: color-mix(in srgb, var(--yii-debug-success), transparent 92%);
+  }
+
+  .yii-debug-link-strip-label {
+    color: var(--yii-debug-success);
+    font-family: var(--yii-debug-font-sans);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .yii-debug-link-strip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .yii-debug-link-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px 3px 8px;
+    border: 1px solid
+      color-mix(in srgb, var(--yii-debug-success), transparent 50%);
+    border-radius: var(--yii-debug-radius-pill);
+    background: var(--yii-debug-panel-surface);
+    color: var(--yii-debug-success);
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background-color 140ms ease,
+      color 140ms ease,
+      transform 140ms ease,
+      border-color 140ms ease;
+
+    /* The arrow is decoration, so it stays out of the markup. */
+    &::before {
+      content: "↳";
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--yii-debug-success);
+      background: color-mix(in srgb, var(--yii-debug-success), transparent 86%);
+      color: var(--yii-debug-success);
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+  }
+
+  @media (width <= 720px) {
+    .yii-debug-stat-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .yii-debug-entity-body {
+      grid-template-columns: 1fr;
+    }
+
+    .yii-debug-entity-head {
+      grid-template-columns: auto 1fr;
+    }
+
+    .yii-debug-entity-meta {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+      max-width: 100%;
+    }
+  }
+
   /* -- Package manifest ------------------------------------------------ */
 
   .yii-debug-manifest {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\User;
 
 use PHPForge\Debug\{ColumnStyle, Panel, PanelView, Tone};
+use PHPForge\Debug\Presenter\BadgeInline;
 
 use function count;
 use function date;
@@ -15,8 +16,6 @@ use function strtolower;
 
 /**
  * Presents the authenticated identity, its attributes grouped by section, and the RBAC roles and permissions.
- *
- * @phpstan-import-type BadgeInline from PanelView
  */
 final class UserPanel extends Panel
 {
@@ -245,7 +244,7 @@ final class UserPanel extends Panel
      *
      * @return BadgeInline Badge carrying the status label and tone.
      */
-    private static function status(UserIdentityHero $hero): array
+    private static function status(UserIdentityHero $hero): BadgeInline
     {
         $label = $hero->statusLabel === '' ? UserMessage::STATUS_UNKNOWN->value : $hero->statusLabel;
 

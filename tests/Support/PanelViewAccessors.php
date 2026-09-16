@@ -5,21 +5,34 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Support;
 
 use PHPForge\Debug\PanelView;
+use PHPForge\Debug\Presenter\{
+    BadgeInline,
+    Block,
+    CardBlock,
+    ColumnEntry,
+    EmptyStateBlock,
+    FactsBlock,
+    FilesBlock,
+    GroupBlock,
+    HeadingBlock,
+    Inline,
+    LinkInline,
+    LinksBlock,
+    ManifestBlock,
+    OverviewBlock,
+    ParagraphBlock,
+    PillsBlock,
+    ReadoutsBlock,
+    SectionBlock,
+    StatsBlock,
+    SummaryMetric,
+    TableBlock,
+    TextInline,
+};
 use PHPUnit\Framework\TestCase;
 
 /**
- * Provides typed readers for the shapes {@see PanelView} exports, so panel tests never index a general array.
- *
- * @phpstan-import-type BadgeInline from PanelView
- * @phpstan-import-type Block from PanelView
- * @phpstan-import-type EmptyStateBlock from PanelView
- * @phpstan-import-type GroupBlock from PanelView
- * @phpstan-import-type Inline from PanelView
- * @phpstan-import-type LinkInline from PanelView
- * @phpstan-import-type OverviewBlock from PanelView
- * @phpstan-import-type Pair from PanelView
- * @phpstan-import-type ParagraphBlock from PanelView
- * @phpstan-import-type TableBlock from PanelView
+ * Narrows the presentation tree {@see PanelView} exports, so panel tests never assert on an unnarrowed value.
  *
  * @phpstan-require-extends TestCase
  */
@@ -30,12 +43,9 @@ trait PanelViewAccessors
      *
      * @return BadgeInline Narrowed badge.
      */
-    protected static function badge(array $inline): array
+    protected static function badge(Inline $inline): BadgeInline
     {
-        return match ($inline['kind']) {
-            'badge' => $inline,
-            default => self::fail('The value must be a badge.'),
-        };
+        return $inline instanceof BadgeInline ? $inline : self::fail('The value must be a badge.');
     }
 
     /**
@@ -44,9 +54,19 @@ trait PanelViewAccessors
      *
      * @return Block Block declared at the requested position.
      */
-    protected static function blockAt(PanelView $view, int $index): array
+    protected static function blockAt(PanelView $view, int $index): Block
     {
-        return $view->blocks()[$index] ?? self::fail('The declared presentation structure must be complete.');
+        return $view->blocks()[$index] ?? self::fail('The block structure must be complete.');
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return CardBlock Narrowed card.
+     */
+    protected static function card(Block $block): CardBlock
+    {
+        return $block instanceof CardBlock ? $block : self::fail('The block must be a card.');
     }
 
     /**
@@ -55,10 +75,31 @@ trait PanelViewAccessors
      *
      * @return Block Block declared at the requested position.
      */
-    protected static function childBlockAt(array $block, int $index): array
+    protected static function childBlockAt(GroupBlock $block, int $index): Block
     {
-        return $block['content']->blocks()[$index]
-            ?? self::fail('The declared presentation structure must be complete.');
+        return $block->content->blocks()[$index] ?? self::fail('The group structure must be complete.');
+    }
+
+    /**
+     * @param CardBlock $block Card to read.
+     * @param int $index Position of the column in display order.
+     *
+     * @return ColumnEntry Column declared at the requested position.
+     */
+    protected static function column(CardBlock $block, int $index): ColumnEntry
+    {
+        return $block->columns[$index] ?? self::fail('The card body must be complete.');
+    }
+
+    /**
+     * @param ColumnEntry $column Column whose child view is read.
+     * @param int $index Position of the block inside the column.
+     *
+     * @return Block Block declared at the requested position.
+     */
+    protected static function columnBlockAt(ColumnEntry $column, int $index): Block
+    {
+        return $column->content->blocks()[$index] ?? self::fail('The column structure must be complete.');
     }
 
     /**
@@ -66,12 +107,19 @@ trait PanelViewAccessors
      *
      * @return EmptyStateBlock Narrowed empty state.
      */
-    protected static function emptyState(array $block): array
+    protected static function emptyState(Block $block): EmptyStateBlock
     {
-        return match ($block['kind']) {
-            'emptyState' => $block,
-            default => self::fail('An empty capture must be explained by an empty state.'),
-        };
+        return $block instanceof EmptyStateBlock ? $block : self::fail('The block must be an empty state.');
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return FactsBlock Narrowed fact strip.
+     */
+    protected static function facts(Block $block): FactsBlock
+    {
+        return $block instanceof FactsBlock ? $block : self::fail('The block must be a fact strip.');
     }
 
     /**
@@ -79,12 +127,12 @@ trait PanelViewAccessors
      *
      * @return array<string, Inline> Field values keyed by their label, in display order.
      */
-    protected static function fields(array $block): array
+    protected static function fields(OverviewBlock $block): array
     {
         $fields = [];
 
-        foreach ($block['fields'] as $field) {
-            $fields[$field['label']] = $field['value'];
+        foreach ($block->fields as $field) {
+            $fields[$field->label] = $field->value;
         }
 
         return $fields;
@@ -93,27 +141,31 @@ trait PanelViewAccessors
     /**
      * @param Block $block Block to narrow.
      *
-     * @return GroupBlock Narrowed group.
+     * @return FilesBlock Narrowed file list.
      */
-    protected static function group(array $block): array
+    protected static function files(Block $block): FilesBlock
     {
-        return match ($block['kind']) {
-            'group' => $block,
-            default => self::fail('Each detail must have an accessible group.'),
-        };
+        return $block instanceof FilesBlock ? $block : self::fail('The block must be a file list.');
     }
 
     /**
      * @param Block $block Block to narrow.
      *
-     * @return array{kind: 'heading', title: string, section: bool} Narrowed heading.
+     * @return GroupBlock Narrowed group.
      */
-    protected static function heading(array $block): array
+    protected static function group(Block $block): GroupBlock
     {
-        return match ($block['kind']) {
-            'heading' => $block,
-            default => self::fail('Each section must have a visible heading.'),
-        };
+        return $block instanceof GroupBlock ? $block : self::fail('The block must be a group.');
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return HeadingBlock Narrowed heading.
+     */
+    protected static function heading(Block $block): HeadingBlock
+    {
+        return $block instanceof HeadingBlock ? $block : self::fail('The block must be a heading.');
     }
 
     /**
@@ -121,11 +173,11 @@ trait PanelViewAccessors
      *
      * @return list<string> Text carried by each inline value, in display order.
      */
-    protected static function inlineValues(array $block): array
+    protected static function inlineValues(ParagraphBlock $block): array
     {
         $values = [];
 
-        foreach ($block['content'] as $inline) {
+        foreach ($block->content as $inline) {
             $values[] = self::textValue($inline);
         }
 
@@ -137,16 +189,49 @@ trait PanelViewAccessors
      *
      * @return LinkInline Narrowed link.
      */
-    protected static function link(array $inline): array
+    protected static function link(Inline $inline): LinkInline
     {
-        return match ($inline['kind']) {
-            'link' => $inline,
-            default => self::fail('The value must be a link.'),
-        };
+        return $inline instanceof LinkInline ? $inline : self::fail('The value must be a link.');
     }
 
     /**
-     * @param list<Pair> $metrics Metrics in display order.
+     * @param Block $block Block to narrow.
+     *
+     * @return LinksBlock Narrowed link strip.
+     */
+    protected static function links(Block $block): LinksBlock
+    {
+        return $block instanceof LinksBlock ? $block : self::fail('The block must be a link strip.');
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return ManifestBlock Narrowed vendor manifest.
+     */
+    protected static function manifest(Block $block): ManifestBlock
+    {
+        return $block instanceof ManifestBlock ? $block : self::fail('The block must be a manifest.');
+    }
+
+    /**
+     * @param list<SummaryMetric> $metrics Metrics in display order.
+     *
+     * @return list<string> Metric labels in display order.
+     */
+    protected static function metricLabels(array $metrics): array
+    {
+        $labels = [];
+
+        foreach ($metrics as $metric) {
+            $labels[] = $metric->label;
+        }
+
+        return $labels;
+    }
+
+    /**
+     * @param list<SummaryMetric> $metrics Metrics in display order.
      *
      * @return list<string> Metric values in display order.
      */
@@ -155,7 +240,7 @@ trait PanelViewAccessors
         $values = [];
 
         foreach ($metrics as $metric) {
-            $values[] = self::textValue($metric['value']);
+            $values[] = self::textValue($metric->value);
         }
 
         return $values;
@@ -166,12 +251,9 @@ trait PanelViewAccessors
      *
      * @return OverviewBlock Narrowed overview.
      */
-    protected static function overview(array $block): array
+    protected static function overview(Block $block): OverviewBlock
     {
-        return match ($block['kind']) {
-            'overview' => $block,
-            default => self::fail('The capture must remain inspectable.'),
-        };
+        return $block instanceof OverviewBlock ? $block : self::fail('The block must be an overview.');
     }
 
     /**
@@ -179,12 +261,29 @@ trait PanelViewAccessors
      *
      * @return ParagraphBlock Narrowed paragraph.
      */
-    protected static function paragraph(array $block): array
+    protected static function paragraph(Block $block): ParagraphBlock
     {
-        return match ($block['kind']) {
-            'paragraph' => $block,
-            default => self::fail('The explanation must be a paragraph.'),
-        };
+        return $block instanceof ParagraphBlock ? $block : self::fail('The block must be a paragraph.');
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return PillsBlock Narrowed pill strip.
+     */
+    protected static function pills(Block $block): PillsBlock
+    {
+        return $block instanceof PillsBlock ? $block : self::fail('The block must be a pill strip.');
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return ReadoutsBlock Narrowed readout row.
+     */
+    protected static function readouts(Block $block): ReadoutsBlock
+    {
+        return $block instanceof ReadoutsBlock ? $block : self::fail('The block must be a readout row.');
     }
 
     /**
@@ -193,40 +292,52 @@ trait PanelViewAccessors
      *
      * @return list<Inline> Cells of the requested row, in display order.
      */
-    protected static function row(array $block, int $index): array
+    protected static function row(TableBlock $block, int $index): array
     {
-        return $block['rows'][$index] ?? self::fail('The table must describe every captured entry.');
+        return $block->rows[$index] ?? self::fail('The table must describe every entry.');
     }
 
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return SectionBlock Narrowed section.
+     */
+    protected static function section(Block $block): SectionBlock
+    {
+        return $block instanceof SectionBlock ? $block : self::fail('The block must be a section.');
+    }
 
-
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return StatsBlock Narrowed stat strip.
+     */
+    protected static function stats(Block $block): StatsBlock
+    {
+        return $block instanceof StatsBlock ? $block : self::fail('The block must be a stat strip.');
+    }
 
     /**
      * @param Block $block Block to narrow.
      *
      * @return TableBlock Narrowed table.
      */
-    protected static function table(array $block): array
+    protected static function table(Block $block): TableBlock
     {
-        return match ($block['kind']) {
-            'table' => $block,
-            default => self::fail('The capture must use the shared table contract.'),
-        };
+        return $block instanceof TableBlock ? $block : self::fail('The block must be a table.');
     }
-
-
 
     /**
      * @param OverviewBlock $block Overview whose fields are indexed.
      *
      * @return array<string, string> Field text keyed by label, in display order.
      */
-    protected static function textFields(array $block): array
+    protected static function textFields(OverviewBlock $block): array
     {
         $fields = [];
 
-        foreach ($block['fields'] as $field) {
-            $fields[$field['label']] = self::textValue($field['value']);
+        foreach ($block->fields as $field) {
+            $fields[$field->label] = self::textValue($field->value);
         }
 
         return $fields;
@@ -237,12 +348,9 @@ trait PanelViewAccessors
      *
      * @return string Text carried by the value.
      */
-    protected static function textValue(array $inline): string
+    protected static function textValue(Inline $inline): string
     {
-        return match ($inline['kind']) {
-            'text' => $inline['value'],
-            default => self::fail('The value must be plain text.'),
-        };
+        return $inline instanceof TextInline ? $inline->value : self::fail('The value must be plain text.');
     }
 
     /**
