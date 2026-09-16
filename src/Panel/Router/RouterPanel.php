@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Router;
 
 use PHPForge\Debug\{ColumnStyle, Panel, PanelView, Tone};
+use PHPForge\Debug\Presenter\BadgeInline;
 
 use function count;
 use function sprintf;
@@ -14,8 +15,6 @@ use function sprintf;
  *
  * URL rules and action routes are read from live framework services, so the adapter supplies them with
  * {@see self::rules()}, {@see self::actionRoutes()}, and {@see self::urlManager()} before presenting.
- *
- * @phpstan-import-type BadgeInline from PanelView
  */
 final class RouterPanel extends Panel
 {
@@ -282,7 +281,7 @@ final class RouterPanel extends Panel
      *
      * @return BadgeInline Success badge when enabled, muted badge otherwise.
      */
-    private static function flag(bool $enabled): array
+    private static function flag(bool $enabled): BadgeInline
     {
         return $enabled
             ? PanelView::badge(RouterMessage::ENABLED->value, Tone::SUCCESS)

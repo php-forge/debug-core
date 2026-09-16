@@ -34,4 +34,28 @@ final class CssProvider
         yield 'success' => [Tone::SUCCESS, 'yii-debug-callout yii-debug-callout-success'];
         yield 'warning' => [Tone::WARNING, 'yii-debug-callout yii-debug-callout-warning'];
     }
+
+    /**
+     * @return iterable<string, array{Tone, string}>
+     */
+    public static function fileTypes(): iterable
+    {
+        yield 'danger' => [Tone::DANGER, 'yii-debug-file-type yii-debug-file-type-danger'];
+        yield 'info' => [Tone::INFO, 'yii-debug-file-type yii-debug-file-type-info'];
+        yield 'muted' => [Tone::MUTED, 'yii-debug-file-type yii-debug-file-type-muted'];
+        yield 'success' => [Tone::SUCCESS, 'yii-debug-file-type yii-debug-file-type-success'];
+        yield 'warning' => [Tone::WARNING, 'yii-debug-file-type yii-debug-file-type-warning'];
+    }
+
+    /**
+     * @return iterable<string, array{Tone, string}>
+     */
+    public static function stats(): iterable
+    {
+        yield 'danger' => [Tone::DANGER, 'yii-debug-stat yii-debug-stat-danger'];
+        yield 'info' => [Tone::INFO, 'yii-debug-stat yii-debug-stat-info'];
+        yield 'muted' => [Tone::MUTED, 'yii-debug-stat yii-debug-stat-muted'];
+        yield 'success' => [Tone::SUCCESS, 'yii-debug-stat yii-debug-stat-success'];
+        yield 'warning' => [Tone::WARNING, 'yii-debug-stat yii-debug-stat-warning'];
+    }
 }

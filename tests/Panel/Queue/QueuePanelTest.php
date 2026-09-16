@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Tests\Panel\Queue;
 
 use PHPForge\Debug\{ColumnStyle, PanelView, Tone};
 use PHPForge\Debug\Panel\Queue\{JobRecord, QueuePanel, QueueSnapshot};
+use PHPForge\Debug\Presenter\{LinkInline, TextInline, TextStyle, ToolbarMetric, ValueInline};
 use PHPForge\Debug\Tests\Support\{JobRecordFixture, PanelViewAccessors};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -15,8 +16,6 @@ use function date;
 
 /**
  * Unit tests for {@see QueuePanel} covering lifecycle counters, the event table, and the per-event detail groups.
- *
- * @phpstan-import-type Pair from PanelView
  */
 #[Group('panel')]
 #[Group('queue')]
@@ -44,7 +43,7 @@ final class QueuePanelTest extends TestCase
 
         self::assertSame(
             Tone::INFO,
-            $callout['tone'],
+            $callout->tone,
             'The async hint must read as a neutral callout.',
         );
         self::assertSame(
@@ -82,17 +81,17 @@ final class QueuePanelTest extends TestCase
         );
         self::assertSame(
             'No queue activity in this request',
-            $state['title'],
+            $state->title,
             'The empty state must keep its heading.',
         );
         self::assertSame(
             ['This request pushed no job and ran none, so the lifecycle log is empty.'],
-            self::inlineValues($state['paragraphs'][0] ?? self::fail('The empty state must explain itself.')),
+            self::inlineValues($state->paragraphs[0] ?? self::fail('The empty state must explain itself.')),
             'The first paragraph must describe the empty log.',
         );
         self::assertSame(
             ['Events appear here when a queue component emits ', 'afterPush', ', ', 'afterExec', ', or ', 'afterError', '.'],
-            self::inlineValues($state['paragraphs'][1] ?? self::fail('The empty state must name the hooks.')),
+            self::inlineValues($state->paragraphs[1] ?? self::fail('The empty state must name the hooks.')),
             'The capture hooks must stay complete and ordered.',
         );
     }
@@ -104,7 +103,7 @@ final class QueuePanelTest extends TestCase
 
         self::assertCount(
             2,
-            $content['content']->blocks(),
+            $content->content->blocks(),
             'An event without payload must keep only its overview and the explanation.',
         );
         self::assertSame(
@@ -143,12 +142,12 @@ final class QueuePanelTest extends TestCase
 
         self::assertSame(
             'Failed',
-            self::badge(self::row($table, 0)[1] ?? self::fail('Every event must report its phase.'))['label'],
+            self::badge(self::row($table, 0)[1] ?? self::fail('Every event must report its phase.'))->label,
             'A failed event must be labeled as failed.',
         );
         self::assertSame(
             Tone::DANGER,
-            self::badge(self::row($table, 0)[1] ?? self::fail('Every event must report its phase.'))['tone'],
+            self::badge(self::row($table, 0)[1] ?? self::fail('Every event must report its phase.'))->tone,
             'A failed event must use the danger tone.',
         );
         self::assertSame(
@@ -184,7 +183,7 @@ final class QueuePanelTest extends TestCase
         );
         self::assertSame(
             Tone::DANGER,
-            self::paragraph(self::childBlockAt($content, 1))['tone'],
+            self::paragraph(self::childBlockAt($content, 1))->tone,
             'The captured error must read as a failure callout.',
         );
     }
@@ -214,7 +213,7 @@ final class QueuePanelTest extends TestCase
 
         self::assertCount(
             2,
-            self::table(self::blockAt($view, 1))['rows'],
+            self::table(self::blockAt($view, 1))->rows,
             'The lifecycle table must list every captured event.',
         );
         self::assertArrayNotHasKey(
@@ -222,8 +221,8 @@ final class QueuePanelTest extends TestCase
             self::fields(self::overview(self::childBlockAt(self::group(self::blockAt($view, 3)), 0))),
             'An event without detail route must not offer a link.',
         );
-        self::assertSame(
-            ['kind' => 'link', 'label' => 'Open job detail', 'href' => '/debug/queue-job?seq=1', 'external' => false],
+        self::assertEquals(
+            new LinkInline('Open job detail', '/debug/queue-job?seq=1', false),
             self::fields(self::overview(self::childBlockAt(self::group(self::blockAt($view, 5)), 0)))['Details']
                 ?? self::fail('The detail route must reach the envelope.'),
             'The adapter-resolved detail route must stay in the same browsing context.',
@@ -275,8 +274,8 @@ final class QueuePanelTest extends TestCase
             $view->isActive(),
             'A captured event must activate navigation.',
         );
-        self::assertSame(
-            [['label' => 'Jobs', 'value' => ['kind' => 'text', 'value' => '1', 'style' => 'plain']]],
+        self::assertEquals(
+            [new ToolbarMetric('Jobs', '1')],
             $view->toolbarMetrics(),
             'The toolbar must report the event count.',
         );
@@ -285,11 +284,11 @@ final class QueuePanelTest extends TestCase
 
         self::assertSame(
             'Lifecycle events',
-            $heading['title'],
+            $heading->title,
             'The lifecycle table must keep its heading.',
         );
         self::assertTrue(
-            $heading['section'],
+            $heading->section,
             'The lifecycle table must open a section-level heading.',
         );
 
@@ -297,7 +296,7 @@ final class QueuePanelTest extends TestCase
 
         self::assertSame(
             ['#', 'Status', 'Job', 'Component', 'Driver', 'Time', 'Attempt', 'Duration'],
-            $table['headers'],
+            $table->headers,
             'The lifecycle column order must stay stable.',
         );
         self::assertSame(
@@ -311,21 +310,21 @@ final class QueuePanelTest extends TestCase
                 6 => ColumnStyle::NUMBER,
                 7 => ColumnStyle::NUMBER,
             ],
-            $table['styles'],
+            $table->styles,
             'Each style must stay attached to the column it formats.',
         );
         self::assertTrue(
-            $table['collapsible'],
+            $table->collapsible,
             'A long lifecycle log must stay collapsible.',
         );
         self::assertSame(
             'Queued',
-            self::badge(self::row($table, 0)[1] ?? self::fail('Every event must report its phase.'))['label'],
+            self::badge(self::row($table, 0)[1] ?? self::fail('Every event must report its phase.'))->label,
             'A pushed event must be labeled as queued.',
         );
         self::assertSame(
             Tone::INFO,
-            self::badge(self::row($table, 0)[1] ?? self::fail('Every event must report its phase.'))['tone'],
+            self::badge(self::row($table, 0)[1] ?? self::fail('Every event must report its phase.'))->tone,
             'A pushed event must stay neutral.',
         );
 
@@ -333,11 +332,11 @@ final class QueuePanelTest extends TestCase
 
         self::assertSame(
             '1. app\\jobs\\HelloJob',
-            $eventHeading['title'],
+            $eventHeading->title,
             'Headings must number the events and name the job.',
         );
         self::assertTrue(
-            $eventHeading['section'],
+            $eventHeading->section,
             'Each event must open a section-level heading.',
         );
 
@@ -345,14 +344,14 @@ final class QueuePanelTest extends TestCase
 
         self::assertSame(
             'Event 1',
-            $content['label'],
+            $content->label,
             'The group must identify the event it describes.',
         );
 
         $overview = self::overview(self::childBlockAt($content, 0));
 
         self::assertTrue(
-            $overview['compact'],
+            $overview->compact,
             'The envelope must use the compact presentation.',
         );
         self::assertSame(
@@ -377,8 +376,8 @@ final class QueuePanelTest extends TestCase
 
         $fields = self::fields($overview);
 
-        self::assertSame(
-            ['kind' => 'text', 'value' => 'yii\\queue\\db\\Queue', 'style' => 'code'],
+        self::assertEquals(
+            new TextInline('yii\\queue\\db\\Queue', TextStyle::CODE),
             $fields['Driver class'] ?? self::fail('The envelope must keep the driver class row.'),
             'A captured driver class must read as source code.',
         );
@@ -412,8 +411,8 @@ final class QueuePanelTest extends TestCase
             self::textValue($fields['Pushed at'] ?? self::fail('The envelope must keep the time row.')),
             'The envelope must show the absolute timestamp.',
         );
-        self::assertSame(
-            ['kind' => 'value', 'value' => ['to' => 'admin@example.com'], 'typeOnly' => false],
+        self::assertEquals(
+            new ValueInline(['to' => 'admin@example.com'], false),
             self::fields(self::overview(self::childBlockAt($content, 1)))['Payload']
                 ?? self::fail('The captured payload must stay inspectable.'),
             'The captured payload must survive the migration unflattened.',
@@ -426,7 +425,7 @@ final class QueuePanelTest extends TestCase
 
         self::assertSame(
             'Lifecycle events',
-            self::heading(self::blockAt($view, 0))['title'],
+            self::heading(self::blockAt($view, 0))->title,
             'A synchronous driver must not add the async hint.',
         );
 
@@ -444,22 +443,6 @@ final class QueuePanelTest extends TestCase
             ],
             'Missing envelope fields must show the placeholder.',
         );
-    }
-
-    /**
-     * @param list<Pair> $metrics Metrics in display order.
-     *
-     * @return list<string> Metric labels in display order.
-     */
-    private static function metricLabels(array $metrics): array
-    {
-        $labels = [];
-
-        foreach ($metrics as $metric) {
-            $labels[] = $metric['label'];
-        }
-
-        return $labels;
     }
 
     /**

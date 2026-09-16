@@ -81,6 +81,46 @@ final class Css
      */
     public const string EMPTY_STATE = 'yii-debug-empty-state';
     /**
+     * Card presenting one entity of a panel's inventory.
+     */
+    public const string ENTITY = 'yii-debug-entity';
+    /**
+     * Body laying out the titled columns of an entity card.
+     */
+    public const string ENTITY_BODY = 'yii-debug-entity-body';
+    /**
+     * Titled column of an entity card body.
+     */
+    public const string ENTITY_COLUMN = 'yii-debug-entity-column';
+    /**
+     * Title of an entity card column.
+     */
+    public const string ENTITY_COLUMN_TITLE = 'yii-debug-entity-column-title';
+    /**
+     * Header row of an entity card.
+     */
+    public const string ENTITY_HEAD = 'yii-debug-entity-head';
+    /**
+     * Glyph identifying an entity card.
+     */
+    public const string ENTITY_ICON = 'yii-debug-entity-icon';
+    /**
+     * Chip row summarizing an entity at the end of its header.
+     */
+    public const string ENTITY_META = 'yii-debug-entity-meta';
+    /**
+     * Headline name of an entity.
+     */
+    public const string ENTITY_NAME = 'yii-debug-entity-name';
+    /**
+     * Qualifier shown under the name of an entity.
+     */
+    public const string ENTITY_SUBTITLE = 'yii-debug-entity-subtitle';
+    /**
+     * Name and subtitle pair of an entity header.
+     */
+    public const string ENTITY_TITLE = 'yii-debug-entity-title';
+    /**
      * Chip reporting an extension name and its state.
      */
     public const string EXT_PILL = 'yii-debug-ext-pill';
@@ -117,6 +157,22 @@ final class Css
      */
     public const string FACT_VALUE = 'yii-debug-fact-value';
     /**
+     * One entry of a file list.
+     */
+    public const string FILE = 'yii-debug-file';
+    /**
+     * List of the files an entity contributes.
+     */
+    public const string FILE_LIST = 'yii-debug-file-list';
+    /**
+     * Path or URL of a file entry.
+     */
+    public const string FILE_NAME = 'yii-debug-file-name';
+    /**
+     * Kind pill of a file entry.
+     */
+    public const string FILE_TYPE = 'yii-debug-file-type';
+    /**
      * Search input narrowing the rows of its filter scope.
      */
     public const string FILTER_INPUT = 'yii-debug-filter-input';
@@ -140,6 +196,22 @@ final class Css
      * Separator between two summary-strip metrics.
      */
     public const string GRID_SUMMARY_SEP = 'yii-debug-grid-summary-sep';
+    /**
+     * Pill-shaped cross-reference of a link strip.
+     */
+    public const string LINK_PILL = 'yii-debug-link-pill';
+    /**
+     * Labeled strip of cross-references.
+     */
+    public const string LINK_STRIP = 'yii-debug-link-strip';
+    /**
+     * Name of a link strip.
+     */
+    public const string LINK_STRIP_LABEL = 'yii-debug-link-strip-label';
+    /**
+     * Wrapper laying out the pills of a link strip.
+     */
+    public const string LINK_STRIP_LIST = 'yii-debug-link-strip-list';
     /**
      * Vendor-grouped package roster card.
      */
@@ -224,6 +296,26 @@ final class Css
      * Content exposed to assistive technology only.
      */
     public const string SR_ONLY = 'yii-debug-sr-only';
+    /**
+     * Tile carrying one headline metric of a stat strip.
+     */
+    public const string STAT = 'yii-debug-stat';
+    /**
+     * Glyph of a stat tile.
+     */
+    public const string STAT_ICON = 'yii-debug-stat-icon';
+    /**
+     * Metric name of a stat tile.
+     */
+    public const string STAT_LABEL = 'yii-debug-stat-label';
+    /**
+     * Row of stat tiles.
+     */
+    public const string STAT_STRIP = 'yii-debug-stat-strip';
+    /**
+     * Headline value of a stat tile.
+     */
+    public const string STAT_VALUE = 'yii-debug-stat-value';
     /**
      * Single entry of a tab list.
      */
@@ -315,6 +407,29 @@ final class Css
     }
 
     /**
+     * Returns the class list of a file-kind pill rendered in the requested tone.
+     *
+     * Usage example:
+     * ```php
+     * $class = \PHPForge\Debug\Theme\Css::fileType(\PHPForge\Debug\Tone::INFO);
+     * ```
+     *
+     * @param Tone $tone Semantic tone of the pill.
+     *
+     * @return string Base and variant classes of the pill.
+     */
+    public static function fileType(Tone $tone): string
+    {
+        return match ($tone) {
+            Tone::DANGER => 'yii-debug-file-type yii-debug-file-type-danger',
+            Tone::INFO => 'yii-debug-file-type yii-debug-file-type-info',
+            Tone::MUTED => 'yii-debug-file-type yii-debug-file-type-muted',
+            Tone::SUCCESS => 'yii-debug-file-type yii-debug-file-type-success',
+            Tone::WARNING => 'yii-debug-file-type yii-debug-file-type-warning',
+        };
+    }
+
+    /**
      * Returns the tinted row class for a status variant.
      *
      * Usage example:
@@ -329,6 +444,31 @@ final class Css
     public static function row(string $variant): string
     {
         return 'yii-debug-row-' . $variant;
+    }
+
+    /**
+     * Returns the class list of a stat tile rendered in the requested tone.
+     *
+     * Only the glyph takes the tone, so the muted variant keeps the panel accent and reads as the neutral base.
+     *
+     * Usage example:
+     * ```php
+     * $class = \PHPForge\Debug\Theme\Css::stat(\PHPForge\Debug\Tone::WARNING);
+     * ```
+     *
+     * @param Tone $tone Semantic tone of the tile.
+     *
+     * @return string Base and variant classes of the tile.
+     */
+    public static function stat(Tone $tone): string
+    {
+        return match ($tone) {
+            Tone::DANGER => 'yii-debug-stat yii-debug-stat-danger',
+            Tone::INFO => 'yii-debug-stat yii-debug-stat-info',
+            Tone::MUTED => 'yii-debug-stat yii-debug-stat-muted',
+            Tone::SUCCESS => 'yii-debug-stat yii-debug-stat-success',
+            Tone::WARNING => 'yii-debug-stat yii-debug-stat-warning',
+        };
     }
 
     /**

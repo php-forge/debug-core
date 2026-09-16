@@ -73,7 +73,6 @@
 .expanded .bar {
   width: calc(100vw - 32px);
   border-radius: 16px;
-  overflow: visible;
 }
 
 .drawer-open .bar {
@@ -81,25 +80,33 @@
   border-bottom-color: transparent;
 }
 
-/* Brand chip — the Yii wordmark anchors the cluster. */
-.brand {
+/*
+ * Shared chip shell — the wordmark, the gauge chips, and the controls are one
+ * shape family; only their fill, spacing, and motion differ below.
+ */
+.brand,
+.panel,
+.control {
   display: inline-flex;
-  flex: none;
   align-items: center;
-  gap: 0;
-  min-height: var(--yii-debug-control-min-size);
-  padding: 3px 8px;
   border: 1px solid var(--yii-debug-panel-border);
   border-radius: 999px;
   color: var(--yii-debug-panel-text);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* Brand chip — the Yii wordmark anchors the cluster. */
+.brand {
+  flex: none;
+  min-height: var(--yii-debug-control-min-size);
+  padding: 3px 8px;
   background: linear-gradient(
     135deg,
     var(--accent-wash-strong),
     light-dark(rgb(255 255 255 / 92%), rgb(16 24 19 / 88%)) 55%
   );
-  text-decoration: none;
   white-space: nowrap;
-  box-sizing: border-box;
   box-shadow: 0 1px 0 light-dark(rgb(255 255 255 / 85%), rgb(255 255 255 / 8%))
     inset;
   transition:
@@ -169,8 +176,6 @@
 .brand-link:hover,
 .brand-link:focus {
   background: light-dark(rgb(22 33 26 / 6%), rgb(255 255 255 / 8%));
-  color: var(--yii-debug-panel-text);
-  text-decoration: none;
 }
 
 .brand-static,
@@ -188,19 +193,8 @@
 }
 
 .brand-version {
-  display: inline-flex;
-  align-items: center;
-  min-height: 18px;
-  padding: 0 7px;
-  border: 1px solid var(--yii-debug-panel-border);
-  border-radius: 999px;
   background: light-dark(rgb(22 33 26 / 5%), rgb(255 255 255 / 8%));
-  color: var(--yii-debug-panel-text);
-  font-family: var(--yii-debug-font-mono);
-  font-size: 12px;
-  font-weight: 700;
   letter-spacing: 0.01em;
-  line-height: 18px;
   white-space: nowrap;
 }
 
@@ -228,8 +222,6 @@
 
 .panels::-webkit-scrollbar {
   display: none;
-  width: 0;
-  height: 0;
 }
 
 .expanded .panels {
@@ -239,19 +231,12 @@
 
 .panel {
   position: relative;
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
   min-height: var(--yii-debug-control-min-size);
   max-width: 260px;
   padding: 3px 10px;
-  border: 1px solid var(--yii-debug-panel-border);
-  border-radius: 999px;
-  color: var(--yii-debug-panel-text);
   background: light-dark(rgb(255 255 255 / 88%), rgb(20 29 23 / 82%));
-  text-decoration: none;
   white-space: nowrap;
-  box-sizing: border-box;
   cursor: default;
   font: inherit;
   box-shadow: 0 1px 0 light-dark(rgb(255 255 255 / 80%), rgb(255 255 255 / 6%))
@@ -294,7 +279,6 @@
 .panel-title {
   font-weight: 600;
   letter-spacing: 0.005em;
-  color: var(--yii-debug-panel-text);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -362,8 +346,13 @@
   color: light-dark(#4f5b93, #a3aedb);
 }
 
-/* Metric readouts render in mono — numbers are the instrument's voice. */
-.metric-value {
+/*
+ * Shared readout pill — chip metrics, AJAX popover status cells, and the
+ * version tag. Numbers are the instrument's voice, so they render in mono.
+ */
+.metric-value,
+.badge,
+.brand-version {
   display: inline-flex;
   align-items: center;
   min-height: 18px;
@@ -371,29 +360,17 @@
   border: 1px solid var(--yii-debug-panel-border);
   border-radius: 999px;
   color: var(--yii-debug-panel-text);
-  background: var(--yii-debug-panel-pill);
   font-family: var(--yii-debug-font-mono);
   font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 18px;
-  box-shadow: 0 1px 0 light-dark(rgb(255 255 255 / 82%), rgb(255 255 255 / 8%))
-    inset;
 }
 
-/* Pill base for the AJAX popover status cells; chip metrics get their shape from .metric-value. */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 18px;
-  padding: 0 7px;
-  border: 1px solid var(--yii-debug-panel-border);
-  border-radius: 999px;
-  font-family: var(--yii-debug-font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 18px;
+.metric-value {
+  background: var(--yii-debug-panel-pill);
+  box-shadow: 0 1px 0 light-dark(rgb(255 255 255 / 82%), rgb(255 255 255 / 8%))
+    inset;
 }
 
 .metric[data-debug-url]:hover .metric-value,
@@ -504,36 +481,42 @@
 /* Verdict-free readouts keep the neutral pill fill. */
 .badge-default {
   background: var(--yii-debug-panel-pill);
-  color: var(--yii-debug-panel-text);
 }
 
 /* AJAX inspector popover. */
 .ajax-panel {
   display: none;
-  position: static;
 }
 
 .expanded .ajax-panel {
   display: inline-flex;
 }
 
-.ajax-popover {
+/*
+ * Popup surface shared by the AJAX inspector and the Extensions menu: both
+ * anchor to the bar, flip with the docking position, and carry one elevation.
+ */
+.ajax-popover,
+.extensions-menu {
   display: none;
   position: absolute;
   right: 0;
   bottom: calc(100% + 10px);
-  width: min(680px, calc(100vw - 32px));
-  max-height: 360px;
-  overflow: auto;
-  padding: 10px;
   border: 1px solid var(--yii-debug-panel-border);
-  border-radius: 16px;
   background: light-dark(rgb(255 255 255 / 98%), rgb(13 19 15 / 98%));
   box-shadow: light-dark(
     0 20px 60px rgb(22 33 26 / 16%),
     0 20px 60px rgb(0 0 0 / 45%)
   );
   box-sizing: border-box;
+}
+
+.ajax-popover {
+  width: min(680px, calc(100vw - 32px));
+  max-height: 360px;
+  overflow: auto;
+  padding: 10px;
+  border-radius: 16px;
 }
 
 .position-top .ajax-popover {
@@ -589,6 +572,153 @@
   text-align: center;
 }
 
+/*
+ * Extensions menu — provider-owned panels folded behind one chip so the inline
+ * gauge strip keeps its fixed vocabulary. The popup lives outside `.panels`
+ * (that strip scrolls with `overflow: auto hidden` and would clip it) and
+ * shares the AJAX popover surface, flipping with the docking position.
+ *
+ * Its rows drop the chip pill for menu vocabulary: full-bleed lines separated
+ * by hairlines, with a primary accent rail marking hover, focus, and the
+ * active panel.
+ */
+.extensions {
+  position: relative;
+  display: none;
+  flex: none;
+}
+
+.expanded .extensions {
+  display: flex;
+}
+
+.extensions-toggle {
+  appearance: none;
+  cursor: pointer;
+}
+
+/* The open chip and its menu read as one unit. */
+.extensions.is-open .extensions-toggle {
+  border-color: var(--yii-debug-panel-primary);
+}
+
+/* The glyph plus the counter carry the chip; the label stays for readers. */
+.extensions-toggle .panel-title {
+  position: absolute;
+  clip-path: inset(50%);
+}
+
+.extensions-menu {
+  z-index: 1;
+  flex-direction: column;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 6px;
+  border-radius: 14px;
+}
+
+.position-top .extensions-menu {
+  top: calc(100% + 10px);
+  bottom: auto;
+}
+
+/* `display: none` to `flex` needs a keyframe; a transition would never run. */
+.extensions.is-open .extensions-menu {
+  --menu-lift: 6px;
+
+  display: flex;
+  animation: extensions-in var(--yii-debug-duration-fast) ease;
+}
+
+.position-top .extensions.is-open .extensions-menu {
+  --menu-lift: -6px;
+}
+
+@keyframes extensions-in {
+  from {
+    opacity: 0;
+    translate: 0 var(--menu-lift);
+  }
+}
+
+.extensions-menu .panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: none;
+  min-height: 32px;
+  padding: 3px 8px 3px 12px;
+  border: 0;
+  border-radius: var(--yii-debug-radius-sm);
+  background: transparent;
+  box-shadow: none;
+}
+
+.extensions-menu .panel + .panel {
+  border-top: 1px solid
+    color-mix(in srgb, var(--yii-debug-panel-border), transparent 50%);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.extensions-menu .panel:not(:last-child) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* The accent rail replaces the chip ring as the row's state marker. */
+.extensions-menu .panel::before {
+  content: "";
+  position: absolute;
+  inset: 4px auto 4px 3px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--yii-debug-panel-primary);
+  opacity: 0;
+  transition: opacity var(--yii-debug-duration-fast) ease;
+}
+
+.extensions-menu .panel:is(:hover, :focus-within, .panel-active) {
+  background: var(--yii-debug-panel-surface-hover);
+  box-shadow: none;
+}
+
+.extensions-menu .panel:is(:hover, :focus-within, .panel-active)::before {
+  opacity: 1;
+}
+
+.extensions-menu .panel-icon {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  color: var(--yii-debug-panel-primary);
+}
+
+/* A failing extension states its verdict in the glyph, not only in the badge. */
+.extensions-menu .panel:has(.badge-danger) .panel-icon {
+  color: var(--yii-debug-danger);
+}
+
+/* The name absorbs the free space so metrics right-align, however many. */
+.extensions-menu .panel-link {
+  flex: 1;
+  gap: 8px;
+}
+
+.extensions-menu .panel-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+.extensions-menu .metric {
+  gap: 6px;
+}
+
 /* Cluster controls (theme, open, collapse). */
 .controls {
   display: inline-flex;
@@ -598,21 +728,14 @@
 }
 
 .control {
-  display: inline-flex;
-  align-items: center;
   justify-content: center;
   width: var(--yii-debug-control-min-size);
   height: var(--yii-debug-control-min-size);
-  border: 1px solid var(--yii-debug-panel-border);
-  border-radius: 999px;
-  color: var(--yii-debug-panel-text);
   background: light-dark(rgb(255 255 255 / 90%), rgb(24 34 27 / 80%));
   font:
     700 18px/1 ui-sans-serif,
     system-ui;
-  text-decoration: none;
   cursor: pointer;
-  box-sizing: border-box;
   box-shadow: 0 1px 0 light-dark(rgb(255 255 255 / 82%), rgb(255 255 255 / 6%))
     inset;
   transition:
@@ -641,7 +764,6 @@
   color: var(--yii-debug-panel-muted);
   opacity: 0.6;
   cursor: default;
-  transform: none;
 }
 
 .control-icon {
@@ -687,7 +809,6 @@
 /* The tick-rail: the resize handle doubles as the cluster's trace line. */
 .resize-handle {
   display: block;
-  width: auto;
   height: 6px;
   margin: 0 18px -3px;
   padding: 0;
@@ -750,6 +871,11 @@
     max-width: 100%;
   }
 
+  .extensions-menu {
+    right: 0;
+    max-width: calc(100vw - 32px);
+  }
+
   .drawer {
     height: min(var(--yii-debug-toolbar-drawer-height), 70vh);
   }
@@ -775,6 +901,7 @@
   .panel,
   .control,
   .drawer,
+  .extensions-menu,
   .metric-value,
   .brand-version {
     border-color: CanvasText;
@@ -788,6 +915,10 @@
   .control:focus-visible {
     border-color: Highlight;
     outline-color: Highlight;
+  }
+
+  .extensions-menu .panel::before {
+    background: Highlight;
   }
 }
 

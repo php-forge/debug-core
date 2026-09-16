@@ -9,13 +9,73 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see Fqcn} covering the shared two-tone label markup: namespace/short-name splitting, method-suffix
- * handling, the plain-value and empty-value fallbacks, and the `title` attribute.
+ * Unit tests for {@see Fqcn} covering the fragment anchor and the shared two-tone label markup: namespace/short-name
+ * splitting, method-suffix handling, the plain-value and empty-value fallbacks, and the `title` attribute.
  */
 #[Group('helpers')]
 #[Group('fqcn')]
 final class FqcnTest extends TestCase
 {
+    public function testAnchorDistinguishesNamesThatShareASlug(): void
+    {
+        self::assertSame(
+            'app-a-b-e8f13edb',
+            Fqcn::anchor('app\\A_B'),
+            'Each separator run must collapse to one dash.',
+        );
+        self::assertSame(
+            'app-a-b-91495c5b',
+            Fqcn::anchor('app\\A__b'),
+            'A shared slug must still carry its own digest.',
+        );
+        self::assertNotSame(
+            Fqcn::anchor('app\\A_B'),
+            Fqcn::anchor('app\\A__b'),
+            'Distinct classes must never share an anchor.',
+        );
+    }
+
+    public function testAnchorDropsTheNamespaceForAGlobalClass(): void
+    {
+        self::assertSame(
+            'globalasset-762af4c5',
+            Fqcn::anchor('GlobalAsset'),
+            'A class outside any namespace must slug alone.',
+        );
+    }
+
+    public function testAnchorReturnsTheDigestAloneForASeparatorOnlyName(): void
+    {
+        self::assertSame(
+            'ebf29a14',
+            Fqcn::anchor('\\_\\'),
+            'An empty slug must leave the digest unprefixed.',
+        );
+    }
+
+    public function testAnchorSharesOneValueAcrossCaseVariantsOfOneClass(): void
+    {
+        self::assertSame(
+            'app-service-mailer-c39fd4a3',
+            Fqcn::anchor('App\\Service\\Mailer'),
+            'The anchor must be lowercase end to end.',
+        );
+        self::assertSame(
+            Fqcn::anchor('App\\Service\\Mailer'),
+            Fqcn::anchor('app\\service\\mailer'),
+            'Case variants of one class must share an anchor.',
+        );
+    }
+
+    public function testAnchorSlugsANamespacedClassAndAppendsItsDigest(): void
+    {
+        self::assertSame(
+            'app-assets-appasset-3c6a8113',
+            Fqcn::anchor('app\\assets\\AppAsset'),
+            'Separators must give way to a dash-joined slug.',
+        );
+    }
+
     public function testNamespacePartReturnsPrefixOrEmptyString(): void
     {
         self::assertSame(

@@ -10,6 +10,7 @@ const config = {
         "resources/src/core/features.js",
         "resources/src/core/tabs.js",
         "resources/src/toolbar/brand.js",
+        "resources/src/toolbar/extensions.js",
         "resources/src/toolbar/focus.js",
         "resources/src/toolbar/icons.js",
         "resources/src/toolbar/loading.js",

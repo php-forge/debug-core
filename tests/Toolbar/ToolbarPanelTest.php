@@ -28,9 +28,10 @@ final class ToolbarPanelTest extends TestCase
                 'url' => null,
                 'icon' => null,
                 'items' => [],
+                'extension' => false,
             ],
             get_object_vars(ToolbarPanel::create('request', 'Request')),
-            'Only the identity must be set; navigation and metrics must stay empty.',
+            'Only the identity must be set; navigation, metrics, and grouping must stay empty.',
         );
     }
 
@@ -54,6 +55,57 @@ final class ToolbarPanelTest extends TestCase
             ],
             $panel->jsonSerialize(),
             'Serialized field order and metric order must be preserved.',
+        );
+    }
+
+    public function testWithExtensionTogglesGroupingAndPreservesOtherFields(): void
+    {
+        $original = self::sample([ToolbarItem::create('0')]);
+
+        $before = get_object_vars($original);
+
+        self::assertArrayNotHasKey(
+            'extension',
+            $original->jsonSerialize(),
+            'Inline panels must omit the key.',
+        );
+
+        $grouped = $original->withExtension(true);
+
+        $expected = $before;
+        $expected['extension'] = true;
+
+        self::assertNotSame(
+            $original,
+            $grouped,
+            'Configuration must return a distinct panel.',
+        );
+        self::assertSame(
+            $before,
+            get_object_vars($original),
+            'Configuration must leave the original unchanged.',
+        );
+        self::assertSame(
+            $expected,
+            get_object_vars($grouped),
+            'Configuration must preserve every other field.',
+        );
+        self::assertSame(
+            [
+                'id' => 'request',
+                'title' => 'Request',
+                'url' => '/debug',
+                'icon' => 'request',
+                'extension' => true,
+                'items' => [['value' => '0', 'status' => 'default']],
+            ],
+            $grouped->jsonSerialize(),
+            'Grouped panels must carry `true` between the icon and the metrics.',
+        );
+        self::assertSame(
+            $original->jsonSerialize(),
+            $grouped->withExtension(false)->jsonSerialize(),
+            'Clearing grouping must restore the inline payload.',
         );
     }
 

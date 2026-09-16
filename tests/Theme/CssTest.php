@@ -38,12 +38,32 @@ final class CssTest extends TestCase
         );
     }
 
+    #[DataProviderExternal(CssProvider::class, 'fileTypes')]
+    public function testFileTypeMapsEveryToneToItsPillClasses(Tone $tone, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            Css::fileType($tone),
+            'Pill must carry the base class before the tone class.',
+        );
+    }
+
     public function testRowPrefixesTheVariant(): void
     {
         self::assertSame(
             'yii-debug-row-warning',
             Css::row('warning'),
             'Variant must follow the row prefix.',
+        );
+    }
+
+    #[DataProviderExternal(CssProvider::class, 'stats')]
+    public function testStatMapsEveryToneToItsTileClasses(Tone $tone, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            Css::stat($tone),
+            'Tile must carry the base class before the tone class.',
         );
     }
 

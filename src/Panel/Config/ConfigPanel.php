@@ -20,8 +20,6 @@ use function substr;
  * Presents the captured application identity, PHP runtime, and installed-extension roster.
  *
  * Adapters own the phpinfo route, so they supply it with {@see self::phpInfoUrl()} before presenting.
- *
- * @phpstan-import-type BadgeInline from PanelView
  */
 final class ConfigPanel extends Panel
 {

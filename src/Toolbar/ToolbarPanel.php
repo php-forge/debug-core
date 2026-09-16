@@ -20,6 +20,8 @@ final readonly class ToolbarPanel implements JsonSerializable
      * @param string|null $url Debug page URL or `null` when only individual metrics are navigable.
      * @param string|null $icon Shared icon name or `null` when no icon is available.
      * @param list<ToolbarItem> $items Panel metrics.
+     * @param bool $extension `true` when the panel is provider-owned or optional and the toolbar groups it under its
+     * Extensions menu; `false` when the panel is built in and stays inline.
      */
     private function __construct(
         public string $id,
@@ -27,6 +29,7 @@ final readonly class ToolbarPanel implements JsonSerializable
         public string|null $url = null,
         public string|null $icon = null,
         public array $items = [],
+        public bool $extension = false,
     ) {}
 
     /**
@@ -52,6 +55,7 @@ final readonly class ToolbarPanel implements JsonSerializable
      *     id?: string}>,
      *     url?: string,
      *     icon?: string,
+     *     extension?: true,
      * } Serialized panel payload.
      */
     public function jsonSerialize(): array
@@ -62,12 +66,35 @@ final readonly class ToolbarPanel implements JsonSerializable
                 'title' => $this->title,
                 'url' => $this->url,
                 'icon' => $this->icon,
+                'extension' => $this->extension ? true : null,
                 'items' => array_map(
                     static fn(ToolbarItem $item): array => $item->jsonSerialize(),
                     $this->items,
                 ),
             ],
             static fn(mixed $value): bool => $value !== null,
+        );
+    }
+
+    /**
+     * Returns a copy with the specified extension classification.
+     *
+     * An extension panel is provider-owned or optional, so the toolbar groups it under its Extensions menu, while
+     * built-in panels stay inline.
+     *
+     * @param bool $extension `true` to group the panel under the Extensions menu; `false` to keep it inline.
+     *
+     * @return self Panel with the classification applied.
+     */
+    public function withExtension(bool $extension): self
+    {
+        return new self(
+            id: $this->id,
+            title: $this->title,
+            url: $this->url,
+            icon: $this->icon,
+            items: $this->items,
+            extension: $extension,
         );
     }
 
@@ -80,7 +107,14 @@ final readonly class ToolbarPanel implements JsonSerializable
      */
     public function withIcon(string|null $icon): self
     {
-        return new self(id: $this->id, title: $this->title, url: $this->url, icon: $icon, items: $this->items);
+        return new self(
+            id: $this->id,
+            title: $this->title,
+            url: $this->url,
+            icon: $icon,
+            items: $this->items,
+            extension: $this->extension,
+        );
     }
 
     /**
@@ -92,7 +126,14 @@ final readonly class ToolbarPanel implements JsonSerializable
      */
     public function withItems(array $items): self
     {
-        return new self(id: $this->id, title: $this->title, url: $this->url, icon: $this->icon, items: $items);
+        return new self(
+            id: $this->id,
+            title: $this->title,
+            url: $this->url,
+            icon: $this->icon,
+            items: $items,
+            extension: $this->extension,
+        );
     }
 
     /**
@@ -104,6 +145,13 @@ final readonly class ToolbarPanel implements JsonSerializable
      */
     public function withUrl(string|null $url): self
     {
-        return new self(id: $this->id, title: $this->title, url: $url, icon: $this->icon, items: $this->items);
+        return new self(
+            id: $this->id,
+            title: $this->title,
+            url: $url,
+            icon: $this->icon,
+            items: $this->items,
+            extension: $this->extension,
+        );
     }
 }

@@ -6,6 +6,7 @@ namespace PHPForge\Debug\Tests\Panel\Router;
 
 use PHPForge\Debug\{ColumnStyle, PanelView, Tone};
 use PHPForge\Debug\Panel\Router\{ActionRouteRow, RouterPanel, RouterRuleRow, RouterSnapshot};
+use PHPForge\Debug\Presenter\{TextInline, TextStyle, ToolbarMetric};
 use PHPForge\Debug\Tests\Support\PanelViewAccessors;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -42,11 +43,11 @@ final class RouterPanelTest extends TestCase
         );
         self::assertSame(
             ' rules tested',
-            ($view->summaryMetrics()[1] ?? self::fail('The trace size must stay in the summary.'))['label'],
+            ($view->summaryMetrics()[1] ?? self::fail('The trace size must stay in the summary.'))->label,
             'More than one inspected rule must use the plural label.',
         );
-        self::assertSame(
-            [['label' => 'Route', 'value' => ['kind' => 'text', 'value' => 'site/index', 'style' => 'plain']]],
+        self::assertEquals(
+            [new ToolbarMetric('Route', 'site/index')],
             $view->toolbarMetrics(),
             'The toolbar must report the resolved route.',
         );
@@ -54,7 +55,7 @@ final class RouterPanelTest extends TestCase
         $overview = self::overview(self::blockAt($view, 0));
 
         self::assertTrue(
-            $overview['compact'],
+            $overview->compact,
             'The route overview must use the compact presentation.',
         );
         self::assertSame(
@@ -69,8 +70,8 @@ final class RouterPanelTest extends TestCase
             ),
             'The dispatched action must survive the migration.',
         );
-        self::assertSame(
-            ['kind' => 'text', 'value' => 'site/index', 'style' => 'code'],
+        self::assertEquals(
+            new TextInline('site/index', TextStyle::CODE),
             self::fields($overview)['Route'] ?? self::fail('The overview must keep the route row.'),
             'A resolved route must read as source code.',
         );
@@ -81,7 +82,7 @@ final class RouterPanelTest extends TestCase
         );
         self::assertSame(
             Tone::INFO,
-            self::paragraph(self::blockAt($view, 1))['tone'],
+            self::paragraph(self::blockAt($view, 1))->tone,
             'The trace message must read as a neutral callout.',
         );
 
@@ -89,11 +90,11 @@ final class RouterPanelTest extends TestCase
 
         self::assertSame(
             'Tested 2 rules before match',
-            $heading['title'],
+            $heading->title,
             'The trace heading must report the inspected rules and the match.',
         );
         self::assertTrue(
-            $heading['section'],
+            $heading->section,
             'The trace must open a section-level heading.',
         );
 
@@ -101,7 +102,7 @@ final class RouterPanelTest extends TestCase
 
         self::assertSame(
             ['#', 'Rule', 'Parent', 'Result'],
-            $trace['headers'],
+            $trace->headers,
             'The trace column order must stay stable.',
         );
         self::assertSame(
@@ -111,11 +112,11 @@ final class RouterPanelTest extends TestCase
                 2 => ColumnStyle::IDENTIFIER,
                 3 => ColumnStyle::PILL,
             ],
-            $trace['styles'],
+            $trace->styles,
             'Each style must stay attached to the column it formats.',
         );
         self::assertTrue(
-            $trace['collapsible'],
+            $trace->collapsible,
             'A long trace must stay collapsible.',
         );
         self::assertSame(
@@ -129,17 +130,17 @@ final class RouterPanelTest extends TestCase
         );
         self::assertSame(
             'no match',
-            self::badge(self::row($trace, 0)[3] ?? self::fail('Every rule must report its result.'))['label'],
+            self::badge(self::row($trace, 0)[3] ?? self::fail('Every rule must report its result.'))->label,
             'A rule that did not match must say so.',
         );
         self::assertSame(
             'match',
-            self::badge(self::row($trace, 1)[3] ?? self::fail('Every rule must report its result.'))['label'],
+            self::badge(self::row($trace, 1)[3] ?? self::fail('Every rule must report its result.'))->label,
             'The matching rule must be badged.',
         );
         self::assertSame(
             Tone::SUCCESS,
-            self::badge(self::row($trace, 1)[3] ?? self::fail('Every rule must report its result.'))['tone'],
+            self::badge(self::row($trace, 1)[3] ?? self::fail('Every rule must report its result.'))->tone,
             'The matching rule must use the success tone.',
         );
     }
@@ -152,12 +153,12 @@ final class RouterPanelTest extends TestCase
 
         self::assertSame(
             'disabled',
-            self::badge($fields['Pretty URL'] ?? self::fail('The overview must keep the pretty URL row.'))['label'],
+            self::badge($fields['Pretty URL'] ?? self::fail('The overview must keep the pretty URL row.'))->label,
             'A disabled flag must read as disabled.',
         );
         self::assertSame(
             Tone::MUTED,
-            self::badge($fields['Strict parsing'] ?? self::fail('The overview must keep the parsing row.'))['tone'],
+            self::badge($fields['Strict parsing'] ?? self::fail('The overview must keep the parsing row.'))->tone,
             'A disabled flag must stay de-emphasized.',
         );
         self::assertSame(
@@ -165,8 +166,8 @@ final class RouterPanelTest extends TestCase
             self::textValue($fields['Global suffix'] ?? self::fail('The overview must keep the suffix row.')),
             'A URL manager without suffix must show the placeholder.',
         );
-        self::assertSame(
-            ['kind' => 'text', 'value' => '—', 'style' => 'plain'],
+        self::assertEquals(
+            new TextInline('—', TextStyle::PLAIN),
             self::fields(self::overview(self::blockAt(self::present(self::unresolved()), 0)))['Route']
                 ?? self::fail('The overview must keep the route row.'),
             'A request without route must show the plain placeholder.',
@@ -192,7 +193,7 @@ final class RouterPanelTest extends TestCase
         );
         self::assertSame(
             'Rules tested',
-            self::heading(self::blockAt($view, 1))['title'],
+            self::heading(self::blockAt($view, 1))->title,
             'An empty trace must keep a neutral heading.',
         );
         self::assertSame(
@@ -204,11 +205,11 @@ final class RouterPanelTest extends TestCase
 
         self::assertSame(
             'URL rules (0)',
-            $rulesHeading['title'],
+            $rulesHeading->title,
             'The rules heading must report the rule count.',
         );
         self::assertTrue(
-            $rulesHeading['section'],
+            $rulesHeading->section,
             'The rules section must open a section-level heading.',
         );
         self::assertSame(
@@ -221,11 +222,11 @@ final class RouterPanelTest extends TestCase
 
         self::assertSame(
             'Action routes (0)',
-            $actionHeading['title'],
+            $actionHeading->title,
             'The action heading must report the action count.',
         );
         self::assertTrue(
-            $actionHeading['section'],
+            $actionHeading->section,
             'The action section must open a section-level heading.',
         );
         self::assertSame(
@@ -269,12 +270,12 @@ final class RouterPanelTest extends TestCase
 
         self::assertSame(
             ' rule tested',
-            ($view->summaryMetrics()[1] ?? self::fail('The trace size must stay in the summary.'))['label'],
+            ($view->summaryMetrics()[1] ?? self::fail('The trace size must stay in the summary.'))->label,
             'A single inspected rule must use the singular label.',
         );
         self::assertSame(
             'Tested 1 rule',
-            self::heading(self::blockAt($view, 1))['title'],
+            self::heading(self::blockAt($view, 1))->title,
             'A trace without match must not claim one.',
         );
         self::assertSame(
@@ -345,14 +346,14 @@ final class RouterPanelTest extends TestCase
         self::assertSame(
             ['enabled', 'enabled'],
             [
-                self::badge($fields['Pretty URL'] ?? self::fail('The overview must keep the pretty URL row.'))['label'],
-                self::badge($fields['Strict parsing'] ?? self::fail('The overview must keep the parsing row.'))['label'],
+                self::badge($fields['Pretty URL'] ?? self::fail('The overview must keep the pretty URL row.'))->label,
+                self::badge($fields['Strict parsing'] ?? self::fail('The overview must keep the parsing row.'))->label,
             ],
             'Enabled URL manager flags must read as enabled.',
         );
         self::assertSame(
             'URL rules (2)',
-            self::heading(self::blockAt($view, 3))['title'],
+            self::heading(self::blockAt($view, 3))->title,
             'The rules heading must report the rule count.',
         );
 
@@ -360,7 +361,7 @@ final class RouterPanelTest extends TestCase
 
         self::assertSame(
             ['#', 'Name', 'Route', 'Verb', 'Suffix', 'Mode', 'Type'],
-            $rules['headers'],
+            $rules->headers,
             'The rule column order must stay stable.',
         );
         self::assertSame(
@@ -371,11 +372,11 @@ final class RouterPanelTest extends TestCase
                 5 => ColumnStyle::IDENTIFIER,
                 6 => ColumnStyle::IDENTIFIER,
             ],
-            $rules['styles'],
+            $rules->styles,
             'Each style must stay attached to the column it formats.',
         );
         self::assertTrue(
-            $rules['collapsible'],
+            $rules->collapsible,
             'A long rule set must stay collapsible.',
         );
         self::assertSame(
@@ -390,7 +391,7 @@ final class RouterPanelTest extends TestCase
         );
         self::assertSame(
             'Action routes (2)',
-            self::heading(self::blockAt($view, 5))['title'],
+            self::heading(self::blockAt($view, 5))->title,
             'The action heading must report the action count.',
         );
 
@@ -398,7 +399,7 @@ final class RouterPanelTest extends TestCase
 
         self::assertSame(
             ['#', 'Action', 'Route', 'First matching rule', 'Rules tested'],
-            $actions['headers'],
+            $actions->headers,
             'The action column order must stay stable.',
         );
         self::assertSame(
@@ -409,11 +410,11 @@ final class RouterPanelTest extends TestCase
                 3 => ColumnStyle::IDENTIFIER,
                 4 => ColumnStyle::NUMBER,
             ],
-            $actions['styles'],
+            $actions->styles,
             'Each style must stay attached to the column it formats.',
         );
         self::assertTrue(
-            $actions['collapsible'],
+            $actions->collapsible,
             'A long action list must stay collapsible.',
         );
         self::assertSame(

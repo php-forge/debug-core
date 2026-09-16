@@ -57,8 +57,8 @@
             "maxGzipBytes": 2210
         },
         "js/toolbar.min.js": {
-            "maxBytes": 57950,
-            "maxGzipBytes": 15450
+            "maxBytes": 58950,
+            "maxGzipBytes": 15950
         },
         "js/userswitch.min.js": {
             "maxBytes": 1810,

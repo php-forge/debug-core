@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Mail;
 
 use PHPForge\Debug\{ColumnStyle, Panel, PanelView, Tone};
+use PHPForge\Debug\Presenter\BadgeInline;
 
 use function count;
 use function date;
@@ -13,8 +14,6 @@ use function sprintf;
 
 /**
  * Presents captured mail messages as a status table followed by one detail group per message.
- *
- * @phpstan-import-type BadgeInline from PanelView
  */
 final class MailPanel extends Panel
 {
@@ -201,7 +200,7 @@ final class MailPanel extends Panel
      *
      * @return BadgeInline Success badge for a delivered message, danger badge for a rejected one.
      */
-    private static function status(MailEntry $message): array
+    private static function status(MailEntry $message): BadgeInline
     {
         return $message->isSuccessful()
             ? PanelView::badge(MailMessage::STATUS_SENT->value, Tone::SUCCESS)
