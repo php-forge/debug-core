@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { afterEach, test } from "vitest";
 
 import {
   installLocalStorage,
@@ -8,12 +8,22 @@ import {
   renderToolbar,
   stubBoundingHeight,
   stubViewportHeight,
+  teardownToolbars,
   toolbarPayload,
 } from "./toolbar-element-harness.js";
 
 var storage = installLocalStorage({ "yii-debug-toolbar-expanded": "1" });
 
 installMatchMedia();
+
+/**
+ * Detaches the fixtures and restores the expanded flag, which the collapse
+ * control persists as part of the behaviour under test.
+ */
+afterEach(() => {
+  teardownToolbars();
+  storage.set("yii-debug-toolbar-expanded", "1");
+});
 
 function payload(overrides) {
   return toolbarPayload(

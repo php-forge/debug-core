@@ -215,8 +215,10 @@ export async function bootDebugPage(options) {
     settings.prepare(documentValue);
   }
 
-  /* jsdom's EventTarget methods reject an inheriting receiver, so the facade
-     forwards them to the window they were taken from. */
+  /**
+   * jsdom's EventTarget methods reject an inheriting receiver, so the facade
+   * forwards them to the window they were taken from.
+   */
   ["addEventListener", "dispatchEvent", "removeEventListener"].forEach(
     function (name) {
       define(facade, name, win[name].bind(win));

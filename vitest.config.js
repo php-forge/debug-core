@@ -5,8 +5,10 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["resources/src/**/*.js"],
-      /* Nothing is hidden from the report: every file matched by `include` is
-         measured, bootstraps included. */
+      /**
+       * Nothing is hidden from the report: every file matched by `include` is
+       * measured, bootstraps included.
+       */
       exclude: [],
       reporter: ["text"],
       reportsDirectory: "runtime/coverage-js",
@@ -16,8 +18,10 @@ export default defineConfig({
         lines: 100,
       },
     },
-    /* `element.js` imports its shadow styles with `?inline`; without CSS
-       processing Vitest would hand it an empty string. */
+    /**
+     * `element.js` imports its shadow styles with `?inline`; without CSS
+     * processing Vitest would hand it an empty string.
+     */
     css: true,
     environment: "node",
     include: ["resources/tests/**/*.test.js"],

@@ -1,18 +1,28 @@
 // @vitest-environment jsdom
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { afterEach, test } from "vitest";
 
 import {
   createToolbar,
   installLocalStorage,
   installMatchMedia,
   renderToolbar,
+  teardownToolbars,
   toolbarPayload,
 } from "./toolbar-element-harness.js";
 
 var storage = installLocalStorage({ "yii-debug-toolbar-expanded": "1" });
 
 installMatchMedia();
+
+/**
+ * Detaches the fixtures and restores the expanded flag unconditionally: a
+ * thrown assertion must not hand the next test a collapsed bar.
+ */
+afterEach(() => {
+  teardownToolbars();
+  storage.set("yii-debug-toolbar-expanded", "1");
+});
 
 function request(overrides) {
   return Object.assign(

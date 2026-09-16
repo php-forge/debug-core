@@ -4,9 +4,11 @@ import { test, vi } from "vitest";
 
 import { bootDebugPage, fire, settle } from "./debug-page-harness.js";
 
-/* The Database panel feature is the failure fixture: it is the only module the
-   bootstrap loads on demand here, and its import must reject for the degraded
-   callout to appear. No other scenario in this file ships a panel marker. */
+/**
+ * The Database panel feature is the failure fixture: it is the only module the
+ * bootstrap loads on demand here, and its import must reject for the degraded
+ * callout to appear. No other scenario in this file ships a panel marker.
+ */
 vi.doMock("../src/panels/db.js", () => {
   throw new Error("Chunk load failed.");
 });

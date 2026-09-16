@@ -1,18 +1,26 @@
 // @vitest-environment jsdom
 import assert from "node:assert/strict";
-import { test, vi } from "vitest";
+import { afterEach, test, vi } from "vitest";
 
 import {
+  connectToolbar,
   createToolbar,
   installLocalStorage,
   installMatchMedia,
   installXmlHttpRequest,
+  teardownToolbars,
 } from "./toolbar-element-harness.js";
 
 installLocalStorage({ "yii-debug-toolbar-expanded": "1" });
 installMatchMedia();
 
 var transport = installXmlHttpRequest();
+
+/** Detaches the fixtures and drops a fake clock a thrown assertion left set. */
+afterEach(() => {
+  teardownToolbars();
+  vi.useRealTimers();
+});
 
 var snapshot = JSON.stringify({
   items: [{ id: "db", title: "Database", url: "/debug/db" }],
@@ -21,11 +29,7 @@ var snapshot = JSON.stringify({
 });
 
 function mount(attributes) {
-  var element = createToolbar(attributes);
-
-  document.body.appendChild(element);
-
-  return element;
+  return connectToolbar(attributes);
 }
 
 function errorMessage(element) {

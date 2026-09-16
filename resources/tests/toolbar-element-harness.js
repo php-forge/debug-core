@@ -134,6 +134,30 @@ export function installXmlHttpRequest() {
   };
 }
 
+/**
+ * Fixtures this module attached to the document, in attachment order.
+ *
+ * Only what the harness appends is recorded: a detached `createToolbar()`
+ * fixture stays out of it, so the lifecycle tests keep driving
+ * `disconnectedCallback()` themselves.
+ */
+var attached = [];
+
+/**
+ * Detaches every recorded fixture still in the document and forgets all of
+ * them, so a thrown assertion cannot leave a connected toolbar registered in
+ * `toolbars`, listening on the document or holding a theme observer.
+ */
+export function teardownToolbars() {
+  for (var i = attached.length - 1; i >= 0; i--) {
+    if (attached[i].isConnected) {
+      attached[i].remove();
+    }
+  }
+
+  attached.length = 0;
+}
+
 export function defineToolbar() {
   if (!window.customElements.get(tagName)) {
     window.customElements.define(tagName, YiiDebugToolbar);
@@ -159,6 +183,7 @@ export function connectToolbar(attributes) {
   var element = createToolbar(attributes);
 
   document.body.appendChild(element);
+  attached.push(element);
 
   return element;
 }
@@ -212,6 +237,7 @@ export function stubFrameWindow(frame) {
   var donor = document.createElement("iframe");
 
   document.body.appendChild(donor);
+  attached.push(donor);
   Object.defineProperty(frame, "contentWindow", {
     configurable: true,
     value: donor.contentWindow,

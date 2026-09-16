@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { afterEach, test } from "vitest";
 
 import { resetHostThemeControlCache } from "../src/toolbar/theme.js";
 import {
@@ -9,11 +9,31 @@ import {
   removeMatchMedia,
   renderToolbar,
   stubFrameWindow,
+  teardownToolbars,
   toolbarPayload,
 } from "./toolbar-element-harness.js";
 
 var storage = installLocalStorage();
 var media = installMatchMedia();
+var hostControls = [];
+
+/**
+ * Restores what a thrown assertion would leave behind: a connected toolbar, a
+ * host switcher, the removed media query and every document marker `reset()`
+ * clears.
+ */
+afterEach(() => {
+  teardownToolbars();
+
+  for (var i = hostControls.length - 1; i >= 0; i--) {
+    hostControls[i].remove();
+  }
+
+  hostControls.length = 0;
+  media = installMatchMedia();
+
+  reset();
+});
 
 function reset() {
   var html = document.documentElement;
@@ -57,6 +77,7 @@ function installHostThemeControl() {
     control.clicks += 1;
   });
   document.body.appendChild(control);
+  hostControls.push(control);
   resetHostThemeControlCache();
 
   return control;

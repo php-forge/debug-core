@@ -1,16 +1,20 @@
 // @vitest-environment jsdom
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { afterEach, test } from "vitest";
 
 import {
   installLocalStorage,
   installMatchMedia,
   renderToolbar,
+  teardownToolbars,
   toolbarPayload,
 } from "./toolbar-element-harness.js";
 
 installLocalStorage({ "yii-debug-toolbar-expanded": "1" });
 installMatchMedia();
+
+/** Detaches the fixtures a thrown assertion would leave connected. */
+afterEach(teardownToolbars);
 
 function payload(overrides) {
   return toolbarPayload(

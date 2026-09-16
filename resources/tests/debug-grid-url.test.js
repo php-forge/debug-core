@@ -451,8 +451,10 @@ test("a field that cannot place a caret is only refocused", async () => {
   const page = await bootDebugPage({
     body: '<input name="Debug[url]" value="/site/index">',
     prepare(documentValue) {
-      /* Older engines expose no selection API on some input types; the source
-         must still hand the field back its focus. */
+      /**
+       * Older engines expose no selection API on some input types; the source
+       * must still hand the field back its focus.
+       */
       documentValue.querySelector("input").setSelectionRange = undefined;
     },
     sessionData: {

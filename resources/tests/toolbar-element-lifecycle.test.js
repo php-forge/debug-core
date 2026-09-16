@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import assert from "node:assert/strict";
-import { test, vi } from "vitest";
+import { afterEach, test, vi } from "vitest";
 
 import { toolbars } from "../src/toolbar/state.js";
 import {
@@ -9,10 +9,26 @@ import {
   installMatchMedia,
   removeMatchMedia,
   renderToolbar,
+  teardownToolbars,
   toolbarPayload,
 } from "./toolbar-element-harness.js";
 
+var mutationObserver = window.MutationObserver;
+
 installLocalStorage({ "yii-debug-toolbar-expanded": "1" });
+
+/**
+ * Restores what a thrown assertion would leave behind: a connected toolbar, a
+ * fake clock, the deleted `MutationObserver` and the removed media query. The
+ * detached `createToolbar()` fixtures stay untouched, so the tests that drive
+ * `disconnectedCallback()` themselves keep proving what it does.
+ */
+afterEach(() => {
+  teardownToolbars();
+  vi.useRealTimers();
+  window.MutationObserver = mutationObserver;
+  installMatchMedia();
+});
 
 function payload() {
   return toolbarPayload({
