@@ -148,14 +148,14 @@ Validation performed by `PanelRegistry::resolve()`:
 
 ## Distinct states the hosts must keep apart
 
-| State | Source | Host behavior |
-| --- | --- | --- |
-| Disabled by configuration | `enabled: false` | Not instantiated, not listed, `PanelRegistry::disabled()` |
-| Provider removed, capture retained | snapshot key without registration | Listed under a raw group, inspectable |
-| `null` capture | collector returned `null` | Panel listed, no payload for that request |
-| Empty capture | collector returned `[]` | Panel listed, presenter renders its empty state |
-| Capture failed | `DebugSnapshot::$failures` | Panel listed with the failure |
-| Presentation failed | `present()` threw | Panel listed with the failure |
+| State                              | Source                            | Host behavior                                             |
+| ---------------------------------- | --------------------------------- | --------------------------------------------------------- |
+| Disabled by configuration          | `enabled: false`                  | Not instantiated, not listed, `PanelRegistry::disabled()` |
+| Provider removed, capture retained | snapshot key without registration | Listed under a raw group, inspectable                     |
+| `null` capture                     | collector returned `null`         | Panel listed, no payload for that request                 |
+| Empty capture                      | collector returned `[]`           | Panel listed, presenter renders its empty state           |
+| Capture failed                     | `DebugSnapshot::$failures`        | Panel listed with the failure                             |
+| Presentation failed                | `present()` threw                 | Panel listed with the failure                             |
 
 ## Acceptance fixtures written in Phase 1
 
