@@ -78,7 +78,6 @@ final class QueuePanel extends Panel
         $errors = $summary->totalErrors();
 
         $view = PanelView::create()
-            ->active($total > 0)
             ->summary(
                 $total === 1 ? QueueMessage::EVENT_SUFFIX->value : QueueMessage::EVENTS_SUFFIX->value,
                 $total,

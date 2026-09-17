@@ -96,7 +96,7 @@ test("a theme marked on the document outvotes stale storage", () => {
   document.body.setAttribute("data-theme", "dark");
 
   assert.equal(
-    element.detectTheme(),
+    element.themeController.detectTheme(),
     "dark",
     "The body marker must be honoured.",
   );
@@ -113,7 +113,7 @@ test("a host-owned theme reads the rendered color scheme", () => {
   var element = renderToolbar(payload());
 
   assert.equal(
-    element.ownsTheme,
+    element.themeController.ownsTheme,
     false,
     "A visible switcher must claim the theme.",
   );
@@ -127,7 +127,7 @@ test("a host-owned theme reads the rendered color scheme", () => {
   resetHostThemeControlCache();
 
   assert.equal(
-    element.detectTheme(),
+    element.themeController.detectTheme(),
     "dark",
     "A declared color scheme must be honoured.",
   );
@@ -148,7 +148,7 @@ test("an owned theme prefers the pinned attribute, then its own key, then host k
   storage.set("yii-debug-toolbar-theme", "dark");
 
   assert.equal(
-    element.detectTheme(),
+    element.themeController.detectTheme(),
     "dark",
     "The toolbar key must be honoured.",
   );
@@ -156,7 +156,11 @@ test("an owned theme prefers the pinned attribute, then its own key, then host k
   storage.delete("yii-debug-toolbar-theme");
   storage.set("vite-ui-theme", "dark");
 
-  assert.equal(element.detectTheme(), "dark", "A host key must be honoured.");
+  assert.equal(
+    element.themeController.detectTheme(),
+    "dark",
+    "A host key must be honoured.",
+  );
 
   element.remove();
   reset();
@@ -179,7 +183,7 @@ test("an owned theme falls back to the system preference and then to light", () 
   removeMatchMedia();
 
   assert.equal(
-    element.detectTheme(),
+    element.themeController.detectTheme(),
     "light",
     "Without a media query light is the default.",
   );
@@ -292,7 +296,7 @@ test("a host switcher receives the toggle instead of the document", () => {
 
   element.theme = "light";
   document.documentElement.setAttribute("data-theme", "dark");
-  element.toggleTheme();
+  element.themeController.toggleTheme();
 
   assert.equal(
     control.clicks,
@@ -319,7 +323,7 @@ test("a host without a usable document element still absorbs the propagation", (
       configurable: true,
       value: null,
     });
-    element.propagateThemeToHost("dark");
+    element.themeController.propagateThemeToHost("dark");
 
     assert.equal(
       storage.get("theme"),
@@ -331,7 +335,7 @@ test("a host without a usable document element still absorbs the propagation", (
       configurable: true,
       value: { setAttribute() {}, style: {} },
     });
-    element.propagateThemeToHost("light");
+    element.themeController.propagateThemeToHost("light");
 
     assert.equal(
       storage.get("theme"),
@@ -356,7 +360,7 @@ test("an unchanged theme is neither rewritten nor re-rendered", () => {
   var bar = element.shadowRoot.querySelector(".panels");
 
   storage.delete("yii-debug-toolbar-theme");
-  element.refreshTheme();
+  element.themeController.refreshTheme();
 
   assert.equal(
     storage.get("yii-debug-toolbar-theme"),
@@ -401,7 +405,7 @@ test("the panel frame flips the theme through postMessage", () => {
 
   var element = renderToolbar(payload());
 
-  element.openPanel("/debug/db");
+  element.drawer.openPanel("/debug/db");
 
   var frameWindow = stubFrameWindow(
     element.shadowRoot.querySelector(".drawer iframe"),
@@ -436,7 +440,7 @@ test("the panel frame closes the drawer through postMessage", () => {
 
   var element = renderToolbar(payload());
 
-  element.openPanel("/debug/db");
+  element.drawer.openPanel("/debug/db");
 
   var frameWindow = stubFrameWindow(
     element.shadowRoot.querySelector(".drawer iframe"),
@@ -474,7 +478,7 @@ test("foreign, unknown and redundant messages are ignored", () => {
     "A message without the panel frame must be ignored.",
   );
 
-  element.openPanel("/debug/db");
+  element.drawer.openPanel("/debug/db");
 
   var frameWindow = stubFrameWindow(
     element.shadowRoot.querySelector(".drawer iframe"),
@@ -526,7 +530,7 @@ test("a theme message reaches the host switcher when one exists", () => {
 
   var element = renderToolbar(payload());
 
-  element.openPanel("/debug/db");
+  element.drawer.openPanel("/debug/db");
 
   var control = installHostThemeControl();
   var frameWindow = stubFrameWindow(
@@ -558,7 +562,7 @@ test("a theme message before the first snapshot only records the theme", () => {
 
   var element = renderToolbar(payload());
 
-  element.openPanel("/debug/db");
+  element.drawer.openPanel("/debug/db");
 
   var frameWindow = stubFrameWindow(
     element.shadowRoot.querySelector(".drawer iframe"),

@@ -367,3 +367,90 @@ test("the request stack keeps only the most recent hundred requests", async () =
   assert.equal(requestStack.length, 100);
   assert.equal(requestStack[99].url, "/api/fetch-bulk-100");
 });
+
+/**
+ * Newest tracked entry. The stack is bounded, so an absolute index taken
+ * before the push stops resolving once the limit is reached.
+ */
+function lastRequest() {
+  return requestStack[requestStack.length - 1];
+}
+
+test("a failed XHR is finalized instead of staying loading", () => {
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/unreachable");
+  xhr.status = 0;
+  xhr.dispatch("error");
+
+  assert.equal(lastRequest().url, "/api/unreachable");
+  assert.equal(lastRequest().loading, false);
+  assert.equal(lastRequest().error, true);
+  assert.equal(lastRequest().statusCode, 0);
+});
+
+test("a timed-out XHR is finalized instead of staying loading", () => {
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/slow");
+  xhr.status = 0;
+  xhr.dispatch("timeout");
+
+  assert.equal(lastRequest().url, "/api/slow");
+  assert.equal(lastRequest().loading, false);
+  assert.equal(lastRequest().error, true);
+  assert.equal(lastRequest().statusCode, 0);
+});
+
+test("an aborted XHR is finalized instead of staying loading", () => {
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/cancelled");
+  xhr.status = 0;
+  xhr.dispatch("abort");
+
+  assert.equal(lastRequest().url, "/api/cancelled");
+  assert.equal(lastRequest().loading, false);
+  assert.equal(lastRequest().error, true);
+  assert.equal(lastRequest().statusCode, 0);
+});
+
+test("a completed XHR is finalized exactly once when a failure follows", () => {
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/completed-then-error");
+  xhr.readyState = 4;
+  xhr.status = 204;
+  xhr.headers = { "X-Debug-Tag": "completed-tag" };
+  xhr.dispatch("readystatechange");
+  xhr.status = 0;
+  xhr.dispatch("error");
+  xhr.dispatch("abort");
+
+  assert.equal(lastRequest().url, "/api/completed-then-error");
+  assert.equal(lastRequest().statusCode, 204);
+  assert.equal(lastRequest().error, false);
+  assert.equal(lastRequest().profile, "completed-tag");
+  assert.equal(xhr.listeners.get("error").size, 0);
+  assert.equal(xhr.listeners.get("abort").size, 0);
+  assert.equal(xhr.listeners.get("timeout").size, 0);
+});
+
+test("a failed XHR is finalized exactly once when more failures follow", () => {
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/error-then-readystate");
+  xhr.status = 0;
+  xhr.dispatch("error");
+  xhr.readyState = 4;
+  xhr.status = 500;
+  xhr.headers = { "X-Debug-Tag": "late-tag" };
+  xhr.dispatch("readystatechange");
+  xhr.dispatch("timeout");
+
+  assert.equal(lastRequest().url, "/api/error-then-readystate");
+  assert.equal(lastRequest().statusCode, 0);
+  assert.equal(lastRequest().profile, undefined);
+  assert.equal(lastRequest().duration, undefined);
+  assert.equal(xhr.listeners.get("readystatechange").size, 0);
+});

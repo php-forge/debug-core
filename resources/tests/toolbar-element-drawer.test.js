@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "vitest";
 
+import { createToolbarView, renderDrawer } from "../src/toolbar/render.js";
 import {
   installLocalStorage,
   installMatchMedia,
@@ -135,7 +136,7 @@ test("a modified click and a click beside a trigger leave the drawer closed", ()
 test("an unsafe panel URL never opens the drawer", () => {
   var element = renderToolbar(payload());
 
-  element.openPanel("//evil.test/debug/db");
+  element.drawer.openPanel("//evil.test/debug/db");
 
   assert.equal(
     element.drawerOpen,
@@ -181,7 +182,7 @@ test("closing a drawer whose trigger disappeared focuses the collapse control", 
 
   click(element.shadowRoot.querySelector('[title="Database"]'));
   element.data.items = [];
-  element.closeDrawer();
+  element.drawer.closeDrawer();
 
   assert.equal(
     element.shadowRoot.activeElement,
@@ -262,7 +263,7 @@ test("the drawer keeps its browsing context while the bar is refreshed", () => {
     "Unchanged URL must not renavigate the frame.",
   );
 
-  element.openPanel("/debug/logs");
+  element.drawer.openPanel("/debug/logs");
 
   assert.equal(
     element.shadowRoot.querySelector(".drawer iframe"),
@@ -374,7 +375,7 @@ test("an unsafe active URL tears the drawer down", () => {
     "Drawer host must be emptied.",
   );
   assert.equal(
-    element.renderDrawer("bottom"),
+    renderDrawer(createToolbarView(element), "bottom"),
     "",
     "A closed drawer must render nothing.",
   );
@@ -393,7 +394,7 @@ test("the drawer height comes from the attribute, then the payload, then the def
 
   element.style.removeProperty("--yii-debug-toolbar-drawer-height");
   element.removeAttribute("data-height");
-  element.applyDrawerHeight();
+  element.drawer.applyDrawerHeight();
 
   assert.equal(
     drawerHeight(element),
@@ -403,7 +404,7 @@ test("the drawer height comes from the attribute, then the payload, then the def
 
   element.style.removeProperty("--yii-debug-toolbar-drawer-height");
   element.data.defaultHeight = undefined;
-  element.applyDrawerHeight();
+  element.drawer.applyDrawerHeight();
 
   assert.equal(
     drawerHeight(element),
@@ -411,7 +412,7 @@ test("the drawer height comes from the attribute, then the payload, then the def
     "Built-in default must be the last resort.",
   );
 
-  element.applyDrawerHeight();
+  element.drawer.applyDrawerHeight();
 
   assert.equal(
     drawerHeight(element),
@@ -443,7 +444,7 @@ test("the drawer height is clamped to the supported range", () => {
 test("a closed toolbar exposes no drawer height to apply", () => {
   var element = renderToolbar(payload());
 
-  element.applyDrawerHeight();
+  element.drawer.applyDrawerHeight();
 
   assert.equal(drawerHeight(element), "", "No drawer means no height.");
 
@@ -500,7 +501,7 @@ test("dragging the handle resizes the drawer until the pointer is released", () 
   document.dispatchEvent(
     new window.MouseEvent("pointermove", { clientY: 200 }),
   );
-  element.onPointerMove({ clientY: 200 });
+  element.drawer.onPointerMove({ clientY: 200 });
 
   assert.equal(
     drawerHeight(element),
@@ -532,7 +533,7 @@ test("dragging without a drawer rectangle measures against the viewport", () => 
     "Top dock must measure from the cursor down.",
   );
 
-  element.onPointerUp();
+  element.drawer.onPointerUp();
   element.remove();
 });
 
@@ -545,7 +546,7 @@ test("a viewport without an inner height falls back to the document height", () 
   stubViewportHeight(0);
 
   try {
-    element.onPointerMove({ clientY: 10 });
+    element.drawer.onPointerMove({ clientY: 10 });
 
     assert.equal(
       drawerHeight(element),
@@ -553,7 +554,7 @@ test("a viewport without an inner height falls back to the document height", () 
       "Collapsed viewport must clamp to the floor.",
     );
 
-    element.onResizeKeyDown({ key: "End", preventDefault() {} });
+    element.drawer.onResizeKeyDown({ key: "End", preventDefault() {} });
 
     assert.equal(
       drawerHeight(element),
@@ -571,7 +572,7 @@ test("a viewport without an inner height falls back to the document height", () 
     stubViewportHeight(768);
   }
 
-  element.onPointerUp();
+  element.drawer.onPointerUp();
   element.remove();
 });
 
@@ -624,7 +625,7 @@ test("the keyboard grows, shrinks and jumps the drawer to its bounds", () => {
 test("resize keys and range updates are inert without a drawer", () => {
   var element = renderToolbar(payload());
 
-  element.onResizeKeyDown({ key: "Home", preventDefault() {} });
+  element.drawer.onResizeKeyDown({ key: "Home", preventDefault() {} });
 
   assert.equal(drawerHeight(element), "", "No drawer means no height.");
 
@@ -634,7 +635,7 @@ test("resize keys and range updates are inert without a drawer", () => {
 
   handle.removeAttribute("aria-valuenow");
   element.shadowRoot.querySelector(".drawer").remove();
-  element.updateResizeHandleAccessibility();
+  element.drawer.updateResizeHandleAccessibility();
 
   assert.equal(
     handle.getAttribute("aria-valuenow"),
@@ -676,7 +677,7 @@ test("an error bar exposes no controls to wire", () => {
   var element = renderToolbar(payload());
 
   element.renderError("Unable to load debug toolbar data.");
-  element.bindEvents();
+  element.drawer.bindEvents();
 
   assert.equal(
     element.shadowRoot.querySelector(".toggle-toolbar"),

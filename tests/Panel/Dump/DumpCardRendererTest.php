@@ -31,7 +31,7 @@ final class DumpCardRendererTest extends TestCase
             <header class="yii-debug-dump-card-head">
             <span class="yii-debug-dump-index" aria-hidden="true">#1</span><span class="yii-debug-dump-type" data-type="object">safe</span><span class="yii-debug-dump-meta"></span>
             </header><div class="yii-debug-dump-body">
-            <pre><code style="color: #000000"><span style="color: #0000BB">safe</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #0000BB">safe</span></code></pre>
             &lt;span onclick="alert(1)"&gt;unsafe attribute&lt;/span&gt;&lt;script&gt;alert(1)&lt;/script&gt;
             </div>
             </div>
@@ -234,6 +234,26 @@ final class DumpCardRendererTest extends TestCase
             'Time metadata must be retained.',
         );
 
+    }
+
+    public function testRenderMessageCellMarksScrollableDumpBodyAsKeyboardFocusable(): void
+    {
+        $html = DumpCardRenderer::renderMessageCell(
+            self::makeRow(
+                message: '<pre><code style="color: #000000"><span style="color: #0000BB">safe</span></code></pre>',
+            ),
+            self::traceLine(),
+            0,
+        );
+
+        self::assertStringContainsString(
+            <<<HTML
+            <div class="yii-debug-dump-body">
+            <pre tabindex="0">
+            HTML,
+            $html,
+            'Scroll container must expose `tabindex="0"`.',
+        );
     }
 
     public function testRenderMessageCellNormalizesUppercaseScalarIdentifiers(): void

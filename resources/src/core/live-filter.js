@@ -4,6 +4,8 @@ export const LIVE_FILTER_ANCHOR_SELECTOR =
 const FILTER_DEFAULT_OPEN_ATTRIBUTE = "data-yii-debug-filter-default-open";
 const FILTER_PREVIOUS_OPEN_ATTRIBUTE = "data-yii-debug-filter-previous-open";
 const FILTER_TARGET_SELECTOR = "[data-yii-debug-filter-target]";
+/** Live filter inputs the page binds: one input, one searchable target. */
+export const LIVE_FILTER_INPUT_SELECTOR = "[data-yii-debug-filter]";
 
 /**
  * Finds the target controlled by a live-filter input.
@@ -110,4 +112,50 @@ export function applyLiveFilter(target, value) {
     unit: target.getAttribute("data-yii-debug-filter-unit") || "rows",
     visible,
   };
+}
+
+/**
+ * Applies one query to the target an input controls and announces the outcome
+ * through the live region the input is described by, creating that region on
+ * first use.
+ */
+export function updateLiveFilter(input) {
+  var target = findLiveFilterTarget(input);
+
+  if (!target) {
+    return;
+  }
+
+  var anchor =
+    input.closest(LIVE_FILTER_ANCHOR_SELECTOR) || input.parentElement || input;
+
+  var result = applyLiveFilter(target, input.value);
+
+  var status = anchor.querySelector("[data-yii-debug-filter-status]");
+
+  if (!status) {
+    status = document.createElement("span");
+    status.id = input.id
+      ? input.id + "-status"
+      : "yii-debug-filter-status-" +
+        (document.querySelectorAll("[data-yii-debug-filter-status]").length +
+          1);
+    status.className = "yii-debug-sr-only";
+    status.setAttribute("aria-live", "polite");
+    status.setAttribute("aria-atomic", "true");
+    status.setAttribute("data-yii-debug-filter-status", "true");
+    anchor.appendChild(status);
+
+    var descriptions = (input.getAttribute("aria-describedby") || "")
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (descriptions.indexOf(status.id) === -1) {
+      descriptions.push(status.id);
+      input.setAttribute("aria-describedby", descriptions.join(" "));
+    }
+  }
+
+  status.textContent =
+    result.visible + " of " + result.total + " " + result.unit + " shown.";
 }

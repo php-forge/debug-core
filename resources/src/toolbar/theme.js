@@ -1,10 +1,12 @@
 import {
-  absoluteUrl,
-  readStorageItem,
-  themeParam,
-  themeStorageKey,
-} from "./state.js";
+  HOST_THEME_STORAGE_KEYS,
+  normalizeThemeToken as normalizeTheme,
+  themeCookie,
+} from "../core/shared.js";
+import { absoluteUrl, readStorageItem, themeParam } from "./state.js";
 import { normalizeToolbarUrl } from "./url.js";
+
+export { normalizeTheme };
 
 var hostControlCache;
 
@@ -19,28 +21,6 @@ var hostControlCache;
  *   5. Computed `color-scheme`.
  *   6. `prefers-color-scheme: dark` media query.
  */
-
-export function normalizeTheme(value) {
-  if (!value) {
-    return null;
-  }
-
-  var tokens = String(value).toLowerCase().trim().split(/\s+/);
-  var darkAliases = ["dark", "night", "black"];
-  var lightAliases = ["light", "day", "white"];
-  var hasDark = tokens.some(function (token) {
-    return darkAliases.indexOf(token) !== -1;
-  });
-  var hasLight = tokens.some(function (token) {
-    return lightAliases.indexOf(token) !== -1;
-  });
-
-  if (hasDark === hasLight) {
-    return null;
-  }
-
-  return hasDark ? "dark" : "light";
-}
 
 export function getElementTheme(element) {
   var attributes = [
@@ -75,18 +55,7 @@ export function getElementTheme(element) {
 }
 
 export function getStorageTheme() {
-  var keys = [
-    "theme",
-    "color-theme",
-    "colorScheme",
-    "color-scheme",
-    "data-bs-theme",
-    "bs-theme",
-    "ui-theme",
-    "preferred-theme",
-    "vite-ui-theme",
-    "vueuse-color-scheme",
-  ];
+  var keys = HOST_THEME_STORAGE_KEYS;
   var i;
   var theme;
 
@@ -220,11 +189,7 @@ export function writeThemeCookie(theme) {
   }
 
   try {
-    document.cookie =
-      themeStorageKey +
-      "=" +
-      encodeURIComponent(theme) +
-      ";path=/;max-age=31536000;SameSite=Lax";
+    document.cookie = themeCookie(theme);
   } catch (_e) {
     /* Cookie writes can be blocked by the browser or iframe sandbox. */
   }

@@ -57,10 +57,6 @@ final class UserPanelTest extends TestCase
 
         $view = self::present($capture);
 
-        self::assertTrue(
-            $view->isActive(),
-            'A captured identity must activate navigation.',
-        );
         self::assertSame(
             ['admin'],
             self::metricValues($view->summaryMetrics()),
@@ -151,14 +147,10 @@ final class UserPanelTest extends TestCase
         );
     }
 
-    public function testGuestRequestDeactivatesThePanelAndExplainsTheMissingIdentity(): void
+    public function testGuestRequestExplainsTheMissingIdentity(): void
     {
         $view = self::present(['identity' => null, 'attributes' => null, 'roles' => null, 'permissions' => null]);
 
-        self::assertFalse(
-            $view->isActive(),
-            'A guest request must not activate navigation.',
-        );
         self::assertSame(
             [],
             $view->summaryMetrics(),

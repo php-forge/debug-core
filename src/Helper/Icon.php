@@ -16,6 +16,11 @@ use function preg_match;
 final class Icon
 {
     /**
+     * Shape an icon key must match: lowercase alphanumerics and hyphens, starting with an alphanumeric.
+     */
+    public const string KEY_PATTERN = '/\A[a-z0-9][a-z0-9-]*\z/';
+
+    /**
      * @var array<string, string> In-memory cache of rendered SVG markup, indexed by icon name.
      */
     private static array $cache = [];
@@ -33,7 +38,7 @@ final class Icon
             return self::$cache[$name];
         }
 
-        if (preg_match('/\A[a-z0-9][a-z0-9-]*\z/', $name) !== 1) {
+        if (preg_match(self::KEY_PATTERN, $name) !== 1) {
             return self::$cache[$name] = '';
         }
 

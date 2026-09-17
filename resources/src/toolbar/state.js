@@ -12,10 +12,14 @@
  * always delegate to the unhooked browser primitives.
  */
 
+import { closest, THEME_STORAGE_KEY } from "../core/shared.js";
+
+export { closest };
+
 export var tagName = "yii-debug-toolbar";
 export var storageKey = "yii-debug-toolbar-expanded";
 export var themeParam = "yii_debug_theme";
-export var themeStorageKey = "yii-debug-toolbar-theme";
+export var themeStorageKey = THEME_STORAGE_KEY;
 export var requestStackLimit = 100;
 export var requestStack = [];
 export var toolbars = [];
@@ -101,19 +105,4 @@ export function sameUrl(left, right) {
 
 export function getPrimaryToolbar() {
   return toolbars.length ? toolbars[0] : document.querySelector(tagName);
-}
-
-export function closest(element, selector) {
-  if (element && element.nodeType !== 1) {
-    element = element.parentElement;
-  }
-
-  while (element && element.nodeType === 1) {
-    if (element.matches(selector)) {
-      return element;
-    }
-    element = element.parentElement;
-  }
-
-  return null;
 }

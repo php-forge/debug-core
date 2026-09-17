@@ -59,7 +59,6 @@ final class AssetPanel extends Panel
         }
 
         $view = PanelView::create()
-            ->active($count > 0 || $vite !== null)
             ->toolbar(AssetMessage::TOOLBAR->value, $count)
             ->stats(
                 PanelView::stat(

@@ -4,9 +4,11 @@ import { afterEach, test, vi } from "vitest";
 
 import { toolbars } from "../src/toolbar/state.js";
 import {
+  connectToolbar,
   createToolbar,
   installLocalStorage,
   installMatchMedia,
+  installXmlHttpRequest,
   removeMatchMedia,
   renderToolbar,
   teardownToolbars,
@@ -16,6 +18,8 @@ import {
 var mutationObserver = window.MutationObserver;
 
 installLocalStorage({ "yii-debug-toolbar-expanded": "1" });
+
+var transport = installXmlHttpRequest();
 
 /**
  * Restores what a thrown assertion would leave behind: a connected toolbar, a
@@ -29,6 +33,10 @@ afterEach(() => {
   window.MutationObserver = mutationObserver;
   installMatchMedia();
 });
+
+function snapshot(tag) {
+  return JSON.stringify({ items: [], tag: tag });
+}
 
 function payload() {
   return toolbarPayload({
@@ -47,7 +55,7 @@ function payload() {
 test("connecting registers the toolbar and watching the theme is idempotent", () => {
   var media = installMatchMedia();
   var element = renderToolbar(payload());
-  var observer = element.themeObserver;
+  var observer = element.themeController.observer;
 
   assert.equal(
     toolbars.indexOf(element),
@@ -55,7 +63,7 @@ test("connecting registers the toolbar and watching the theme is idempotent", ()
     "Toolbar must be registered once.",
   );
   assert.equal(
-    element.systemThemeQuery,
+    element.themeController.systemQuery,
     media,
     "System query must be retained.",
   );
@@ -65,10 +73,10 @@ test("connecting registers the toolbar and watching the theme is idempotent", ()
     "System query must be observed once.",
   );
 
-  element.watchTheme();
+  element.themeController.watchTheme();
 
   assert.equal(
-    element.themeObserver,
+    element.themeController.observer,
     observer,
     "Observer must not be rebuilt.",
   );
@@ -81,9 +89,13 @@ test("connecting registers the toolbar and watching the theme is idempotent", ()
   element.remove();
 
   assert.equal(toolbars.indexOf(element), -1, "Toolbar must be unregistered.");
-  assert.equal(element.themeObserver, null, "Observer must be released.");
   assert.equal(
-    element.systemThemeQuery,
+    element.themeController.observer,
+    null,
+    "Observer must be released.",
+  );
+  assert.equal(
+    element.themeController.systemQuery,
     null,
     "System query must be released.",
   );
@@ -93,7 +105,7 @@ test("connecting registers the toolbar and watching the theme is idempotent", ()
     "System query listener must be removed.",
   );
   assert.equal(
-    element.boundThemeMessage,
+    element.themeController.themeMessage,
     null,
     "Message listener must be released.",
   );
@@ -129,7 +141,11 @@ test("disconnecting a toolbar that was never connected is inert", () => {
   element.disconnectedCallback();
 
   assert.equal(toolbars.indexOf(element), -1, "Registry must stay empty.");
-  assert.equal(element.themeObserver, null, "No observer may be released.");
+  assert.equal(
+    element.themeController.observer,
+    null,
+    "No observer may be released.",
+  );
   assert.equal(element.resizing, false, "No drag may be in flight.");
 });
 
@@ -141,7 +157,7 @@ test("the host theme control is re-evaluated after the page settles", () => {
   var refreshes = 0;
 
   try {
-    element.refreshTheme = function () {
+    element.themeController.refreshTheme = function () {
       refreshes += 1;
     };
 
@@ -158,7 +174,7 @@ test("the host theme control is re-evaluated after the page settles", () => {
     );
 
     assert.equal(
-      element.themeRefreshTimer !== null,
+      element.themeController.refreshTimer !== null,
       true,
       "Timer must be recorded.",
     );
@@ -168,7 +184,7 @@ test("the host theme control is re-evaluated after the page settles", () => {
   }
 
   assert.equal(
-    element.themeRefreshTimer,
+    element.themeController.refreshTimer,
     null,
     "Timer must be cleared on disconnect.",
   );
@@ -190,7 +206,7 @@ test("a media query without listener support is tolerated", () => {
   var element = renderToolbar(payload());
 
   assert.equal(
-    element.systemThemeQuery,
+    element.themeController.systemQuery,
     media,
     "System query must still be retained.",
   );
@@ -198,7 +214,7 @@ test("a media query without listener support is tolerated", () => {
   element.remove();
 
   assert.equal(
-    element.systemThemeQuery,
+    element.themeController.systemQuery,
     null,
     "System query must still be released.",
   );
@@ -213,9 +229,13 @@ test("a host without media queries or mutation observers is tolerated", () => {
   var element = renderToolbar(payload());
 
   try {
-    assert.equal(element.themeObserver, null, "No observer may be built.");
     assert.equal(
-      element.systemThemeQuery,
+      element.themeController.observer,
+      null,
+      "No observer may be built.",
+    );
+    assert.equal(
+      element.themeController.systemQuery,
       null,
       "No system query may be built.",
     );
@@ -235,16 +255,23 @@ test("a document without a body is observed on its root only", () => {
   Object.defineProperty(document, "body", { configurable: true, value: null });
 
   try {
-    element.watchTheme();
+    element.themeController.watchTheme();
 
-    assert.ok(element.themeObserver, "The root must still be observed.");
+    assert.ok(
+      element.themeController.observer,
+      "The root must still be observed.",
+    );
   } finally {
     delete document.body;
   }
 
   element.disconnectedCallback();
 
-  assert.equal(element.themeObserver, null, "Observer must be released.");
+  assert.equal(
+    element.themeController.observer,
+    null,
+    "Observer must be released.",
+  );
 });
 
 test("the document pointer listener follows the element lifecycle", () => {
@@ -284,7 +311,7 @@ test("disconnecting during a drag stops the resize", () => {
 
   var element = renderToolbar(payload());
 
-  element.openPanel("/debug/db");
+  element.drawer.openPanel("/debug/db");
   element.shadowRoot
     .querySelector(".resize-handle")
     .dispatchEvent(
@@ -306,4 +333,149 @@ test("disconnecting during a drag stops the resize", () => {
     "50vh",
     "A detached toolbar must not be resized.",
   );
+});
+
+test("a response arriving after the toolbar was detached is dropped", () => {
+  var element = connectToolbar({ "data-url": "/debug/toolbar" });
+  var request = transport.last();
+  var announcements = 0;
+
+  element.addEventListener("yii.debug.toolbar_attached", function () {
+    announcements += 1;
+  });
+  element.remove();
+  request.respond(200, snapshot("after-detach"));
+
+  assert.equal(request.aborted, true, "Disposal must abort the request.");
+  assert.equal(element.currentTag, null, "Tracked tag must stay untouched.");
+  assert.equal(element.data, null, "No payload may be applied.");
+  assert.equal(
+    element.shadowRoot.querySelector(".bar"),
+    null,
+    "Nothing may be rendered.",
+  );
+  assert.equal(announcements, 0, "No attachment may be announced.");
+});
+
+test("a retry scheduled before the toolbar was detached never fires", () => {
+  vi.useFakeTimers();
+
+  var element = connectToolbar({ "data-url": "/debug/toolbar" });
+
+  try {
+    transport.last().respond(404, "{}");
+
+    var issued = transport.requests.length;
+
+    element.remove();
+    vi.advanceTimersByTime(5000);
+
+    assert.equal(
+      transport.requests.length,
+      issued,
+      "A cleared retry must not reach the network.",
+    );
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("a detached toolbar refuses a new load", () => {
+  var element = connectToolbar({ "data-url": "/debug/toolbar" });
+
+  element.remove();
+
+  var issued = transport.requests.length;
+
+  element.load();
+
+  assert.equal(transport.requests.length, issued, "No request may be issued.");
+});
+
+test("reconnecting starts a single fresh load lifecycle", () => {
+  var element = connectToolbar({ "data-url": "/debug/toolbar" });
+  var stale = transport.last();
+  var announcements = 0;
+
+  element.addEventListener("yii.debug.toolbar_attached", function () {
+    announcements += 1;
+  });
+  element.remove();
+  document.body.appendChild(element);
+
+  var fresh = transport.last();
+
+  assert.notEqual(fresh, stale, "Reconnecting must issue its own request.");
+  assert.equal(
+    toolbars.filter(function (candidate) {
+      return candidate === element;
+    }).length,
+    1,
+    "Registry must hold a single entry.",
+  );
+
+  stale.respond(200, snapshot("stale"));
+
+  assert.equal(
+    element.currentTag,
+    null,
+    "A previous lifecycle must not settle.",
+  );
+
+  fresh.respond(200, snapshot("fresh"));
+
+  assert.equal(element.currentTag, "fresh", "The new lifecycle must apply.");
+  assert.equal(announcements, 1, "Attachment must be announced once.");
+
+  element.remove();
+});
+
+test("a superseded response cannot overwrite the newer tag", () => {
+  var element = connectToolbar({ "data-url": "/debug/toolbar" });
+  var stale = transport.last();
+
+  element.load();
+
+  var fresh = transport.last();
+
+  fresh.respond(200, snapshot("fresh"));
+  stale.respond(200, snapshot("stale"));
+
+  assert.equal(element.currentTag, "fresh", "Newer tag must survive.");
+  assert.equal(
+    element.loader.lastTag,
+    "fresh",
+    "Rollback target must not move back.",
+  );
+
+  element.remove();
+});
+
+test("two toolbars settling out of order keep their own state", () => {
+  var first = connectToolbar({ "data-url": "/debug/toolbar?tag=one" });
+  var firstRequest = transport.last();
+  var second = connectToolbar({ "data-url": "/debug/toolbar?tag=two" });
+  var secondRequest = transport.last();
+  var announcements = [];
+
+  first.addEventListener("yii.debug.toolbar_attached", function () {
+    announcements.push("first");
+  });
+  second.addEventListener("yii.debug.toolbar_attached", function () {
+    announcements.push("second");
+  });
+
+  secondRequest.respond(200, snapshot("two"));
+  firstRequest.respond(200, snapshot("one"));
+
+  assert.equal(first.currentTag, "one", "First toolbar must keep its tag.");
+  assert.equal(second.currentTag, "two", "Second toolbar must keep its tag.");
+  assert.deepEqual(
+    announcements,
+    ["second", "first"],
+    "Each toolbar must announce only its own completion.",
+  );
+
+  first.remove();
+  second.remove();
 });

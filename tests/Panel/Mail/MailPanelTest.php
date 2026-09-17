@@ -28,14 +28,10 @@ final class MailPanelTest extends TestCase
      */
     private const int TIME = 1_757_700_000;
 
-    public function testEmptyCaptureDeactivatesThePanelAndExplainsTheMissingMessages(): void
+    public function testEmptyCaptureExplainsTheMissingMessages(): void
     {
         $view = self::present();
 
-        self::assertFalse(
-            $view->isActive(),
-            'An empty inbox must not activate navigation.',
-        );
         self::assertSame(
             [],
             $view->summaryMetrics(),
@@ -262,10 +258,6 @@ final class MailPanelTest extends TestCase
     {
         $view = self::present(self::message());
 
-        self::assertTrue(
-            $view->isActive(),
-            'A captured message must activate navigation.',
-        );
         self::assertSame(
             [' email'],
             self::metricLabels($view->summaryMetrics()),

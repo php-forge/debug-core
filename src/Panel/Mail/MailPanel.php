@@ -43,7 +43,7 @@ final class MailPanel extends Panel
 
         $count = count($messages);
 
-        $view = PanelView::create()->active($count > 0);
+        $view = PanelView::create();
 
         if ($count === 0) {
             return $view->emptyState(

@@ -97,12 +97,12 @@ test("a loaded snapshot is rendered and announced", () => {
 
   assert.equal(element.currentTag, "tag-1", "Snapshot tag must be recorded.");
   assert.equal(
-    element.lastLoadedTag,
+    element.loader.lastTag,
     "tag-1",
     "Last good tag must be recorded.",
   );
   assert.equal(
-    element.lastLoadedUrl,
+    element.loader.lastUrl,
     "/debug/toolbar",
     "Last good URL must be recorded.",
   );
@@ -121,7 +121,7 @@ test("a snapshot without a tag clears the tracked tag", () => {
   transport.last().respond(200, JSON.stringify({ items: [] }));
 
   assert.equal(element.currentTag, null, "Tag must be cleared.");
-  assert.equal(element.lastLoadedTag, null, "Last good tag must be cleared.");
+  assert.equal(element.loader.lastTag, null, "Last good tag must be cleared.");
 
   element.remove();
 });
@@ -157,6 +157,87 @@ test("an unparsable snapshot is reported", () => {
     errorMessage(element),
     "Invalid debug toolbar data response.",
     "A malformed body must be reported.",
+  );
+  assert.equal(element.data, null, "No payload may be kept.");
+
+  element.remove();
+});
+
+test("a body that is not a toolbar snapshot is reported", () => {
+  var element = mount({ "data-url": "/debug/toolbar" });
+
+  transport.last().respond(200, "null");
+
+  assert.equal(
+    errorMessage(element),
+    "Invalid debug toolbar data response.",
+    "An empty body must be reported.",
+  );
+
+  element.remove();
+
+  var shapeless = mount({ "data-url": "/debug/toolbar" });
+
+  transport.last().respond(200, JSON.stringify({ tag: "tag-1" }));
+
+  assert.equal(
+    errorMessage(shapeless),
+    "Invalid debug toolbar data response.",
+    "A body without an `items` list must be reported.",
+  );
+  assert.equal(shapeless.data, null, "No payload may be kept.");
+  assert.equal(shapeless.currentTag, null, "No tag may be tracked.");
+
+  shapeless.remove();
+});
+
+test("a transport failure is reported exactly once", () => {
+  var element = mount({ "data-url": "/debug/toolbar" });
+  var renderError = element.renderError;
+  var reports = [];
+
+  element.renderError = function (message) {
+    reports.push(message);
+    renderError.call(this, message);
+  };
+
+  /* A browser completes the request before it raises `error`. */
+  transport.last().fail();
+
+  assert.deepEqual(
+    reports,
+    ["Unable to load debug toolbar data."],
+    "The second transport event must not report the failure again.",
+  );
+
+  element.remove();
+});
+
+test("a request that runs out of time is reported", () => {
+  var element = mount({ "data-url": "/debug/toolbar" });
+
+  transport.last().timeout();
+
+  assert.equal(
+    errorMessage(element),
+    "Unable to load debug toolbar data.",
+    "A deadline has no response to report.",
+  );
+
+  element.remove();
+});
+
+test("an aborted request is not reported as a failure", () => {
+  var element = mount({ "data-url": "/debug/toolbar" });
+  var request = transport.last();
+
+  request.abort();
+
+  assert.equal(request.aborted, true, "Transport must record the abort.");
+  assert.equal(
+    element.shadowRoot.querySelector(".error-message"),
+    null,
+    "An abort must leave the bar untouched.",
   );
   assert.equal(element.data, null, "No payload may be kept.");
 
@@ -378,6 +459,27 @@ test("a rejected tag rolls back to the last good snapshot", () => {
     "/debug/toolbar?tag=tag-1",
     "Data URL must roll back.",
   );
+  assert.ok(
+    element.shadowRoot.querySelector('[title="Database"]'),
+    "Last good snapshot must stay on screen.",
+  );
+  assert.equal(
+    element.shadowRoot.querySelector(".error-message"),
+    null,
+    "A recoverable failure must not paint an error.",
+  );
+
+  element.remove();
+});
+
+test("a tag answered with an unusable body rolls back without an error", () => {
+  var element = mount({ "data-url": "/debug/toolbar?tag=tag-1" });
+
+  transport.last().respond(200, snapshot);
+  element.followTag("tag-2");
+  transport.last().respond(200, "<html>not json</html>");
+
+  assert.equal(element.currentTag, "tag-1", "Tracked tag must roll back.");
   assert.ok(
     element.shadowRoot.querySelector('[title="Database"]'),
     "Last good snapshot must stay on screen.",

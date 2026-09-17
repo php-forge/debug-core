@@ -67,7 +67,16 @@ The adapter-facing API is documented in the source PHPDoc under `src/`.
 
 ## Frontend development
 
-The frontend source lives in `resources/src` and Vite builds it into `resources/assets/dist`. Rebuild and verify with:
+The frontend source lives in `resources/src` and Vite builds it into `resources/assets/dist`. Two entries are built:
+
+- `resources/src/toolbar/index.js` — the `<yii-debug-toolbar>` custom element. `element.js` owns the view state, the
+  shadow skeleton, and the render cycle; it composes one controller per responsibility (`loader.js`,
+  `theme-controller.js`, `drawer.js`) and renders through the stateless builders in `render.js`.
+- `resources/src/core/debug.js` — the debugger page bootstrap. It resolves the theme, initializes the page
+  controllers (`theme.js`, `disclosure.js`, `live-filter.js`, `grid-navigation.js`, `tabs.js`, `deep-links.js`,
+  `clipboard.js`, `features.js`), and owns the keyboard precedence between the layers.
+
+Rebuild and verify with:
 
 ```bash
 npm install
@@ -76,6 +85,8 @@ npm run lint:js
 npm run lint:css
 npm run test:js
 npm run build
+npm run check:size
+npm run check:icons
 ```
 
 ## Package information

@@ -360,11 +360,6 @@ final class Css
     /**
      * Returns the class list of a status chip rendered in the requested tone.
      *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Theme\Css::badge(\PHPForge\Debug\Tone::SUCCESS);
-     * ```
-     *
      * @param Tone $tone Semantic tone of the chip.
      *
      * @return string Base and variant classes of the chip.
@@ -386,11 +381,6 @@ final class Css
      * Only the accent border varies by tone, so the muted variant deliberately carries no rule of its own and reads
      * as the neutral base.
      *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Theme\Css::callout(\PHPForge\Debug\Tone::DANGER);
-     * ```
-     *
      * @param Tone $tone Semantic tone of the callout.
      *
      * @return string Base and variant classes of the callout.
@@ -408,11 +398,6 @@ final class Css
 
     /**
      * Returns the class list of a file-kind pill rendered in the requested tone.
-     *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Theme\Css::fileType(\PHPForge\Debug\Tone::INFO);
-     * ```
      *
      * @param Tone $tone Semantic tone of the pill.
      *
@@ -432,11 +417,6 @@ final class Css
     /**
      * Returns the tinted row class for a status variant.
      *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Theme\Css::row('warning');
-     * ```
-     *
      * @param string $variant Row variant: `danger`, `info`, `success`, or `warning`.
      *
      * @return string Row class carrying the variant tint.
@@ -450,11 +430,6 @@ final class Css
      * Returns the class list of a stat tile rendered in the requested tone.
      *
      * Only the glyph takes the tone, so the muted variant keeps the panel accent and reads as the neutral base.
-     *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Theme\Css::stat(\PHPForge\Debug\Tone::WARNING);
-     * ```
      *
      * @param Tone $tone Semantic tone of the tile.
      *
@@ -474,11 +449,6 @@ final class Css
     /**
      * Returns the status-pill class for an HTTP status class.
      *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Theme\Css::status(\PHPForge\Debug\Helper\Vocabulary::statusClass(404));
-     * ```
-     *
      * @param string $variant Status class produced by {@see \PHPForge\Debug\Helper\Vocabulary::statusClass()}: `2xx`,
      * `3xx`, `4xx`, `5xx`, or `none`.
      *
@@ -492,11 +462,6 @@ final class Css
     /**
      * Returns the tinted class of a summary-strip statistic.
      *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Theme\Css::summaryStat('warn');
-     * ```
-     *
      * @param string $variant Statistic variant: an HTTP status class (`2xx` to `5xx`) or a severity (`danger`,
      * `info`, `trace`, `warn`).
      *
@@ -509,11 +474,6 @@ final class Css
 
     /**
      * Returns the method-chip class for an HTTP verb.
-     *
-     * Usage example:
-     * ```php
-     * $class = \PHPForge\Debug\Theme\Css::verb(\PHPForge\Debug\Helper\Vocabulary::verb('POST'));
-     * ```
      *
      * @param string $verb Verb suffix produced by {@see \PHPForge\Debug\Helper\Vocabulary::verb()}: `delete`, `get`,
      * `other`, `post`, or `put`.

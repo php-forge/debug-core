@@ -54,7 +54,20 @@ export default defineConfig({
 
           return "[ext]/[name].[ext]";
         },
-        manualChunks: undefined,
+        /**
+         * Rolldown groups every module reachable from both entries into a
+         * single shared chunk. `core/shared.js` is pulled out by name so the
+         * page and toolbar bundles keep loading it as its own cacheable file
+         * with its own size budget, instead of growing an unrelated chunk.
+         */
+        advancedChunks: {
+          groups: [
+            {
+              name: "shared",
+              test: /[\\/]resources[\\/]src[\\/]core[\\/]shared\.js$/,
+            },
+          ],
+        },
       },
     },
   },

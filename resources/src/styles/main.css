@@ -2518,14 +2518,12 @@
     }
   }
 
-  .yii-debug-table-vite-overview tbody th,
   .yii-debug-table-overview tbody th {
     width: 200px;
     min-width: 160px;
     max-width: 200px;
   }
 
-  .yii-debug-vite-component + .yii-debug-vite-component,
   .yii-debug-panel-group + .yii-debug-panel-group {
     margin-top: var(--yii-debug-space-6);
   }

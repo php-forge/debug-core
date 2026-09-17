@@ -69,14 +69,10 @@ final class AssetPanelTest extends TestCase
         );
     }
 
-    public function testEmptyCaptureDeactivatesThePanelAndExplainsTheMissingBundles(): void
+    public function testEmptyCaptureExplainsTheMissingBundles(): void
     {
         $view = self::present([]);
 
-        self::assertFalse(
-            $view->isActive(),
-            'An empty inventory must not activate navigation.',
-        );
         self::assertEquals(
             [
                 new StatEntry('asset', 'bundles', '0', Tone::MUTED),
@@ -202,10 +198,6 @@ final class AssetPanelTest extends TestCase
             ],
         );
 
-        self::assertTrue(
-            $view->isActive(),
-            'A captured bundle must activate navigation.',
-        );
         self::assertEquals(
             [
                 new StatEntry('asset', 'bundles', '3', Tone::MUTED),
@@ -408,11 +400,6 @@ final class AssetPanelTest extends TestCase
                     ],
                 ],
             ],
-        );
-
-        self::assertTrue(
-            $view->isActive(),
-            'A captured Vite bridge must activate navigation even without bundles.',
         );
 
         $viteHeading = self::heading(self::blockAt($view, 1));

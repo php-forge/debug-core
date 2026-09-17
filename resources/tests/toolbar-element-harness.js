@@ -85,6 +85,7 @@ export function installXmlHttpRequest() {
   var requests = [];
 
   function FakeXmlHttpRequest() {
+    this.aborted = false;
     this.headers = {};
     this.readyState = 0;
     this.responseText = "";
@@ -119,6 +120,35 @@ export function installXmlHttpRequest() {
   FakeXmlHttpRequest.prototype.progress = function (readyState) {
     this.readyState = readyState;
     this.onreadystatechange();
+  };
+
+  /** Aborts the request the way the browser does: no response, no body. */
+  FakeXmlHttpRequest.prototype.abort = function () {
+    this.aborted = true;
+    this.readyState = 4;
+    this.status = 0;
+
+    if (this.onabort) {
+      this.onabort();
+    }
+  };
+
+  /**
+   * Drives a transport failure. Browsers complete the request first and only
+   * then raise `error`, so the fake raises both in that order.
+   */
+  FakeXmlHttpRequest.prototype.fail = function () {
+    this.readyState = 4;
+    this.status = 0;
+    this.onreadystatechange();
+    this.onerror();
+  };
+
+  /** Drives the `timeout` event a host-configured deadline would raise. */
+  FakeXmlHttpRequest.prototype.timeout = function () {
+    this.readyState = 4;
+    this.status = 0;
+    this.ontimeout();
   };
 
   window.XMLHttpRequest = FakeXmlHttpRequest;
