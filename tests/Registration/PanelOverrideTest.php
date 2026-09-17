@@ -118,6 +118,16 @@ final class PanelOverrideTest extends TestCase
         PanelOverride::fromArray(['position' => '1']);
     }
 
+    public function testThrowInvalidArgumentExceptionForNonStringIcon(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            "Debug panel option 'icon' must be a string.",
+        );
+
+        PanelOverride::fromArray(['icon' => 5]);
+    }
+
     public function testThrowInvalidArgumentExceptionForNonStringTitle(): void
     {
         $this->expectException(InvalidArgumentException::class);
