@@ -29,7 +29,7 @@
         "ui-awesome/html-interop": "^0.4",
         "ui-awesome/html-mixin": "^0.8.2",
         "ui-awesome/html-svg": "^0.6",
-        "php-forge/debug": "^0.2"
+        "php-forge/debug": "^0.3"
     },
     "require-dev": {
         "infection/infection": "^0.35",
