@@ -209,6 +209,73 @@ test("a dropdown without a menu ignores arrow keys", async () => {
   assert.equal(isOpen(page, "filters"), false, "No menu, no navigation.");
 });
 
+/** Records every click the menu item receives, synthetic or native. */
+function recordClicks(item) {
+  var clicks = [];
+
+  item.addEventListener("click", function () {
+    clicks.push(item);
+  });
+
+  return clicks;
+}
+
+test("Enter activates a menu item the browser leaves inert", async () => {
+  const page = await bootDebugPage({
+    body: dropdown({
+      items: '<div role="menuitem" tabindex="0" id="reset">Reset</div>',
+      open: true,
+    }),
+  });
+  const item = page.document.getElementById("reset");
+  const clicks = recordClicks(item);
+  const event = press(item, "Enter");
+
+  assert.equal(clicks.length, 1, "Activation must reach the item.");
+  assert.equal(event.defaultPrevented, true, "The key must be consumed.");
+});
+
+test("Space activates a menu item the browser leaves inert", async () => {
+  const page = await bootDebugPage({
+    body: dropdown({
+      items: '<div role="menuitem" tabindex="0" id="reset">Reset</div>',
+      open: true,
+    }),
+  });
+  const item = page.document.getElementById("reset");
+  const clicks = recordClicks(item);
+  const event = press(item, " ");
+
+  assert.equal(clicks.length, 1, "Activation must reach the item.");
+  assert.equal(event.defaultPrevented, true, "The key must be consumed.");
+});
+
+test("Enter on a native menu item is left to the browser", async () => {
+  const page = await bootDebugPage({ body: dropdown({ open: true }) });
+  const item = page.document.querySelector(".yii-debug-dropdown-menu a");
+  const clicks = recordClicks(item);
+  const event = press(item, "Enter");
+
+  assert.equal(clicks.length, 0, "No click may be synthesized.");
+  assert.equal(
+    event.defaultPrevented,
+    false,
+    "Native activation must stay available.",
+  );
+});
+
+test("Enter on menu content that is no item activates nothing", async () => {
+  const page = await bootDebugPage({
+    body: dropdown({ items: '<span id="label">Filters</span>', open: true }),
+  });
+  const label = page.document.getElementById("label");
+  const clicks = recordClicks(label);
+  const event = press(label, "Enter");
+
+  assert.equal(clicks.length, 0, "Only menu items are activated.");
+  assert.equal(event.defaultPrevented, false, "The key must stay available.");
+});
+
 test("Escape closes the dropdown and returns focus to its trigger", async () => {
   const page = await bootDebugPage({
     body: dropdown({ open: true }),

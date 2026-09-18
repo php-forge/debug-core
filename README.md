@@ -89,6 +89,9 @@ npm run check:size
 npm run check:icons
 ```
 
+`check:icons` compares the toolbar's inline glyphs with `resources/assets/svg`; the toolbar-only chrome glyphs
+(`chevron-left`, `chevron-right`, `close`, `external-link`) have no panel file by design and never fail `--strict`.
+
 ## Package information
 
 [![PHP](https://img.shields.io/badge/%3E%3D8.3-777BB4.svg?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/releases/8.3/en.php)

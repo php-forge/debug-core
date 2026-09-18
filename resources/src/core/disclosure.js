@@ -21,6 +21,9 @@ import { dropdownNavigationIndex } from "./dropdown.js";
 /** Selector of the trigger opening a dropdown menu. */
 const DROPDOWN_TRIGGER = '[data-yii-debug-toggle="dropdown"]';
 
+/** Menu items the browser already activates from the keyboard. */
+const DROPDOWN_NATIVE_ITEMS = "a[href], button:not([disabled])";
+
 /** Keys the dropdown menu answers with a roving focus move. */
 const DROPDOWN_NAVIGATION_KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
 
@@ -31,7 +34,7 @@ function findToggle(node, kind) {
 function dropdownItems(menu) {
   return Array.from(
     menu.querySelectorAll(
-      'a[href], button:not([disabled]), [role="menuitem"][tabindex]',
+      DROPDOWN_NATIVE_ITEMS + ', [role="menuitem"][tabindex]',
     ),
   ).filter(function (item) {
     return !item.hidden && item.getAttribute("aria-hidden") !== "true";
@@ -85,7 +88,8 @@ function hideDropdowns(except) {
 }
 
 /**
- * Moves focus inside the dropdown the event started in.
+ * Moves focus inside the dropdown the event started in, and activates the item
+ * holding that focus when the menu item is not a native control.
  *
  * @returns {boolean} `true` when the key belonged to an open-able dropdown, so
  * the caller stops before the layers behind it answer the same key.
@@ -124,6 +128,23 @@ export function focusDropdownItem(event) {
     dropdownTrigger.setAttribute("aria-expanded", "true");
 
     items[nextItem].focus();
+
+    return true;
+  }
+
+  /**
+   * Host markup may expose menu items as `[role="menuitem"]` elements, which
+   * the browser never activates on its own; `a` and `button` items keep their
+   * native activation instead of receiving a synthesized click.
+   */
+  if (
+    dropdownMenu &&
+    (event.key === "Enter" || event.key === " ") &&
+    dropdownItems(dropdownMenu).indexOf(event.target) !== -1 &&
+    !event.target.matches(DROPDOWN_NATIVE_ITEMS)
+  ) {
+    event.preventDefault();
+    event.target.click();
 
     return true;
   }

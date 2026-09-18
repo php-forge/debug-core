@@ -258,6 +258,9 @@ final class PanelRegistryTest extends TestCase
     public function testThrowInvalidArgumentExceptionForEmptyId(): void
     {
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Debug panel ID must be a non-empty identifier without surrounding whitespace: "".',
+        );
 
         PanelRegistration::extension('', 'X', 'db');
     }
@@ -272,7 +275,9 @@ final class PanelRegistryTest extends TestCase
     public function testThrowInvalidArgumentExceptionForIdWithSurroundingWhitespace(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must not have surrounding whitespace');
+        $this->expectExceptionMessage(
+            'Debug panel ID must be a non-empty identifier without surrounding whitespace: " vite ".',
+        );
 
         PanelRegistration::extension(' vite ', 'X', 'db');
     }
@@ -307,7 +312,9 @@ final class PanelRegistryTest extends TestCase
     public function testThrowInvalidArgumentExceptionForWhitespaceOnlyId(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('must not be empty');
+        $this->expectExceptionMessage(
+            'Debug panel ID must be a non-empty identifier without surrounding whitespace: " ".',
+        );
 
         PanelRegistration::extension(' ', 'X', 'db');
     }

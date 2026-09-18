@@ -3,6 +3,8 @@ import { test } from "vitest";
 
 var failNextFetch = false;
 var fetchCalls = [];
+var finalizeNextOpen = false;
+var throwNextOpen = false;
 var toolbar = {
   getAttribute(name) {
     return name === "data-url" ? "/debug/default/toolbar?tag=page" : null;
@@ -41,13 +43,29 @@ globalThis.XMLHttpRequest = function XMLHttpRequest() {
   this.listeners = new Map();
   this.headers = {};
 };
+/**
+ * Mirrors the native `open()`: it terminates the request underneath an active
+ * instance and re-enters OPENED without ever reaching DONE, so the listeners of
+ * the terminated request never see a final `readystatechange`. `throwNextOpen`
+ * rejects the call as a browser does for an invalid state, and
+ * `finalizeNextOpen` stands in for a host whose `open()` drives the previous
+ * request to DONE itself.
+ */
 globalThis.XMLHttpRequest.prototype.open = function open() {
-  if (this.readyState > 1 && this.readyState < 4) {
+  if (throwNextOpen) {
+    throwNextOpen = false;
+
+    throw new Error("The object is in an invalid state.");
+  }
+
+  if (finalizeNextOpen) {
+    finalizeNextOpen = false;
     this.readyState = 4;
     this.dispatch("readystatechange");
   }
 
   this.readyState = 1;
+  this.dispatch("readystatechange");
 };
 globalThis.XMLHttpRequest.prototype.addEventListener =
   function addEventListener(type, listener) {
@@ -156,7 +174,7 @@ test("XHR tracking detaches completed listeners before instance reuse", () => {
   assert.equal(second.profilerUrl, "/debug/second");
 });
 
-test("XHR tracking detaches in-flight listeners before instance reuse", () => {
+test("XHR tracking finalizes an in-flight request before instance reuse", () => {
   var startIndex = requestStack.length;
   var xhr = new XMLHttpRequest();
 
@@ -167,7 +185,23 @@ test("XHR tracking detaches in-flight listeners before instance reuse", () => {
   xhr.readyState = 3;
   xhr.open("POST", "/api/replacement");
 
-  assert.equal(xhr.listeners.get("readystatechange").size, 1);
+  var first = requestStack[startIndex];
+  var replacement = requestStack[startIndex + 1];
+
+  assert.equal(
+    xhr.listeners.get("readystatechange").size,
+    1,
+    "Only the replacement may stay attached.",
+  );
+  assert.equal(first.loading, false, "The replaced entry must not stay open.");
+  assert.equal(first.error, true, "An aborted request is an error.");
+  assert.equal(first.statusCode, 0, "Transport failures report `0`.");
+  assert.equal(
+    replacement.url,
+    "/api/replacement",
+    "The reuse must be tracked.",
+  );
+  assert.equal(replacement.loading, true, "The replacement is still running.");
 
   xhr.readyState = 4;
   xhr.status = 202;
@@ -178,17 +212,101 @@ test("XHR tracking detaches in-flight listeners before instance reuse", () => {
   };
   xhr.dispatch("readystatechange");
 
-  var first = requestStack[startIndex];
-  var replacement = requestStack[startIndex + 1];
-
   assert.equal(xhr.listeners.get("readystatechange").size, 0);
-  assert.equal(first.statusCode, undefined);
+  assert.equal(first.statusCode, 0, "The replaced entry must stay final.");
   assert.equal(first.profile, undefined);
   assert.equal(first.profilerUrl, undefined);
   assert.equal(replacement.statusCode, 202);
   assert.equal(replacement.duration, "20");
   assert.equal(replacement.profile, "replacement-tag");
   assert.equal(replacement.profilerUrl, "/debug/replacement");
+});
+
+test("an XHR finalized during open() is not failed a second time", () => {
+  var startIndex = requestStack.length;
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/finalized-on-reuse");
+  xhr.readyState = 3;
+  xhr.status = 204;
+  xhr.headers = { "X-Debug-Tag": "closing-tag" };
+  finalizeNextOpen = true;
+  xhr.open("GET", "/api/after-finalize");
+
+  var first = requestStack[startIndex];
+
+  assert.equal(first.statusCode, 204, "The host response must be kept.");
+  assert.equal(first.error, false, "A completed request is no failure.");
+  assert.equal(first.profile, "closing-tag", "Its metadata must survive.");
+  assert.equal(
+    requestStack[startIndex + 1].url,
+    "/api/after-finalize",
+    "The reuse must be tracked.",
+  );
+});
+
+test("an open() that throws keeps the request it would have replaced", () => {
+  var startIndex = requestStack.length;
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/kept");
+  xhr.readyState = 3;
+  throwNextOpen = true;
+
+  assert.throws(
+    function () {
+      xhr.open("POST", "/api/rejected");
+    },
+    /invalid state/,
+    "The native failure must propagate.",
+  );
+
+  var kept = requestStack[startIndex];
+
+  assert.equal(
+    requestStack.length,
+    startIndex + 1,
+    "A rejected open starts nothing.",
+  );
+  assert.equal(kept.loading, true, "The live entry must stay open.");
+  assert.equal(
+    xhr.listeners.get("readystatechange").size,
+    1,
+    "Its listeners must stay attached.",
+  );
+
+  xhr.readyState = 4;
+  xhr.status = 200;
+  xhr.headers = {};
+  xhr.dispatch("readystatechange");
+
+  assert.equal(kept.loading, false, "The kept entry must still finalize.");
+  assert.equal(kept.statusCode, 200, "Its own response must be recorded.");
+});
+
+test("a single tracked XHR completes without the reuse guard", () => {
+  var startIndex = requestStack.length;
+  var xhr = new XMLHttpRequest();
+
+  xhr.open("GET", "/api/single");
+
+  assert.equal(requestStack.length, startIndex + 1, "One request, one entry.");
+  assert.equal(requestStack[startIndex].loading, true, "It starts open.");
+
+  xhr.readyState = 4;
+  xhr.status = 200;
+  xhr.headers = { "X-Debug-Tag": "single-tag" };
+  xhr.dispatch("readystatechange");
+
+  assert.equal(
+    requestStack.length,
+    startIndex + 1,
+    "No extra entry may appear.",
+  );
+  assert.equal(requestStack[startIndex].loading, false, "It must finalize.");
+  assert.equal(requestStack[startIndex].error, false, "`200` is no error.");
+  assert.equal(requestStack[startIndex].statusCode, 200);
+  assert.equal(requestStack[startIndex].profile, "single-tag");
 });
 
 test("AJAX tracking rejects unsafe debug profile response links", () => {

@@ -60,7 +60,7 @@ export default defineConfig({
          * page and toolbar bundles keep loading it as its own cacheable file
          * with its own size budget, instead of growing an unrelated chunk.
          */
-        advancedChunks: {
+        codeSplitting: {
           groups: [
             {
               name: "shared",

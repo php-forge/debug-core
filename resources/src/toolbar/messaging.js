@@ -33,12 +33,19 @@ var xhrTrackers = new WeakMap();
  */
 var xhrFailureEvents = ["abort", "error", "timeout"];
 
+/**
+ * Detaches the listeners an instance is tracked with and forgets its tracker.
+ *
+ * @returns {object|null} The detached tracker, or `null` when the instance
+ * carries none — which is how a caller learns the tracker it held has already
+ * finalized its entry.
+ */
 function detachXhrTracker(xhr) {
   var tracker = xhrTrackers.get(xhr);
   var i;
 
   if (!tracker) {
-    return;
+    return null;
   }
 
   xhr.removeEventListener("readystatechange", tracker.readyStateChange, false);
@@ -48,6 +55,8 @@ function detachXhrTracker(xhr) {
   }
 
   xhrTrackers.delete(xhr);
+
+  return tracker;
 }
 
 /**
@@ -162,9 +171,21 @@ function trackXhr() {
   XMLHttpRequest.prototype.open = function (method, url) {
     var xhr = this;
     var trackRequest = shouldTrackRequest(url);
+    var previousTracker = xhrTrackers.get(xhr);
 
-    detachXhrTracker(xhr);
+    /* The tracker survives the native call, which may throw and keep the request. */
     originalXhrOpen.apply(xhr, Array.prototype.slice.call(arguments));
+
+    /**
+     * Reopening an active instance aborts the request underneath it without a
+     * final `readystatechange`, so the entry it leaves behind is finalized
+     * here — unless its own listeners already did, which keeps an entry
+     * finalized exactly once.
+     */
+    if (previousTracker && detachXhrTracker(xhr) === previousTracker) {
+      failRequest(previousTracker.item, 0);
+      notifyAjaxChange();
+    }
 
     if (trackRequest) {
       var item = startRequest(url, method);
@@ -195,6 +216,7 @@ function trackXhr() {
 
       xhrTrackers.set(xhr, {
         failure: handleFailure,
+        item: item,
         readyStateChange: handleReadyStateChange,
       });
       notifyAjaxChange();

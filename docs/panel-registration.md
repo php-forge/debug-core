@@ -142,6 +142,8 @@ final readonly class PanelRegistry
 Validation performed by `PanelRegistry::resolve()`:
 
 - Duplicate default ID: `InvalidArgumentException` naming the ID.
+- Override keys are not validated: a key that matches no default and carries `enabled: false` is recorded in
+  `disabled()` exactly as written, because a disabled entry is opaque by design (its class is never loaded either).
 - Override for an ID with no default: accepted only when `enabled === false` (uninstalled optional package);
   otherwise `InvalidArgumentException` naming the ID, so a typo never disappears silently.
 - Effective title empty: rejected.
@@ -174,8 +176,8 @@ All of them pass since Phase 3. Characterization tests that passed from the star
 services; the packaged events configuration declares no provider listeners) are kept in the same files and marked as
 such in their docblocks.
 
-Open detail for Phase 2: an ID with surrounding whitespace is rejected, not trimmed. The fixtures pin the empty and
-whitespace-only cases; the padded case (`' vite '`) follows the same rule.
+Open detail for Phase 2: an ID with surrounding whitespace is rejected, not trimmed. The rule lives only in the
+`PanelRegistration` constructor and reports the empty, whitespace-only, and padded (`' vite '`) cases with one message.
 
 ## Follow-ups this contract leaves open
 

@@ -9,9 +9,11 @@
  * Markup is normalized before comparing — attribute order and insignificant
  * whitespace carry no meaning in SVG — but no artwork is ever rewritten.
  *
- * The two inventories are not aligned yet, so a difference is a warning and the
- * run stays green. Pass `--strict` to fail on one, which is what the repository
- * must switch to once the authoritative artwork has been picked.
+ * The two inventories are not aligned yet, so a difference — or an inline glyph
+ * with no file at all — is a warning and the run stays green. Pass `--strict` to
+ * fail on either, which is what the repository must switch to once the
+ * authoritative artwork has been picked. The toolbar chrome glyphs listed in
+ * `TOOLBAR_ONLY_KEYS` are exempt: they are reported, never failed on.
  */
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -25,6 +27,17 @@ const strict = process.argv.includes("--strict");
 
 /** Attributes that only size the rendered glyph, never its geometry. */
 const PRESENTATION_ATTRIBUTES = ["width", "height"];
+
+/**
+ * Glyphs the toolbar chrome draws inside its own shadow DOM. No panel renders
+ * them through `Helper\Icon`, so they intentionally have no file on disk.
+ */
+const TOOLBAR_ONLY_KEYS = [
+    "chevron-left",
+    "chevron-right",
+    "close",
+    "external-link",
+];
 
 /**
  * Rewrites one tag with its attributes sorted by name, dropping the ones named
@@ -84,13 +97,20 @@ function compare(inline, file) {
 const rows = [];
 const differing = [];
 const missing = [];
+const toolbarOnly = [];
 
 for (const key of Object.keys(builtinIcons).sort()) {
     const path = resolve(svgRoot, `${key}.svg`);
 
     if (!existsSync(path)) {
-        missing.push(key);
-        rows.push({ icon: key, result: "no file", difference: "" });
+        const exempt = TOOLBAR_ONLY_KEYS.includes(key);
+
+        (exempt ? toolbarOnly : missing).push(key);
+        rows.push({
+            icon: key,
+            result: exempt ? "toolbar-only" : "no file",
+            difference: "",
+        });
 
         continue;
     }
@@ -112,9 +132,16 @@ console.log(
 );
 console.table(rows);
 console.log(
-    `Identical: ${rows.length - differing.length - missing.length}, ` +
-        `differs: ${differing.length}, no file: ${missing.length}.`,
+    `Identical: ${rows.length - differing.length - missing.length - toolbarOnly.length}, ` +
+        `differs: ${differing.length}, no file: ${missing.length}, ` +
+        `toolbar-only: ${toolbarOnly.length}.`,
 );
+
+if (toolbarOnly.length > 0) {
+    console.log(
+        `\nToolbar-only chrome glyphs, no panel file expected: ${toolbarOnly.join(", ")}.`,
+    );
+}
 
 if (missing.length > 0) {
     console.log(
@@ -122,7 +149,7 @@ if (missing.length > 0) {
     );
 }
 
-if (differing.length === 0) {
+if (differing.length === 0 && missing.length === 0) {
     console.log(
         "\nEvery key backed by a file is identical: `npm run build:icons` can " +
             "regenerate icons.js from the files.",
@@ -133,18 +160,21 @@ if (differing.length === 0) {
 
 const report = differing
     .map(({ key, difference }) => `- ${key}: ${difference}`)
+    .concat(
+        missing.map((key) => `- ${key}: no file under resources/assets/svg`),
+    )
     .join("\n");
 
 if (strict) {
-    console.error(`\nInline glyphs differ from their file:\n${report}`);
+    console.error(`\nInline glyphs do not match their file:\n${report}`);
     process.exitCode = 1;
 
     process.exit();
 }
 
 console.warn(
-    `\nWarning: inline glyphs differ from their file:\n${report}\n` +
+    `\nWarning: inline glyphs do not match their file:\n${report}\n` +
         "The inline set stays authoritative until the artwork is picked, so " +
         "icons.js is NOT generated from the files. Run with `--strict` to fail " +
-        "on a difference.",
+        "on a difference or a missing file.",
 );

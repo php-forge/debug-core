@@ -161,18 +161,11 @@ enum Message: string
     case PANEL_ID_DUPLICATE = 'Duplicate debug panel ID: %s.';
 
     /**
-     * Indicates that a panel ID is empty.
+     * Indicates that a panel ID is empty or carries surrounding whitespace, which is rejected instead of trimmed.
      *
-     * Format: "Debug panel ID must not be empty."
+     * Format: "Debug panel ID must be a non-empty identifier without surrounding whitespace: "%s"."
      */
-    case PANEL_ID_EMPTY = 'Debug panel ID must not be empty.';
-
-    /**
-     * Indicates that a panel ID carries surrounding whitespace, which is rejected instead of trimmed.
-     *
-     * Format: "Debug panel ID must not have surrounding whitespace: "%s"."
-     */
-    case PANEL_ID_WHITESPACE = 'Debug panel ID must not have surrounding whitespace: "%s".';
+    case PANEL_ID_INVALID = 'Debug panel ID must be a non-empty identifier without surrounding whitespace: "%s".';
 
     /**
      * Indicates that a panel option value does not satisfy its expected type.

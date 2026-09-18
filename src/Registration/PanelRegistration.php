@@ -37,15 +37,9 @@ final readonly class PanelRegistration
         public bool $extension,
         public int|null $position = null,
     ) {
-        if (trim($id) === '') {
+        if ($id === '' || trim($id) !== $id) {
             throw new InvalidArgumentException(
-                Message::PANEL_ID_EMPTY->getMessage(),
-            );
-        }
-
-        if (trim($id) !== $id) {
-            throw new InvalidArgumentException(
-                Message::PANEL_ID_WHITESPACE->getMessage($id),
+                Message::PANEL_ID_INVALID->getMessage($id),
             );
         }
 

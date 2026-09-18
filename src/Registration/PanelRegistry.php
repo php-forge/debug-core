@@ -77,8 +77,8 @@ final readonly class PanelRegistry
      * @param iterable<PanelRegistration> $defaults Host built-ins first, then providers, with provider defaults.
      * @param iterable<string, PanelOverride> $overrides Application configuration indexed by panel ID.
      *
-     * @throws InvalidArgumentException When a default ID is registered twice, an override targets an unknown ID
-     * without disabling it, or an override sets a position on a built-in panel.
+     * @throws InvalidArgumentException When a default ID is registered twice, an
+     * override targets an unknown ID without disabling it, or an override sets a position on a built-in panel.
      *
      * @return self Resolved catalog.
      */
