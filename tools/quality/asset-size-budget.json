@@ -56,6 +56,10 @@
             "maxBytes": 6760,
             "maxGzipBytes": 2210
         },
+        "js/shared.min.js": {
+            "maxBytes": 785,
+            "maxGzipBytes": 435
+        },
         "js/toolbar.min.js": {
             "maxBytes": 58950,
             "maxGzipBytes": 15950

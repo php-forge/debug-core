@@ -55,7 +55,6 @@ final class UserPanel extends Panel
 
         if (is_array($identity) === false || $identity === []) {
             return PanelView::create()
-                ->active(false)
                 ->emptyState(
                     UserMessage::EMPTY_HEADLINE->value,
                     UserMessage::EMPTY_EXPLANATION->value,

@@ -58,14 +58,10 @@ final class QueuePanelTest extends TestCase
         );
     }
 
-    public function testEmptyCaptureDeactivatesThePanelAndExplainsTheMissingEvents(): void
+    public function testEmptyCaptureExplainsTheMissingEvents(): void
     {
         $view = self::present([]);
 
-        self::assertFalse(
-            $view->isActive(),
-            'An empty lifecycle log must not activate navigation.',
-        );
         self::assertSame(
             [' events', ' queued', ' done'],
             self::metricLabels($view->summaryMetrics()),
@@ -270,10 +266,6 @@ final class QueuePanelTest extends TestCase
             ],
         );
 
-        self::assertTrue(
-            $view->isActive(),
-            'A captured event must activate navigation.',
-        );
         self::assertEquals(
             [new ToolbarMetric('Jobs', '1')],
             $view->toolbarMetrics(),

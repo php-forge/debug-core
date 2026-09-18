@@ -2,10 +2,23 @@
  * Floating debug toolbar entry point. Wires the Web Component class and the
  * AJAX tracker together; the heavy logic lives in the sibling modules:
  *
- *   - state.js     module state, constants, and pure utility helpers.
- *   - theme.js     theme detection, normalization, and URL/cookie stamping.
- *   - messaging.js XMLHttpRequest / fetch interception that feeds the chips.
- *   - element.js   the YiiDebugToolbar HTMLElement (+ shadow DOM styles).
+ *   - element.js          the YiiDebugToolbar HTMLElement: view state, the
+ *                         shadow skeleton, the render cycle, and the lifecycle
+ *                         of the controllers below (+ shadow DOM styles).
+ *   - loader.js           one snapshot load lifecycle per connection.
+ *   - theme-controller.js theme resolution, the host signals that flip it, and
+ *                         the listeners disposal releases.
+ *   - drawer.js           the panel drawer, its resize affordances, and the
+ *                         Extensions menu.
+ *   - render.js           stateless HTML builders the render cycle composes.
+ *   - state.js            module state, constants, and pure utility helpers.
+ *   - theme.js            theme detection, normalization, and URL/cookie
+ *                         stamping.
+ *   - messaging.js        XMLHttpRequest / fetch interception that feeds the
+ *                         chips.
+ *
+ * The remaining modules (brand, extensions, focus, icons, loading, panel,
+ * position, url) hold the pure helpers those modules call.
  */
 
 import { YiiDebugToolbar } from "./element.js";

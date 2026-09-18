@@ -26,7 +26,7 @@ final class PhpHighlighterTest extends TestCase
         );
         self::assertSame(
             <<<HTML
-            <pre><code style="color: #000000"><span style="color: #DD0000">'\'quoted\' &lt;script&gt;alert(1)&lt;/script&gt;'</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #DD0000">'\'quoted\' &lt;script&gt;alert(1)&lt;/script&gt;'</span></code></pre>
             HTML,
             $html,
             'A string must render as the quoted expression that recreates it.',
@@ -37,7 +37,7 @@ final class PhpHighlighterTest extends TestCase
     {
         self::assertSame(
             <<<HTML
-            <pre><code style="color: #000000"><span style="color: #0000BB">1</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #0000BB">1</span></code></pre>
             HTML,
             PhpHighlighter::highlight(1),
             'A scalar sharing the opening tag color must survive its removal.',
@@ -53,7 +53,7 @@ final class PhpHighlighterTest extends TestCase
     {
         self::assertSame(
             <<<HTML
-            <pre><code style="color: #000000"><span style="color: #007700">[
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[
                 </span><span style="color: #DD0000">'id' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">7</span><span style="color: #007700">,
             ]</span></code></pre>
             HTML,

@@ -147,6 +147,62 @@ enum Message: string
     case N_PLUS_ONE_THRESHOLD_INVALID = 'The N+1 threshold must be at least two.';
 
     /**
+     * Indicates that a panel icon key does not match the accepted icon key shape.
+     *
+     * Format: "Debug panel icon key is invalid: "%s"."
+     */
+    case PANEL_ICON_INVALID = 'Debug panel icon key is invalid: "%s".';
+
+    /**
+     * Indicates that a panel ID is registered more than once.
+     *
+     * Format: "Duplicate debug panel ID: %s."
+     */
+    case PANEL_ID_DUPLICATE = 'Duplicate debug panel ID: %s.';
+
+    /**
+     * Indicates that a panel ID is empty or carries surrounding whitespace, which is rejected instead of trimmed.
+     *
+     * Format: "Debug panel ID must be a non-empty identifier without surrounding whitespace: "%s"."
+     */
+    case PANEL_ID_INVALID = 'Debug panel ID must be a non-empty identifier without surrounding whitespace: "%s".';
+
+    /**
+     * Indicates that a panel option value does not satisfy its expected type.
+     *
+     * Format: "Debug panel option '%s' must be %s."
+     */
+    case PANEL_OPTION_TYPE_INVALID = 'Debug panel option \'%s\' must be %s.';
+
+    /**
+     * Indicates that a panel entry carries a key outside the accepted options.
+     *
+     * Format: "Unknown debug panel option '%s'. Allowed options: %s."
+     */
+    case PANEL_OPTION_UNKNOWN = 'Unknown debug panel option \'%s\'. Allowed options: %s.';
+
+    /**
+     * Indicates that a panel override targets an ID no provider registered and does not disable it.
+     *
+     * Format: "Debug panel override targets an unregistered ID: %s."
+     */
+    case PANEL_OVERRIDE_UNREGISTERED = 'Debug panel override targets an unregistered ID: %s.';
+
+    /**
+     * Indicates that a panel override sets a position on a built-in panel, whose order is fixed.
+     *
+     * Format: "Debug panel position must not be set on the built-in panel: %s."
+     */
+    case PANEL_POSITION_BUILT_IN = 'Debug panel position must not be set on the built-in panel: %s.';
+
+    /**
+     * Indicates that a panel title is empty.
+     *
+     * Format: "Debug panel title must not be empty."
+     */
+    case PANEL_TITLE_EMPTY = 'Debug panel title must not be empty.';
+
+    /**
      * Indicates that a route definition field does not satisfy its expected shape.
      *
      * Format: "Route definition key '%s' must be %s."

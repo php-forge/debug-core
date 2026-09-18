@@ -24,13 +24,13 @@
     },
     "apps": [
         {
-            "name": "vue",
-            "path": "../../app-vue",
+            "name": "yii2",
+            "path": "../../yii2-extensions/app-inertia-vue",
             "baseURL": "http://localhost:8080"
         },
         {
-            "name": "react",
-            "path": "../../app-react",
+            "name": "yii3",
+            "path": "../../yii3/app-inertia-vue",
             "baseURL": "http://localhost:8081"
         }
     ]

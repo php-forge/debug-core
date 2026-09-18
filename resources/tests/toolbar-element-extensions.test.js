@@ -281,7 +281,7 @@ test("a pointer event without a composed path falls back to its target", () => {
   var root = element.shadowRoot;
 
   click(root.querySelector(".extensions-toggle"));
-  element.boundExtensionsPointerDown({
+  element.drawer.extensionsPointerDown({
     target: root.querySelector('.extensions-menu [title="Inertia"]'),
   });
 
@@ -291,7 +291,7 @@ test("a pointer event without a composed path falls back to its target", () => {
     "A target inside must keep the menu open.",
   );
 
-  element.boundExtensionsPointerDown({ target: root.querySelector(".bar") });
+  element.drawer.extensionsPointerDown({ target: root.querySelector(".bar") });
 
   assert.equal(
     element.extensionsOpen,
@@ -299,7 +299,7 @@ test("a pointer event without a composed path falls back to its target", () => {
     "A target outside must dismiss the menu.",
   );
 
-  element.boundExtensionsPointerDown({ target: root.querySelector(".bar") });
+  element.drawer.extensionsPointerDown({ target: root.querySelector(".bar") });
 
   assert.equal(
     element.extensionsOpen,
@@ -340,7 +340,7 @@ test("an unrendered menu still tracks its open state", () => {
     }),
   );
 
-  element.toggleExtensions();
+  element.drawer.toggleExtensions();
 
   assert.equal(
     element.extensionsOpen,
@@ -348,7 +348,7 @@ test("an unrendered menu still tracks its open state", () => {
     "State must flip without a menu to sync.",
   );
 
-  element.closeExtensions(false);
+  element.drawer.closeExtensions(false);
 
   assert.equal(element.extensionsOpen, false, "State must flip back.");
   assert.equal(
@@ -366,7 +366,7 @@ test("an empty menu leaves focus where it is", () => {
 
   root.querySelector(".extensions-menu").innerHTML = "";
   root.querySelector(".extensions-toggle").focus();
-  element.toggleExtensions();
+  element.drawer.toggleExtensions();
 
   assert.equal(
     root.activeElement,
@@ -382,7 +382,7 @@ test("a wrapper without its chip still records the open state", () => {
   var root = element.shadowRoot;
 
   root.querySelector(".extensions-toggle").remove();
-  element.toggleExtensions();
+  element.drawer.toggleExtensions();
 
   assert.ok(
     root.querySelector(".extensions").classList.contains("is-open"),

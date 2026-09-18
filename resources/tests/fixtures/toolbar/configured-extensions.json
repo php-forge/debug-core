@@ -1,0 +1,107 @@
+{
+    "configUrl": "/debug/view?tag=tag-fixture&panel=config",
+    "defaultHeight": 50,
+    "iconBaseUrl": "/debug/assets/svg/",
+    "indexUrl": "/debug/index",
+    "items": [
+        {
+            "id": "request",
+            "title": "Request",
+            "url": "/debug/view?tag=tag-fixture&panel=request",
+            "icon": "request",
+            "items": [
+                {
+                    "value": "GET /",
+                    "status": "default"
+                }
+            ]
+        },
+        {
+            "id": "log",
+            "title": "Logs",
+            "url": "/debug/view?tag=tag-fixture&panel=log",
+            "icon": "logs",
+            "items": [
+                {
+                    "label": "messages",
+                    "value": "12",
+                    "status": "default"
+                }
+            ]
+        },
+        {
+            "id": "event",
+            "title": "Events",
+            "url": "/debug/view?tag=tag-fixture&panel=event",
+            "icon": "events",
+            "items": [
+                {
+                    "value": "3",
+                    "status": "default"
+                }
+            ]
+        },
+        {
+            "id": "profiling",
+            "title": "",
+            "url": "/debug/view?tag=tag-fixture&panel=profiling",
+            "icon": "profiling",
+            "items": [
+                {
+                    "value": "42 ms",
+                    "status": "default"
+                }
+            ]
+        },
+        {
+            "id": "inertia",
+            "title": "Inertia visits",
+            "url": "/debug/view?tag=tag-fixture&panel=inertia",
+            "icon": "inertia",
+            "extension": true,
+            "items": [
+                {
+                    "label": "visits",
+                    "value": "2",
+                    "status": "default"
+                }
+            ]
+        },
+        {
+            "id": "cache",
+            "title": "Cache operations",
+            "url": "/debug/view?tag=tag-fixture&panel=cache",
+            "icon": "db",
+            "extension": true,
+            "items": [
+                {
+                    "label": "hits",
+                    "value": "7",
+                    "status": "default"
+                }
+            ]
+        },
+        {
+            "id": "vite",
+            "title": "Vite assets",
+            "url": "/debug/view?tag=tag-fixture&panel=vite",
+            "icon": "asset",
+            "extension": true,
+            "items": [
+                {
+                    "label": "assets",
+                    "value": "3",
+                    "status": "default"
+                }
+            ]
+        }
+    ],
+    "logo": null,
+    "logoFallback": null,
+    "phpInfoUrl": "/debug/phpinfo",
+    "phpVersion": null,
+    "position": "bottom",
+    "tag": "tag-fixture",
+    "title": "Debugger",
+    "yiiVersion": null
+}

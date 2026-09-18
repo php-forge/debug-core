@@ -22,17 +22,95 @@ import { normalizeToolbarUrl } from "./url.js";
  * `-Link`) so the toolbar chips can follow the most recent profiled request.
  */
 
-var xhrReadyStateListeners = new WeakMap();
+var xhrTrackers = new WeakMap();
 
-function detachXhrReadyStateListener(xhr) {
-  var listener = xhrReadyStateListeners.get(xhr);
+/**
+ * Events a request that never produced a response finalizes on.
+ *
+ * `readystatechange` already reaches DONE for most transport failures, so the
+ * listeners are a safety net rather than the primary path — whichever fires
+ * first detaches the others, which is what makes an entry finalize once.
+ */
+var xhrFailureEvents = ["abort", "error", "timeout"];
 
-  if (!listener) {
-    return;
+/**
+ * Detaches the listeners an instance is tracked with and forgets its tracker.
+ *
+ * @returns {object|null} The detached tracker, or `null` when the instance
+ * carries none — which is how a caller learns the tracker it held has already
+ * finalized its entry.
+ */
+function detachXhrTracker(xhr) {
+  var tracker = xhrTrackers.get(xhr);
+  var i;
+
+  if (!tracker) {
+    return null;
   }
 
-  xhr.removeEventListener("readystatechange", listener, false);
-  xhrReadyStateListeners.delete(xhr);
+  xhr.removeEventListener("readystatechange", tracker.readyStateChange, false);
+
+  for (i = 0; i < xhrFailureEvents.length; i++) {
+    xhr.removeEventListener(xhrFailureEvents[i], tracker.failure, false);
+  }
+
+  xhrTrackers.delete(xhr);
+
+  return tracker;
+}
+
+/**
+ * Records a request the toolbar tracks and keeps the stack bounded.
+ *
+ * Trimming from the front keeps the most recent `requestStackLimit` entries
+ * while the array binding itself stays shared with every other module.
+ */
+function startRequest(url, method) {
+  var item = {
+    loading: true,
+    error: false,
+    url: url,
+    method: method,
+    start: new Date(),
+  };
+
+  requestStack.push(item);
+
+  if (requestStack.length > requestStackLimit) {
+    requestStack.splice(0, requestStack.length - requestStackLimit);
+  }
+
+  return item;
+}
+
+/**
+ * Stamps an entry with the metadata Yii's debug middleware returns.
+ *
+ * `readHeader` abstracts the adapter difference between `getResponseHeader()`
+ * and `Headers.get()`; nothing here reads a response body.
+ */
+function completeRequest(item, readHeader, statusCode) {
+  item.duration = readHeader("X-Debug-Duration") || new Date() - item.start;
+  item.loading = false;
+  item.statusCode = statusCode;
+  item.error = statusCode < 200 || statusCode >= 400;
+  item.profile = readHeader("X-Debug-Tag");
+  item.profilerUrl = normalizeToolbarUrl(readHeader("X-Debug-Link"));
+}
+
+/**
+ * Finalizes an entry whose request never produced a response.
+ *
+ * `statusCode` is omitted for `fetch`, which exposes no transport status on a
+ * rejected promise; `XMLHttpRequest` reports `0` and that value is recorded.
+ */
+function failRequest(item, statusCode) {
+  item.loading = false;
+  item.error = true;
+
+  if (typeof statusCode === "number") {
+    item.statusCode = statusCode;
+  }
 }
 
 function shouldTrackRequest(requestUrl) {
@@ -93,42 +171,54 @@ function trackXhr() {
   XMLHttpRequest.prototype.open = function (method, url) {
     var xhr = this;
     var trackRequest = shouldTrackRequest(url);
+    var previousTracker = xhrTrackers.get(xhr);
 
-    detachXhrReadyStateListener(xhr);
+    /* The tracker survives the native call, which may throw and keep the request. */
     originalXhrOpen.apply(xhr, Array.prototype.slice.call(arguments));
 
+    /**
+     * Reopening an active instance aborts the request underneath it without a
+     * final `readystatechange`, so the entry it leaves behind is finalized
+     * here — unless its own listeners already did, which keeps an entry
+     * finalized exactly once.
+     */
+    if (previousTracker && detachXhrTracker(xhr) === previousTracker) {
+      failRequest(previousTracker.item, 0);
+      notifyAjaxChange();
+    }
+
     if (trackRequest) {
-      var item = {
-        loading: true,
-        error: false,
-        url: url,
-        method: method,
-        start: new Date(),
+      var item = startRequest(url, method);
+      var readHeader = function (name) {
+        return xhr.getResponseHeader(name);
       };
-      requestStack.push(item);
-      if (requestStack.length > requestStackLimit) {
-        requestStack.splice(0, requestStack.length - requestStackLimit);
-      }
       var handleReadyStateChange = function () {
         if (xhr.readyState !== 4) {
           return;
         }
 
-        detachXhrReadyStateListener(xhr);
-        item.duration =
-          xhr.getResponseHeader("X-Debug-Duration") || new Date() - item.start;
-        item.loading = false;
-        item.statusCode = xhr.status;
-        item.error = xhr.status < 200 || xhr.status >= 400;
-        item.profile = xhr.getResponseHeader("X-Debug-Tag");
-        item.profilerUrl = normalizeToolbarUrl(
-          xhr.getResponseHeader("X-Debug-Link"),
-        );
+        detachXhrTracker(xhr);
+        completeRequest(item, readHeader, xhr.status);
         notifyAjaxChange();
       };
+      var handleFailure = function () {
+        detachXhrTracker(xhr);
+        failRequest(item, xhr.status);
+        notifyAjaxChange();
+      };
+      var i;
 
       xhr.addEventListener("readystatechange", handleReadyStateChange, false);
-      xhrReadyStateListeners.set(xhr, handleReadyStateChange);
+
+      for (i = 0; i < xhrFailureEvents.length; i++) {
+        xhr.addEventListener(xhrFailureEvents[i], handleFailure, false);
+      }
+
+      xhrTrackers.set(xhr, {
+        failure: handleFailure,
+        item: item,
+        readyStateChange: handleReadyStateChange,
+      });
       notifyAjaxChange();
     }
   };
@@ -160,35 +250,23 @@ function trackFetch() {
     var promise = originalFetch(input, init);
 
     if (shouldTrackRequest(url)) {
-      var item = {
-        loading: true,
-        error: false,
-        url: url,
-        method: method,
-        start: new Date(),
-      };
-      requestStack.push(item);
-      if (requestStack.length > requestStackLimit) {
-        requestStack.splice(0, requestStack.length - requestStackLimit);
-      }
+      var item = startRequest(url, method);
+
       promise
         .then(function (response) {
-          item.duration =
-            response.headers.get("X-Debug-Duration") || new Date() - item.start;
-          item.loading = false;
-          item.statusCode = response.status;
-          item.error = response.status < 200 || response.status >= 400;
-          item.profile = response.headers.get("X-Debug-Tag");
-          item.profilerUrl = normalizeToolbarUrl(
-            response.headers.get("X-Debug-Link"),
+          completeRequest(
+            item,
+            function (name) {
+              return response.headers.get(name);
+            },
+            response.status,
           );
           notifyAjaxChange();
 
           return response;
         })
         .catch(function () {
-          item.loading = false;
-          item.error = true;
+          failRequest(item);
           notifyAjaxChange();
         });
       notifyAjaxChange();

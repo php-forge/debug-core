@@ -1,25 +1,12 @@
+import {
+  normalizeThemeToken as normalizeTheme,
+  THEME_STORAGE_KEY,
+  themeCookie,
+} from "./shared.js";
+
 export const THEME_PARAM = "yii_debug_theme";
-export const THEME_STORAGE_KEY = "yii-debug-toolbar-theme";
 
-export function normalizeTheme(value) {
-  if (!value) {
-    return null;
-  }
-
-  const aliases = String(value).toLowerCase().trim().split(/\s+/);
-  const hasDark = aliases.some((alias) =>
-    ["dark", "night", "black"].includes(alias),
-  );
-  const hasLight = aliases.some((alias) =>
-    ["light", "day", "white"].includes(alias),
-  );
-
-  if (hasDark === hasLight) {
-    return null;
-  }
-
-  return hasDark ? "dark" : "light";
-}
+export { normalizeTheme, THEME_STORAGE_KEY };
 
 export function themeToggleLabel(theme) {
   return normalizeTheme(theme) === "dark"
@@ -117,7 +104,7 @@ export function writeTheme(theme) {
   }
 
   try {
-    document.cookie = `${THEME_STORAGE_KEY}=${encodeURIComponent(normalized)};path=/;max-age=31536000;SameSite=Lax`;
+    document.cookie = themeCookie(normalized);
   } catch {
     // Cookie writes can be blocked by the browser or iframe sandbox.
   }
@@ -205,4 +192,96 @@ export function preserveThemeInLinks(theme) {
 
     input.value = theme;
   }
+}
+
+/**
+ * Reads the theme of the toolbar hosting this page in its drawer iframe.
+ *
+ * The frame lives inside the toolbar's shadow root, so the host element of that
+ * root carries the live authority for the page rendered inside it.
+ */
+function getParentToolbarTheme() {
+  let root;
+  let host;
+
+  try {
+    if (!window.frameElement) {
+      return null;
+    }
+
+    root = window.frameElement.getRootNode
+      ? window.frameElement.getRootNode()
+      : null;
+    host = root && root.host ? root.host : null;
+
+    return host ? normalizeTheme(host.getAttribute("data-theme")) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Reads the theme a deep link froze into the address bar. */
+function getUrlTheme() {
+  try {
+    return normalizeTheme(
+      new URL(window.location.href).searchParams.get(THEME_PARAM),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolves the theme the debugger page must render, marks the document with it
+ * and mirrors the choice to the client memory the next page reads.
+ *
+ * @returns {string} The applied theme.
+ */
+export function applyTheme() {
+  // Priority is "what the client most recently chose, regardless of stack":
+  //   1. Parent toolbar theme (drawer iframe) — the live authority NOW.
+  //   2. Cookie (last client write — survives reloads + backend staleness).
+  //   3. localStorage fallback (cookie may be blocked in some sandboxes).
+  //   4. Explicit `?yii_debug_theme=` query — deep links with no client
+  //      state yet. The query is a snapshot frozen at link-render time,
+  //      so it must NEVER outrank a later client choice: that is exactly
+  //      how a stale `dark` link used to revert a fresh `light` pick.
+  //   5. Server-rendered `data-yii-debug-theme` attribute.
+  //   6. `prefers-color-scheme` media query as the very last resort.
+  const theme =
+    getParentToolbarTheme() ||
+    readThemeCookie() ||
+    readStoredTheme() ||
+    getUrlTheme() ||
+    normalizeTheme(
+      document.documentElement.getAttribute("data-yii-debug-theme"),
+    ) ||
+    (window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light");
+
+  document.documentElement.setAttribute("data-yii-debug-theme", theme);
+
+  writeTheme(theme);
+
+  return theme;
+}
+
+/**
+ * Binds the page's theme switcher and reports every flip to the toolbar hosting
+ * the page, so the drawer and its host stay on the same theme.
+ */
+export function bindThemeToggleButton() {
+  bindThemeToggle(
+    document.querySelector("[data-yii-debug-theme-toggle]"),
+    function (next) {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          { source: "yii-debug-toolbar", type: "theme", theme: next },
+          window.location.origin,
+        );
+      }
+    },
+  );
 }

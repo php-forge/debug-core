@@ -3,6 +3,13 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "vitest";
 
 import {
+  createToolbarView,
+  iconHtml,
+  isPanelActive,
+  renderControls,
+  renderPanel,
+} from "../src/toolbar/render.js";
+import {
   createToolbar,
   installLocalStorage,
   installMatchMedia,
@@ -418,27 +425,29 @@ test("panel titles fall back to the identifier and then to a generic label", () 
   var element = renderToolbar(fullPayload());
 
   assert.match(
-    element.renderPanel({ id: "queue" }),
+    renderPanel(createToolbarView(element), { id: "queue" }),
     /class="panel" title="queue"/,
     "A non-string title must fall back to the identifier.",
   );
   assert.match(
-    element.renderPanel({}),
+    renderPanel(createToolbarView(element), {}),
     /class="panel" title="Panel"/,
     "Without title and identifier a generic label must be used.",
   );
   assert.match(
-    element.renderPanel({ id: "queue", title: "" }),
+    renderPanel(createToolbarView(element), { id: "queue", title: "" }),
     /aria-label="queue"/,
     "An empty title must still label the group with the identifier.",
   );
   assert.match(
-    element.renderPanel({ title: "" }),
+    renderPanel(createToolbarView(element), { title: "" }),
     /aria-label="Panel"/,
     "An empty title without identifier must use the generic label.",
   );
   assert.equal(
-    element.renderPanel({ title: "" }).indexOf("panel-title"),
+    renderPanel(createToolbarView(element), { title: "" }).indexOf(
+      "panel-title",
+    ),
     -1,
     "An empty title must not render a caption.",
   );
@@ -467,7 +476,10 @@ test("metrics render an icon, a label, or neither", () => {
     "A metric without status must fall back to the default badge.",
   );
   assert.match(
-    element.renderPanel({ id: "queue", items: [{ value: "0" }] }),
+    renderPanel(createToolbarView(element), {
+      id: "queue",
+      items: [{ value: "0" }],
+    }),
     /<span class="metric"><span class="metric-value badge-default">0<\/span><\/span>/,
     "A metric with neither icon nor label must render only its value.",
   );
@@ -519,7 +531,7 @@ test("a panel whose own URL is open is marked active", () => {
     "Panel URL must be compared against the open URL.",
   );
   assert.equal(
-    element.isPanelActive({ id: "db", url: "/debug/db" }),
+    isPanelActive(createToolbarView(element), { id: "db", url: "/debug/db" }),
     true,
     "A panel without metrics must still match on its own URL.",
   );
@@ -533,17 +545,17 @@ test("icons resolve from the built-in set, then the payload base URL, then nothi
   var element = renderToolbar(fullPayload());
 
   assert.match(
-    element.iconHtml("db", "panel-icon"),
+    iconHtml(createToolbarView(element), "db", "panel-icon"),
     /mask-image:url\(data:image\/svg\+xml/,
     "Built-in glyphs must be inlined.",
   );
   assert.match(
-    element.iconHtml("inertia-custom", "panel-icon"),
+    iconHtml(createToolbarView(element), "inertia-custom", "panel-icon"),
     /mask-image:url\(\/assets\/icons\/inertia-custom\.svg\)/,
     "Unknown glyphs must resolve against the payload base URL.",
   );
   assert.equal(
-    element.iconHtml("", "panel-icon"),
+    iconHtml(createToolbarView(element), "", "panel-icon"),
     "",
     "No name means no glyph.",
   );
@@ -551,7 +563,7 @@ test("icons resolve from the built-in set, then the payload base URL, then nothi
   element.data.iconBaseUrl = undefined;
 
   assert.equal(
-    element.iconHtml("inertia-custom", "panel-icon"),
+    iconHtml(createToolbarView(element), "inertia-custom", "panel-icon"),
     "",
     "Without a base URL an unknown glyph must be dropped.",
   );
@@ -559,7 +571,7 @@ test("icons resolve from the built-in set, then the payload base URL, then nothi
   element.data = null;
 
   assert.equal(
-    element.iconHtml("db", "panel-icon"),
+    iconHtml(createToolbarView(element), "db", "panel-icon"),
     "",
     "Without a payload no glyph may be drawn.",
   );
@@ -608,7 +620,7 @@ test("controls expose the theme toggle, the external link and the collapse butto
   element.expanded = false;
 
   assert.match(
-    element.renderControls(),
+    renderControls(createToolbarView(element)),
     /title="Expand toolbar"/,
     "A collapsed state must offer to expand.",
   );

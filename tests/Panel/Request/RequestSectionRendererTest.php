@@ -44,7 +44,7 @@ final class RequestSectionRendererTest extends TestCase
             HTTP_HOST
             </th><td>
             <div class="yii-debug-php-dump">
-            <pre><code style="color: #000000"><span style="color: #DD0000">'localhost'</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #DD0000">'localhost'</span></code></pre>
             </div>
             </td>
             </tr>
@@ -185,7 +185,7 @@ final class RequestSectionRendererTest extends TestCase
             HTTP_HOST
             </th><td>
             <div class="yii-debug-php-dump">
-            <pre><code style="color: #000000"><span style="color: #DD0000">'localhost'</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #DD0000">'localhost'</span></code></pre>
             </div>
             </td>
             </tr>
@@ -195,6 +195,22 @@ final class RequestSectionRendererTest extends TestCase
             HTML,
             RequestSectionRenderer::renderSection($section),
             'Filterable section must expose a search input.',
+        );
+    }
+
+    public function testRenderSectionMarksScrollablePhpDumpAsKeyboardFocusable(): void
+    {
+        $html = RequestSectionRenderer::renderSection(
+            new RequestSection(caption: 'Server', entries: ['HTTP_HOST' => 'localhost']),
+        );
+
+        self::assertStringContainsString(
+            <<<HTML
+            <div class="yii-debug-php-dump">
+            <pre tabindex="0">
+            HTML,
+            $html,
+            'Scroll container must expose `tabindex="0"`.',
         );
     }
 
@@ -224,7 +240,7 @@ final class RequestSectionRendererTest extends TestCase
             X-Custom
             </th><td>
             <div class="yii-debug-php-dump">
-            <pre><code style="color: #000000"><span style="color: #DD0000">'\'quoted\' &lt;script&gt;alert(1)&lt;/script&gt;'</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #DD0000">'\'quoted\' &lt;script&gt;alert(1)&lt;/script&gt;'</span></code></pre>
             </div>
             </td>
             </tr>
@@ -349,7 +365,7 @@ final class RequestSectionRendererTest extends TestCase
             page
             </th><td>
             <div class="yii-debug-php-dump">
-            <pre><code style="color: #000000"><span style="color: #0000BB">1</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #0000BB">1</span></code></pre>
             </div>
             </td>
             </tr>
@@ -375,7 +391,7 @@ final class RequestSectionRendererTest extends TestCase
             name
             </th><td>
             <div class="yii-debug-php-dump">
-            <pre><code style="color: #000000"><span style="color: #DD0000">'Ada'</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #DD0000">'Ada'</span></code></pre>
             </div>
             </td>
             </tr>

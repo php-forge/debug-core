@@ -189,6 +189,8 @@ final class DumpCardRenderer
      * Snapshot files and adapter callbacks are untrusted inputs at this rendering boundary. Encoding first and only
      * reconstructing the exact `pre`, `code`, and `span` forms used by `highlight_string()` prevents persisted or
      * callback-provided markup from becoming executable HTML.
+     *
+     * The rebuilt `<pre>` scrolls horizontally, so it carries `tabindex="0"` to stay reachable by keyboard.
      */
     private static function sanitizeMessage(string $message): string
     {
@@ -208,7 +210,7 @@ final class DumpCardRenderer
 
         foreach ($parts as $index => $part) {
             $opening = match (true) {
-                $part === '&lt;pre&gt;' => ['tag' => 'pre', 'html' => '<pre>'],
+                $part === '&lt;pre&gt;' => ['tag' => 'pre', 'html' => '<pre tabindex="0">'],
                 preg_match('/^&lt;(code|span) style="color: (#[0-9A-Fa-f]{6})"&gt;/', $part, $match) === 1 => [
                     'tag' => $match[1],
                     'html' => "<{$match[1]} style=\"color: {$match[2]}\">",

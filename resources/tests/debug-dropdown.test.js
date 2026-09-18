@@ -171,7 +171,7 @@ test("hidden menu items are skipped by keyboard navigation", async () => {
         '<a href="/debug/log" hidden>Log</a>' +
         '<a href="/debug/mail" aria-hidden="true">Mail</a>' +
         '<button type="button" disabled>Clear</button>' +
-        '<span role="menuitem" tabindex="-1">Reset</span>',
+        '<button type="button">Reset</button>',
     }),
   });
 

@@ -12,8 +12,6 @@ import {
   shouldCloseToolbarDrawer,
 } from "../src/toolbar/focus.js";
 import {
-  isToolbarLoadCurrent,
-  resolveToolbarLoadGeneration,
   resolveToolbarLoadRollback,
   toolbarDataUrlForTag,
   toolbarRetryDelay,
@@ -95,23 +93,6 @@ test("toolbarRetryDelay retries missing snapshots with bounded backoff", () => {
   assert.equal(toolbarRetryDelay(404, Number.NaN), null);
   assert.equal(toolbarRetryDelay(404, 0.5), null);
   assert.equal(toolbarRetryDelay(500, 0), null);
-});
-
-test("toolbar load generations reject stale responses and retries", () => {
-  var activeGeneration = resolveToolbarLoadGeneration(0);
-  var staleGeneration = activeGeneration;
-
-  assert.equal(activeGeneration, 1);
-
-  activeGeneration = resolveToolbarLoadGeneration(activeGeneration);
-
-  assert.equal(activeGeneration, 2);
-  assert.equal(isToolbarLoadCurrent(activeGeneration, staleGeneration), false);
-  assert.equal(isToolbarLoadCurrent(activeGeneration, activeGeneration), true);
-  assert.equal(
-    resolveToolbarLoadGeneration(activeGeneration, staleGeneration),
-    staleGeneration,
-  );
 });
 
 test("toolbar load rollback prefers the last successful snapshot", () => {
