@@ -14,6 +14,8 @@ final readonly class UserSnapshot implements PanelSnapshot
     use ArrayPayloadSnapshot;
 
     /**
+     * Returns the captured identity and RBAC payload.
+     *
      * @return array<array-key, mixed> Captured identity attributes, roles, and permissions.
      */
     public function data(): array
@@ -21,6 +23,11 @@ final readonly class UserSnapshot implements PanelSnapshot
         return $this->values();
     }
 
+    /**
+     * Returns the key under which the user payload is stored.
+     *
+     * @return string Payload key.
+     */
     protected static function payloadKey(): string
     {
         return 'data';

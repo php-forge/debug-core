@@ -34,6 +34,14 @@ final readonly class ViteChunk implements PanelRow
         public bool $isEntry,
     ) {}
 
+    /**
+     * Narrows one persisted manifest entry into a typed chunk.
+     *
+     * @param mixed $data Persisted manifest entry, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the entry, used to report a malformed payload.
+     *
+     * @return self Chunk carrying every persisted manifest field.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -57,6 +65,8 @@ final readonly class ViteChunk implements PanelRow
     }
 
     /**
+     * Returns the typed row for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

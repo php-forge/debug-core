@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Panel\Db;
 
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
-use PHPUnit\Framework\Attributes\Group;
+use PHPForge\Debug\Tests\Provider\SqlHighlighterProvider;
+use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see SqlHighlighter} covering token classification, escaping, and pass-through behavior.
+ * Unit tests for {@see SqlHighlighter} covering statement detection, token classification, escaping, and
+ * pass-through behavior.
+ *
+ * {@see SqlHighlighterProvider} for statement detection cases.
  */
 #[Group('panel')]
 #[Group('db')]
@@ -158,5 +162,17 @@ final class SqlHighlighterTest extends TestCase
             SqlHighlighter::highlight("/* multi\nline */ 1 -- tail note"),
             'Both comment forms must be wrapped.',
         );
+    }
+
+    #[DataProviderExternal(SqlHighlighterProvider::class, 'statements')]
+    public function testIsStatementAcceptsRawSql(string $value): void
+    {
+        self::assertTrue(SqlHighlighter::isStatement($value), 'Statement must be detected.');
+    }
+
+    #[DataProviderExternal(SqlHighlighterProvider::class, 'nonStatements')]
+    public function testIsStatementRejectsProseBorrowingSqlVerbs(string $value): void
+    {
+        self::assertFalse(SqlHighlighter::isStatement($value), 'Prose must stay plain text.');
     }
 }

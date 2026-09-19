@@ -16,9 +16,17 @@ final readonly class AssetSnapshot implements PanelSnapshot
     /**
      * @param list<AssetBundleRow> $bundles
      */
-    public function __construct(private array $bundles, private ViteManifest|null $vite) {}
+    public function __construct(
+        private array $bundles,
+        /**
+         * Captured Vite bridge snapshot, or `null` when no Vite bridge is registered.
+         */
+        private ViteManifest|null $vite,
+    ) {}
 
     /**
+     * Returns the asset bundles registered during the request.
+     *
      * @return list<AssetBundleRow> Registered bundles in registration order.
      */
     public function bundles(): array
@@ -26,6 +34,14 @@ final readonly class AssetSnapshot implements PanelSnapshot
         return $this->bundles;
     }
 
+    /**
+     * Narrows the persisted asset payload into a typed snapshot.
+     *
+     * @param mixed $data Persisted payload, expected to be an object carrying a `bundles` list and a `vite` entry.
+     * @param string $path JSON path of the payload, used to report a malformed capture.
+     *
+     * @return self Snapshot carrying the registered bundles and the Vite manifest.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -48,6 +64,8 @@ final readonly class AssetSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the panel snapshot for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

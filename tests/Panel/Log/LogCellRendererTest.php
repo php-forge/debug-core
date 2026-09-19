@@ -216,6 +216,24 @@ final class LogCellRendererTest extends TestCase
 
     }
 
+    public function testRenderMessageCellHighlightsSqlWhenTheMessageIsAStatement(): void
+    {
+        $html = LogCellRenderer::renderMessageCell(
+            self::makeRow(message: 'SELECT * FROM "post"', category: 'application'),
+            self::traceLine(),
+        );
+
+        self::assertSame(
+            <<<'HTML'
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> * <span class="yii-debug-sql-kw">FROM</span> "post"
+            </div>
+            HTML,
+            $html,
+            'Statements logged outside the DB category must wear the mono wrapper.',
+        );
+    }
+
     public function testRenderMessageCellKeepsPlainEscapingForNonDbCategory(): void
     {
         $html = LogCellRenderer::renderMessageCell(

@@ -26,6 +26,10 @@ final class RequestDiagnosticValueRenderer
 {
     /**
      * Escapes a diagnostic label while substituting malformed UTF-8 bytes.
+     *
+     * @param string $value Diagnostic label to escape.
+     *
+     * @return string Escaped label with malformed bytes substituted.
      */
     public static function escape(string $value): string
     {
@@ -34,6 +38,10 @@ final class RequestDiagnosticValueRenderer
 
     /**
      * Renders a header value, preserving repeated header lines as distinct ordered values.
+     *
+     * @param mixed $value Captured header value.
+     *
+     * @return string Clamped list markup for repeated lines, or the single rendered value.
      */
     public static function header(mixed $value): string
     {
@@ -67,6 +75,10 @@ final class RequestDiagnosticValueRenderer
 
     /**
      * Renders a captured scalar as readable text and falls back to the diagnostic dumper for structured values.
+     *
+     * @param mixed $value Captured diagnostic value.
+     *
+     * @return string Clamped markup carrying the rendered value.
      */
     public static function value(mixed $value): string
     {
@@ -77,6 +89,12 @@ final class RequestDiagnosticValueRenderer
     }
 
     /**
+     * Determines whether the value is a non-empty list of strings.
+     *
+     * @param mixed $value Captured diagnostic value.
+     *
+     * @return bool `true` when every entry is a `string`, `false` otherwise.
+     *
      * @phpstan-assert-if-true list<string> $value
      */
     private static function isStringList(mixed $value): bool
@@ -94,6 +112,13 @@ final class RequestDiagnosticValueRenderer
         return true;
     }
 
+    /**
+     * Renders a captured string, marking an empty one with a readable placeholder.
+     *
+     * @param string $value Captured string value.
+     *
+     * @return string Escaped text, or the empty-value placeholder markup.
+     */
     private static function string(string $value): string
     {
         if ($value === '') {

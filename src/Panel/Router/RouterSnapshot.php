@@ -19,8 +19,17 @@ final readonly class RouterSnapshot implements PanelSnapshot
      * @param list<CurrentRouteLogRow> $entries
      */
     public function __construct(
+        /**
+         * Dispatched action descriptor, or `null` when routing resolved none.
+         */
         public string|null $action,
+        /**
+         * Route the request resolved to.
+         */
         public string $route,
+        /**
+         * Routing trace message emitted by the URL manager, or `null` when it emitted none.
+         */
         public string|null $message,
         private array $entries,
     ) {}
@@ -66,6 +75,8 @@ final readonly class RouterSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the URL rules inspected while resolving the route.
+     *
      * @return list<CurrentRouteLogRow> Rules inspected during routing, in inspection order.
      */
     public function entries(): array
@@ -73,6 +84,14 @@ final readonly class RouterSnapshot implements PanelSnapshot
         return $this->entries;
     }
 
+    /**
+     * Narrows the persisted routing payload into a typed snapshot.
+     *
+     * @param mixed $data Persisted payload, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the payload, used to report a malformed capture.
+     *
+     * @return self Snapshot carrying the resolved route and the inspected rules.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -114,6 +133,8 @@ final readonly class RouterSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the panel snapshot for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

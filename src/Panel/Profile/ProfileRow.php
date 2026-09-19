@@ -54,6 +54,14 @@ final readonly class ProfileRow implements PanelRow
         public array $trace,
     ) {}
 
+    /**
+     * Narrows one persisted block of the profiling payload into a typed row.
+     *
+     * @param mixed $data Persisted block, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the block, used to report a malformed payload.
+     *
+     * @return self Row carrying every persisted block field.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -106,6 +114,8 @@ final readonly class ProfileRow implements PanelRow
     }
 
     /**
+     * Returns the typed row for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

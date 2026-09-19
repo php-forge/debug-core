@@ -32,6 +32,13 @@ final class TimelineMemoryRenderer
      * Renders an SVG memory graph, or `''` when its geometry cannot be resolved.
      *
      * @param list<MemorySample> $samples Memory samples in any order.
+     * @param float $start Request start time the horizontal axis is offset from.
+     * @param float $duration Request duration the horizontal axis spans, in seconds.
+     * @param int $memory Peak memory the vertical axis scales to, in bytes.
+     * @param int $width Viewport width, in user units.
+     * @param int $height Viewport height, in user units.
+     *
+     * @return string Inline SVG markup, or an empty string when the geometry cannot be resolved.
      */
     public static function render(
         array $samples,
@@ -81,6 +88,11 @@ final class TimelineMemoryRenderer
             ->render();
     }
 
+    /**
+     * Builds the vertical fill gradient from the configured opacity stops.
+     *
+     * @return LinearGradient Gradient the filled area references.
+     */
     private static function gradient(): LinearGradient
     {
         $stops = [];
@@ -101,6 +113,13 @@ final class TimelineMemoryRenderer
             ->html(...$stops);
     }
 
+    /**
+     * Formats a coordinate as a compact decimal without trailing zeros.
+     *
+     * @param float|int $value Coordinate to format.
+     *
+     * @return string Formatted coordinate.
+     */
     private static function number(float|int $value): string
     {
         $rendered = rtrim(sprintf('%.6F', $value), '0');
@@ -109,7 +128,13 @@ final class TimelineMemoryRenderer
     }
 
     /**
-     * @param list<array{0: float, 1: float}> $points
+     * Builds the filled area point list, closing the shape along the baseline.
+     *
+     * @param list<array{0: float, 1: float}> $points Plotted coordinates in ascending `x` order.
+     * @param int $width Viewport width, in user units.
+     * @param int $height Viewport height, in user units.
+     *
+     * @return string Point list for the area polygon.
      */
     private static function polygonPoints(array $points, int $width, int $height): string
     {
@@ -121,7 +146,13 @@ final class TimelineMemoryRenderer
     }
 
     /**
-     * @param list<array{0: float, 1: float}> $points
+     * Builds the stroked line point list, extending the last sample to the right edge.
+     *
+     * @param list<array{0: float, 1: float}> $points Plotted coordinates in ascending `x` order.
+     * @param int $width Viewport width, in user units.
+     * @param int $height Viewport height, in user units.
+     *
+     * @return string Point list for the trend polyline.
      */
     private static function polylinePoints(array $points, int $width, int $height): string
     {
@@ -134,7 +165,8 @@ final class TimelineMemoryRenderer
      * Traces the sampled points from the baseline, returning the point list and the last plotted `y` coordinate the
      * polygon and polyline closers extend from.
      *
-     * @param list<array{0: float, 1: float}> $points
+     * @param list<array{0: float, 1: float}> $points Plotted coordinates in ascending `x` order.
+     * @param int $height Viewport height, in user units.
      *
      * @return array{0: string, 1: float|int} Rendered point list and the last plotted `y` coordinate.
      */

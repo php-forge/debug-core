@@ -48,6 +48,8 @@ final class EventRow implements PanelRow
      * Returns how many distinct event classes the given rows cover.
      *
      * @param list<self> $rows Captured event rows.
+     *
+     * @return int Number of distinct event classes across the given rows.
      */
     public static function distinctClassCount(array $rows): int
     {
@@ -62,6 +64,14 @@ final class EventRow implements PanelRow
         return count($classes);
     }
 
+    /**
+     * Hydrates an event row from decoded JSON data.
+     *
+     * @param mixed $data Decoded event row payload.
+     * @param string $path Payload path used in hydration errors.
+     *
+     * @return self Hydrated row, enriched with diagnostics when the payload carried them.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -89,13 +99,20 @@ final class EventRow implements PanelRow
             : $row;
     }
 
+    /**
+     * Returns the optional diagnostics attached to the row.
+     *
+     * @return EventInspection|null Attached diagnostics, or `null` when the row was captured without them.
+     */
     public function inspection(): EventInspection|null
     {
         return $this->inspection;
     }
 
     /**
-     * @return array<string, mixed>
+     * Returns the row for JSON serialization.
+     *
+     * @return array<string, mixed> Serialized row fields, including the diagnostics when the row carries them.
      */
     public function jsonSerialize(): array
     {
@@ -113,6 +130,8 @@ final class EventRow implements PanelRow
      * Returns how many of the given rows were triggered statically.
      *
      * @param list<self> $rows Captured event rows.
+     *
+     * @return int Number of statically triggered rows.
      */
     public static function staticCount(array $rows): int
     {
@@ -129,6 +148,10 @@ final class EventRow implements PanelRow
 
     /**
      * Returns an enriched copy without changing the constructor or the original captured row.
+     *
+     * @param EventInspection $inspection Optional diagnostics to attach.
+     *
+     * @return self Row carrying the diagnostics.
      */
     public function withInspection(EventInspection $inspection): self
     {

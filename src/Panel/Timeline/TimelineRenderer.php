@@ -29,6 +29,11 @@ final class TimelineRenderer
      *
      * @param list<TimelineSpanRow> $rows Positioned timeline spans.
      * @param array<int, float> $rulers Ruler offsets keyed by milliseconds.
+     * @param string $memorySvg Inline memory graph markup, or an empty string to omit the footer.
+     * @param int $memory Peak memory reported in the footer, in bytes.
+     * @param int $memoryHeight Memory graph track height, in pixels.
+     *
+     * @return string Chart markup, or an empty string when no span survived filtering.
      */
     public static function renderChart(
         array $rows,
@@ -58,6 +63,11 @@ final class TimelineRenderer
 
     /**
      * Renders the empty-state hint linking to the sortable Profiling panel.
+     *
+     * @param bool $hasRows Whether any span survived filtering.
+     * @param string $profilingUrl URL of the Profiling panel for the same request.
+     *
+     * @return string Hint markup, or an empty string when spans are present.
      */
     public static function renderEmptyHint(bool $hasRows, string $profilingUrl): string
     {
@@ -89,7 +99,12 @@ final class TimelineRenderer
     /**
      * Renders the filter form while preserving adapter-owned route parameters.
      *
+     * @param string $action Form action URL owned by the adapter.
      * @param array<string, string> $hiddenParams Hidden route and theme parameters.
+     * @param string $duration Minimum duration filter, in milliseconds.
+     * @param string $category Category filter matched against span names.
+     *
+     * @return string Filter form markup.
      */
     public static function renderFilterForm(
         string $action,
@@ -144,6 +159,12 @@ final class TimelineRenderer
 
     /**
      * Renders total duration, peak memory, and visible span count.
+     *
+     * @param float $duration Total request duration, in milliseconds.
+     * @param int $memory Peak memory, in bytes.
+     * @param int $spanCount Number of spans left after filtering.
+     *
+     * @return string Summary header markup.
      */
     public static function renderSummary(float $duration, int $memory, int $spanCount): string
     {
@@ -175,6 +196,13 @@ final class TimelineRenderer
             ->render();
     }
 
+    /**
+     * Builds the accessible row label, prefixing the category only when the tooltip omits it.
+     *
+     * @param TimelineSpanRow $row Span to label.
+     *
+     * @return string Accessible label for the span row.
+     */
     private static function accessibleRowLabel(TimelineSpanRow $row): string
     {
         if ($row->category === '' || str_starts_with($row->tooltip, $row->category . "\n")) {
@@ -184,6 +212,13 @@ final class TimelineRenderer
         return "{$row->category}\n{$row->tooltip}";
     }
 
+    /**
+     * Formats an axis tick in milliseconds below one second and in seconds above it.
+     *
+     * @param int $milliseconds Tick offset, in milliseconds.
+     *
+     * @return string Tick label carrying its unit.
+     */
     private static function formatTickLabel(int $milliseconds): string
     {
         if ($milliseconds < 1000) {
@@ -196,7 +231,11 @@ final class TimelineRenderer
     }
 
     /**
+     * Renders the ruler axis, positioning each tick at its offset.
+     *
      * @param array<int, float> $rulers Ruler offsets keyed by milliseconds.
+     *
+     * @return Header Axis header holding the positioned ticks.
      */
     private static function renderAxis(array $rulers): Header
     {
@@ -212,6 +251,15 @@ final class TimelineRenderer
         return Header::tag()->class('yii-debug-tl-axis')->html(...$ticks);
     }
 
+    /**
+     * Renders the memory footer holding the graph and the peak-memory readout.
+     *
+     * @param string $svg Inline memory graph markup.
+     * @param int $memory Peak memory, in bytes.
+     * @param int $height Graph track height, in pixels.
+     *
+     * @return Footer Memory footer element.
+     */
     private static function renderMemoryFooter(string $svg, int $memory, int $height): Footer
     {
         return Footer::tag()
@@ -232,6 +280,13 @@ final class TimelineRenderer
             );
     }
 
+    /**
+     * Renders one span as a labelled row carrying its positioned bar.
+     *
+     * @param TimelineSpanRow $row Positioned timeline span.
+     *
+     * @return Div Span row element.
+     */
     private static function renderRow(TimelineSpanRow $row): Div
     {
         return Div::tag()
@@ -272,7 +327,11 @@ final class TimelineRenderer
     }
 
     /**
+     * Renders the span rows as an accessible list.
+     *
      * @param list<TimelineSpanRow> $rows Positioned timeline spans.
+     *
+     * @return Div List element holding the span rows.
      */
     private static function renderRows(array $rows): Div
     {
@@ -288,6 +347,13 @@ final class TimelineRenderer
             ->html(...$rendered);
     }
 
+    /**
+     * Shortens a category to its class short name, falling back to the full category.
+     *
+     * @param string $category Span category.
+     *
+     * @return string Short category name, or the placeholder glyph when the category is empty.
+     */
     private static function shortCategoryName(string $category): string
     {
         if ($category === '') {

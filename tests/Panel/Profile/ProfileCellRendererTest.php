@@ -178,6 +178,24 @@ final class ProfileCellRendererTest extends TestCase
         );
     }
 
+    public function testRenderInfoCellHighlightsSqlWhenTheInfoIsAStatement(): void
+    {
+        self::assertSame(
+            <<<'HTML'
+            <div class="yii-debug-db-sql">
+            <span class="yii-debug-sql-kw">SELECT</span> * <span class="yii-debug-sql-kw">FROM</span> "post"
+            </div>
+            HTML,
+            ProfileCellRenderer::renderInfoCell(
+                self::makeRow(
+                    category: 'Yiisoft\\Db\\Driver\\Pdo\\AbstractPdoCommand::queryInternal',
+                    info: 'SELECT * FROM "post"',
+                ),
+            ),
+            'Statements profiled outside the known categories must wear the mono wrapper.',
+        );
+    }
+
     public function testRenderInfoCellKeepsPlainInfoUnhighlighted(): void
     {
         $html = ProfileCellRenderer::renderInfoCell(self::makeRow(category: 'application', info: 'SELECT me'));

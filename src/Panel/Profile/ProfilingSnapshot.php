@@ -27,7 +27,13 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
      * @param list<MemorySample> $samples
      */
     public function __construct(
+        /**
+         * Peak memory in bytes recorded for the request.
+         */
         public int $memory,
+        /**
+         * Request processing duration in seconds.
+         */
         public float $time,
         private array $entries,
         private array $samples,
@@ -123,6 +129,8 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the resolved profile blocks.
+     *
      * @return list<ProfileRow> Resolved profile blocks in capture order.
      */
     public function entries(): array
@@ -130,6 +138,14 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
         return $this->entries;
     }
 
+    /**
+     * Narrows the persisted profiling payload into a typed snapshot.
+     *
+     * @param mixed $data Persisted payload, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the payload, used to report a malformed capture.
+     *
+     * @return self Snapshot carrying the request metrics, the profile blocks, and the memory samples.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -165,6 +181,8 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the panel snapshot for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array
@@ -181,6 +199,8 @@ final readonly class ProfilingSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the memory samples that feed the timeline chart.
+     *
      * @return list<MemorySample> Memory readings recorded alongside each captured profile message.
      */
     public function samples(): array

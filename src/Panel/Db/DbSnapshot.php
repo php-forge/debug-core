@@ -39,6 +39,8 @@ final readonly class DbSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the captured query rows.
+     *
      * @return list<QueryRow> Executed statements in capture order.
      */
     public function entries(): array
@@ -46,6 +48,14 @@ final readonly class DbSnapshot implements PanelSnapshot
         return $this->entries;
     }
 
+    /**
+     * Narrows the persisted database payload into a typed snapshot.
+     *
+     * @param mixed $data Persisted payload, expected to be an object carrying an `entries` list.
+     * @param string $path JSON path of the payload, used to report a malformed capture.
+     *
+     * @return self Snapshot carrying the persisted query rows.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         return new self(
@@ -56,6 +66,8 @@ final readonly class DbSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the panel snapshot for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

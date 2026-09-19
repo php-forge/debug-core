@@ -7,12 +7,13 @@ namespace PHPForge\Debug\Panel\Db;
 use UIAwesome\Html\Helper\Encode;
 
 use function array_reverse;
+use function preg_match;
 use function preg_match_all;
 use function strlen;
 use function substr;
 
 /**
- * Highlights SQL statements as escape-safe HTML for the DB panel and the EXPLAIN view.
+ * Recognizes SQL statements and highlights them as escape-safe HTML for the DB, Log, and Profiling panels.
  */
 final class SqlHighlighter
 {
@@ -29,6 +30,22 @@ final class SqlHighlighter
         . '|ORDER|HAVING|LIMIT|OFFSET|UNION|ALL|DISTINCT|INTO|VALUES|SET|CREATE|ALTER|DROP|TABLE|INDEX|VIEW|TRIGGER'
         . '|SEQUENCE|PRIMARY|FOREIGN|KEY|REFERENCES|CONSTRAINT|DEFAULT|CHECK|UNIQUE|ASC|DESC|WITH|RECURSIVE'
         . '|RETURNING|CAST|COALESCE|NULLIF|BEGIN|COMMIT|ROLLBACK|TRANSACTION|EXPLAIN|ANALYZE|SHOW|DESCRIBE)\b)~is';
+    /**
+     * Statement shapes that identify raw SQL: an opening verb followed by the clause that verb requires, so prose
+     * opening with the same word ("Select me", "Update available") stays plain text.
+     */
+    private const string STATEMENT_PATTERN = '~^\s*(?:'
+        . 'SELECT\b.{0,4096}?\bFROM\b'
+        . '|INSERT\s+INTO\b'
+        . '|UPDATE\b.{0,4096}?\bSET\b'
+        . '|DELETE\s+FROM\b'
+        . '|REPLACE\s+INTO\b'
+        . '|WITH\b.{0,4096}?\bSELECT\b'
+        . '|(?:CREATE|ALTER|DROP|TRUNCATE)\s+(?:TEMPORARY\s+|UNIQUE\s+)?'
+        . '(?:TABLE|INDEX|VIEW|SCHEMA|DATABASE|SEQUENCE|TRIGGER)\b'
+        . '|(?:PRAGMA|EXPLAIN|VACUUM|ANALYZE|SHOW)\s+\S'
+        . '|(?:BEGIN|COMMIT|ROLLBACK)(?:\s+TRANSACTION)?\s*;?\s*$'
+        . ')~is';
     /**
      * Maps a matched named group to its `<span>` class; an empty class emits the escaped token unwrapped.
      */
@@ -80,5 +97,20 @@ final class SqlHighlighter
         }
 
         return $html . Encode::content(substr($sql, $offset));
+    }
+
+    /**
+     * Returns whether the value reads as a raw SQL statement rather than as a log or profiling sentence.
+     *
+     * Panels whose rows mix both call this to decide when {@see highlight()} applies, so statements logged under a
+     * category the panel does not know still render with the token spans of the queries grid.
+     *
+     * @param string $value Message or block description to inspect.
+     *
+     * @return bool `true` when the value opens a SQL statement; `false` otherwise.
+     */
+    public static function isStatement(string $value): bool
+    {
+        return preg_match(self::STATEMENT_PATTERN, $value) === 1;
     }
 }
