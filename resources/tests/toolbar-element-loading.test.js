@@ -95,17 +95,7 @@ test("a loaded snapshot is rendered and announced", () => {
 
   request.respond(200, snapshot);
 
-  assert.equal(element.currentTag, "tag-1", "Snapshot tag must be recorded.");
-  assert.equal(
-    element.loader.lastTag,
-    "tag-1",
-    "Last good tag must be recorded.",
-  );
-  assert.equal(
-    element.loader.lastUrl,
-    "/debug/toolbar",
-    "Last good URL must be recorded.",
-  );
+  assert.equal(element.data.tag, "tag-1", "Snapshot tag must be recorded.");
   assert.equal(attached, 1, "Attachment must be announced exactly once.");
   assert.ok(
     element.shadowRoot.querySelector('[title="Database"]'),
@@ -115,13 +105,16 @@ test("a loaded snapshot is rendered and announced", () => {
   element.remove();
 });
 
-test("a snapshot without a tag clears the tracked tag", () => {
+test("a snapshot without a tag renders like any other", () => {
   var element = mount({ "data-url": "/debug/toolbar" });
 
   transport.last().respond(200, JSON.stringify({ items: [] }));
 
-  assert.equal(element.currentTag, null, "Tag must be cleared.");
-  assert.equal(element.loader.lastTag, null, "Last good tag must be cleared.");
+  assert.equal(element.data.tag, undefined, "No tag may be invented.");
+  assert.ok(
+    element.shadowRoot.querySelector(".bar .brand"),
+    "Snapshot must be rendered.",
+  );
 
   element.remove();
 });
@@ -186,7 +179,6 @@ test("a body that is not a toolbar snapshot is reported", () => {
     "A body without an `items` list must be reported.",
   );
   assert.equal(shapeless.data, null, "No payload may be kept.");
-  assert.equal(shapeless.currentTag, null, "No tag may be tracked.");
 
   shapeless.remove();
 });
@@ -361,7 +353,7 @@ test("a retry belonging to a superseded load is dropped", () => {
     transport.last().respond(200, snapshot);
 
     assert.equal(
-      element.currentTag,
+      element.data.tag,
       "tag-1",
       "The current load must still apply.",
     );
@@ -383,138 +375,10 @@ test("a response belonging to a superseded load is dropped", () => {
   transport.last().respond(200, snapshot);
 
   assert.equal(
-    element.currentTag,
+    element.data.tag,
     "tag-1",
     "The current response must be applied.",
   );
 
   element.remove();
-});
-
-test("following a new tag reloads the toolbar for that request", () => {
-  var element = mount({ "data-url": "/debug/toolbar?tag=tag-1" });
-
-  transport.last().respond(200, snapshot);
-  element.followTag("tag-2");
-
-  assert.equal(
-    transport.last().url,
-    "http://localhost:3000/debug/toolbar?tag=tag-2",
-    "Follow-up request must carry the new tag.",
-  );
-
-  transport.last().respond(200, JSON.stringify({ items: [], tag: "tag-2" }));
-
-  assert.equal(element.currentTag, "tag-2", "Tracked tag must move on.");
-
-  element.remove();
-});
-
-test("following the tag already on screen is a no-op", () => {
-  var element = mount({ "data-url": "/debug/toolbar?tag=tag-1" });
-
-  transport.last().respond(200, snapshot);
-
-  var issued = transport.requests.length;
-
-  element.followTag("tag-1");
-  element.followTag(null);
-
-  assert.equal(transport.requests.length, issued, "No request may be issued.");
-
-  element.currentTag = null;
-  element.followTag("tag-1");
-
-  assert.equal(
-    transport.requests.length,
-    issued,
-    "A tag that resolves to the same URL must be skipped.",
-  );
-
-  element.remove();
-});
-
-test("following a tag without a data URL is a no-op", () => {
-  var element = mount();
-  var issued = transport.requests.length;
-
-  element.followTag("tag-2");
-
-  assert.equal(transport.requests.length, issued, "No request may be issued.");
-  assert.equal(element.currentTag, null, "No tag may be tracked.");
-
-  element.remove();
-});
-
-test("a rejected tag rolls back to the last good snapshot", () => {
-  var element = mount({ "data-url": "/debug/toolbar?tag=tag-1" });
-
-  transport.last().respond(200, snapshot);
-  element.followTag("tag-2");
-  transport.last().respond(500, "");
-
-  assert.equal(element.currentTag, "tag-1", "Tracked tag must roll back.");
-  assert.equal(
-    element.getAttribute("data-url"),
-    "/debug/toolbar?tag=tag-1",
-    "Data URL must roll back.",
-  );
-  assert.ok(
-    element.shadowRoot.querySelector('[title="Database"]'),
-    "Last good snapshot must stay on screen.",
-  );
-  assert.equal(
-    element.shadowRoot.querySelector(".error-message"),
-    null,
-    "A recoverable failure must not paint an error.",
-  );
-
-  element.remove();
-});
-
-test("a tag answered with an unusable body rolls back without an error", () => {
-  var element = mount({ "data-url": "/debug/toolbar?tag=tag-1" });
-
-  transport.last().respond(200, snapshot);
-  element.followTag("tag-2");
-  transport.last().respond(200, "<html>not json</html>");
-
-  assert.equal(element.currentTag, "tag-1", "Tracked tag must roll back.");
-  assert.ok(
-    element.shadowRoot.querySelector('[title="Database"]'),
-    "Last good snapshot must stay on screen.",
-  );
-  assert.equal(
-    element.shadowRoot.querySelector(".error-message"),
-    null,
-    "A recoverable failure must not paint an error.",
-  );
-
-  element.remove();
-});
-
-test("a rejected tag without a snapshot reloads the previous data URL", () => {
-  var element = createToolbar({ "data-url": "/debug/toolbar?tag=tag-1" });
-
-  element.followTag("tag-2");
-
-  assert.equal(
-    transport.last().url,
-    "http://localhost:3000/debug/toolbar?tag=tag-2",
-    "Follow-up request must carry the new tag.",
-  );
-
-  transport.last().respond(500, "");
-
-  assert.equal(element.currentTag, null, "Tracked tag must be forgotten.");
-  assert.equal(
-    element.getAttribute("data-url"),
-    "/debug/toolbar?tag=tag-1",
-    "Data URL must roll back.",
-  );
-  assert.equal(
-    transport.last().url,
-    "/debug/toolbar?tag=tag-1",
-    "Rollback must refetch the previous snapshot.",
-  );
 });

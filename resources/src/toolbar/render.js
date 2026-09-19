@@ -3,7 +3,6 @@ import { builtinIconUrl } from "./icons.js";
 import { extensionsBadgeStatus } from "./extensions.js";
 import { renderPhpBrand, renderYiiBrand } from "./brand.js";
 import {
-  renderAjaxProfileLink,
   renderToolbarItemIdentifier,
   renderToolbarLinkAttributes,
   toolbarItemTag,
@@ -30,6 +29,9 @@ import { normalizeToolbarUrl } from "./url.js";
 /** Class carried by every icon rendered inside a toolbar control. */
 var controlIconClass = "control-icon";
 
+/** Rows the AJAX menu lists; older entries stay counted on the chip. */
+var ajaxMenuLimit = 20;
+
 /**
  * Snapshots the element state the builders read, including the theme stamping
  * they apply to every navigable URL.
@@ -41,7 +43,7 @@ export function createToolbarView(toolbar) {
     data: toolbar.data,
     drawerOpen: toolbar.drawerOpen,
     expanded: toolbar.expanded,
-    extensionsOpen: toolbar.extensionsOpen,
+    openMenu: toolbar.openMenu,
     theme: toolbar.theme,
     withTheme: function (url) {
       return toolbar.themeController.withTheme(url);
@@ -148,12 +150,12 @@ function ajaxVerbClass(method) {
   return "verb-other";
 }
 
-export function renderAjaxPanel(view) {
+/**
+ * Returns the badge status of the AJAX counter: a request in flight shows as
+ * loading, and a failure among the last three raises the chip.
+ */
+function ajaxBadgeStatus(requests) {
   var status = "success";
-  var requests = view.ajaxRequests || [];
-  var recent = requests.slice(Math.max(0, requests.length - 20));
-  var rows = "";
-  var icon = iconHtml(view, "ajax", "panel-icon");
 
   requests.forEach(function (request, index) {
     if (request.loading) {
@@ -163,59 +165,106 @@ export function renderAjaxPanel(view) {
     }
   });
 
-  recent.forEach(function (request) {
-    var profileUrl = request.profilerUrl;
-    var profile = renderAjaxProfileLink(
-      request.profile,
-      profileUrl,
-      profileUrl ? view.withTheme(profileUrl) : null,
-      escapeHtml,
-    );
+  return status;
+}
 
-    rows +=
-      '<tr><td><span class="' +
+/**
+ * Renders one AJAX menu row. A profiled request links to its own capture and
+ * doubles as a drawer trigger; a request the debugger did not capture stays
+ * inert.
+ *
+ * @returns {{active: boolean, html: string}} The row and whether the drawer
+ * shows its capture.
+ */
+function renderAjaxRequest(view, request) {
+  var url = request.profilerUrl;
+  var attributes = renderToolbarLinkAttributes(
+    url,
+    url ? view.withTheme(url) : "",
+    escapeHtml,
+  );
+  var active = Boolean(url && view.activeUrl) && sameUrl(url, view.activeUrl);
+  var element = attributes === "" ? "span" : "a";
+
+  return {
+    active: active,
+    html:
+      "<" +
+      element +
+      ' class="ajax-request' +
+      (active ? " is-active" : "") +
+      '"' +
+      attributes +
+      ' title="' +
+      escapeHtml(request.url) +
+      '">' +
+      '<span class="ajax-verb ' +
       ajaxVerbClass(request.method) +
       '">' +
       escapeHtml(request.method || "GET") +
-      "</span></td>" +
-      '<td><span class="badge ' +
+      "</span>" +
+      '<span class="badge ' +
       ajaxStatusBadgeClass(request) +
       '">' +
       escapeHtml(request.statusCode || "-") +
-      "</span></td>" +
-      '<td class="ajax-url" title="' +
+      "</span>" +
+      '<span class="ajax-url">' +
       escapeHtml(request.url) +
-      '">' +
-      escapeHtml(request.url) +
-      "</td>" +
-      "<td>" +
+      "</span>" +
+      '<span class="ajax-time">' +
       escapeHtml(request.duration ? request.duration + " ms" : "-") +
-      "</td>" +
-      "<td>" +
-      profile +
-      "</td></tr>";
+      "</span></" +
+      element +
+      ">",
+  };
+}
+
+/**
+ * Renders the AJAX chip and the menu listing the tracked requests.
+ *
+ * The chip sits with the Extensions group at the end of the bar: the stack is
+ * runtime state of the page, not a panel of its captured request. Each row
+ * opens the capture of its own request in the drawer, so the chips keep
+ * reporting the page request whatever the page fetches afterwards.
+ */
+export function renderAjaxMenu(view) {
+  var requests = view.ajaxRequests || [];
+  var recent = requests.slice(Math.max(0, requests.length - ajaxMenuLimit));
+  var open = view.openMenu === "ajax";
+  var active = false;
+  var rows = "";
+
+  recent.forEach(function (request) {
+    var row = renderAjaxRequest(view, request);
+
+    active = active || row.active;
+    rows += row.html;
   });
 
   if (rows === "") {
-    rows =
-      '<tr><td colspan="5" class="empty">No AJAX requests tracked yet.</td></tr>';
+    rows = '<span class="empty">No AJAX requests tracked yet.</span>';
   }
 
   return (
-    '<div class="panel ajax-panel" role="group" tabindex="0" aria-label="AJAX requests: ' +
+    '<div class="ajax menu' +
+    (open ? " is-open" : "") +
+    '"><button type="button" class="panel menu-toggle ajax-toggle' +
+    (active ? " panel-active" : "") +
+    '" data-menu="ajax" aria-expanded="' +
+    (open ? "true" : "false") +
+    '" aria-controls="ajax-menu" aria-label="AJAX requests: ' +
     requests.length +
-    '">' +
-    icon +
+    '" title="AJAX requests">' +
+    iconHtml(view, "ajax", "panel-icon") +
     '<span class="panel-title">AJAX</span>' +
     '<span class="metric"><span class="metric-value badge-' +
-    status +
+    ajaxBadgeStatus(requests) +
     '">' +
     requests.length +
-    "</span></span>" +
-    '<div class="ajax-popover"><table><thead><tr><th scope="col">Method</th><th scope="col">Status</th><th scope="col">URL</th><th scope="col">Time</th><th scope="col">Profile</th></tr></thead>' +
-    "<tbody>" +
+    "</span></span></button>" +
+    '<div class="menu-list ajax-menu" id="ajax-menu" role="group" aria-label="AJAX requests">' +
     rows +
-    "</tbody></table></div></div>"
+    "</div></div>"
   );
 }
 
@@ -243,7 +292,7 @@ export function renderExtensions(view, extensions) {
 
   var html = "";
   var active = false;
-  var open = view.extensionsOpen;
+  var open = view.openMenu === "extensions";
 
   extensions.forEach(function (panel) {
     if (isPanelActive(view, panel)) {
@@ -254,11 +303,11 @@ export function renderExtensions(view, extensions) {
   });
 
   return (
-    '<div class="extensions' +
+    '<div class="extensions menu' +
     (open ? " is-open" : "") +
-    '"><button type="button" class="panel extensions-toggle' +
+    '"><button type="button" class="panel menu-toggle extensions-toggle' +
     (active ? " panel-active" : "") +
-    '" aria-expanded="' +
+    '" data-menu="extensions" aria-expanded="' +
     (open ? "true" : "false") +
     '" aria-controls="extensions-menu" title="Extensions">' +
     iconHtml(view, "dots", "panel-icon") +
@@ -268,7 +317,7 @@ export function renderExtensions(view, extensions) {
     '">' +
     escapeHtml(extensions.length) +
     "</span></span></button>" +
-    '<div class="extensions-menu" id="extensions-menu" role="group" aria-label="Extensions">' +
+    '<div class="menu-list extensions-menu" id="extensions-menu" role="group" aria-label="Extensions">' +
     html +
     "</div></div>"
   );

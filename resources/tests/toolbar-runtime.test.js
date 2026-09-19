@@ -11,13 +11,8 @@ import {
   requestParentToolbarDrawerClose,
   shouldCloseToolbarDrawer,
 } from "../src/toolbar/focus.js";
+import { toolbarRetryDelay } from "../src/toolbar/loading.js";
 import {
-  resolveToolbarLoadRollback,
-  toolbarDataUrlForTag,
-  toolbarRetryDelay,
-} from "../src/toolbar/loading.js";
-import {
-  renderAjaxProfileLink,
   renderToolbarLinkAttributes,
   shouldOpenToolbarDrawer,
   toolbarItemTag,
@@ -93,63 +88,6 @@ test("toolbarRetryDelay retries missing snapshots with bounded backoff", () => {
   assert.equal(toolbarRetryDelay(404, Number.NaN), null);
   assert.equal(toolbarRetryDelay(404, 0.5), null);
   assert.equal(toolbarRetryDelay(500, 0), null);
-});
-
-test("toolbar load rollback prefers the last successful snapshot", () => {
-  assert.deepEqual(
-    resolveToolbarLoadRollback(
-      "/debug/toolbar?tag=loaded",
-      "loaded",
-      "/debug/toolbar?tag=pending-a",
-      "pending-a",
-    ),
-    {
-      url: "/debug/toolbar?tag=loaded",
-      tag: "loaded",
-      reload: false,
-    },
-  );
-  assert.deepEqual(
-    resolveToolbarLoadRollback(
-      null,
-      null,
-      "/debug/toolbar?tag=pending-a",
-      "pending-a",
-    ),
-    {
-      url: "/debug/toolbar?tag=pending-a",
-      tag: "pending-a",
-      reload: true,
-    },
-  );
-});
-
-test("toolbar data URLs follow tags through query parameters", () => {
-  var baseUrl = "https://example.test/app";
-
-  assert.equal(
-    toolbarDataUrlForTag(
-      "/debug/toolbar?tag=request-1&panel=summary",
-      "request-2",
-      baseUrl,
-    ),
-    "https://example.test/debug/toolbar?tag=request-2&panel=summary",
-  );
-  assert.equal(
-    toolbarDataUrlForTag("/debug/toolbar?panel=summary", "request-2", baseUrl),
-    "https://example.test/debug/toolbar?panel=summary&tag=request-2",
-  );
-});
-
-test("toolbar data URL resolution rejects unusable inputs", () => {
-  var baseUrl = "https://example.test/";
-
-  assert.equal(toolbarDataUrlForTag("", "request-2", baseUrl), null);
-  assert.equal(toolbarDataUrlForTag("/debug/toolbar", "", baseUrl), null);
-  assert.equal(
-    toolbarDataUrlForTag("https://[invalid", "request-2", baseUrl),
-    null,
-  );
 });
 
 test("toolbar item links remain focusable without nested interactive elements", () => {
@@ -281,16 +219,6 @@ test("toolbar link renderers drop unsafe navigation targets", () => {
       location,
     ),
     "",
-  );
-  assert.equal(
-    renderAjaxProfileLink(
-      "hostile",
-      "https://other.test/debug/view",
-      "https://other.test/debug/view",
-      String,
-      location,
-    ),
-    "n/a",
   );
   assert.equal(
     shouldOpenToolbarDrawer(
@@ -600,21 +528,6 @@ test("embedded debug pages request drawer closure after an unhandled Escape", ()
     ),
     false,
   );
-});
-
-test("AJAX profile URLs separate themed native and drawer navigation", () => {
-  var html = renderAjaxProfileLink(
-    "request-profile",
-    "/debug/view?tag=request-profile",
-    "/debug/view?tag=request-profile&yii_debug_theme=dark",
-    String,
-  );
-
-  assert.equal(
-    html,
-    '<a class="ajax-link" href="/debug/view?tag=request-profile&yii_debug_theme=dark" data-debug-url="/debug/view?tag=request-profile">request-profile</a>',
-  );
-  assert.equal(renderAjaxProfileLink(null, null, null, String), "n/a");
 });
 
 test("normalizeToolbarPosition honors top and the legacy upper alias", () => {

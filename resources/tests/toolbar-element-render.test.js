@@ -163,7 +163,7 @@ test("the collapsed opener falls back to the default product name", () => {
   element.remove();
 });
 
-test("an expanded toolbar renders brand, profiling chip, AJAX panel, strip and controls", () => {
+test("an expanded toolbar renders brand, profiling chip, strip, AJAX menu and controls", () => {
   expanded();
 
   var element = renderToolbar(fullPayload());
@@ -177,8 +177,8 @@ test("an expanded toolbar renders brand, profiling chip, AJAX panel, strip and c
 
   assert.deepEqual(
     order,
-    ["brand", "panel", "panel", "panels", "controls"],
-    "Bar order: brand, profiling chip, AJAX panel, strip, controls.",
+    ["brand", "panel", "panels", "ajax", "controls"],
+    "Bar order: brand, profiling chip, strip, AJAX menu, controls.",
   );
   assert.equal(
     root.querySelector(".toolbar").className,
@@ -191,7 +191,7 @@ test("an expanded toolbar renders brand, profiling chip, AJAX panel, strip and c
     "Profiling must be pulled out of the inline strip.",
   );
   assert.equal(
-    root.querySelector(".ajax-panel .panel-title").textContent,
+    root.querySelector(".ajax-toggle .panel-title").textContent,
     "AJAX",
     "AJAX chip must sit outside the strip.",
   );
@@ -211,8 +211,12 @@ test("a payload without panels still renders the surrounding chrome", () => {
   );
   assert.equal(
     element.shadowRoot.querySelectorAll(".bar > .panel").length,
-    1,
-    "Only the AJAX chip may remain.",
+    0,
+    "No chip may remain outside the strip.",
+  );
+  assert.ok(
+    element.shadowRoot.querySelector(".bar > .ajax .ajax-toggle"),
+    "Only the AJAX menu may remain.",
   );
 
   element.remove();

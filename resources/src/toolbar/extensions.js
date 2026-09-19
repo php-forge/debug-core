@@ -54,24 +54,3 @@ export function extensionsBadgeStatus(extensions) {
 
   return danger ? "danger" : "default";
 }
-
-/**
- * Returns `true` for an unhandled Escape that must close an open menu.
- *
- * Mirrors `shouldCloseToolbarDrawer()`; the menu answers first so a single
- * Escape never closes both the menu and the drawer.
- */
-export function shouldCloseExtensionsMenu(event, open) {
-  return Boolean(
-    open && event && event.key === "Escape" && !event.defaultPrevented,
-  );
-}
-
-/**
- * Returns whether an event target sits inside the Extensions wrapper.
- *
- * The `closest` helper is injected so the check stays free of a live DOM.
- */
-export function isInsideExtensions(target, closestFn) {
-  return closestFn(target, ".extensions") !== null;
-}

@@ -9,7 +9,7 @@
  *   - theme-controller.js theme resolution, the host signals that flip it, and
  *                         the listeners disposal releases.
  *   - drawer.js           the panel drawer, its resize affordances, and the
- *                         Extensions menu.
+ *                         bar menus (AJAX and Extensions).
  *   - render.js           stateless HTML builders the render cycle composes.
  *   - state.js            module state, constants, and pure utility helpers.
  *   - theme.js            theme detection, normalization, and URL/cookie
@@ -17,8 +17,8 @@
  *   - messaging.js        XMLHttpRequest / fetch interception that feeds the
  *                         chips.
  *
- * The remaining modules (brand, extensions, focus, icons, loading, panel,
- * position, url) hold the pure helpers those modules call.
+ * The remaining modules (brand, extensions, focus, icons, loading, menu,
+ * panel, position, url) hold the pure helpers those modules call.
  */
 
 import { YiiDebugToolbar } from "./element.js";

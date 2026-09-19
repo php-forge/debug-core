@@ -1,10 +1,15 @@
 import { closest, storageKey, writeStorageItem } from "./state.js";
-import { isInsideExtensions, shouldCloseExtensionsMenu } from "./extensions.js";
 import {
   focusToolbarElement,
   focusToolbarTrigger,
   shouldCloseToolbarDrawer,
 } from "./focus.js";
+import {
+  isInsideToolbarMenu,
+  shouldCloseToolbarMenu,
+  toolbarMenu,
+  toolbarMenus,
+} from "./menu.js";
 import { shouldOpenToolbarDrawer } from "./panel.js";
 import { toolbarDrawerHeight, toolbarDrawerHeightForKey } from "./position.js";
 import { renderDrawer } from "./render.js";
@@ -21,12 +26,13 @@ var minimumDrawerHeight = 120;
 
 /**
  * Owns the interactive layers of the toolbar: the panel drawer, its resize
- * affordances and the Extensions menu.
+ * affordances and the bar menus (AJAX and Extensions).
  *
- * `bind()` attaches the document-level listener that dismisses the menu, and
- * `dispose()` releases it together with whatever a drag in flight still holds.
- * Shadow-root wiring stays with the render cycle: `bindDelegatedEvents()` runs
- * once on the skeleton and `bindEvents()` re-binds the controls each render.
+ * `bind()` attaches the document-level listener that dismisses the open menu,
+ * and `dispose()` releases it together with whatever a drag in flight still
+ * holds. Shadow-root wiring stays with the render cycle:
+ * `bindDelegatedEvents()` runs once on the skeleton and `bindEvents()` re-binds
+ * the controls each render.
  *
  * Usage example:
  *
@@ -54,12 +60,14 @@ export function createToolbarDrawer(toolbar) {
   }
 
   /**
-   * A pointer landing anywhere but the menu dismisses it. Registered on the
-   * document by `bind()` and released by `dispose()`, so the registration
+   * A pointer landing anywhere but the open menu dismisses it. Registered on
+   * the document by `bind()` and released by `dispose()`, so the registration
    * follows the element lifecycle.
    */
-  function extensionsPointerDown(event) {
-    if (!toolbar.extensionsOpen) {
+  function menuPointerDown(event) {
+    var menu = toolbarMenu(toolbar.openMenu);
+
+    if (!menu) {
       return;
     }
 
@@ -71,14 +79,14 @@ export function createToolbarDrawer(toolbar) {
       typeof event.composedPath === "function" ? event.composedPath() : [];
     var target = path.length > 0 ? path[0] : event.target;
 
-    if (!isInsideExtensions(target, closest)) {
-      controller.closeExtensions(false);
+    if (!isInsideToolbarMenu(target, menu, closest)) {
+      controller.closeMenu(false);
     }
   }
 
   controller = {
     /** Document handler dismissing the menu, exposed for the lifecycle tests. */
-    extensionsPointerDown: extensionsPointerDown,
+    menuPointerDown: menuPointerDown,
     /**
      * Applies the stored drawer height once, then republishes the resize
      * handle's value range.
@@ -105,23 +113,25 @@ export function createToolbarDrawer(toolbar) {
 
       controller.updateResizeHandleAccessibility();
     },
-    /** Starts the lifecycle: the menu answers pointers landing outside it. */
+    /** Starts the lifecycle: the open menu answers pointers landing outside it. */
     bind: function () {
-      document.addEventListener("pointerdown", extensionsPointerDown, false);
+      document.addEventListener("pointerdown", menuPointerDown, false);
     },
     /**
      * Binds the shadow-root delegation installed once on the skeleton: chips
-     * open the drawer, the Extensions toggle flips the menu, and Escape closes
-     * exactly one layer.
+     * open the drawer, a menu chip flips its menu, and Escape closes exactly
+     * one layer.
      */
     bindDelegatedEvents: function () {
       var root = toolbar.shadowRoot;
 
       root.addEventListener("click", function (event) {
-        if (closest(event.target, ".extensions-toggle")) {
+        var toggle = closest(event.target, ".menu-toggle");
+
+        if (toggle) {
           event.preventDefault();
           event.stopPropagation();
-          controller.toggleExtensions();
+          controller.toggleMenu(toggle.getAttribute("data-menu"));
 
           return;
         }
@@ -143,10 +153,10 @@ export function createToolbarDrawer(toolbar) {
          * The menu answers first, so a single Escape never collapses both the
          * menu and the drawer behind it.
          */
-        if (shouldCloseExtensionsMenu(event, toolbar.extensionsOpen)) {
+        if (shouldCloseToolbarMenu(event, toolbar.openMenu !== null)) {
           event.preventDefault();
           event.stopPropagation();
-          controller.closeExtensions(true);
+          controller.closeMenu(true);
 
           return;
         }
@@ -208,7 +218,7 @@ export function createToolbarDrawer(toolbar) {
       var restoreFocusUrl = toolbar.restoreFocusUrl;
 
       toolbar.drawerOpen = false;
-      toolbar.extensionsOpen = false;
+      toolbar.openMenu = null;
       toolbar.restoreFocusUrl = null;
       toolbar.render();
 
@@ -216,12 +226,24 @@ export function createToolbarDrawer(toolbar) {
         focusToolbarElement(toolbar.shadowRoot, ".toggle-toolbar");
       }
     },
-    closeExtensions: function (focusToggle) {
-      toolbar.extensionsOpen = false;
-      controller.syncExtensions();
+    /**
+     * Closes the open menu, if any, without re-rendering the bar, and returns
+     * focus to its chip when asked to.
+     */
+    closeMenu: function (focusToggle) {
+      var name = toolbar.openMenu;
+      var menu = toolbarMenu(name);
+
+      toolbar.openMenu = null;
+
+      if (!menu) {
+        return;
+      }
+
+      controller.syncMenu(name);
 
       if (focusToggle) {
-        focusToolbarElement(toolbar.shadowRoot, ".extensions-toggle");
+        focusToolbarElement(toolbar.shadowRoot, menu.toggle);
       }
     },
     /**
@@ -232,7 +254,7 @@ export function createToolbarDrawer(toolbar) {
       toolbar.resizing = false;
       document.removeEventListener("pointermove", onPointerMove, false);
       document.removeEventListener("pointerup", onPointerUp, false);
-      document.removeEventListener("pointerdown", extensionsPointerDown, false);
+      document.removeEventListener("pointerdown", menuPointerDown, false);
     },
     onPointerMove: function (event) {
       if (!toolbar.resizing) {
@@ -293,7 +315,7 @@ export function createToolbarDrawer(toolbar) {
 
       toolbar.expanded = true;
       toolbar.drawerOpen = true;
-      toolbar.extensionsOpen = false;
+      toolbar.openMenu = null;
       toolbar.activeUrl = normalizedUrl;
       toolbar.restoreFocusUrl = normalizedUrl;
       writeStorageItem(storageKey, "1");
@@ -363,21 +385,21 @@ export function createToolbarDrawer(toolbar) {
 
       toolbar.drawerPosition = position;
     },
-    /** Mirrors the menu state onto the rendered wrapper and its toggle. */
-    syncExtensions: function () {
-      var wrapper = toolbar.shadowRoot.querySelector(".extensions");
+    /** Mirrors the state of the named menu onto its wrapper and its chip. */
+    syncMenu: function (name) {
+      var menu = toolbarMenus[name];
+      var wrapper = toolbar.shadowRoot.querySelector(menu.wrapper);
 
       if (!wrapper) {
         return;
       }
 
-      wrapper.classList.toggle("is-open", toolbar.extensionsOpen);
+      var open = toolbar.openMenu === name;
+
+      wrapper.classList.toggle("is-open", open);
       wrapper
-        .querySelector(".extensions-toggle")
-        ?.setAttribute(
-          "aria-expanded",
-          toolbar.extensionsOpen ? "true" : "false",
-        );
+        .querySelector(menu.toggle)
+        ?.setAttribute("aria-expanded", open ? "true" : "false");
     },
     /** Collapses or expands the bar, persisting the choice. */
     toggleExpanded: function () {
@@ -390,20 +412,30 @@ export function createToolbarDrawer(toolbar) {
       focusToolbarElement(toolbar.shadowRoot, ".toggle-toolbar");
     },
     /**
-     * Flips the menu without re-rendering the bar, so focus stays on the
-     * toggle.
+     * Flips the named menu without re-rendering the bar, so focus stays on
+     * the chip. Opening a menu closes the other one first: only one is open at
+     * a time.
      */
-    toggleExtensions: function () {
-      toolbar.extensionsOpen = !toolbar.extensionsOpen;
-      controller.syncExtensions();
+    toggleMenu: function (name) {
+      var previous = toolbar.openMenu;
 
-      if (!toolbar.extensionsOpen) {
+      if (previous === name) {
+        controller.closeMenu(false);
+
         return;
       }
 
-      var menu = toolbar.shadowRoot.querySelector(".extensions-menu");
+      toolbar.openMenu = name;
 
-      menu?.querySelector("[data-debug-url], a, button")?.focus?.();
+      if (previous !== null) {
+        controller.syncMenu(previous);
+      }
+
+      controller.syncMenu(name);
+
+      var list = toolbar.shadowRoot.querySelector(toolbarMenus[name].menu);
+
+      list?.querySelector("[data-debug-url], a, button")?.focus?.();
     },
     /** Republishes the resize handle's value range after a height change. */
     updateResizeHandleAccessibility: function () {

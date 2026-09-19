@@ -381,14 +381,14 @@ test("request tracking skips toolbar, cross-origin, and skip-listed URLs", async
   toolbar.getAttribute = originalGetAttribute;
 });
 
-test("ajax notifications drive registered toolbars and follow tagged requests", () => {
-  var followed = [];
+test("ajax notifications hand the stack to every registered toolbar", () => {
   var received = [];
 
+  /**
+   * The registered toolbar exposes nothing but `setAjaxRequests()`: a tagged
+   * completion must not ask it to move away from the page request.
+   */
   toolbars.push({
-    followTag(tag) {
-      followed.push(tag);
-    },
     getAttribute(name) {
       return toolbar.getAttribute(name);
     },
@@ -401,28 +401,20 @@ test("ajax notifications drive registered toolbars and follow tagged requests", 
     var tagged = new XMLHttpRequest();
 
     tagged.open("GET", "/api/tagged");
+
+    assert.equal(received.length, 1, "Opening must notify.");
+
     tagged.readyState = 4;
     tagged.status = 200;
     tagged.headers = { "X-Debug-Tag": "fresh-tag" };
     tagged.dispatch("readystatechange");
 
-    assert.equal(followed[followed.length - 1], "fresh-tag");
-
-    var untagged = new XMLHttpRequest();
-
-    untagged.open("GET", "/api/untagged");
-    assert.equal(followed[followed.length - 1], "fresh-tag");
-
-    untagged.readyState = 2;
-    untagged.dispatch("readystatechange");
-
-    untagged.readyState = 4;
-    untagged.status = 200;
-    untagged.headers = {};
-    untagged.dispatch("readystatechange");
-
-    assert.equal(followed[followed.length - 1], "fresh-tag");
-    assert.equal(received.length > 0, true);
+    assert.equal(received.length, 2, "Completing must notify.");
+    assert.equal(
+      received[1],
+      requestStack.length,
+      "Every notification must carry the whole stack.",
+    );
   } finally {
     toolbars.pop();
   }

@@ -19,7 +19,8 @@ import { normalizeToolbarUrl } from "./url.js";
  * Tracked requests skip the toolbar's own data fetch and any URL listed in
  * `data-skip-urls` on the host element. Each completed request gets stamped
  * with the headers Yii's debug middleware adds (`X-Debug-Tag`, `-Duration`,
- * `-Link`) so the toolbar chips can follow the most recent profiled request.
+ * `-Link`) so the AJAX menu can open the capture of every listed request. The
+ * bar itself keeps showing the page request: an AJAX call never replaces it.
  */
 
 var xhrTrackers = new WeakMap();
@@ -146,25 +147,6 @@ function notifyAjaxChange() {
   toolbars.forEach(function (toolbar) {
     toolbar.setAjaxRequests(requestStack);
   });
-
-  /**
-   * Follow the most recent AJAX request that carries an X-Debug-Tag header so
-   * the chips reflect what just happened on the server (e.g. login that hit
-   * the database) instead of staying frozen on the initial page-load tag.
-   */
-  for (var i = requestStack.length - 1; i >= 0; i--) {
-    var item = requestStack[i];
-
-    if (item.loading || !item.profile) {
-      continue;
-    }
-
-    toolbars.forEach(function (toolbar) {
-      toolbar.followTag(item.profile);
-    });
-
-    return;
-  }
 }
 
 function trackXhr() {

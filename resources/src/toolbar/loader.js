@@ -42,13 +42,11 @@ function responseMessage(xhr) {
 
 /**
  * Owns one toolbar load lifecycle: the request in flight, the scheduled 404
- * retry, the generation that supersedes older completions, the caller callback
- * and the last good snapshot the follow-tag path rolls back to.
+ * retry and the generation that supersedes older completions.
  *
  * `connectedCallback()` starts a controller and `disconnectedCallback()`
  * disposes it, so a response the network delivers after the element left the
- * document can no longer render, move the tracked tag or announce an
- * attachment.
+ * document can no longer render or announce an attachment.
  *
  * Usage example:
  *
@@ -62,7 +60,6 @@ function responseMessage(xhr) {
 export function createToolbarLoader(toolbar) {
   var disposed = false;
   var generation = 0;
-  var loader;
   var request = null;
   var timer = null;
 
@@ -89,18 +86,16 @@ export function createToolbarLoader(toolbar) {
     }
   }
 
-  function send(done, attempt, requestGeneration) {
+  function send(attempt, requestGeneration) {
     var url = toolbar.normalizeUrl(toolbar.getAttribute("data-url"));
 
     /**
-     * Closes the load and reports `message` on the bar, unless the caller
-     * carries a `done` callback: that caller restores its own state, so an
-     * error painted here would flash over the snapshot it puts back.
+     * Closes the load and reports `message` on the bar when one is given.
      *
      * Settling advances the generation, so the second transport event a
      * browser raises for the same failure cannot report it twice.
      */
-    var settle = function (ok, message) {
+    var settle = function (message) {
       if (!isCurrent(requestGeneration)) {
         return;
       }
@@ -108,15 +103,13 @@ export function createToolbarLoader(toolbar) {
       generation += 1;
       request = null;
 
-      if (typeof done === "function") {
-        done.call(toolbar, ok);
-      } else if (message) {
+      if (message) {
         toolbar.renderError(message);
       }
     };
 
     if (!url) {
-      settle(false, "Debug toolbar data URL is missing or unsafe.");
+      settle("Debug toolbar data URL is missing or unsafe.");
 
       return;
     }
@@ -134,7 +127,7 @@ export function createToolbarLoader(toolbar) {
      * way, so it never paints an error over the toolbar.
      */
     xhr.onabort = function () {
-      settle(false);
+      settle();
     };
 
     /**
@@ -142,7 +135,7 @@ export function createToolbarLoader(toolbar) {
      * configures one. Neither event carries a response to report.
      */
     xhr.onerror = xhr.ontimeout = function () {
-      settle(false, unavailableMessage);
+      settle(unavailableMessage);
     };
 
     xhr.onreadystatechange = function () {
@@ -160,13 +153,13 @@ export function createToolbarLoader(toolbar) {
         if (retryDelay !== null) {
           timer = window.setTimeout(function () {
             timer = null;
-            send(done, attempt + 1, requestGeneration);
+            send(attempt + 1, requestGeneration);
           }, retryDelay);
 
           return;
         }
 
-        settle(false, responseMessage(xhr));
+        settle(responseMessage(xhr));
 
         return;
       }
@@ -175,30 +168,23 @@ export function createToolbarLoader(toolbar) {
 
       /**
        * The adapter contract is a JSON object carrying the `items` list; `tag`
-       * stays optional, so a tag-less snapshot renders and clears the tag.
+       * stays optional, so a tag-less snapshot renders like any other.
        */
       if (!data || !Array.isArray(data.items)) {
-        settle(false, "Invalid debug toolbar data response.");
+        settle("Invalid debug toolbar data response.");
 
         return;
       }
 
       toolbar.data = data;
-      toolbar.currentTag = data.tag || null;
-      loader.lastTag = toolbar.currentTag;
-      loader.lastUrl = url;
       toolbar.render();
       toolbar.dispatchAttachedEvent();
-      settle(true);
+      settle();
     };
     xhr.send();
   }
 
-  loader = {
-    /** Tag of the last snapshot that rendered. */
-    lastTag: null,
-    /** Data URL the last snapshot that rendered came from. */
-    lastUrl: null,
+  return {
     /**
      * Ends the lifecycle: pending completions are invalidated, a scheduled
      * retry is cancelled and the request in flight is aborted.
@@ -209,18 +195,16 @@ export function createToolbarLoader(toolbar) {
     },
     /**
      * Fetches the snapshot at `data-url`, superseding whatever the controller
-     * still had open. `done` receives the outcome with the toolbar as `this`.
+     * still had open.
      */
-    load: function (done) {
+    load: function () {
       if (disposed) {
         return;
       }
 
       generation += 1;
       stopPending();
-      send(done, 0, generation);
+      send(0, generation);
     },
   };
-
-  return loader;
 }
