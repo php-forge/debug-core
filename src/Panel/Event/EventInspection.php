@@ -16,28 +16,60 @@ use function strlen;
  */
 final class EventInspection implements PanelRow
 {
+    /**
+     * Monotonic observation time in seconds, or `null` when no clock reading was captured.
+     */
     private float|null $clock = null;
 
     /**
+     * Explicit adapter-selected scalar fields observed with the event.
+     *
      * @var array<string, string>
      */
     private array $context = [];
 
+    /**
+     * Context capture state: `disabled`, `captured`, `unsupported`, or `failed`.
+     */
     private string $contextStatus = 'disabled';
 
+    /**
+     * Observed nesting depth of the scope the event belongs to.
+     */
     private int $depth = 0;
 
+    /**
+     * Request-local scope identity correlating lifecycle markers, or `null` when no correlation was observed.
+     */
     private int|null $pairId = null;
 
+    /**
+     * Lifecycle marker: `enter`, `leave`, or empty for ordinary events.
+     */
     private string $phase = '';
 
     /**
+     * Argument-free source frames observed when the event fired.
+     *
      * @var list<string>
      */
     private array $trace = [];
 
+    /**
+     * Trace capture state: `disabled`, `captured`, or `failed`.
+     */
     private string $traceStatus = 'disabled';
 
+    /**
+     * Hydrates event diagnostics from decoded JSON data.
+     *
+     * @param mixed $data Decoded event diagnostics payload.
+     * @param string $path Payload path used in hydration errors.
+     *
+     * @throws HydrationException When a value exceeds its bound or a capture state is unknown.
+     *
+     * @return self Hydrated event diagnostics.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)->shape(
@@ -105,52 +137,91 @@ final class EventInspection implements PanelRow
             ->withLifecycle($pairId, $phase, $depth, $clock);
     }
 
+    /**
+     * Returns the monotonic observation time.
+     *
+     * @return float|null Observation time in seconds, or `null` when no clock reading was captured.
+     */
     public function getClock(): float|null
     {
         return $this->clock;
     }
 
     /**
-     * @return array<string, string>
+     * Returns the selected context fields.
+     *
+     * @return array<string, string> Explicit adapter-selected scalar fields.
      */
     public function getContext(): array
     {
         return $this->context;
     }
 
+    /**
+     * Returns the context capture state.
+     *
+     * @return string One of `disabled`, `captured`, `unsupported`, or `failed`.
+     */
     public function getContextStatus(): string
     {
         return $this->contextStatus;
     }
 
+    /**
+     * Returns the observed nesting depth.
+     *
+     * @return int Nesting depth of the scope the event belongs to.
+     */
     public function getDepth(): int
     {
         return $this->depth;
     }
 
+    /**
+     * Returns the request-local scope identity.
+     *
+     * @return int|null Scope identity correlating lifecycle markers, or `null` when none was observed.
+     */
     public function getPairId(): int|null
     {
         return $this->pairId;
     }
 
+    /**
+     * Returns the lifecycle marker.
+     *
+     * @return string `enter`, `leave`, or empty for ordinary events.
+     */
     public function getPhase(): string
     {
         return $this->phase;
     }
 
     /**
-     * @return list<string>
+     * Returns the captured source frames.
+     *
+     * @return list<string> Argument-free source frames.
      */
     public function getTrace(): array
     {
         return $this->trace;
     }
 
+    /**
+     * Returns the trace capture state.
+     *
+     * @return string One of `disabled`, `captured`, or `failed`.
+     */
     public function getTraceStatus(): string
     {
         return $this->traceStatus;
     }
 
+    /**
+     * Returns the diagnostics for JSON serialization.
+     *
+     * @return array<string, mixed> Serialized context, trace, capture states, and lifecycle correlation.
+     */
     public function jsonSerialize(): array
     {
         return [
@@ -170,6 +241,8 @@ final class EventInspection implements PanelRow
      *
      * @param array<string, string> $context Explicit adapter-selected scalar fields, not an object dump.
      * @param string $contextStatus One of `disabled`, `captured`, `unsupported`, or `failed`.
+     *
+     * @return self Diagnostics with the context and its capture state applied.
      */
     public function withContext(array $context, string $contextStatus): self
     {
@@ -187,6 +260,8 @@ final class EventInspection implements PanelRow
      * @param string $phase Empty for ordinary events; `enter` or `leave` for lifecycle markers.
      * @param int $depth Observed nesting depth.
      * @param float|null $clock Monotonic observation time in seconds, not a wall-clock timestamp.
+     *
+     * @return self Diagnostics with the lifecycle correlation applied.
      */
     public function withLifecycle(int|null $pairId, string $phase, int $depth, float|null $clock): self
     {
@@ -204,6 +279,8 @@ final class EventInspection implements PanelRow
      *
      * @param list<string> $trace Argument-free source frames.
      * @param string $traceStatus One of `disabled`, `captured`, or `failed`.
+     *
+     * @return self Diagnostics with the trace and its capture state applied.
      */
     public function withTrace(array $trace, string $traceStatus): self
     {

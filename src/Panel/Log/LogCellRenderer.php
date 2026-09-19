@@ -82,16 +82,19 @@ final class LogCellRenderer
      * Renders the message cell, followed by the optional trace list.
      *
      * The row holds the message as a display string (already exported when the source was non-string), so the renderer
-     * escapes it once — except for DB command entries, whose raw SQL message renders through
-     * {@see SqlHighlighter::highlight()} with the same token spans as the db panel queries grid. Long messages
-     * collapse behind the {@see CellMore} clamp.
+     * escapes it once — except for DB command entries and for any message {@see SqlHighlighter::isStatement()} reads
+     * as raw SQL, which render through {@see SqlHighlighter::highlight()} with the same token spans as the db panel
+     * queries grid. Long messages collapse behind the {@see CellMore} clamp.
      *
      * @param LogRow $row Typed log record.
      * @param Closure(array<string, mixed>): string $traceLine Renders one backtrace frame as a link line.
      */
     public static function renderMessageCell(LogRow $row, Closure $traceLine): string
     {
-        $body = str_starts_with($row->category, self::SQL_CATEGORY_PREFIX)
+        $isSql = str_starts_with($row->category, self::SQL_CATEGORY_PREFIX)
+            || SqlHighlighter::isStatement($row->message);
+
+        $body = $isSql
             ? Div::tag()
                 ->class('yii-debug-db-sql')
                 ->html(SqlHighlighter::highlight($row->message))

@@ -47,6 +47,14 @@ final readonly class AssetBundleRow implements PanelRow
         public array $depends,
     ) {}
 
+    /**
+     * Narrows one persisted bundle of the asset payload into a typed row.
+     *
+     * @param mixed $data Persisted bundle, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the bundle, used to report a malformed payload.
+     *
+     * @return self Row carrying every persisted bundle field.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -92,6 +100,8 @@ final readonly class AssetBundleRow implements PanelRow
     }
 
     /**
+     * Returns the typed row for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

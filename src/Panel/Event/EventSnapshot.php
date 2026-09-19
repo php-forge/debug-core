@@ -14,11 +14,15 @@ use function array_map;
 final readonly class EventSnapshot implements PanelSnapshot
 {
     /**
-     * @param list<EventRow> $entries
+     * Creates a snapshot from the captured event rows.
+     *
+     * @param list<EventRow> $entries Captured rows in fire order.
      */
     public function __construct(private array $entries) {}
 
     /**
+     * Returns the captured event rows.
+     *
      * @return list<EventRow> Captured rows in fire order.
      */
     public function entries(): array
@@ -26,6 +30,14 @@ final readonly class EventSnapshot implements PanelSnapshot
         return $this->entries;
     }
 
+    /**
+     * Hydrates the Event panel snapshot from decoded JSON data.
+     *
+     * @param mixed $data Decoded Event panel payload.
+     * @param string $path Payload path used in hydration errors.
+     *
+     * @return self Hydrated snapshot carrying the typed rows.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         return new self(
@@ -36,7 +48,9 @@ final readonly class EventSnapshot implements PanelSnapshot
     }
 
     /**
-     * @return array<string, mixed>
+     * Returns the snapshot for JSON serialization.
+     *
+     * @return array<string, mixed> Serialized event rows in fire order.
      */
     public function jsonSerialize(): array
     {

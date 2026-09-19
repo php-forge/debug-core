@@ -114,6 +114,16 @@ final readonly class JobRecord implements PanelRow
         public string $error,
     ) {}
 
+    /**
+     * Narrows one persisted event of the queue payload into a typed record.
+     *
+     * @param mixed $data Persisted event, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the event, used to report a malformed payload.
+     *
+     * @throws HydrationException When the persisted event type is not one of {@see self::EVENT_TYPES}.
+     *
+     * @return self Record carrying every persisted event field.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -194,6 +204,8 @@ final readonly class JobRecord implements PanelRow
     }
 
     /**
+     * Returns the typed row for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

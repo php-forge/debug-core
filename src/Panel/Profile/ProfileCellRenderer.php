@@ -55,9 +55,9 @@ final class ProfileCellRenderer
     /**
      * Renders the info cell with one indentation arrow per nesting level, followed by the info text.
      *
-     * DB command blocks carry a raw SQL statement as their info, so they render through
-     * {@see SqlHighlighter::highlight()} with the same token spans as the db panel queries grid. Long statements
-     * collapse behind the {@see CellMore} clamp instead of stretching the row past the viewport.
+     * DB command blocks, and any block whose info {@see SqlHighlighter::isStatement()} reads as raw SQL, render
+     * through {@see SqlHighlighter::highlight()} with the same token spans as the db panel queries grid. Long
+     * statements collapse behind the {@see CellMore} clamp instead of stretching the row past the viewport.
      *
      * @param ProfileRow $row Typed profile row.
      */
@@ -68,7 +68,7 @@ final class ProfileCellRenderer
             ->content('→')
             ->render();
 
-        $body = self::isSqlCategory($row->category)
+        $body = self::isSqlCategory($row->category) || SqlHighlighter::isStatement($row->info)
             ? Div::tag()->class('yii-debug-db-sql')
                 ->html(SqlHighlighter::highlight($row->info))
                 ->render()
@@ -91,6 +91,13 @@ final class ProfileCellRenderer
             ->render();
     }
 
+    /**
+     * Returns whether the category belongs to a DB command block whose info is a raw SQL statement.
+     *
+     * @param string $category Profile category to inspect.
+     *
+     * @return bool `true` when the category starts with a known DB command prefix; `false` otherwise.
+     */
     private static function isSqlCategory(string $category): bool
     {
         foreach (self::SQL_CATEGORY_PREFIXES as $prefix) {

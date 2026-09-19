@@ -31,6 +31,14 @@ final readonly class CurrentRouteLogRow implements PanelRow
         public bool $match,
     ) {}
 
+    /**
+     * Narrows one persisted rule of the routing payload into a typed row.
+     *
+     * @param mixed $data Persisted rule, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the rule, used to report a malformed payload.
+     *
+     * @return self Row carrying the inspected rule, its parent, and the match flag.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)->shape(['rule', 'parent', 'match']);
@@ -64,6 +72,8 @@ final readonly class CurrentRouteLogRow implements PanelRow
     }
 
     /**
+     * Returns the typed row for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

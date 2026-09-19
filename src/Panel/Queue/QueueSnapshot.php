@@ -38,6 +38,8 @@ final readonly class QueueSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the captured queue lifecycle events.
+     *
      * @return list<JobRecord> Captured job events in event order.
      */
     public function entries(): array
@@ -45,6 +47,14 @@ final readonly class QueueSnapshot implements PanelSnapshot
         return $this->entries;
     }
 
+    /**
+     * Narrows the persisted queue payload into a typed snapshot.
+     *
+     * @param mixed $data Persisted payload, expected to be an object carrying an `entries` list.
+     * @param string $path JSON path of the payload, used to report a malformed capture.
+     *
+     * @return self Snapshot carrying the persisted job events.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         return new self(
@@ -55,6 +65,8 @@ final readonly class QueueSnapshot implements PanelSnapshot
     }
 
     /**
+     * Returns the panel snapshot for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

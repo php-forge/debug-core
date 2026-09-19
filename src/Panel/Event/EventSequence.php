@@ -22,6 +22,8 @@ final readonly class EventSequence
     private array $positions;
 
     /**
+     * Derives the chronology from the complete capture.
+     *
      * @param list<EventRow> $rows Original observation order.
      */
     public function __construct(private array $rows)
@@ -42,11 +44,25 @@ final readonly class EventSequence
         $this->pairs = $pairs;
     }
 
+    /**
+     * Returns how long after the first captured event the given row fired.
+     *
+     * @param EventRow $row Row to measure.
+     *
+     * @return float Offset from the first captured row, in milliseconds.
+     */
     public function elapsed(EventRow $row): float
     {
         return ($row->time - ($this->rows[0]->time ?? $row->time)) * 1000;
     }
 
+    /**
+     * Returns the idle time between the given row and the one observed before it.
+     *
+     * @param EventRow $row Row to measure.
+     *
+     * @return float|null Milliseconds since the previous row, or `null` for the first row and for unknown rows.
+     */
     public function gap(EventRow $row): float|null
     {
         $index = $this->index($row);
@@ -56,6 +72,13 @@ final readonly class EventSequence
         return $previous === null ? null : ($row->time - $previous->time) * 1000;
     }
 
+    /**
+     * Returns the original observation position of the given row.
+     *
+     * @param EventRow $row Row to locate.
+     *
+     * @return int One-based capture position, or `0` when the row is not part of the capture.
+     */
     public function index(EventRow $row): int
     {
         return $this->positions[spl_object_id($row)] ?? 0;
@@ -63,6 +86,10 @@ final readonly class EventSequence
 
     /**
      * Returns only unambiguous, explicitly correlated inclusive intervals.
+     *
+     * @param EventRow $row Lifecycle `enter` marker to measure.
+     *
+     * @return float|null Inclusive duration in milliseconds, or `null` when the correlation is absent or ambiguous.
      */
     public function interval(EventRow $row): float|null
     {

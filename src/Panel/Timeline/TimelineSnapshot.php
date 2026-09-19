@@ -12,12 +12,22 @@ use PHPForge\Debug\Storage\{PanelSnapshot, Payload};
 final readonly class TimelineSnapshot implements PanelSnapshot
 {
     /**
+     * Creates the timing and peak-memory snapshot for the request.
+     *
      * @param float $start The start time of the timeline snapshot.
      * @param float $end The end time of the timeline snapshot.
      * @param int $memory The peak memory usage at the time of the snapshot.
      */
     public function __construct(public float $start, public float $end, public int $memory) {}
 
+    /**
+     * Hydrates the Timeline panel snapshot from decoded JSON data.
+     *
+     * @param mixed $data Decoded Timeline panel payload.
+     * @param string $path Payload path used in hydration errors.
+     *
+     * @return self Hydrated timing and peak-memory snapshot.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)->shape(['start', 'end', 'memory']);
@@ -26,7 +36,9 @@ final readonly class TimelineSnapshot implements PanelSnapshot
     }
 
     /**
-     * @return array<string, mixed>
+     * Returns the snapshot for JSON serialization.
+     *
+     * @return array<string, mixed> Serialized start time, end time, and peak memory.
      */
     public function jsonSerialize(): array
     {

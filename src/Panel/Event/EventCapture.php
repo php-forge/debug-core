@@ -23,9 +23,11 @@ use function strstr;
 final class EventCapture
 {
     /**
+     * Bounds and sanitizes the adapter-selected context fields.
+     *
      * @param array<string, string> $fields Adapter-selected fields only.
      *
-     * @return array<string, string>
+     * @return array<string, string> At most sixteen sanitized fields, with sensitive values replaced by `[redacted]`.
      */
     public static function context(array $fields): array
     {
@@ -43,11 +45,13 @@ final class EventCapture
     }
 
     /**
+     * Bounds and sanitizes the source frames observed when an event fired.
+     *
      * @param list<array<string, mixed>> $frames Backtrace acquired with `DEBUG_BACKTRACE_IGNORE_ARGS`.
      * @param int $limit Maximum frames; hard-limited to sixteen.
      * @param list<string> $skipFiles Adapter instrumentation files to omit.
      *
-     * @return list<string>
+     * @return list<string> Sanitized `file:line` frames in call order.
      */
     public static function trace(array $frames, int $limit, array $skipFiles = []): array
     {
@@ -74,6 +78,13 @@ final class EventCapture
         return $result;
     }
 
+    /**
+     * Strips NUL-delimited declaration paths and bounds the captured text.
+     *
+     * @param string $value Raw diagnostic text.
+     *
+     * @return string Text bounded to 2048 bytes, suffixed with `[truncated]` when it was cut.
+     */
     private static function text(string $value): string
     {
         // Anonymous class names may contain a NUL-delimited declaration path.

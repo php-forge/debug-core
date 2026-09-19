@@ -126,6 +126,14 @@ final class QueryRow implements PanelRow
         return null;
     }
 
+    /**
+     * Narrows one persisted statement of the database payload into a typed row.
+     *
+     * @param mixed $data Persisted statement, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the statement, used to report a malformed payload.
+     *
+     * @return self Row carrying every persisted statement field.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)

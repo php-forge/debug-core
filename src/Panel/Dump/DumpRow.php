@@ -36,6 +36,14 @@ final readonly class DumpRow implements PanelRow
         public array $trace,
     ) {}
 
+    /**
+     * Narrows one persisted dump of the dump payload into a typed row.
+     *
+     * @param mixed $data Persisted dump, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the dump, used to report a malformed payload.
+     *
+     * @return self Row carrying every persisted dump field.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -75,6 +83,8 @@ final readonly class DumpRow implements PanelRow
     }
 
     /**
+     * Returns the typed row for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array

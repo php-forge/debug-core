@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel;
 
+use JsonException;
 use PHPForge\Debug\{ColumnStyle, PanelView};
 use PHPForge\Debug\Helper\{Badge, CellMore, Disclosure, EmptyState, ExtensionPill, Format, Icon, Table, Trace};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
@@ -583,6 +584,15 @@ final class PanelRenderer
             ->render();
     }
 
+    /**
+     * Renders an inline value as its JSON text, clamped when it overflows the cell.
+     *
+     * @param mixed $value Value to encode.
+     *
+     * @throws JsonException When the value cannot be encoded.
+     *
+     * @return string Encoded JSON document, clamped behind the cell expander when it is long.
+     */
     private function preview(mixed $value): string
     {
         $json = json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

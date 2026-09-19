@@ -15,6 +15,7 @@ final readonly class NPlusOneFinding
      * @param float $totalDuration Total group duration in milliseconds.
      * @param int $firstSequence First query sequence used as the deep-link target.
      * @param list<int> $sequences Query sequences belonging to the group.
+     * @param string $representativeQuery Statement shown as the sample of the group.
      */
     public function __construct(
         public string $fingerprint,
@@ -25,6 +26,11 @@ final readonly class NPlusOneFinding
         public string $representativeQuery,
     ) {}
 
+    /**
+     * Returns the stable DOM id the queries grid deep-links the group with.
+     *
+     * @return string DOM id derived from the first query sequence of the group.
+     */
     public function id(): string
     {
         return "yii-debug-db-n1-{$this->firstSequence}";

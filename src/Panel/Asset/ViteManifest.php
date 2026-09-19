@@ -17,13 +17,33 @@ final readonly class ViteManifest
      * @param list<ViteChunk> $chunks
      */
     public function __construct(
+        /**
+         * Public base URL the built assets are served from.
+         */
         public string $baseUrl,
+        /**
+         * Whether the bridge serves assets from the Vite dev server instead of the build manifest.
+         */
         public bool $devMode,
+        /**
+         * Dev server URL, or `null` when the bridge serves built assets.
+         */
         public string|null $devServerUrl,
+        /**
+         * Filesystem path of the build manifest the bridge reads.
+         */
         public string $manifestPath,
         public array $chunks,
     ) {}
 
+    /**
+     * Narrows the persisted Vite payload into a typed manifest.
+     *
+     * @param mixed $data Persisted manifest, expected to be an object carrying the declared shape.
+     * @param string $path JSON path of the manifest, used to report a malformed payload.
+     *
+     * @return self Manifest carrying the bridge configuration and its build chunks.
+     */
     public static function fromArray(mixed $data, string $path): self
     {
         $payload = Payload::object($data, $path)
@@ -53,6 +73,8 @@ final readonly class ViteManifest
     }
 
     /**
+     * Returns the typed manifest for JSON serialization.
+     *
      * @return array<string, mixed>
      */
     public function jsonSerialize(): array
