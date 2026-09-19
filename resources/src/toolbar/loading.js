@@ -15,39 +15,3 @@ export function toolbarRetryDelay(status, attempt) {
 
   return retryDelays[attempt];
 }
-
-/**
- * Resolves the snapshot a rejected follow-tag load must restore.
- */
-export function resolveToolbarLoadRollback(
-  lastLoadedUrl,
-  lastLoadedTag,
-  previousUrl,
-  previousTag,
-) {
-  var hasLoadedSnapshot = Boolean(lastLoadedUrl);
-
-  return {
-    url: hasLoadedSnapshot ? lastLoadedUrl : previousUrl,
-    tag: hasLoadedSnapshot ? lastLoadedTag : previousTag,
-    reload: !hasLoadedSnapshot,
-  };
-}
-
-export function toolbarDataUrlForTag(url, nextTag, baseUrl) {
-  if (!url || !nextTag) {
-    return null;
-  }
-
-  var parsed;
-
-  try {
-    parsed = new URL(url, baseUrl);
-  } catch {
-    return null;
-  }
-
-  parsed.searchParams.set("tag", nextTag);
-
-  return parsed.href;
-}

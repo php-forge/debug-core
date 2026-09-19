@@ -1,18 +1,17 @@
 import {
   readStorageItem,
   requestStack,
-  sameUrl,
   storageKey,
   toolbars,
 } from "./state.js";
 import { createToolbarDrawer } from "./drawer.js";
 import { splitToolbarPanels } from "./extensions.js";
+import { focusToolbarElement, focusToolbarTrigger } from "./focus.js";
 import { createToolbarLoader } from "./loader.js";
-import { resolveToolbarLoadRollback, toolbarDataUrlForTag } from "./loading.js";
 import { normalizeToolbarPosition } from "./position.js";
 import {
   createToolbarView,
-  renderAjaxPanel,
+  renderAjaxMenu,
   renderBrand,
   renderCollapsedOpener,
   renderControls,
@@ -41,7 +40,8 @@ import toolbarStyles from "./toolbar-shadow.css?inline";
  *
  *   - loader.js           one load lifecycle per connection.
  *   - theme-controller.js theme resolution and the host signals that flip it.
- *   - drawer.js           the panel drawer, its resize affordances and the menu.
+ *   - drawer.js           the panel drawer, its resize affordances and the bar
+ *                         menus.
  *   - render.js           the stateless HTML builders the render cycle calls.
  */
 export function YiiDebugToolbar() {
@@ -52,11 +52,13 @@ export function YiiDebugToolbar() {
   self.activeUrl = "";
   self.expanded = readStorageItem(storageKey) === "1";
   self.drawerOpen = false;
-  /* Menu state is per page view: never persisted, never restored. */
-  self.extensionsOpen = false;
+  /**
+   * Name of the open bar menu (`ajax` or `extensions`), or `null`. Menu state
+   * is per page view: never persisted, never restored.
+   */
+  self.openMenu = null;
   self.restoreFocusUrl = null;
   self.resizing = false;
-  self.currentTag = null;
   /* Replaced by a fresh one on every connect; see `connectedCallback()`. */
   self.loader = createToolbarLoader(self);
   self.drawer = createToolbarDrawer(self);
@@ -101,6 +103,14 @@ YiiDebugToolbar.prototype.disconnectedCallback = function () {
   this.drawer.dispose();
 };
 
+/**
+ * Records the tracked requests and refreshes the AJAX menu in place, so the
+ * surrounding bar keeps its nodes and an open menu stays open.
+ *
+ * A refresh replaces the menu nodes, so focus held inside the menu is moved to
+ * the matching new row, or to the chip when the row was pushed out of the
+ * list.
+ */
 YiiDebugToolbar.prototype.setAjaxRequests = function (requests) {
   this.ajaxRequests = requests;
 
@@ -108,7 +118,7 @@ YiiDebugToolbar.prototype.setAjaxRequests = function (requests) {
     return;
   }
 
-  var current = this.barRoot.querySelector(".ajax-panel");
+  var current = this.barRoot.querySelector(".ajax");
 
   if (!current) {
     this.render();
@@ -117,10 +127,20 @@ YiiDebugToolbar.prototype.setAjaxRequests = function (requests) {
   }
 
   var staging = document.createElement("div");
-  staging.innerHTML = this.renderAjaxPanel();
+  staging.innerHTML = this.renderAjaxMenu();
 
-  if (staging.firstElementChild) {
-    current.replaceWith(staging.firstElementChild);
+  if (!staging.firstElementChild) {
+    return;
+  }
+
+  var focused = this.shadowRoot.activeElement;
+  var refocus = focused !== null && current.contains(focused);
+  var focusedUrl = refocus ? focused.getAttribute("data-debug-url") : null;
+
+  current.replaceWith(staging.firstElementChild);
+
+  if (refocus && !focusToolbarTrigger(this.shadowRoot, focusedUrl)) {
+    focusToolbarElement(this.shadowRoot, ".ajax-toggle");
   }
 };
 
@@ -128,62 +148,13 @@ YiiDebugToolbar.prototype.normalizeUrl = function (url) {
   return normalizeToolbarUrl(url);
 };
 
-YiiDebugToolbar.prototype.followTag = function (tag) {
-  if (!tag || this.currentTag === tag) {
-    return;
-  }
-
-  var url = this.normalizeUrl(this.getAttribute("data-url"));
-
-  if (!url) {
-    return;
-  }
-
-  var previousUrl = url;
-  var previousTag = this.currentTag;
-  var nextUrl = toolbarDataUrlForTag(url, tag, window.location.href);
-
-  if (!nextUrl || sameUrl(url, nextUrl)) {
-    return;
-  }
-
-  this.currentTag = tag;
-  this.setAttribute("data-url", nextUrl);
-  this.load(function (ok) {
-    if (ok) {
-      return;
-    }
-
-    /**
-     * The tag we tried to follow was rejected (404 — rotated out of history,
-     * 500, etc.). Roll back so the toolbar keeps showing the last good data
-     * instead of leaving the user with a broken state.
-     */
-    var rollback = resolveToolbarLoadRollback(
-      this.loader.lastUrl,
-      this.loader.lastTag,
-      previousUrl,
-      previousTag,
-    );
-
-    this.currentTag = rollback.tag;
-    this.setAttribute("data-url", rollback.url);
-
-    if (rollback.reload) {
-      this.load();
-    } else {
-      this.render();
-    }
-  });
-};
-
 /**
  * Loads the snapshot at `data-url` through the controller the element
  * lifecycle owns. A detached element keeps its disposed controller, so the
  * call stays inert until the element is connected again.
  */
-YiiDebugToolbar.prototype.load = function (done) {
-  this.loader.load(done);
+YiiDebugToolbar.prototype.load = function () {
+  this.loader.load();
 };
 
 YiiDebugToolbar.prototype.dispatchAttachedEvent = function () {
@@ -232,12 +203,12 @@ YiiDebugToolbar.prototype.renderError = function (message) {
 };
 
 /**
- * Renders the AJAX chip the tracker refreshes on its own, out of the render
+ * Renders the AJAX menu the tracker refreshes on its own, out of the render
  * cycle: `setAjaxRequests()` swaps this fragment in place so the surrounding
  * bar keeps its nodes.
  */
-YiiDebugToolbar.prototype.renderAjaxPanel = function () {
-  return renderAjaxPanel(createToolbarView(this));
+YiiDebugToolbar.prototype.renderAjaxMenu = function () {
+  return renderAjaxMenu(createToolbarView(this));
 };
 
 YiiDebugToolbar.prototype.getPosition = function () {
@@ -275,8 +246,8 @@ YiiDebugToolbar.prototype.render = function () {
   this.barRoot.innerHTML = this.expanded
     ? renderBrand(view) +
       profilingChip +
-      this.renderAjaxPanel() +
       renderPanels(view, split.inline) +
+      renderAjaxMenu(view) +
       renderExtensions(view, split.extensions) +
       renderControls(view)
     : renderCollapsedOpener(view);

@@ -3,8 +3,6 @@ import { test } from "vitest";
 
 import {
   extensionsBadgeStatus,
-  isInsideExtensions,
-  shouldCloseExtensionsMenu,
   splitToolbarPanels,
 } from "../src/toolbar/extensions.js";
 
@@ -58,45 +56,4 @@ test("the Extensions badge surfaces a failure hidden inside the menu", () => {
   assert.equal(extensionsBadgeStatus([healthy, failing]), "danger");
   assert.equal(extensionsBadgeStatus([healthy, metricFree]), "default");
   assert.equal(extensionsBadgeStatus([]), "default");
-});
-
-test("Escape closes only an open Extensions menu", () => {
-  assert.equal(
-    shouldCloseExtensionsMenu({ key: "Escape", defaultPrevented: false }, true),
-    true,
-  );
-  assert.equal(
-    shouldCloseExtensionsMenu({ key: "Enter", defaultPrevented: false }, true),
-    false,
-  );
-  assert.equal(
-    shouldCloseExtensionsMenu({ key: "Escape", defaultPrevented: true }, true),
-    false,
-  );
-  assert.equal(
-    shouldCloseExtensionsMenu(
-      { key: "Escape", defaultPrevented: false },
-      false,
-    ),
-    false,
-  );
-});
-
-test("outside pointers are told apart from the Extensions wrapper", () => {
-  var wrapper = { className: "extensions" };
-  var menuItem = { parentElement: wrapper };
-  var control = { parentElement: null };
-  var closestStub = function (target, selector) {
-    if (selector !== ".extensions") {
-      return null;
-    }
-
-    return target === wrapper || target.parentElement === wrapper
-      ? wrapper
-      : null;
-  };
-
-  assert.equal(isInsideExtensions(wrapper, closestStub), true);
-  assert.equal(isInsideExtensions(menuItem, closestStub), true);
-  assert.equal(isInsideExtensions(control, closestStub), false);
 });

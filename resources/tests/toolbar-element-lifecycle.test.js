@@ -281,27 +281,27 @@ test("the document pointer listener follows the element lifecycle", () => {
 
   element.shadowRoot.querySelector(".extensions-toggle").click();
 
-  assert.equal(element.extensionsOpen, true, "Menu must be open.");
+  assert.equal(element.openMenu, "extensions", "Menu must be open.");
 
   document.dispatchEvent(
     new window.MouseEvent("pointerdown", { bubbles: true, composed: true }),
   );
 
   assert.equal(
-    element.extensionsOpen,
-    false,
+    element.openMenu,
+    null,
     "An attached listener must dismiss the menu.",
   );
 
   element.remove();
-  element.extensionsOpen = true;
+  element.openMenu = "extensions";
   document.dispatchEvent(
     new window.MouseEvent("pointerdown", { bubbles: true, composed: true }),
   );
 
   assert.equal(
-    element.extensionsOpen,
-    true,
+    element.openMenu,
+    "extensions",
     "A detached listener must leave the menu alone.",
   );
 });
@@ -347,7 +347,6 @@ test("a response arriving after the toolbar was detached is dropped", () => {
   request.respond(200, snapshot("after-detach"));
 
   assert.equal(request.aborted, true, "Disposal must abort the request.");
-  assert.equal(element.currentTag, null, "Tracked tag must stay untouched.");
   assert.equal(element.data, null, "No payload may be applied.");
   assert.equal(
     element.shadowRoot.querySelector(".bar"),
@@ -416,15 +415,11 @@ test("reconnecting starts a single fresh load lifecycle", () => {
 
   stale.respond(200, snapshot("stale"));
 
-  assert.equal(
-    element.currentTag,
-    null,
-    "A previous lifecycle must not settle.",
-  );
+  assert.equal(element.data, null, "A previous lifecycle must not settle.");
 
   fresh.respond(200, snapshot("fresh"));
 
-  assert.equal(element.currentTag, "fresh", "The new lifecycle must apply.");
+  assert.equal(element.data.tag, "fresh", "The new lifecycle must apply.");
   assert.equal(announcements, 1, "Attachment must be announced once.");
 
   element.remove();
@@ -441,12 +436,7 @@ test("a superseded response cannot overwrite the newer tag", () => {
   fresh.respond(200, snapshot("fresh"));
   stale.respond(200, snapshot("stale"));
 
-  assert.equal(element.currentTag, "fresh", "Newer tag must survive.");
-  assert.equal(
-    element.loader.lastTag,
-    "fresh",
-    "Rollback target must not move back.",
-  );
+  assert.equal(element.data.tag, "fresh", "Newer tag must survive.");
 
   element.remove();
 });
@@ -468,8 +458,8 @@ test("two toolbars settling out of order keep their own state", () => {
   secondRequest.respond(200, snapshot("two"));
   firstRequest.respond(200, snapshot("one"));
 
-  assert.equal(first.currentTag, "one", "First toolbar must keep its tag.");
-  assert.equal(second.currentTag, "two", "Second toolbar must keep its tag.");
+  assert.equal(first.data.tag, "one", "First toolbar must keep its tag.");
+  assert.equal(second.data.tag, "two", "Second toolbar must keep its tag.");
   assert.deepEqual(
     announcements,
     ["second", "first"],

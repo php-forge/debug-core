@@ -347,7 +347,7 @@
 }
 
 /*
- * Shared readout pill — chip metrics, AJAX popover status cells, and the
+ * Shared readout pill — chip metrics, AJAX menu status cells, and the
  * version tag. Numbers are the instrument's voice, so they render in mono.
  */
 .metric-value,
@@ -385,7 +385,7 @@
  * Badges follow the fixed semantic hue vocabulary with the tinted "ink on
  * paper" formula shared with the debugger panels. Status-class suffixes come
  * from `Vocabulary::statusClass()` via the RequestPanel toolbar item and the
- * AJAX popover rows; the generic verdicts come from the panels' toolbar items
+ * AJAX menu rows; the generic verdicts come from the panels' toolbar items
  * and the AJAX counter.
  */
 .badge-status-2xx,
@@ -437,7 +437,7 @@
   color: color-mix(in srgb, var(--badge-hue) 80%, var(--yii-debug-panel-text));
 }
 
-/* HTTP verb readouts in the AJAX popover — vocabulary-colored text. */
+/* HTTP verb readouts in the AJAX menu — vocabulary-colored text. */
 .verb-get {
   color: color-mix(
     in srgb,
@@ -483,26 +483,44 @@
   background: var(--yii-debug-panel-pill);
 }
 
-/* AJAX inspector popover. */
-.ajax-panel {
-  display: none;
-}
-
-.expanded .ajax-panel {
-  display: inline-flex;
-}
-
 /*
- * Popup surface shared by the AJAX inspector and the Extensions menu: both
- * anchor to the bar, flip with the docking position, and carry one elevation.
+ * Bar menus — the AJAX inspector and the Extensions group fold a list behind
+ * one chip each, side by side at the end of the bar. Both live outside
+ * `.panels` (that strip scrolls with `overflow: auto hidden` and would clip a
+ * popup anchored to one of its children), share one popup surface, and flip
+ * with the docking position. Only one is open at a time.
  */
-.ajax-popover,
-.extensions-menu {
+.menu {
+  position: relative;
+  display: none;
+  flex: none;
+}
+
+.expanded .menu {
+  display: flex;
+}
+
+.menu-toggle {
+  appearance: none;
+  cursor: pointer;
+}
+
+/* The open chip and its menu read as one unit. */
+.menu.is-open .menu-toggle {
+  border-color: var(--yii-debug-panel-primary);
+}
+
+.menu-list {
   display: none;
   position: absolute;
+  z-index: 1;
   right: 0;
   bottom: calc(100% + 10px);
+  flex-direction: column;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 6px;
   border: 1px solid var(--yii-debug-panel-border);
+  border-radius: 14px;
   background: light-dark(rgb(255 255 255 / 98%), rgb(13 19 15 / 98%));
   box-shadow: light-dark(
     0 20px 60px rgb(22 33 26 / 16%),
@@ -511,137 +529,37 @@
   box-sizing: border-box;
 }
 
-.ajax-popover {
-  width: min(680px, calc(100vw - 32px));
-  max-height: 360px;
-  overflow: auto;
-  padding: 10px;
-  border-radius: 16px;
-}
-
-.position-top .ajax-popover {
-  top: calc(100% + 10px);
-  bottom: auto;
-}
-
-.ajax-panel:hover .ajax-popover,
-.ajax-panel:focus-within .ajax-popover {
-  display: block;
-}
-
-.ajax-popover table {
-  width: 100%;
-  border-spacing: 0;
-  border-collapse: collapse;
-  color: var(--yii-debug-panel-text);
-}
-
-.ajax-popover th,
-.ajax-popover td {
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--yii-debug-panel-border);
-  text-align: left;
-  vertical-align: top;
-}
-
-.ajax-popover th {
-  font-size: 12px;
-  color: var(--yii-debug-panel-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.ajax-url {
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ajax-link {
-  padding: 0;
-  border: 0;
-  color: var(--yii-debug-panel-link);
-  background: transparent;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.empty {
-  color: var(--yii-debug-panel-muted);
-  text-align: center;
-}
-
-/*
- * Extensions menu — provider-owned panels folded behind one chip so the inline
- * gauge strip keeps its fixed vocabulary. The popup lives outside `.panels`
- * (that strip scrolls with `overflow: auto hidden` and would clip it) and
- * shares the AJAX popover surface, flipping with the docking position.
- *
- * Its rows drop the chip pill for menu vocabulary: full-bleed lines separated
- * by hairlines, with a primary accent rail marking hover, focus, and the
- * active panel.
- */
-.extensions {
-  position: relative;
-  display: none;
-  flex: none;
-}
-
-.expanded .extensions {
-  display: flex;
-}
-
-.extensions-toggle {
-  appearance: none;
-  cursor: pointer;
-}
-
-/* The open chip and its menu read as one unit. */
-.extensions.is-open .extensions-toggle {
-  border-color: var(--yii-debug-panel-primary);
-}
-
-/* The glyph plus the counter carry the chip; the label stays for readers. */
-.extensions-toggle .panel-title {
-  position: absolute;
-  clip-path: inset(50%);
-}
-
-.extensions-menu {
-  z-index: 1;
-  flex-direction: column;
-  min-width: 200px;
-  max-width: min(320px, calc(100vw - 32px));
-  padding: 6px;
-  border-radius: 14px;
-}
-
-.position-top .extensions-menu {
+.position-top .menu-list {
   top: calc(100% + 10px);
   bottom: auto;
 }
 
 /* `display: none` to `flex` needs a keyframe; a transition would never run. */
-.extensions.is-open .extensions-menu {
+.menu.is-open .menu-list {
   --menu-lift: 6px;
 
   display: flex;
-  animation: extensions-in var(--yii-debug-duration-fast) ease;
+  animation: menu-in var(--yii-debug-duration-fast) ease;
 }
 
-.position-top .extensions.is-open .extensions-menu {
+.position-top .menu.is-open .menu-list {
   --menu-lift: -6px;
 }
 
-@keyframes extensions-in {
+@keyframes menu-in {
   from {
     opacity: 0;
     translate: 0 var(--menu-lift);
   }
 }
 
-.extensions-menu .panel {
+/*
+ * Menu rows drop the chip pill for menu vocabulary: full-bleed lines separated
+ * by hairlines, with a primary accent rail marking hover, focus, and the
+ * active entry.
+ */
+.menu-list .panel,
+.ajax-request {
   position: relative;
   display: flex;
   align-items: center;
@@ -654,22 +572,26 @@
   border-radius: var(--yii-debug-radius-sm);
   background: transparent;
   box-shadow: none;
+  box-sizing: border-box;
 }
 
-.extensions-menu .panel + .panel {
+.menu-list .panel + .panel,
+.ajax-request + .ajax-request {
   border-top: 1px solid
     color-mix(in srgb, var(--yii-debug-panel-border), transparent 50%);
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
 
-.extensions-menu .panel:not(:last-child) {
+.menu-list .panel:not(:last-child),
+.ajax-request:not(:last-child) {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
 
 /* The accent rail replaces the chip ring as the row's state marker. */
-.extensions-menu .panel::before {
+.menu-list .panel::before,
+.ajax-request::before {
   content: "";
   position: absolute;
   inset: 4px auto 4px 3px;
@@ -680,13 +602,25 @@
   transition: opacity var(--yii-debug-duration-fast) ease;
 }
 
-.extensions-menu .panel:is(:hover, :focus-within, .panel-active) {
+.menu-list .panel:is(:hover, :focus-within, .panel-active),
+.ajax-request[href]:is(:hover, :focus-visible, .is-active) {
   background: var(--yii-debug-panel-surface-hover);
   box-shadow: none;
 }
 
-.extensions-menu .panel:is(:hover, :focus-within, .panel-active)::before {
+.menu-list .panel:is(:hover, :focus-within, .panel-active)::before,
+.ajax-request[href]:is(:hover, :focus-visible, .is-active)::before {
   opacity: 1;
+}
+
+/* Extensions — the glyph plus the counter carry the chip; the label stays for readers. */
+.extensions-toggle .panel-title {
+  position: absolute;
+  clip-path: inset(50%);
+}
+
+.extensions-menu {
+  min-width: 200px;
 }
 
 .extensions-menu .panel-icon {
@@ -717,6 +651,62 @@
 
 .extensions-menu .metric {
   gap: 6px;
+}
+
+/*
+ * AJAX — each row is the request itself: verb, status, URL and time. A
+ * captured request links to its own snapshot; an uncaptured one stays inert.
+ */
+.ajax-menu {
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.ajax-request {
+  color: var(--yii-debug-panel-text);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ajax-request[href] {
+  cursor: pointer;
+}
+
+.ajax-verb {
+  flex: none;
+  width: 6ch;
+  font-family: var(--yii-debug-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ajax-request .badge {
+  flex: none;
+}
+
+.ajax-url {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ajax-time {
+  flex: none;
+  color: var(--yii-debug-panel-muted);
+  font-family: var(--yii-debug-font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  padding: 6px 12px;
+  color: var(--yii-debug-panel-muted);
+  font-size: 13px;
+  text-align: center;
 }
 
 /* Cluster controls (theme, open, collapse). */
@@ -871,8 +861,7 @@
     max-width: 100%;
   }
 
-  .extensions-menu {
-    right: 0;
+  .menu-list {
     max-width: calc(100vw - 32px);
   }
 
@@ -885,7 +874,7 @@
   .brand,
   .panel,
   .control,
-  .ajax-link {
+  .ajax-request {
     min-height: 44px;
   }
 
@@ -901,7 +890,7 @@
   .panel,
   .control,
   .drawer,
-  .extensions-menu,
+  .menu-list,
   .metric-value,
   .brand-version {
     border-color: CanvasText;
@@ -917,7 +906,8 @@
     outline-color: Highlight;
   }
 
-  .extensions-menu .panel::before {
+  .menu-list .panel::before,
+  .ajax-request::before {
     background: Highlight;
   }
 }

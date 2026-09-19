@@ -14,6 +14,7 @@ const config = {
         "resources/src/toolbar/focus.js",
         "resources/src/toolbar/icons.js",
         "resources/src/toolbar/loading.js",
+        "resources/src/toolbar/menu.js",
         "resources/src/toolbar/panel.js",
         "resources/src/toolbar/position.js",
         "resources/src/toolbar/url.js",

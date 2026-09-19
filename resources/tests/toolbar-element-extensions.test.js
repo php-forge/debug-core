@@ -102,14 +102,24 @@ test("provider panels are grouped behind a single Extensions chip", () => {
     "A failure hidden in the menu must surface on the chip.",
   );
   assert.equal(
+    root.querySelector(".extensions-toggle").getAttribute("data-menu"),
+    "extensions",
+    "Chip must name its menu.",
+  );
+  assert.equal(
     root.querySelector(".extensions-menu").getAttribute("aria-label"),
     "Extensions",
     "Menu must be labelled.",
   );
   assert.equal(
+    root.querySelector(".bar > .extensions").previousElementSibling.className,
+    "ajax menu",
+    "Menu must follow the AJAX menu.",
+  );
+  assert.equal(
     root.querySelector(".bar > .extensions").nextElementSibling.className,
     "controls",
-    "Menu must sit between the strip and the controls.",
+    "Menu must precede the controls.",
   );
 
   element.remove();
@@ -137,7 +147,7 @@ test("a healthy extension set keeps the neutral badge", () => {
   );
   assert.equal(
     element.shadowRoot.querySelector(".extensions-toggle").className,
-    "panel extensions-toggle",
+    "panel menu-toggle extensions-toggle",
     "Chip must stay inactive.",
   );
 
@@ -167,7 +177,7 @@ test("the chip opens the menu, moves focus into it, and closes it again", () => 
 
   click(toggle);
 
-  assert.equal(element.extensionsOpen, true, "Menu must be open.");
+  assert.equal(element.openMenu, "extensions", "Menu must be open.");
   assert.ok(
     root.querySelector(".extensions").classList.contains("is-open"),
     "Wrapper must carry the open modifier.",
@@ -185,11 +195,50 @@ test("the chip opens the menu, moves focus into it, and closes it again", () => 
 
   click(toggle);
 
-  assert.equal(element.extensionsOpen, false, "Menu must be closed.");
+  assert.equal(element.openMenu, null, "Menu must be closed.");
   assert.equal(
     toggle.getAttribute("aria-expanded"),
     "false",
     "Chip must announce the closed menu.",
+  );
+
+  element.remove();
+});
+
+test("opening one menu closes the other", () => {
+  var element = renderToolbar(payload());
+  var root = element.shadowRoot;
+
+  click(root.querySelector(".extensions-toggle"));
+  click(root.querySelector(".ajax-toggle"));
+
+  assert.equal(element.openMenu, "ajax", "The AJAX menu must take over.");
+  assert.equal(
+    root.querySelector(".extensions").classList.contains("is-open"),
+    false,
+    "Extensions wrapper must be closed.",
+  );
+  assert.equal(
+    root.querySelector(".extensions-toggle").getAttribute("aria-expanded"),
+    "false",
+    "Extensions chip must announce the closed menu.",
+  );
+  assert.ok(
+    root.querySelector(".ajax").classList.contains("is-open"),
+    "AJAX wrapper must be open.",
+  );
+
+  click(root.querySelector(".extensions-toggle"));
+
+  assert.equal(
+    element.openMenu,
+    "extensions",
+    "The Extensions menu must take over again.",
+  );
+  assert.equal(
+    root.querySelector(".ajax").classList.contains("is-open"),
+    false,
+    "AJAX wrapper must be closed.",
   );
 
   element.remove();
@@ -203,7 +252,7 @@ test("Escape closes the menu before the drawer and restores focus to the chip", 
   click(root.querySelector(".extensions-toggle"));
   keydown(root.querySelector(".extensions-toggle"), "Escape");
 
-  assert.equal(element.extensionsOpen, false, "Menu must close first.");
+  assert.equal(element.openMenu, null, "Menu must close first.");
   assert.equal(
     element.drawerOpen,
     true,
@@ -233,8 +282,8 @@ test("opening a grouped panel closes the menu", () => {
   click(element.shadowRoot.querySelector('.extensions-menu [title="Queue"]'));
 
   assert.equal(
-    element.extensionsOpen,
-    false,
+    element.openMenu,
+    null,
     "Menu must close with the drawer opening.",
   );
   assert.equal(
@@ -260,16 +309,16 @@ test("a pointer outside the menu dismisses it and one inside does not", () => {
   pointerdown(root.querySelector('.extensions-menu [title="Inertia"]'));
 
   assert.equal(
-    element.extensionsOpen,
-    true,
+    element.openMenu,
+    "extensions",
     "A pointer inside must keep the menu open.",
   );
 
   pointerdown(root.querySelector(".bar"));
 
   assert.equal(
-    element.extensionsOpen,
-    false,
+    element.openMenu,
+    null,
     "A pointer outside must dismiss the menu.",
   );
 
@@ -281,29 +330,29 @@ test("a pointer event without a composed path falls back to its target", () => {
   var root = element.shadowRoot;
 
   click(root.querySelector(".extensions-toggle"));
-  element.drawer.extensionsPointerDown({
+  element.drawer.menuPointerDown({
     target: root.querySelector('.extensions-menu [title="Inertia"]'),
   });
 
   assert.equal(
-    element.extensionsOpen,
-    true,
+    element.openMenu,
+    "extensions",
     "A target inside must keep the menu open.",
   );
 
-  element.drawer.extensionsPointerDown({ target: root.querySelector(".bar") });
+  element.drawer.menuPointerDown({ target: root.querySelector(".bar") });
 
   assert.equal(
-    element.extensionsOpen,
-    false,
+    element.openMenu,
+    null,
     "A target outside must dismiss the menu.",
   );
 
-  element.drawer.extensionsPointerDown({ target: root.querySelector(".bar") });
+  element.drawer.menuPointerDown({ target: root.querySelector(".bar") });
 
   assert.equal(
-    element.extensionsOpen,
-    false,
+    element.openMenu,
+    null,
     "A closed menu must ignore further pointers.",
   );
 
@@ -340,22 +389,26 @@ test("an unrendered menu still tracks its open state", () => {
     }),
   );
 
-  element.drawer.toggleExtensions();
+  element.drawer.toggleMenu("extensions");
 
   assert.equal(
-    element.extensionsOpen,
-    true,
+    element.openMenu,
+    "extensions",
     "State must flip without a menu to sync.",
   );
 
-  element.drawer.closeExtensions(false);
+  element.drawer.closeMenu(false);
 
-  assert.equal(element.extensionsOpen, false, "State must flip back.");
+  assert.equal(element.openMenu, null, "State must flip back.");
   assert.equal(
     element.shadowRoot.activeElement,
     null,
     "Nothing may be focused when no chip exists.",
   );
+
+  element.drawer.closeMenu(true);
+
+  assert.equal(element.openMenu, null, "A closed menu must stay closed.");
 
   element.remove();
 });
@@ -366,7 +419,7 @@ test("an empty menu leaves focus where it is", () => {
 
   root.querySelector(".extensions-menu").innerHTML = "";
   root.querySelector(".extensions-toggle").focus();
-  element.drawer.toggleExtensions();
+  element.drawer.toggleMenu("extensions");
 
   assert.equal(
     root.activeElement,
@@ -382,7 +435,7 @@ test("a wrapper without its chip still records the open state", () => {
   var root = element.shadowRoot;
 
   root.querySelector(".extensions-toggle").remove();
-  element.drawer.toggleExtensions();
+  element.drawer.toggleMenu("extensions");
 
   assert.ok(
     root.querySelector(".extensions").classList.contains("is-open"),
