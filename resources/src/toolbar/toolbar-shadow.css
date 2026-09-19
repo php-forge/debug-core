@@ -255,7 +255,8 @@
 .panel[data-debug-url]:focus,
 .panel:has(.panel-link:hover),
 .panel:focus-within,
-.panel-active {
+.panel-active,
+.menu-toggle:hover {
   border-color: var(--yii-debug-panel-primary);
   background: light-dark(rgb(14 122 85 / 10%), rgb(47 208 140 / 12%));
   box-shadow:
@@ -500,7 +501,17 @@
   display: flex;
 }
 
+/*
+ * A menu chip borrows the controls' shape: a glyph button of the same size,
+ * with the counter riding its top-right corner. The glyph and the counter
+ * carry the chip; the label stays for readers.
+ */
 .menu-toggle {
+  justify-content: center;
+  width: var(--yii-debug-control-min-size);
+  height: var(--yii-debug-control-min-size);
+  padding: 0;
+  background: light-dark(rgb(255 255 255 / 90%), rgb(24 34 27 / 80%));
   appearance: none;
   cursor: pointer;
 }
@@ -508,6 +519,31 @@
 /* The open chip and its menu read as one unit. */
 .menu.is-open .menu-toggle {
   border-color: var(--yii-debug-panel-primary);
+}
+
+.menu-toggle .panel-icon {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.menu-toggle .panel-title {
+  position: absolute;
+  clip-path: inset(50%);
+}
+
+.menu-toggle .metric {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+}
+
+/* A halo in the bar's fill cuts the counter out of the chip edge. */
+.menu-toggle .metric-value {
+  min-height: 18px;
+  padding: 0 6px;
+  font-size: 11px;
+  box-shadow: 0 0 0 2px light-dark(rgb(255 255 255 / 96%), rgb(13 19 15 / 95%));
 }
 
 .menu-list {
@@ -613,12 +649,7 @@
   opacity: 1;
 }
 
-/* Extensions — the glyph plus the counter carry the chip; the label stays for readers. */
-.extensions-toggle .panel-title {
-  position: absolute;
-  clip-path: inset(50%);
-}
-
+/* Extensions — provider panels folded behind the dots. */
 .extensions-menu {
   min-width: 200px;
 }
@@ -878,7 +909,8 @@
     min-height: 44px;
   }
 
-  .control {
+  .control,
+  .menu-toggle {
     width: 44px;
     height: 44px;
   }
