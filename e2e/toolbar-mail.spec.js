@@ -17,7 +17,7 @@ for (const app of debugApps()) {
     page,
   }) => {
     test.skip(
-      app.name === "yii3",
+      app.id === "yii3",
       "Yii3 has no Mail panel until the Phase 5 port.",
     );
 

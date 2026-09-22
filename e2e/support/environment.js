@@ -80,11 +80,17 @@ export function debugApps() {
     ? configuredURLs
     : defaults.map((app) => app.baseURL);
 
-  return urls.map((baseURL, index) => ({
-    name:
-      configuredNames?.[index] ?? defaults[index]?.name ?? `app-${index + 1}`,
-    baseURL: validatedBaseURL(baseURL, index),
-  }));
+  // `id` is the fixture-contract identity and never follows DEBUG_UI_APP_NAMES, so specs can branch on it safely;
+  // `name` is the display label used in test titles.
+  return urls.map((baseURL, index) => {
+    const id = defaults[index]?.name ?? `app-${index + 1}`;
+
+    return Object.freeze({
+      id,
+      name: configuredNames?.[index] ?? id,
+      baseURL: validatedBaseURL(baseURL, index),
+    });
+  });
 }
 
 export function fixtureTag(state = "dense") {
