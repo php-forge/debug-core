@@ -84,26 +84,23 @@ final class ToolbarDataTest extends TestCase
 
     public function testJsonSerializeBuildsBrowserPayload(): void
     {
-        $data = new ToolbarData(
-            tag: 'request-1',
-            title: 'Yii Debugger',
-            indexUrl: '/debug',
-            configUrl: '/debug/view?tag=request-1',
-            items: [
-                ToolbarPanel::create('request', 'Request')
-                    ->withUrl('/debug/view?tag=request-1&panel=request')
-                    ->withIcon('request')
-                    ->withItems(
-                        [
-                            ToolbarItem::create('200')
-                                ->withLabel('Status')
-                                ->withStatus('success'),
-                        ],
-                    ),
-            ],
-            phpVersion: '8.5.9',
-            yiiVersion: '3',
-        );
+        $data = ToolbarData::create('request-1', 'Yii Debugger')
+            ->withNavigation('/debug', '/debug/view?tag=request-1', null)
+            ->withPanels(
+                [
+                    ToolbarPanel::create('request', 'Request')
+                        ->withUrl('/debug/view?tag=request-1&panel=request')
+                        ->withIcon('request')
+                        ->withItems(
+                            [
+                                ToolbarItem::create('200')
+                                    ->withLabel('Status')
+                                    ->withStatus('success'),
+                            ],
+                        ),
+                ],
+            )
+            ->withBranding(null, null, '8.5.9', '3');
 
         $payload = $data->jsonSerialize();
 
@@ -191,21 +188,11 @@ final class ToolbarDataTest extends TestCase
             ->withIcon('db')
             ->withItems([$item]);
 
-        $data = new ToolbarData(
-            tag: 'request-2',
-            title: 'Debugger',
-            indexUrl: '/debug',
-            configUrl: '/debug/config',
-            items: [$panel],
-            position: 'top',
-            defaultHeight: 42,
-            iconBaseUrl: '/icons/',
-            logo: '/icons/yii.svg',
-            logoFallback: '/yii.png',
-            phpInfoUrl: '/debug/php-info',
-            phpVersion: '8.5.9',
-            yiiVersion: '3.0',
-        );
+        $data = ToolbarData::create('request-2', 'Debugger')
+            ->withNavigation('/debug', '/debug/config', '/debug/php-info')
+            ->withPanels([$panel])
+            ->withPresentation('top', 42, '/icons/')
+            ->withBranding('/icons/yii.svg', '/yii.png', '8.5.9', '3.0');
 
         self::assertSame(
             [
@@ -251,21 +238,7 @@ final class ToolbarDataTest extends TestCase
         $sourcePanel = ToolbarPanel::create('request', 'Request');
         $replacementPanel = ToolbarPanel::create('logs', 'Logs');
 
-        $source = new ToolbarData(
-            tag: 'request-1',
-            title: 'Yii Debugger',
-            indexUrl: '/debug',
-            configUrl: '/debug/view?tag=request-1',
-            items: [$sourcePanel],
-            position: 'top',
-            defaultHeight: 42,
-            iconBaseUrl: '/icons/',
-            logo: '/yii.svg',
-            logoFallback: '/yii-fallback.svg',
-            phpInfoUrl: '/debug/php-info',
-            phpVersion: '8.5.9',
-            yiiVersion: '3',
-        );
+        $source = self::fullPayload([$sourcePanel]);
 
         $clone = $source->withPanels([$replacementPanel]);
 
@@ -280,23 +253,23 @@ final class ToolbarDataTest extends TestCase
             'Panel enrichment must not change the source payload.',
         );
         self::assertEquals(
-            new ToolbarData(
-                tag: 'request-1',
-                title: 'Yii Debugger',
-                indexUrl: '/debug',
-                configUrl: '/debug/view?tag=request-1',
-                items: [$replacementPanel],
-                position: 'top',
-                defaultHeight: 42,
-                iconBaseUrl: '/icons/',
-                logo: '/yii.svg',
-                logoFallback: '/yii-fallback.svg',
-                phpInfoUrl: '/debug/php-info',
-                phpVersion: '8.5.9',
-                yiiVersion: '3',
-            ),
+            self::fullPayload([$replacementPanel]),
             $clone,
             'Panel enrichment must replace only the toolbar panels.',
         );
+    }
+
+    /**
+     * Builds a payload with every optional field set, so a comparison detects any field a wither drops.
+     *
+     * @param list<ToolbarPanel> $items Toolbar panels.
+     */
+    private static function fullPayload(array $items): ToolbarData
+    {
+        return ToolbarData::create('request-1', 'Yii Debugger')
+            ->withNavigation('/debug', '/debug/view?tag=request-1', '/debug/php-info')
+            ->withPanels($items)
+            ->withPresentation('top', 42, '/icons/')
+            ->withBranding('/yii.svg', '/yii-fallback.svg', '8.5.9', '3');
     }
 }

@@ -28,7 +28,7 @@ final readonly class ToolbarData implements JsonSerializable
      * @param string|null $phpVersion PHP version label or `null` when omitted.
      * @param string|null $yiiVersion Yii version label or `null` when omitted.
      */
-    public function __construct(
+    private function __construct(
         public string $tag,
         public string $title,
         public string $indexUrl,
