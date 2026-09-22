@@ -20,6 +20,14 @@
             "tag": "quality-fixture-dense-v1",
             "timestamp": 1787529601.0,
             "rows": 80
+        },
+        "prgPost": {
+            "tag": "toolbar-prg-post-v1",
+            "timestamp": 1787529602.0
+        },
+        "prgGet": {
+            "tag": "toolbar-prg-get-v1",
+            "timestamp": 1787529603.0
         }
     },
     "apps": [
