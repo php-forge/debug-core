@@ -314,6 +314,53 @@ function emptyPanels(float $timestamp): array
 }
 
 /**
+ * Builds one half of a POST-redirect-GET pair: the POST sends `$mailCount` messages, the GET that follows sends none,
+ * so the host toolbar must surface the POST's mail as a cross-request chip on the GET.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function prgPanels(float $timestamp, string $method, int $mailCount): array
+{
+    $panels = emptyPanels($timestamp);
+
+    $panels['request'] = RequestSnapshot::capture(
+        [
+            'statusCode' => $method === 'POST' ? 302 : 200,
+            'general' => ['method' => $method],
+            'requestHeaders' => [],
+            'responseHeaders' => [],
+            'requestBody' => [],
+            'GET' => [],
+            'POST' => [],
+            'FILES' => [],
+            'COOKIE' => [],
+            'SERVER' => [],
+        ],
+    )->jsonSerialize();
+    $panels['mail'] = [
+        'entries' => rows(
+            $mailCount,
+            static fn(int $index): array => [
+                'from' => 'Debug Fixture <fixture@example.test>',
+                'to' => ["prg-recipient-{$index}@example.test"],
+                'cc' => [],
+                'bcc' => [],
+                'replyTo' => [],
+                'subject' => "Toolbar PRG fixture message {$index}",
+                'body' => "Sent by the POST half of the toolbar PRG fixture {$index}.",
+                'headers' => "From: fixture@example.test\nX-Quality-Fixture: prg-{$index}",
+                'charset' => 'UTF-8',
+                'file' => '',
+                'isSuccessful' => true,
+                'time' => (int) $timestamp + $index,
+            ],
+        ),
+    ];
+
+    return normalizePanels($panels);
+}
+
+/**
  * @param array<string, string> $sensitiveFixture
  *
  * @return array<string, array<string, mixed>>
@@ -729,11 +776,12 @@ function snapshot(
     float $timestamp,
     array $panels,
     int $statusCode,
+    string $method = 'GET',
 ): DebugSnapshot {
     $dbEntries = $panels['db']['entries'] ?? null;
     $mailEntries = $panels['mail']['entries'] ?? null;
     $summary = RequestSummary::create($tag)
-        ->withRequest(url: $url, method: 'GET', ip: '127.0.0.1', time: $timestamp)
+        ->withRequest(url: $url, method: $method, ip: '127.0.0.1', time: $timestamp)
         ->withResponse($statusCode)
         ->withDatabase(is_array($dbEntries) ? count($dbEntries) : 0)
         ->withMail(is_array($mailEntries) ? count($mailEntries) : 0, [])
@@ -818,7 +866,13 @@ $contract = readContract();
 $targets = resolveTargets($contract, $options);
 $states = $contract['states'] ?? null;
 
-if (!is_array($states) || !is_array($states['empty'] ?? null) || !is_array($states['dense'] ?? null)) {
+if (
+    !is_array($states)
+    || !is_array($states['empty'] ?? null)
+    || !is_array($states['dense'] ?? null)
+    || !is_array($states['prgPost'] ?? null)
+    || !is_array($states['prgGet'] ?? null)
+) {
     throw new RuntimeException("Fixture contract field 'states' is incomplete.");
 }
 
@@ -826,6 +880,10 @@ $emptyTag = $states['empty']['tag'] ?? null;
 $emptyTime = $states['empty']['timestamp'] ?? null;
 $denseTag = $states['dense']['tag'] ?? null;
 $denseTime = $states['dense']['timestamp'] ?? null;
+$prgPostTag = $states['prgPost']['tag'] ?? null;
+$prgPostTime = $states['prgPost']['timestamp'] ?? null;
+$prgGetTag = $states['prgGet']['tag'] ?? null;
+$prgGetTime = $states['prgGet']['timestamp'] ?? null;
 $rowCount = $options['rows'] ?? ($states['dense']['rows'] ?? null);
 $rowCount = is_string($rowCount) && ctype_digit($rowCount) ? (int) $rowCount : $rowCount;
 
@@ -834,6 +892,10 @@ if (
     || !is_numeric($emptyTime)
     || !is_string($denseTag)
     || !is_numeric($denseTime)
+    || !is_string($prgPostTag)
+    || !is_numeric($prgPostTime)
+    || !is_string($prgGetTag)
+    || !is_numeric($prgGetTime)
     || !is_int($rowCount)
     || $rowCount < 1
     || $rowCount > 5_000
@@ -855,7 +917,7 @@ foreach ($targets as $target) {
         );
     }
 
-    $historySize = max(200, count($manifest->entries) + 2);
+    $historySize = max(200, count($manifest->entries) + 4);
     $empty = snapshot(
         $emptyTag,
         $target['baseURL'] . '/quality-fixture/empty',
@@ -871,17 +933,38 @@ foreach ($targets as $target) {
         200,
     );
 
-    // Upsert the stable tags without deleting developers' live snapshots.
+    $prgPost = snapshot(
+        $prgPostTag,
+        $target['baseURL'] . '/quality-fixture/prg',
+        (float) $prgPostTime,
+        prgPanels((float) $prgPostTime, 'POST', 1),
+        302,
+        'POST',
+    );
+    $prgGet = snapshot(
+        $prgGetTag,
+        $target['baseURL'] . '/quality-fixture/prg',
+        (float) $prgGetTime,
+        prgPanels((float) $prgGetTime, 'GET', 0),
+        200,
+    );
+
+    // Upsert the stable tags without deleting developers' live snapshots. Each write moves its tag to the newest
+    // manifest position, so the PRG pair stays adjacent with the GET immediately after the POST.
     $store->writeSnapshot($empty, $historySize);
     $store->writeSnapshot($dense, $historySize);
+    $store->writeSnapshot($prgPost, $historySize);
+    $store->writeSnapshot($prgGet, $historySize);
     assertPersistedRedaction($target['path'] . "/runtime/debug/{$denseTag}.json", $contract);
 
     if (!isset($options['quiet'])) {
         printf(
-            "%s: seeded %s and %s (%d dense rows) in %s\n",
+            "%s: seeded %s, %s, %s and %s (%d dense rows) in %s\n",
             $target['name'],
             $emptyTag,
             $denseTag,
+            $prgPostTag,
+            $prgGetTag,
             $rowCount,
             $target['path'] . '/runtime/debug',
         );
