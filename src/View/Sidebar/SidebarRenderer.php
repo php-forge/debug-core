@@ -73,7 +73,7 @@ final class SidebarRenderer
                             ->content($snapshot->path),
                     ),
                 self::renderMetaStrip($snapshot),
-                self::renderNavRow($snapshot),
+                self::renderNavRow($snapshot->navigation),
             );
     }
 
@@ -140,27 +140,27 @@ final class SidebarRenderer
      * directly. An entry links to its target capture, except in cursor mode and when the target does not exist, where
      * it renders as a button the history script drives.
      *
-     * @param SidebarSnapshot $snapshot Capture the navigator moves away from.
+     * @param SidebarNavigation $navigation Navigator row of the capture the card describes.
      *
      * @return string Rendered navigator row.
      */
-    private static function renderNavRow(SidebarSnapshot $snapshot): string
+    private static function renderNavRow(SidebarNavigation $navigation): string
     {
         $entries = [
             [
-                'newest', $snapshot->isNewest, $snapshot->newestUrl, ViewMessage::NEWEST_REQUEST->value,
+                'newest', $navigation->isNewest, $navigation->newestUrl, ViewMessage::NEWEST_REQUEST->value,
                 ViewMessage::NEWEST_CAPTURED_REQUEST->value, 'chevrons-up',
             ],
             [
-                'newer', $snapshot->hasNewer === false, $snapshot->newerUrl, 'Newer request',
+                'newer', $navigation->hasNewer === false, $navigation->newerUrl, 'Newer request',
                 'Newer captured request', 'chevron-up',
             ],
             [
-                'older', $snapshot->hasOlder === false, $snapshot->olderUrl, 'Older request',
+                'older', $navigation->hasOlder === false, $navigation->olderUrl, 'Older request',
                 'Older captured request', 'chevron-down',
             ],
             [
-                'oldest', $snapshot->isOldest, $snapshot->oldestUrl, 'Oldest request',
+                'oldest', $navigation->isOldest, $navigation->oldestUrl, 'Oldest request',
                 'Oldest captured request', 'chevrons-down',
             ],
         ];
@@ -168,7 +168,7 @@ final class SidebarRenderer
         $items = [];
 
         foreach ($entries as [$target, $isDisabled, $url, $title, $ariaLabel, $icon]) {
-            $asButton = $snapshot->isCursor || $isDisabled;
+            $asButton = $navigation->isCursor || $isDisabled;
 
             $attributes = $asButton ? ['type' => 'button', 'title' => $title] : ['title' => $title];
 
@@ -178,7 +178,7 @@ final class SidebarRenderer
 
             $attributes['aria-label'] = $ariaLabel;
 
-            if ($asButton && $snapshot->isCursor) {
+            if ($asButton && $navigation->isCursor) {
                 $attributes['data-yii-debug-cursor'] = $target;
             }
 
@@ -254,11 +254,11 @@ final class SidebarRenderer
             ->class('yii-debug-side-section yii-debug-request-nav')
             ->addAriaAttribute('label', $snapshot->ariaLabel);
 
-        if ($snapshot->isCursor) {
+        if ($snapshot->navigation->isCursor) {
             $section = $section->addDataAttribute('yii-debug-history-cursor', true);
 
-            if ($snapshot->cursorInitTag !== '') {
-                $section = $section->addDataAttribute('yii-debug-cursor-init', $snapshot->cursorInitTag);
+            if ($snapshot->navigation->cursorInitTag !== '') {
+                $section = $section->addDataAttribute('yii-debug-cursor-init', $snapshot->navigation->cursorInitTag);
             }
         }
 

@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\View\Sidebar;
 
+use PHPForge\Debug\Helper\{Text, Vocabulary};
+use PHPForge\Debug\Storage\RequestSummary;
+
+use function date;
+
 /**
  * Typed view-model for the snapshot card surfaced at the top of the debugger sidebar ('CURRENT REQUEST' /
  * 'NEWEST REQUEST').
+ *
+ * The request identity is derived from the capture summary, so every host renders the method, URL, status, and time
+ * of a capture the same way; the navigator row comes from the host through {@see SidebarNavigation}.
  */
 final readonly class SidebarSnapshot
 {
@@ -36,7 +44,7 @@ final readonly class SidebarSnapshot
          */
         public int $statusCode,
         /**
-         * Status-pill CSS modifier ('success' / 'muted' / 'warning' / 'danger') derived from `$statusCode`.
+         * Status-pill CSS modifier ('2xx' / '3xx' / '4xx' / '5xx' / 'none') derived from `$statusCode`.
          */
         public string $statusVariant,
         /**
@@ -48,222 +56,40 @@ final readonly class SidebarSnapshot
          */
         public bool $isAjax,
         /**
-         * `true` when the sidebar is rendered for the index page and the navigator buttons act as a grid cursor.
+         * Navigator row moving away from this capture.
          */
-        public bool $isCursor,
-        /**
-         * Optional tag the cursor JS should land on when the sidebar arrives from a panel view's History link
-         * (`?cursor=<tag>`). Empty string falls back to the newest captured request.
-         */
-        public string $cursorInitTag,
-        /**
-         * Newest request link target (top of list); empty string renders an empty `href`.
-         */
-        public string $newestUrl,
-        /**
-         * Oldest request link target (bottom of list); empty string renders an empty `href`.
-         */
-        public string $oldestUrl,
-        /**
-         * Newer request link target; empty string when the snapshot is already on the newest row.
-         */
-        public string $newerUrl,
-        /**
-         * Older request link target; empty string when the snapshot is already on the oldest row.
-         */
-        public string $olderUrl,
-        /**
-         * `true` when the snapshot is the newest captured request; disables the Newest button.
-         */
-        public bool $isNewest,
-        /**
-         * `true` when the snapshot is the oldest captured request; disables the Oldest button.
-         */
-        public bool $isOldest,
-        /**
-         * `true` when there is a newer request available; controls the Newer button.
-         */
-        public bool $hasNewer,
-        /**
-         * `true` when there is an older request available; controls the Older button.
-         */
-        public bool $hasOlder,
+        public SidebarNavigation $navigation,
     ) {}
 
     /**
-     * Creates an empty sidebar snapshot ready for immutable enrichment.
+     * Creates the snapshot card of one capture.
+     *
+     * @param RequestSummary $summary Summary of the capture the card describes.
+     * @param SidebarNavigation $navigation Navigator row the host computed for that capture.
+     * @param string $title Section heading shown above the card.
+     * @param string|null $ariaLabel Accessible name of the section, or `null` to reuse the heading.
+     *
+     * @return self Snapshot card view-model.
      */
-    public static function create(string $title, string|null $ariaLabel = null): self
-    {
+    public static function fromSummary(
+        RequestSummary $summary,
+        SidebarNavigation $navigation,
+        string $title,
+        string|null $ariaLabel = null,
+    ): self {
+        $unix = (int) $summary->time;
+
         return new self(
             title: $title,
             ariaLabel: $ariaLabel ?? $title,
-            method: '',
-            path: '',
-            fullUrl: '',
-            statusCode: 0,
-            statusVariant: 'muted',
-            time: '',
-            isAjax: false,
-            isCursor: false,
-            cursorInitTag: '',
-            newestUrl: '',
-            oldestUrl: '',
-            newerUrl: '',
-            olderUrl: '',
-            isNewest: true,
-            isOldest: true,
-            hasNewer: false,
-            hasOlder: false,
-        );
-    }
-
-    /**
-     * Returns a copy with history-cursor behavior.
-     */
-    public function withCursor(bool $isCursor = true, string $cursorInitTag = ''): self
-    {
-        return new self(
-            title: $this->title,
-            ariaLabel: $this->ariaLabel,
-            method: $this->method,
-            path: $this->path,
-            fullUrl: $this->fullUrl,
-            statusCode: $this->statusCode,
-            statusVariant: $this->statusVariant,
-            time: $this->time,
-            isAjax: $this->isAjax,
-            isCursor: $isCursor,
-            cursorInitTag: $cursorInitTag,
-            newestUrl: $this->newestUrl,
-            oldestUrl: $this->oldestUrl,
-            newerUrl: $this->newerUrl,
-            olderUrl: $this->olderUrl,
-            isNewest: $this->isNewest,
-            isOldest: $this->isOldest,
-            hasNewer: $this->hasNewer,
-            hasOlder: $this->hasOlder,
-        );
-    }
-
-    /**
-     * Returns a copy with navigator availability state.
-     */
-    public function withNavigationState(bool $isNewest, bool $isOldest, bool $hasNewer, bool $hasOlder): self
-    {
-        return new self(
-            title: $this->title,
-            ariaLabel: $this->ariaLabel,
-            method: $this->method,
-            path: $this->path,
-            fullUrl: $this->fullUrl,
-            statusCode: $this->statusCode,
-            statusVariant: $this->statusVariant,
-            time: $this->time,
-            isAjax: $this->isAjax,
-            isCursor: $this->isCursor,
-            cursorInitTag: $this->cursorInitTag,
-            newestUrl: $this->newestUrl,
-            oldestUrl: $this->oldestUrl,
-            newerUrl: $this->newerUrl,
-            olderUrl: $this->olderUrl,
-            isNewest: $isNewest,
-            isOldest: $isOldest,
-            hasNewer: $hasNewer,
-            hasOlder: $hasOlder,
-        );
-    }
-
-    /**
-     * Returns a copy with navigator URLs.
-     */
-    public function withNavigationUrls(
-        string $newestUrl,
-        string $oldestUrl,
-        string $newerUrl,
-        string $olderUrl,
-    ): self {
-        return new self(
-            title: $this->title,
-            ariaLabel: $this->ariaLabel,
-            method: $this->method,
-            path: $this->path,
-            fullUrl: $this->fullUrl,
-            statusCode: $this->statusCode,
-            statusVariant: $this->statusVariant,
-            time: $this->time,
-            isAjax: $this->isAjax,
-            isCursor: $this->isCursor,
-            cursorInitTag: $this->cursorInitTag,
-            newestUrl: $newestUrl,
-            oldestUrl: $oldestUrl,
-            newerUrl: $newerUrl,
-            olderUrl: $olderUrl,
-            isNewest: $this->isNewest,
-            isOldest: $this->isOldest,
-            hasNewer: $this->hasNewer,
-            hasOlder: $this->hasOlder,
-        );
-    }
-
-    /**
-     * Returns a copy with request identity and URL data.
-     */
-    public function withRequest(
-        string $method,
-        string $path,
-        string $fullUrl,
-        string $time = '',
-        bool $isAjax = false,
-    ): self {
-        return new self(
-            title: $this->title,
-            ariaLabel: $this->ariaLabel,
-            method: $method,
-            path: $path,
-            fullUrl: $fullUrl,
-            statusCode: $this->statusCode,
-            statusVariant: $this->statusVariant,
-            time: $time,
-            isAjax: $isAjax,
-            isCursor: $this->isCursor,
-            cursorInitTag: $this->cursorInitTag,
-            newestUrl: $this->newestUrl,
-            oldestUrl: $this->oldestUrl,
-            newerUrl: $this->newerUrl,
-            olderUrl: $this->olderUrl,
-            isNewest: $this->isNewest,
-            isOldest: $this->isOldest,
-            hasNewer: $this->hasNewer,
-            hasOlder: $this->hasOlder,
-        );
-    }
-
-    /**
-     * Returns a copy with response metadata.
-     */
-    public function withResponse(int $statusCode, string $statusVariant): self
-    {
-        return new self(
-            title: $this->title,
-            ariaLabel: $this->ariaLabel,
-            method: $this->method,
-            path: $this->path,
-            fullUrl: $this->fullUrl,
-            statusCode: $statusCode,
-            statusVariant: $statusVariant,
-            time: $this->time,
-            isAjax: $this->isAjax,
-            isCursor: $this->isCursor,
-            cursorInitTag: $this->cursorInitTag,
-            newestUrl: $this->newestUrl,
-            oldestUrl: $this->oldestUrl,
-            newerUrl: $this->newerUrl,
-            olderUrl: $this->olderUrl,
-            isNewest: $this->isNewest,
-            isOldest: $this->isOldest,
-            hasNewer: $this->hasNewer,
-            hasOlder: $this->hasOlder,
+            method: $summary->method,
+            path: Text::urlToPath($summary->url),
+            fullUrl: $summary->url,
+            statusCode: $summary->statusCode,
+            statusVariant: Vocabulary::statusClass($summary->statusCode),
+            time: $unix > 0 ? date('H:i:s', $unix) : '',
+            isAjax: $summary->ajax,
+            navigation: $navigation,
         );
     }
 }

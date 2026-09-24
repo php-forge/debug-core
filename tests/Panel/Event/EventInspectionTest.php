@@ -11,6 +11,7 @@ use PHPForge\Debug\Tests\Provider\EventInspectionProvider;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
+use function array_replace;
 use function strlen;
 
 /**
@@ -242,7 +243,7 @@ final class EventInspectionTest extends TestCase
             'Later options must not change the context-only copy.',
         );
         self::assertSame(
-            [...$expected, 'pairId' => null, 'phase' => '', 'depth' => 0, 'clock' => null],
+            array_replace($expected, ['pairId' => null, 'phase' => '', 'depth' => 0, 'clock' => null]),
             $withTrace->jsonSerialize(),
             'Lifecycle options must not change earlier copies.',
         );
