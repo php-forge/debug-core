@@ -12,6 +12,7 @@ use Stringable;
 use Throwable;
 
 use function array_map;
+use function array_replace;
 use function is_int;
 use function is_string;
 
@@ -256,7 +257,7 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
     public function getTrace(): array
     {
         return array_map(
-            static fn(array $frame): array => [...$frame, 'args' => $frame['args']->values()],
+            static fn(array $frame): array => array_replace($frame, ['args' => $frame['args']->values()]),
             $this->trace,
         );
     }
@@ -275,7 +276,7 @@ final readonly class ExceptionSnapshot implements JsonSerializable, Stringable
             'file' => $this->file,
             'line' => $this->line,
             'trace' => array_map(
-                static fn(array $frame): array => [...$frame, 'args' => $frame['args']->jsonSerialize()],
+                static fn(array $frame): array => array_replace($frame, ['args' => $frame['args']->jsonSerialize()]),
                 $this->trace,
             ),
             'toString' => $this->toString,
