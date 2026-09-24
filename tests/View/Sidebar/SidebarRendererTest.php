@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\View\Sidebar;
 
-use PHPForge\Debug\View\Sidebar\{SidebarNavItem, SidebarRenderer, SidebarSnapshot, SidebarView};
+use PHPForge\Debug\Tests\Support\RequestSummaryFixture;
+use PHPForge\Debug\View\Sidebar\{SidebarNavItem, SidebarNavigation, SidebarRenderer, SidebarSnapshot, SidebarView};
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+use function mktime;
 use function substr_count;
 
 /**
@@ -252,7 +254,7 @@ final class SidebarRendererTest extends TestCase
 
     public function testRenderHidesTimeChipWhenTimeEmpty(): void
     {
-        $view = new SidebarView(snapshot: $this->snapshot(time: ''), navItems: []);
+        $view = new SidebarView(snapshot: $this->snapshot(hasTime: false), navItems: []);
 
         self::assertMatchesRegularExpression(
             '/yii-debug-snapshot-time[^>]*hidden/',
@@ -275,7 +277,7 @@ final class SidebarRendererTest extends TestCase
             <div class="yii-debug-snapshot-line">
             <span class="yii-debug-snapshot-method yii-debug-verb-get" data-snapshot-field="method">GET</span><span class="yii-debug-snapshot-url" title="http://example.test/index.php" data-snapshot-field="url">/index.php</span>
             </div><div class="yii-debug-snapshot-meta">
-            <span class="yii-debug-snapshot-status yii-debug-status-2xx" data-snapshot-field="status">–</span><span class="yii-debug-snapshot-time" data-snapshot-field="time">12:34:56</span><span class="yii-debug-snapshot-tag" data-snapshot-field="ajax">AJAX</span>
+            <span class="yii-debug-snapshot-status yii-debug-status-none" data-snapshot-field="status">–</span><span class="yii-debug-snapshot-time" data-snapshot-field="time">12:34:56</span><span class="yii-debug-snapshot-tag" data-snapshot-field="ajax">AJAX</span>
             </div><div class="yii-debug-request-nav-row" role="group">
             <button class="yii-debug-btn yii-debug-btn-ghost yii-debug-btn-icon is-disabled" type="button" title="Newest request" disabled aria-label="Newest captured request">
             <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m7 11l5-5l5 5"/><path d="m7 17l5-5l5 5"/></g></svg>
@@ -466,22 +468,29 @@ final class SidebarRendererTest extends TestCase
         bool $isCursor = false,
         bool $isAjax = true,
         int $statusCode = 200,
-        string $time = '12:34:56',
+        bool $hasTime = true,
         string $cursorInitTag = '',
     ): SidebarSnapshot {
-        return SidebarSnapshot::create(
+        return SidebarSnapshot::fromSummary(
+            RequestSummaryFixture::create(
+                [
+                    'url' => 'http://example.test/index.php',
+                    'ajax' => $isAjax,
+                    'time' => $hasTime ? (float) mktime(12, 34, 56, 9, 24, 2026) : 0.0,
+                    'statusCode' => $statusCode,
+                ],
+            ),
+            new SidebarNavigation(
+                isCursor: $isCursor,
+                cursorInitTag: $cursorInitTag,
+                newestUrl: '/debug/view',
+                oldestUrl: '/debug/view?tag=oldest',
+                olderUrl: '/debug/view?tag=older',
+                isOldest: false,
+                hasOlder: true,
+            ),
             $isCursor ? 'Newest request' : 'Current request',
             $isCursor ? 'Newest captured request' : 'Current request',
-        )
-            ->withRequest('GET', '/index.php', 'http://example.test/index.php', $time, $isAjax)
-            ->withResponse($statusCode, $statusCode >= 500 ? '5xx' : '2xx')
-            ->withCursor($isCursor, $cursorInitTag)
-            ->withNavigationUrls(
-                '/debug/view',
-                '/debug/view?tag=oldest',
-                '',
-                '/debug/view?tag=older',
-            )
-            ->withNavigationState(true, false, false, true);
+        );
     }
 }

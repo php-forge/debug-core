@@ -203,6 +203,28 @@ enum Message: string
     case PANEL_TITLE_EMPTY = 'Debug panel title must not be empty.';
 
     /**
+     * Indicates that a registration entry declares a non-boolean `enabled` option.
+     *
+     * Format: "Debug registration '%s' option 'enabled' must be a boolean."
+     */
+    case REGISTRATION_ENABLED_INVALID = 'Debug registration \'%s\' option \'enabled\' must be a boolean.';
+
+    /**
+     * Indicates that a registration entry is neither a class string nor an array declaring a `class` string.
+     *
+     * Format: "Debug registration '%s' must be a class string or an array declaring a 'class' string."
+     */
+    case REGISTRATION_ENTRY_INVALID
+        = 'Debug registration \'%s\' must be a class string or an array declaring a \'class\' string.';
+
+    /**
+     * Indicates that a registration key differs from the ID the registered collector or panel declares.
+     *
+     * Format: "Debug %s registered as '%s' must match its ID '%s'."
+     */
+    case REGISTRATION_ID_MISMATCH = 'Debug %s registered as \'%s\' must match its ID \'%s\'.';
+
+    /**
      * Indicates that a route definition field does not satisfy its expected shape.
      *
      * Format: "Route definition key '%s' must be %s."
