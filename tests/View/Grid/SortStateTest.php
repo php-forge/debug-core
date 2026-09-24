@@ -156,6 +156,19 @@ final class SortStateTest extends TestCase
         );
     }
 
+    public function testPanelUrlKeepsIntegerQueryKeys(): void
+    {
+        $context = new PanelRenderContext('request-1', 'log', [], 'light', new DebugUrlGeneratorFixture());
+
+        $url = SortState::panelUrl($context, [5 => 'x', 'page' => 2]);
+
+        self::assertSame(
+            '/panel/request-1/log?5=x&page=2&sort=time',
+            $url('time'),
+            'Integer key must not be renumbered.',
+        );
+    }
+
     public function testPanelUrlMergesTheSortValueIntoTheVisibleQuery(): void
     {
         $context = new PanelRenderContext('request-1', 'log', ['page' => 3], 'light', new DebugUrlGeneratorFixture());

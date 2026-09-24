@@ -8,6 +8,7 @@ use Closure;
 use PHPForge\Debug\Panel\PanelRenderContext;
 use UIAwesome\Html\Palpable\A;
 
+use function array_replace;
 use function in_array;
 use function str_starts_with;
 use function substr;
@@ -124,7 +125,7 @@ final readonly class SortState
     public static function panelUrl(PanelRenderContext $context, array $queryParams): Closure
     {
         return static fn(string $sort): string => $context->panelUrl(
-            queryParams: [...$queryParams, 'sort' => $sort],
+            queryParams: array_replace($queryParams, ['sort' => $sort]),
         );
     }
 
