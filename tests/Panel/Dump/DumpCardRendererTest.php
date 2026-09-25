@@ -146,7 +146,7 @@ final class DumpCardRendererTest extends TestCase
     public function testRenderMessageCellFormatsMillisecondsAtTheUpperBoundary(): void
     {
         $html = DumpCardRenderer::renderMessageCell(
-            self::makeRow(time: 1_700_000_000.1239),
+            self::makeRow(time: 1_700_000_000_123.9),
             self::traceLine(),
             0,
         );
@@ -162,7 +162,7 @@ final class DumpCardRendererTest extends TestCase
             </div>
             HTML,
             $html,
-            'Millisecond conversion must use exactly one thousand units per second.',
+            'Fractional milliseconds must be truncated, not scaled.',
         );
     }
 
@@ -211,7 +211,7 @@ final class DumpCardRendererTest extends TestCase
     public function testRenderMessageCellKeepsTimeAndTraceMetadataTogether(): void
     {
         $html = DumpCardRenderer::renderMessageCell(
-            self::makeRow(time: 1_700_000_000.5, trace: [['file' => '/app/User.php', 'line' => 42]]),
+            self::makeRow(time: 1_700_000_000_500.0, trace: [['file' => '/app/User.php', 'line' => 42]]),
             self::traceLine(),
             0,
         );
@@ -418,7 +418,7 @@ final class DumpCardRendererTest extends TestCase
     public function testRenderMessageCellRendersFormattedTimeWhenTimeIsPositive(): void
     {
         $html = DumpCardRenderer::renderMessageCell(
-            self::makeRow(time: 1_700_000_000.789),
+            self::makeRow(time: 1_700_000_000_789.0),
             self::traceLine(),
             0,
         );

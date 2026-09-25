@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Storage;
 
 use PHPForge\Debug\Storage\{DebugSnapshot, RequestSummary, SnapshotStore, StorageException};
-use PHPUnit\Framework\Attributes\{Group, TestWith};
+use PHPUnit\Framework\Attributes\{Group, RequiresOperatingSystemFamily, TestWith};
 use PHPUnit\Framework\TestCase;
 use Xepozz\InternalMocker\MockerState;
 
@@ -485,12 +485,9 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    #[RequiresOperatingSystemFamily('Linux')]
     public function testManifestReadResultReportsEmptyAndUnreadableManifestFiles(): void
     {
-        if (PHP_OS_FAMILY === 'Windows') {
-            self::markTestSkipped('POSIX read permissions are not portable to Windows.');
-        }
-
         mkdir($this->path, recursive: true);
         file_put_contents("{$this->path}/index.json", '');
 
@@ -902,12 +899,9 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    #[RequiresOperatingSystemFamily('Linux')]
     public function testSnapshotReadResultReportsEmptyMismatchAndUnreadableFiles(): void
     {
-        if (PHP_OS_FAMILY === 'Windows') {
-            self::markTestSkipped('POSIX read permissions are not portable to Windows.');
-        }
-
         mkdir($this->path, recursive: true);
         file_put_contents("{$this->path}/empty.json", '');
 
@@ -1513,12 +1507,9 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    #[RequiresOperatingSystemFamily('Linux')]
     public function testWriteRejectsUnreadableExistingTransactionTarget(): void
     {
-        if (PHP_OS_FAMILY === 'Windows') {
-            self::markTestSkipped('POSIX read permissions are not portable to Windows.');
-        }
-
         $store = $this->store();
 
         $store->writeSnapshot(
@@ -1539,14 +1530,9 @@ final class SnapshotStoreTest extends TestCase
         );
     }
 
+    #[RequiresOperatingSystemFamily('Linux')]
     public function testWriteRejectsUnreadableManifest(): void
     {
-        if (PHP_OS_FAMILY === 'Windows') {
-            self::markTestSkipped(
-                'POSIX read permissions are not portable to Windows.',
-            );
-        }
-
         $store = $this->store();
 
         $store->writeSnapshot(
