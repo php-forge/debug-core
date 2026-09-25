@@ -5,8 +5,6 @@ import "./history-cursor.js";
 import { bindCopyControls } from "./clipboard.js";
 import { initSectionPermalinks } from "./deep-links.js";
 import {
-  dismissDropdowns,
-  focusDropdownItem,
   onDisclosureClick,
   onRevealClick,
   prepareCellMoreControls,
@@ -67,16 +65,9 @@ import { requestParentToolbarDrawerClose } from "../toolbar/focus.js";
       return;
     }
 
-    /* The open menu answers first, so the drawer behind it keeps its Escape. */
-    if (focusDropdownItem(event)) {
-      return;
-    }
-
     if (event.key === "Escape") {
-      var dropdownWasOpen = dismissDropdowns();
-
       window.setTimeout(function () {
-        requestParentToolbarDrawerClose(event, window, dropdownWasOpen);
+        requestParentToolbarDrawerClose(event, window);
       }, 0);
     }
   });

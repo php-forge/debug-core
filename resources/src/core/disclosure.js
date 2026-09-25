@@ -1,14 +1,8 @@
 import { closest } from "./shared.js";
-import { dropdownNavigationIndex } from "./dropdown.js";
 
 /**
- * Click-driven disclosure layers of the debugger page: dropdown menus,
- * collapsible sections, the "Show more" cell boxes and the click-to-reveal
- * controls guarding sensitive values.
- *
- * Keyboard handling stays with the page bootstrap, which owns the precedence
- * between the layers; this module exposes the two steps that handler needs
- * ({@link focusDropdownItem} and {@link dismissDropdowns}).
+ * Click-driven disclosure layers of the debugger page: the "Show more" cell
+ * boxes and the click-to-reveal controls guarding sensitive values.
  *
  * Usage example:
  *
@@ -18,25 +12,8 @@ import { dropdownNavigationIndex } from "./dropdown.js";
  * ```
  */
 
-/** Selector of the trigger opening a dropdown menu. */
-const DROPDOWN_TRIGGER = '[data-yii-debug-toggle="dropdown"]';
-
-/** Focusable menu items; the browser activates them from the keyboard. */
-const DROPDOWN_ITEMS = "a[href], button:not([disabled])";
-
-/** Keys the dropdown menu answers with a roving focus move. */
-const DROPDOWN_NAVIGATION_KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
-
 function findToggle(node, kind) {
   return closest(node, '[data-yii-debug-toggle="' + kind + '"]');
-}
-
-function dropdownItems(menu) {
-  return Array.from(menu.querySelectorAll(DROPDOWN_ITEMS)).filter(
-    function (item) {
-      return !item.hidden && item.getAttribute("aria-hidden") !== "true";
-    },
-  );
 }
 
 /**
@@ -69,148 +46,24 @@ export function prepareCellMoreControls() {
   }
 }
 
-/** Closes every open dropdown but the one owning `except`. */
-function hideDropdowns(except) {
-  var wrappers = document.querySelectorAll(".yii-debug-dropdown.is-open");
-  for (var i = 0; i < wrappers.length; i++) {
-    var menu = wrappers[i].querySelector(".yii-debug-dropdown-menu");
-    if (except && menu === except) {
-      continue;
-    }
-    wrappers[i].classList.remove("is-open");
-    var trigger = wrappers[i].querySelector(DROPDOWN_TRIGGER);
-    if (trigger) {
-      trigger.setAttribute("aria-expanded", "false");
-    }
-  }
-}
-
-/**
- * Moves focus inside the dropdown the event started in.
- *
- * @returns {boolean} `true` when the key belonged to an open-able dropdown, so
- * the caller stops before the layers behind it answer the same key.
- */
-export function focusDropdownItem(event) {
-  var dropdownWrapper = closest(event.target, ".yii-debug-dropdown");
-  var dropdownTrigger = dropdownWrapper
-    ? dropdownWrapper.querySelector(DROPDOWN_TRIGGER)
-    : null;
-  var dropdownMenu = dropdownWrapper
-    ? dropdownWrapper.querySelector(".yii-debug-dropdown-menu")
-    : null;
-
-  if (
-    dropdownWrapper &&
-    dropdownTrigger &&
-    dropdownMenu &&
-    DROPDOWN_NAVIGATION_KEYS.indexOf(event.key) !== -1
-  ) {
-    var items = dropdownItems(dropdownMenu);
-    var currentItem = items.indexOf(event.target);
-    var nextItem = dropdownNavigationIndex(
-      items.length,
-      currentItem,
-      event.key,
-      event.target === dropdownTrigger,
-    );
-
-    if (items.length === 0) {
-      return true;
-    }
-
-    event.preventDefault();
-    hideDropdowns(dropdownMenu);
-    dropdownWrapper.classList.add("is-open");
-    dropdownTrigger.setAttribute("aria-expanded", "true");
-
-    items[nextItem].focus();
-
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Closes every dropdown and returns focus to the trigger of the one that was
- * open.
- *
- * @returns {boolean} `true` when a dropdown absorbed the dismissal, so the
- * layer behind it keeps its own Escape.
- */
-export function dismissDropdowns() {
-  var openDropdown = document.querySelector(".yii-debug-dropdown.is-open");
-  var dropdownWasOpen = Boolean(openDropdown);
-  var openDropdownTrigger = openDropdown
-    ? openDropdown.querySelector(DROPDOWN_TRIGGER)
-    : null;
-
-  hideDropdowns(null);
-
-  if (openDropdownTrigger) {
-    openDropdownTrigger.focus();
-  }
-
-  return dropdownWasOpen;
-}
-
-/** Toggles the disclosure layer a click landed on, closing the menus behind it. */
+/** Toggles the "Show more" box a click landed on. */
 export function onDisclosureClick(event) {
-  var dropdown = findToggle(event.target, "dropdown");
-  var collapse = findToggle(event.target, "collapse");
   var cellMore = findToggle(event.target, "cell-more");
 
-  if (cellMore) {
-    var moreBox = closest(cellMore, ".yii-debug-cell-more");
-    event.preventDefault();
-
-    if (!moreBox) {
-      return;
-    }
-
-    var moreOpen = moreBox.classList.toggle("is-open");
-    cellMore.setAttribute("aria-expanded", moreOpen ? "true" : "false");
-    cellMore.textContent = moreOpen ? "Show less" : "Show more";
+  if (!cellMore) {
     return;
   }
 
-  if (collapse) {
-    var targetSelector =
-      collapse.getAttribute("data-target") || collapse.getAttribute("href");
-    var target = targetSelector ? document.querySelector(targetSelector) : null;
-    event.preventDefault();
+  var moreBox = closest(cellMore, ".yii-debug-cell-more");
+  event.preventDefault();
 
-    if (!target) {
-      return;
-    }
-
-    var isShown = target.classList.contains("is-open");
-    target.classList.toggle("is-open", !isShown);
-    collapse.setAttribute("aria-expanded", isShown ? "false" : "true");
+  if (!moreBox) {
     return;
   }
 
-  if (dropdown) {
-    var wrapper = closest(dropdown, ".yii-debug-dropdown");
-    var menu = wrapper
-      ? wrapper.querySelector(".yii-debug-dropdown-menu")
-      : null;
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!wrapper || !menu) {
-      return;
-    }
-
-    var isOpen = wrapper.classList.contains("is-open");
-    hideDropdowns(menu);
-    wrapper.classList.toggle("is-open", !isOpen);
-    dropdown.setAttribute("aria-expanded", isOpen ? "false" : "true");
-    return;
-  }
-
-  hideDropdowns(null);
+  var moreOpen = moreBox.classList.toggle("is-open");
+  cellMore.setAttribute("aria-expanded", moreOpen ? "true" : "false");
+  cellMore.textContent = moreOpen ? "Show less" : "Show more";
 }
 
 /** Click-to-reveal toggle for sensitive User-panel fields. */

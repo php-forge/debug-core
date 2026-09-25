@@ -145,3 +145,42 @@ for (const [adapter, query, mail] of [
     });
   }
 }
+
+// Header markup copied from the Yii3 History grid: `SortState::header()` sets the order class on the link.
+for (const [direction, order, arrow] of [
+  ["ascending", "asc", "↑"],
+  ["descending", "desc", "↓"],
+]) {
+  test(`Yii3 History marks the ${direction} sorted column with an arrow`, async ({
+    page,
+  }) => {
+    await page.setContent(`
+      <!doctype html>
+      <html lang="en">
+        <body class="yii-debug">
+          <table class="yii-debug-table">
+            <thead>
+              <tr>
+                <th scope="col" aria-sort="${direction}"><a class="${order}" href="/debug?sort=time">Time</a></th>
+                <th scope="col"><a href="/debug?sort=method">Method</a></th>
+              </tr>
+            </thead>
+          </table>
+        </body>
+      </html>
+    `);
+    await page.addStyleTag({ path: stylesheet.pathname });
+
+    const marker = (selector) =>
+      page
+        .locator(selector)
+        .evaluate((link) => getComputedStyle(link, "::after").content);
+
+    expect(await marker("th[aria-sort] a"), "Sorted column arrow").toBe(
+      `"${arrow}"`,
+    );
+    expect(await marker("th:not([aria-sort]) a"), "Unsorted column").toBe(
+      "none",
+    );
+  });
+}

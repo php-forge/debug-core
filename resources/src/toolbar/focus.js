@@ -69,16 +69,11 @@ function toolbarDrawerMessageData(event, origin, frameWindow) {
   return event.data;
 }
 
-export function requestParentToolbarDrawerClose(
-  event,
-  browserWindow,
-  dropdownWasOpen,
-) {
+export function requestParentToolbarDrawerClose(event, browserWindow) {
   if (
     !event ||
     event.key !== "Escape" ||
     event.defaultPrevented ||
-    dropdownWasOpen ||
     !browserWindow.parent ||
     browserWindow.parent === browserWindow
   ) {

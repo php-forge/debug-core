@@ -491,10 +491,7 @@ test("embedded debug pages request drawer closure after an unhandled Escape", ()
   };
   var escape = { key: "Escape", defaultPrevented: false };
 
-  assert.equal(
-    requestParentToolbarDrawerClose(escape, browserWindow, false),
-    true,
-  );
+  assert.equal(requestParentToolbarDrawerClose(escape, browserWindow), true);
   assert.deepEqual(messages, [
     {
       message: { source: "yii-debug-toolbar", type: "close-drawer" },
@@ -505,26 +502,17 @@ test("embedded debug pages request drawer closure after an unhandled Escape", ()
     requestParentToolbarDrawerClose(
       { ...escape, defaultPrevented: true },
       browserWindow,
-      false,
     ),
-    false,
-  );
-  assert.equal(
-    requestParentToolbarDrawerClose(escape, browserWindow, true),
     false,
   );
   var topWindow = { location: browserWindow.location };
   topWindow.parent = topWindow;
 
-  assert.equal(
-    requestParentToolbarDrawerClose(escape, topWindow, false),
-    false,
-  );
+  assert.equal(requestParentToolbarDrawerClose(escape, topWindow), false);
   assert.equal(
     requestParentToolbarDrawerClose(
       { key: "Enter", defaultPrevented: false },
       browserWindow,
-      false,
     ),
     false,
   );
