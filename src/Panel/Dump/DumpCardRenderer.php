@@ -80,7 +80,9 @@ final class DumpCardRenderer
     }
 
     /**
-     * Formats a Unix timestamp in seconds as `H:i:s.mmm`, falling back to `''` when no timestamp is set.
+     * Formats the row timestamp as `H:i:s.mmm`, falling back to `''` when no timestamp is set.
+     *
+     * {@see DumpRow::$time} already holds epoch milliseconds, so the fraction is truncated, not scaled again.
      */
     private static function formatTime(float $time): string
     {
@@ -88,7 +90,7 @@ final class DumpCardRenderer
             return '';
         }
 
-        return Format::timeOfDay(intval($time * 1000));
+        return Format::timeOfDay(intval($time));
     }
 
     /**
