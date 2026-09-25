@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test, vi } from "vitest";
 
-import { bootDebugPage, fire, settle } from "./debug-page-harness.js";
+import { bootDebugPage, fire, press, settle } from "./debug-page-harness.js";
 
 /**
  * The Database panel feature is the failure fixture: it is the only module the
@@ -230,4 +230,49 @@ test("a panel feature failure without a main region only flags the page", async 
     null,
     "No region means no callout.",
   );
+});
+
+test("Escape asks the parent toolbar to close the drawer", async () => {
+  const page = await bootDebugPage({
+    body: "<p>Panel</p>",
+    parent: "frame",
+  });
+
+  press(page.document.querySelector("p"), "Escape");
+
+  await settle(page.window);
+
+  assert.deepEqual(
+    page.posts,
+    [
+      {
+        data: { source: "yii-debug-toolbar", type: "close-drawer" },
+        origin: "https://debug.test",
+      },
+    ],
+    "Host toolbar must be asked to close.",
+  );
+});
+
+test("Escape on a standalone page posts nothing", async () => {
+  const page = await bootDebugPage({ body: "<p>Panel</p>" });
+
+  press(page.document.querySelector("p"), "Escape");
+
+  await settle(page.window);
+
+  assert.equal(page.posts.length, 0, "There is no drawer to close.");
+});
+
+test("a keydown on the document itself is ignored", async () => {
+  const page = await bootDebugPage({ body: "<p>Panel</p>", parent: "frame" });
+  const event = fire(page.document, "keydown", {
+    cancelable: true,
+    key: "ArrowDown",
+  });
+
+  await settle(page.window);
+
+  assert.equal(event.defaultPrevented, false, "A targetless key stays live.");
+  assert.equal(page.posts.length, 0, "Only Escape may close the drawer.");
 });

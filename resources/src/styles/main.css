@@ -13,6 +13,7 @@
 @import "./tokens.css";
 @import "./fonts.css";
 @import "./events.css";
+@import "./request.css";
 
 /**
  * ---------------------------------------------------------------------------
@@ -245,18 +246,6 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-  }
-
-  .yii-debug-side-section-link {
-    color: var(--yii-debug-panel-link);
-    font-size: var(--yii-debug-fs-sm);
-    text-decoration: none;
-
-    &:hover,
-    &:focus {
-      color: var(--yii-debug-panel-link-hover);
-      text-decoration: underline;
-    }
   }
 
   /**
@@ -572,47 +561,18 @@
   }
 
   /**
-   * Request overview — a continuous telemetry rail for identity, response,
-   * runtime metrics, and capture metadata.
+   * The Request status value also carries `.yii-debug-snapshot-status`, so its
+   * padding only wins while this rule follows that one; it stays out of
+   * request.css, which is imported ahead of every rule in this file.
    */
-  .yii-debug-request-hero {
-    margin-bottom: var(--yii-debug-space-4);
-    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface-muted);
-    box-shadow: var(--yii-debug-shadow-sm);
+  .yii-debug-request-overview-status-value {
+    padding: 3px 9px;
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-lg);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
   }
 
-  .yii-debug-request-overview {
-    overflow: hidden;
-    margin-bottom: var(--yii-debug-space-4);
-    border: var(--yii-debug-border);
-    border-inline-start: 4px solid
-      color-mix(
-        in srgb,
-        var(--yii-debug-hue, var(--yii-debug-panel-muted)) 76%,
-        var(--yii-debug-panel-text)
-      );
-    border-radius: var(--yii-debug-radius-lg);
-    background: var(--yii-debug-panel-surface);
-    box-shadow: var(--yii-debug-shadow-sm);
-  }
-
-  .yii-debug-request-overview-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--yii-debug-space-4);
-    align-items: center;
-    padding: var(--yii-debug-space-4);
-  }
-
-  .yii-debug-request-overview-identity {
-    min-width: 0;
-  }
-
-  .yii-debug-request-overview-label,
-  .yii-debug-request-overview-status-label,
   .yii-debug-panel-heading-eyebrow {
     display: block;
     margin-bottom: 5px;
@@ -622,166 +582,6 @@
     letter-spacing: 0.09em;
     line-height: 1.2;
     text-transform: uppercase;
-  }
-
-  .yii-debug-request-hero-line {
-    display: flex;
-    align-items: center;
-    gap: var(--yii-debug-space-2);
-    min-width: 0;
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-base);
-  }
-
-  /* Colors come from the shared vocabulary chip formula (see Semantic vocabulary). */
-  .yii-debug-request-hero-method {
-    flex: none;
-    padding: 2px 10px;
-    border-radius: var(--yii-debug-radius-pill);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-  }
-
-  .yii-debug-request-hero-url {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--yii-debug-panel-text);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .yii-debug-request-hero-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px var(--yii-debug-space-3);
-    margin-top: 6px;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-
-    &:empty {
-      display: none;
-    }
-  }
-
-  .yii-debug-request-hero-meta-item {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--yii-debug-space-1);
-  }
-
-  .yii-debug-request-hero-meta-label {
-    font-family: var(--yii-debug-font-sans);
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-  }
-
-  .yii-debug-request-hero-meta-value {
-    color: var(--yii-debug-panel-text);
-  }
-
-  .yii-debug-request-overview-status {
-    min-width: 72px;
-    text-align: right;
-  }
-
-  .yii-debug-request-overview-status-value {
-    padding: 3px 9px;
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-lg);
-    letter-spacing: -0.03em;
-    line-height: 1.2;
-  }
-
-  .yii-debug-request-overview-metrics {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
-    margin: 0;
-    border-block: var(--yii-debug-border);
-    background: var(--yii-debug-panel-surface-muted);
-  }
-
-  .yii-debug-request-overview-metric {
-    min-width: 0;
-    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
-
-    & + & {
-      border-inline-start: var(--yii-debug-border);
-    }
-
-    dt {
-      margin-bottom: 2px;
-      color: var(--yii-debug-panel-muted);
-      font-size: 0.6875rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-    }
-
-    dd {
-      display: flex;
-      min-width: 0;
-      flex-wrap: wrap;
-      align-items: center;
-      margin: 0;
-      gap: var(--yii-debug-space-2);
-      color: var(--yii-debug-panel-text);
-      font-family: var(--yii-debug-font-mono);
-      font-size: var(--yii-debug-fs-sm);
-      font-weight: 600;
-      overflow-wrap: anywhere;
-    }
-  }
-
-  .yii-debug-request-overview-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--yii-debug-space-2) var(--yii-debug-space-5);
-    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-  }
-
-  .yii-debug-request-overview-config {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--yii-debug-space-2);
-    margin-inline-start: auto;
-  }
-
-  .yii-debug-request-overview-meta-item {
-    display: inline-flex;
-    min-width: 0;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .yii-debug-request-overview-meta-label {
-    margin-bottom: 2px;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-sans);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-  }
-
-  .yii-debug-request-overview-tag {
-    overflow: hidden;
-    max-width: 34ch;
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-sm);
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .yii-debug-request-overview-flag,
@@ -797,426 +597,6 @@
     letter-spacing: 0.07em;
     line-height: 1.4;
     text-transform: uppercase;
-  }
-
-  /**
-   * Composed Request + routing view. The request overview remains one
-   * continuous execution rail; routing metadata and failures extend that rail
-   * instead of introducing another stack of nested cards.
-   */
-  .yii-debug-request-routing-error {
-    margin: 0;
-    border-width: 1px 0 0 4px;
-    border-radius: 0;
-
-    p {
-      margin: 0;
-    }
-  }
-
-  .yii-debug-request-tabs {
-    min-width: 0;
-
-    > .yii-debug-tabs {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: thin;
-    }
-
-    .yii-debug-tab {
-      flex: none;
-    }
-
-    .yii-debug-empty-state {
-      padding: var(--yii-debug-space-4);
-
-      h2 {
-        margin: 0;
-        font-size: var(--yii-debug-fs-base);
-      }
-    }
-  }
-
-  /**
-   * Request diagnostic ledgers. Headers read as an HTTP exchange rather than
-   * two unrelated tables; server variables read as one grouped execution
-   * record. Both keep the captured keys and values as the primary visual ink.
-   */
-  .yii-debug-diagnostic-shell {
-    overflow: hidden;
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-lg);
-    background: var(--yii-debug-panel-surface);
-    box-shadow: var(--yii-debug-shadow-sm);
-  }
-
-  .yii-debug-diagnostic-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--yii-debug-space-4);
-    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
-    border-bottom: var(--yii-debug-border);
-    background: var(--yii-debug-panel-surface-muted);
-  }
-
-  .yii-debug-diagnostic-heading-copy {
-    display: flex;
-    min-width: 0;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--yii-debug-space-2) var(--yii-debug-space-3);
-
-    h2 {
-      margin: 0;
-    }
-  }
-
-  .yii-debug-diagnostic-counts {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--yii-debug-space-2);
-  }
-
-  .yii-debug-diagnostic-count,
-  .yii-debug-diagnostic-total,
-  .yii-debug-header-lane-count,
-  .yii-debug-server-group-count {
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .yii-debug-diagnostic-count {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--yii-debug-space-1);
-  }
-
-  .yii-debug-diagnostic-count + .yii-debug-diagnostic-count::before {
-    width: 1px;
-    height: 12px;
-    margin-inline-end: var(--yii-debug-space-1);
-    background: var(--yii-debug-panel-border-strong);
-    content: "";
-  }
-
-  .yii-debug-diagnostic-count-value {
-    color: var(--yii-debug-panel-text);
-    font-weight: 700;
-  }
-
-  .yii-debug-diagnostic-filter {
-    width: min(280px, 42%);
-    max-width: none;
-    background: var(--yii-debug-panel-surface);
-  }
-
-  .yii-debug-header-lanes {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .yii-debug-header-lane {
-    position: relative;
-    min-width: 0;
-  }
-
-  .yii-debug-header-lane + .yii-debug-header-lane {
-    border-inline-start: 2px solid
-      color-mix(
-        in srgb,
-        var(--yii-debug-panel-primary) 36%,
-        var(--yii-debug-panel-border)
-      );
-
-    &::before {
-      position: absolute;
-      z-index: 1;
-      top: 25px;
-      inset-inline-start: -5px;
-      width: 8px;
-      height: 8px;
-      border: 2px solid var(--yii-debug-panel-surface);
-      border-radius: var(--yii-debug-radius-pill);
-      background: var(--yii-debug-panel-primary);
-      content: "";
-    }
-  }
-
-  .yii-debug-header-lane-header {
-    display: flex;
-    min-height: 58px;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--yii-debug-space-3);
-    padding: 10px var(--yii-debug-space-4);
-    border-bottom: var(--yii-debug-border);
-
-    h3 {
-      margin: 1px 0 0;
-      font-size: var(--yii-debug-fs-base);
-    }
-  }
-
-  .yii-debug-header-direction {
-    display: block;
-    color: var(--yii-debug-panel-primary-strong);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-  }
-
-  .yii-debug-diagnostic-ledger {
-    margin: 0;
-  }
-
-  .yii-debug-diagnostic-row {
-    display: grid;
-    grid-template-columns: minmax(132px, 0.72fr) minmax(0, 1.28fr);
-    align-items: start;
-    border-top: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border) 58%, transparent);
-
-    &:first-child {
-      border-top: 0;
-    }
-
-    &:hover {
-      background: var(--yii-debug-panel-surface-hover);
-    }
-
-    dt,
-    dd {
-      min-width: 0;
-      padding: 10px var(--yii-debug-space-4);
-      font-family: var(--yii-debug-font-mono);
-      font-size: var(--yii-debug-fs-sm);
-      line-height: 1.5;
-    }
-
-    dt {
-      overflow: hidden;
-      color: var(--yii-debug-panel-muted);
-      font-weight: 600;
-      overflow-wrap: anywhere;
-    }
-
-    dd {
-      margin: 0;
-      border-inline-start: 1px solid
-        color-mix(in srgb, var(--yii-debug-panel-border) 45%, transparent);
-      color: var(--yii-debug-panel-text);
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-  }
-
-  .yii-debug-header-ledger .yii-debug-diagnostic-row:nth-child(even),
-  .yii-debug-server-ledger .yii-debug-diagnostic-row:nth-child(even) {
-    background: color-mix(
-      in srgb,
-      var(--yii-debug-panel-surface-muted),
-      transparent 72%
-    );
-
-    &:hover {
-      background: var(--yii-debug-panel-surface-hover);
-    }
-  }
-
-  .yii-debug-diagnostic-values {
-    display: grid;
-    gap: 6px;
-  }
-
-  .yii-debug-diagnostic-value-count {
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-sans);
-    font-size: 0.6875rem;
-  }
-
-  .yii-debug-diagnostic-value-list {
-    display: grid;
-    gap: var(--yii-debug-space-1);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
-    li + li {
-      padding-top: var(--yii-debug-space-1);
-      border-top: 1px dashed var(--yii-debug-panel-border);
-    }
-  }
-
-  .yii-debug-diagnostic-empty-value,
-  .yii-debug-diagnostic-lane-empty,
-  .yii-debug-diagnostic-empty-state,
-  .yii-debug-diagnostic-filter-empty {
-    color: var(--yii-debug-panel-muted);
-    font-style: italic;
-  }
-
-  .yii-debug-diagnostic-lane-empty,
-  .yii-debug-diagnostic-empty-state,
-  .yii-debug-diagnostic-filter-empty {
-    margin: 0;
-    padding: var(--yii-debug-space-4);
-  }
-
-  .yii-debug-diagnostic-filter-empty {
-    border-top: var(--yii-debug-border);
-    text-align: center;
-  }
-
-  .yii-debug-server-group-body > .yii-debug-mini-toolbar {
-    margin: 0;
-    padding: var(--yii-debug-space-2) var(--yii-debug-space-4);
-    border-bottom: var(--yii-debug-border);
-
-    .yii-debug-filter-input {
-      max-width: 100%;
-    }
-  }
-
-  .yii-debug-server-additional + .yii-debug-server-group,
-  .yii-debug-server-group + .yii-debug-server-group {
-    border-top: var(--yii-debug-border);
-  }
-
-  .yii-debug-server-group-summary {
-    display: flex;
-    min-height: 44px;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--yii-debug-space-3);
-    padding: 9px var(--yii-debug-space-4);
-    border-bottom: var(--yii-debug-border);
-    background: var(--yii-debug-panel-surface-muted);
-
-    .yii-debug-server-group-title {
-      margin: 0;
-      font-size: var(--yii-debug-fs-sm);
-      font-weight: 700;
-    }
-  }
-
-  .yii-debug-server-group-summary {
-    cursor: pointer;
-    list-style: none;
-
-    &::-webkit-details-marker {
-      display: none;
-    }
-
-    &:hover,
-    &:focus-visible {
-      background: var(--yii-debug-panel-surface-hover);
-    }
-  }
-
-  .yii-debug-server-group-identity {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--yii-debug-space-2);
-  }
-
-  .yii-debug-server-group:not([open]) > .yii-debug-server-group-summary {
-    border-bottom: 0;
-  }
-
-  .yii-debug-server-group-summary .yii-debug-disclosure-hint {
-    margin-inline-start: auto;
-  }
-
-  .yii-debug-diagnostic-row[hidden],
-  .yii-debug-header-lane[hidden],
-  .yii-debug-server-group[hidden],
-  .yii-debug-diagnostic-filter-empty[hidden] {
-    display: none;
-  }
-
-  @container yii-debug-main (width <= 900px) {
-    .yii-debug-header-lanes {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .yii-debug-header-lane + .yii-debug-header-lane {
-      border-top: 2px solid
-        color-mix(
-          in srgb,
-          var(--yii-debug-panel-primary) 36%,
-          var(--yii-debug-panel-border)
-        );
-      border-inline-start: 0;
-
-      &::before {
-        top: -5px;
-        inset-inline-start: var(--yii-debug-space-4);
-      }
-    }
-  }
-
-  @container yii-debug-main (width <= 560px) {
-    .yii-debug-diagnostic-header {
-      align-items: stretch;
-      flex-direction: column;
-    }
-
-    .yii-debug-diagnostic-filter {
-      width: 100%;
-    }
-
-    .yii-debug-diagnostic-row {
-      grid-template-columns: minmax(0, 1fr);
-
-      dt {
-        padding-bottom: var(--yii-debug-space-1);
-      }
-
-      dd {
-        padding-top: 0;
-        border-inline-start: 0;
-      }
-    }
-  }
-
-  .yii-debug-route-resolution {
-    margin: var(--yii-debug-space-3) var(--yii-debug-space-4) var(--yii-debug-space-4);
-  }
-
-  .yii-debug-route-resolution-message {
-    margin: 0 0 var(--yii-debug-space-3);
-    color: var(--yii-debug-panel-muted);
-    font-size: var(--yii-debug-fs-sm);
-  }
-
-  .yii-debug-route-trace {
-    min-width: 560px;
-  }
-
-  .yii-debug-table.yii-debug-route-trace {
-    thead th,
-    tbody td {
-      text-align: center;
-    }
-
-    thead th:nth-child(2),
-    tbody td:nth-child(2) {
-      text-align: start;
-    }
-
-    thead th:first-child,
-    tbody td:first-child {
-      width: 56px;
-    }
-
-    thead th:last-child,
-    tbody td:last-child {
-      width: 160px;
-    }
   }
 
   .yii-debug-panel-heading {
@@ -1268,10 +648,6 @@
       align-items: center;
       gap: var(--yii-debug-space-2);
       text-align: left;
-    }
-
-    .yii-debug-request-overview-status-label {
-      margin: 0;
     }
 
     .yii-debug-request-overview-metrics {
@@ -1331,13 +707,6 @@
 
   .yii-debug-stack > * + * {
     margin-top: var(--yii-debug-space-4);
-  }
-
-  /* Two-column responsive form layout (used by mail switch etc.) */
-  .yii-debug-grid-2 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--yii-debug-space-4);
   }
 
   /**
@@ -1501,21 +870,10 @@
     background: transparent;
   }
 
-  .yii-debug-btn-subtle {
-    border-color: transparent;
-    background: var(--yii-debug-panel-surface-muted);
-  }
-
   .yii-debug-btn-sm {
     min-height: 28px;
     padding: 4px 10px;
     font-size: var(--yii-debug-fs-xs);
-  }
-
-  .yii-debug-btn-group {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: var(--yii-debug-space-1);
   }
 
   /**
@@ -2100,19 +1458,16 @@
     text-align: right;
   }
 
-  /* Sort-icons rendered by GridView sort links (`a.asc`/`a.desc` or appended marker-span dialect). */
+  /* Sort-icons rendered by the sort links of both hosts (`a.asc`/`a.desc`). */
   a.asc::after,
-  a.desc::after,
-  .yii-debug-sort-asc::after,
-  .yii-debug-sort-desc::after {
+  a.desc::after {
     margin-left: 4px;
     content: "↑";
     font-size: 0.85em;
     opacity: 0.78;
   }
 
-  a.desc::after,
-  .yii-debug-sort-desc::after {
+  a.desc::after {
     content: "↓";
   }
 
@@ -2195,13 +1550,6 @@
     margin-bottom: var(--yii-debug-space-3);
   }
 
-  .yii-debug-field-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--yii-debug-space-3) var(--yii-debug-space-4);
-    margin-bottom: var(--yii-debug-space-3);
-  }
-
   .yii-debug-label {
     color: var(--yii-debug-panel-text);
     font-size: var(--yii-debug-fs-sm);
@@ -2209,8 +1557,7 @@
   }
 
   .yii-debug-input,
-  .yii-debug-select,
-  .yii-debug-textarea {
+  .yii-debug-select {
     width: 100%;
     min-height: 32px;
     padding: 6px 10px;
@@ -2241,12 +1588,6 @@
     &::placeholder {
       color: var(--yii-debug-panel-muted);
     }
-  }
-
-  .yii-debug-textarea {
-    min-height: 96px;
-    line-height: 1.45;
-    resize: vertical;
   }
 
   /* GridView filter-row inputs. */
@@ -2334,63 +1675,6 @@
 
   .yii-debug-tab-panel.is-active {
     display: block;
-  }
-
-  /* Collapsible section (used by mail panel filter form). */
-  .yii-debug-collapsible {
-    display: none;
-    margin-top: var(--yii-debug-space-3);
-
-    &.is-open {
-      display: block;
-    }
-  }
-
-  /**
-   * -------------------------------------------------------------------
-   * Dropdown.
-   * -------------------------------------------------------------------
-   */
-
-  .yii-debug-dropdown {
-    position: relative;
-    display: inline-block;
-  }
-
-  .yii-debug-dropdown-menu {
-    display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    z-index: 100;
-    min-width: 220px;
-    margin: 0;
-    padding: 4px;
-    border: var(--yii-debug-border-strong);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface);
-    box-shadow: var(--yii-debug-shadow-md);
-    list-style: none;
-  }
-
-  .yii-debug-dropdown.is-open .yii-debug-dropdown-menu {
-    display: block;
-  }
-
-  .yii-debug-dropdown-item {
-    display: block;
-    padding: 6px 10px;
-    border-radius: var(--yii-debug-radius-sm);
-    color: var(--yii-debug-panel-text);
-    font-size: var(--yii-debug-fs-sm);
-    text-decoration: none;
-
-    &:hover,
-    &:focus {
-      background: var(--yii-debug-panel-surface-hover);
-      color: var(--yii-debug-panel-link-hover);
-      text-decoration: none;
-    }
   }
 
   /**
@@ -2620,347 +1904,6 @@
     );
   }
 
-  /* Small total-duration line shown at the top of the Timeline panel. */
-  .yii-debug-timeline-duration {
-    margin: 0 0 var(--yii-debug-space-3);
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-sm);
-    letter-spacing: 0.04em;
-  }
-
-  /**
-   * ────────────────────────────────────────────────────────────────────
-   * User panel — "Personnel Dossier"
-   * Identity card with monogram avatar, status pill, and semantic sections.
-   * Sensitive values masked behind a click-to-reveal pill.
-   * ────────────────────────────────────────────────────────────────────
-   */
-  .yii-debug-user {
-    display: flex;
-    flex-direction: column;
-    gap: var(--yii-debug-space-3);
-  }
-
-  .yii-debug-user-card {
-    position: relative;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--yii-debug-space-4);
-    align-items: center;
-    padding: var(--yii-debug-space-4) var(--yii-debug-space-5);
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-lg);
-    background:
-      radial-gradient(
-        circle at top right,
-        color-mix(in srgb, var(--yii-debug-panel-primary), transparent 80%),
-        transparent 60%
-      ),
-      var(--yii-debug-panel-surface);
-    box-shadow: var(--yii-debug-shadow-sm);
-    overflow: hidden;
-  }
-
-  .yii-debug-user-avatar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 64px;
-    height: 64px;
-    flex: none;
-    border-radius: 50%;
-    background: linear-gradient(
-      135deg,
-      var(--yii-debug-panel-primary),
-      var(--yii-debug-info)
-    );
-    box-shadow:
-      0 4px 12px
-        color-mix(in srgb, var(--yii-debug-panel-primary), transparent 50%),
-      inset 0 1px 0 rgb(255 255 255 / 22%);
-    color: #fff;
-    font-family: var(--yii-debug-font-mono);
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-  }
-
-  .yii-debug-user-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-
-  .yii-debug-user-name {
-    margin: 0;
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xl);
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-
-  .yii-debug-user-handle {
-    margin: 0;
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-sm);
-  }
-
-  .yii-debug-user-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 6px;
-  }
-
-  .yii-debug-user-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px 4px 8px;
-    border-radius: var(--yii-debug-radius-pill);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-
-    &::before {
-      content: "";
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: currentcolor;
-    }
-  }
-
-  .yii-debug-user-status-success {
-    background: color-mix(in srgb, var(--yii-debug-success), transparent 84%);
-    color: var(--yii-debug-success);
-
-    &::before {
-      animation: yii-debug-user-pulse 2.4s ease-in-out infinite;
-      box-shadow: 0 0 0 0
-        color-mix(in srgb, var(--yii-debug-success), transparent 30%);
-    }
-  }
-
-  .yii-debug-user-status-danger {
-    background: color-mix(in srgb, var(--yii-debug-danger), transparent 84%);
-    color: var(--yii-debug-danger);
-  }
-
-  .yii-debug-user-status-warning {
-    background: color-mix(in srgb, var(--yii-debug-warning), transparent 84%);
-    color: var(--yii-debug-warning);
-  }
-
-  .yii-debug-user-status-muted {
-    background: var(--yii-debug-panel-surface-muted);
-    color: var(--yii-debug-panel-muted);
-  }
-
-  .yii-debug-user-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border: 1px solid var(--yii-debug-panel-border);
-    border-radius: var(--yii-debug-radius-pill);
-    color: var(--yii-debug-panel-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-xs);
-    letter-spacing: 0.04em;
-  }
-
-  .yii-debug-user-section {
-    border: var(--yii-debug-border);
-    border-radius: var(--yii-debug-radius-md);
-    background: var(--yii-debug-panel-surface);
-    overflow: hidden;
-
-    > header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px var(--yii-debug-space-3);
-      border-bottom: var(--yii-debug-border);
-      background: var(--yii-debug-panel-surface-muted);
-      color: var(--yii-debug-panel-muted);
-      font-family: var(--yii-debug-font-sans);
-      font-size: var(--yii-debug-fs-xs);
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    dl {
-      margin: 0;
-      padding: 0;
-    }
-  }
-
-  .yii-debug-user-section-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    color: var(--yii-debug-panel-primary);
-
-    svg {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  .yii-debug-user-row {
-    display: grid;
-    grid-template-columns: minmax(140px, 22%) 1fr;
-    gap: var(--yii-debug-space-3);
-    padding: 12px var(--yii-debug-space-3);
-    border-bottom: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border) 50%, transparent);
-
-    &:last-child {
-      border-bottom: 0;
-    }
-
-    dt {
-      align-self: center;
-      color: var(--yii-debug-panel-muted);
-      font-family: var(--yii-debug-font-mono);
-      font-size: var(--yii-debug-fs-xs);
-      letter-spacing: 0.02em;
-    }
-
-    dd {
-      margin: 0;
-      min-width: 0;
-    }
-  }
-
-  .yii-debug-user-value {
-    color: var(--yii-debug-panel-text);
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-sm);
-    word-break: break-all;
-  }
-
-  .yii-debug-user-empty {
-    color: color-mix(in srgb, var(--yii-debug-panel-muted), transparent 35%);
-    font-family: var(--yii-debug-font-mono);
-  }
-
-  .yii-debug-user-time {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 10px;
-    font-family: var(--yii-debug-font-mono);
-    font-size: var(--yii-debug-fs-sm);
-
-    .yii-debug-user-time-rel {
-      color: var(--yii-debug-panel-text);
-      font-weight: 600;
-    }
-
-    .yii-debug-user-time-abs {
-      color: var(--yii-debug-panel-muted);
-      font-size: var(--yii-debug-fs-xs);
-    }
-  }
-
-  /**
-   * Click-to-reveal pill for sensitive fields. Native button so the keyboard
-   * toggles it for free; CSS swaps mask/value via `.is-revealed`.
-   */
-  .yii-debug-user-reveal {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 6px 6px 6px 14px;
-    border: 1px solid
-      color-mix(in srgb, var(--yii-debug-panel-border) 80%, transparent);
-    border-radius: var(--yii-debug-radius-pill);
-    background: var(--yii-debug-panel-surface-muted);
-    color: var(--yii-debug-panel-text);
-    font: inherit;
-    cursor: pointer;
-    text-align: left;
-    transition:
-      border-color 0.14s ease,
-      background 0.14s ease;
-
-    &:hover,
-    &:focus {
-      border-color: var(--yii-debug-panel-primary);
-    }
-
-    .yii-debug-user-mask,
-    .yii-debug-user-real {
-      font-family: var(--yii-debug-font-mono);
-      font-size: var(--yii-debug-fs-sm);
-    }
-
-    .yii-debug-user-mask {
-      letter-spacing: 0.1em;
-      color: var(--yii-debug-panel-muted);
-    }
-
-    .yii-debug-user-real {
-      display: none;
-      max-width: 60ch;
-      overflow-wrap: anywhere;
-      color: var(--yii-debug-panel-text);
-    }
-
-    .yii-debug-user-reveal-cta {
-      flex: none;
-      padding: 3px 10px;
-      border-radius: var(--yii-debug-radius-pill);
-      background: color-mix(
-        in srgb,
-        var(--yii-debug-panel-primary),
-        transparent 80%
-      );
-      color: var(--yii-debug-panel-primary);
-      font-size: var(--yii-debug-fs-xs);
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-
-      &::before {
-        content: "Reveal";
-      }
-    }
-
-    &.is-revealed {
-      .yii-debug-user-mask {
-        display: none;
-      }
-
-      .yii-debug-user-real {
-        display: inline;
-      }
-
-      .yii-debug-user-reveal-cta {
-        background: color-mix(
-          in srgb,
-          var(--yii-debug-warning),
-          transparent 84%
-        );
-        color: var(--yii-debug-warning);
-
-        &::before {
-          content: "Hide";
-        }
-      }
-    }
-  }
-
   /**
    * Visually hide an element while keeping it in the accessibility tree —
    * used on per-panel <h1>s that are visually redundant (the active sidebar
@@ -3129,25 +2072,6 @@
       transform: translateY(-1px);
       background: color-mix(in srgb, var(--yii-debug-hue), transparent 80%);
       text-decoration: none;
-    }
-  }
-
-  /**
-   * Trailing CTA inside the summary strip (e.g. "Latest →" on the index).
-   * Sits to the right of the bucket pills; visually a small primary link.
-   */
-  .yii-debug-grid-summary-action {
-    margin-left: auto;
-    color: var(--yii-debug-panel-primary-strong);
-    font-weight: 700;
-    letter-spacing: 0;
-    text-transform: none;
-    text-decoration: none;
-
-    &:hover,
-    &:focus-visible {
-      color: var(--yii-debug-panel-link-hover);
-      text-decoration: underline;
     }
   }
 
@@ -3468,45 +2392,12 @@
   /**
    * -------------------------------------------------------------------
    * Queue panel — request-scoped roster of `Yii::$app->queue->push()` /
-   * exec / error events. The default view is a paginated GridView with
-   * filter row (status, driver, component, job class, job id); each row
-   * is a one-click jump to a dedicated detail page that renders the full
-   * payload tree, error block, schedule chips, and a live lifecycle pill
-   * (waiting / reserved / done) queried once against the originating
-   * queue component. Card markup (`.yii-debug-queue-card*`) lives further
-   * below and powers the detail page only.
+   * exec / error events, rendered as cards (`.yii-debug-queue-card*`,
+   * further below) and a dedicated job page with the full payload tree,
+   * error block, schedule chips, and a live lifecycle pill (waiting /
+   * reserved / done) queried once against the originating queue component.
    * -------------------------------------------------------------------
    */
-  .yii-debug-queue-grid-job {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    line-height: 1.2;
-  }
-
-  .yii-debug-queue-grid-job-link {
-    color: var(--yii-debug-text-strong);
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .yii-debug-queue-grid-job-link:hover {
-    text-decoration: underline;
-  }
-
-  .yii-debug-queue-grid-job-namespace {
-    color: var(--yii-debug-text-muted);
-    font-family: var(--yii-debug-font-mono);
-    font-size: 0.78rem;
-    white-space: nowrap;
-  }
-
-  .yii-debug-grid-queue .yii-debug-queue-status,
-  .yii-debug-grid-queue .yii-debug-queue-driver {
-    white-space: nowrap;
-  }
-
   .yii-debug-queue-job-page {
     display: flex;
     flex-direction: column;
@@ -4296,26 +3187,23 @@
   }
 
   /**
-   * The ID column (History tag SHA and Queue job id) shares a single
-   * baseline width so the filter input renders identically across panels
-   * and the 13-character hex never wraps even when the filter is open.
-   * Width is sized to fit the 13-character SHA + breathing room.
+   * The ID column (History tag SHA) keeps a baseline width so the
+   * 13-character hex never wraps even when the filter is open. Width is
+   * sized to fit the 13-character SHA + breathing room.
    */
-  .yii-debug-col-id,
-  .yii-debug-col-queue-id {
+  .yii-debug-col-id {
     min-width: 120px;
     white-space: nowrap;
   }
 
   /**
-   * Pin the ID filter inputs to a fixed compact width across panels so
-   * the search box never stretches with the column on wide viewports —
-   * sized to fit the 13-character SHA without spilling into empty space.
-   * Higher specificity than `.yii-debug-grid .filters input { width: 100% }`
-   * so this wins regardless of source order.
+   * Pin the ID filter input to a fixed compact width so the search box
+   * never stretches with the column on wide viewports — sized to fit the
+   * 13-character SHA without spilling into empty space. Higher specificity
+   * than `.yii-debug-grid .filters input { width: 100% }` so this wins
+   * regardless of source order.
    */
-  .yii-debug-grid .filters input.yii-debug-col-id-input,
-  .yii-debug-grid .filters input.yii-debug-col-queue-id-input {
+  .yii-debug-grid .filters input.yii-debug-col-id-input {
     box-sizing: border-box;
     width: 104px;
   }
@@ -4521,10 +3409,6 @@
     white-space: nowrap;
   }
 
-  .yii-debug-break {
-    word-break: break-all;
-  }
-
   /* "Not set" marker used in some views. */
   .yii-debug-not-set {
     color: var(--yii-debug-danger);
@@ -4546,6 +3430,14 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /**
+   * The readout stretches to the rail width and inherits the tabular
+   * digits, so right-aligning it lines the units up down the column.
+   */
+  .yii-debug-gauge-value {
+    text-align: right;
+  }
+
   .yii-debug-gauge-bar {
     display: block;
     height: 3px;
@@ -4561,6 +3453,12 @@
     height: 100%;
     border-radius: inherit;
     background: var(--yii-debug-gauge-fill);
+  }
+
+  /* Profiling Info nesting: one muted arrow per span level, set off from the label. */
+  .yii-debug-indent {
+    margin-inline-end: var(--yii-debug-space-1);
+    color: var(--yii-debug-panel-muted);
   }
 
   /**
@@ -6510,19 +5408,6 @@
       scroll-behavior: auto !important;
       transition-duration: 0.01ms !important;
     }
-  }
-}
-
-@keyframes yii-debug-user-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.55;
-    transform: scale(0.85);
   }
 }
 
