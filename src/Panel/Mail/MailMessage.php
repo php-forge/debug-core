@@ -80,6 +80,11 @@ enum MailMessage: string
     case FAILED_SUFFIX = ' failed';
 
     /**
+     * Body of the `404` response when a requested `.eml` download does not exist in the mail directory.
+     */
+    case FILE_NOT_FOUND = 'Mail file not found';
+
+    /**
      * Header of the sender column, also used as its detail field label.
      */
     case FROM = 'From';
@@ -118,6 +123,12 @@ enum MailMessage: string
      * Placeholder shown wherever the capture left a field empty.
      */
     case PLACEHOLDER = '—';
+
+    /**
+     * `sprintf()` template of the toolbar metric tooltip that opens the request which sent the mail before a
+     * redirect; it receives the request method and path.
+     */
+    case PREVIOUS_REQUEST = 'Sent in the previous request (%s %s) — open it.';
 
     /**
      * Detail field label of the reply-to recipients.
