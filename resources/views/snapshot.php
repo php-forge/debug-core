@@ -54,8 +54,10 @@ $panelHeader = $panelContent !== null
                 ->content('JSON snapshot'),
         )
         ->render();
+// The payload scrolls horizontally on narrow viewports, so it takes keyboard focus to stay reachable.
 $panelBody = $panelContent ?? Pre::tag()
     ->class('yii-debug-panel-payload')
+    ->addAttribute('tabindex', '0')
     ->html(Code::tag()->content($payload))
     ->render();
 ?>
