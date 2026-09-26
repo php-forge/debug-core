@@ -653,6 +653,24 @@ final class DumpCardRendererTest extends TestCase
         );
     }
 
+    public function testRenderMessageCellSniffsVarDumperObjectExpressions(): void
+    {
+        $cases = [
+            "&lt;?php new \\DateTimeImmutable('2026-09-25T12:00:00.000+00:00')" => 'DateTimeImmutable',
+            'function () {/* source */}' => 'Closure',
+            'fn () =&gt; 1' => 'Closure',
+            'static fn () =&gt; 1' => 'Closure',
+        ];
+
+        foreach ($cases as $message => $label) {
+            self::assertStringContainsString(
+                "<span class=\"yii-debug-dump-type\" data-type=\"object\">{$label}</span>",
+                DumpCardRenderer::renderMessageCell(self::makeRow(message: $message), self::traceLine(), 0),
+                "Payload `{$message}` must be labelled `{$label}`.",
+            );
+        }
+    }
+
     public function testRenderMessageCellSubstitutesInvalidUtf8InTheExactCardHtml(): void
     {
         self::assertSame(

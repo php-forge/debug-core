@@ -6,14 +6,14 @@ namespace PHPForge\Debug\Panel\Asset;
 
 use PHPForge\Debug\{ColumnStyle, Panel, PanelView, Tone};
 use PHPForge\Debug\Helper\Fqcn;
-use PHPForge\Debug\Presenter\{FileEntry, LinkInline};
+use PHPForge\Debug\Presenter\{CardEntry, FileEntry, LinkInline};
 
 use function array_map;
 use function count;
 use function sprintf;
 
 /**
- * Presents the registered asset bundles as a strip of headline statistics and one card per bundle.
+ * Presents the registered asset bundles as a strip of headline statistics and a grid holding one card per bundle.
  *
  * The optional Vite bridge snapshot is described first, because it governs how the bundles resolve their URLs.
  */
@@ -111,22 +111,17 @@ final class AssetPanel extends Panel
             );
         }
 
-        foreach ($bundles as $bundle) {
-            $view = self::card($view, $bundle);
-        }
-
-        return $view;
+        return $view->cards(...array_map(self::card(...), $bundles));
     }
 
     /**
-     * Appends one bundle as a card: identity in the header, declared files and wiring in its columns.
+     * Describes one bundle as a card: identity in the header, declared files and wiring in its columns.
      *
-     * @param PanelView $view View to extend.
      * @param AssetBundleRow $bundle Captured bundle to describe.
      *
-     * @return PanelView View completed with the bundle card.
+     * @return CardEntry Card describing the bundle.
      */
-    private static function card(PanelView $view, AssetBundleRow $bundle): PanelView
+    private static function card(AssetBundleRow $bundle): CardEntry
     {
         $cssCount = count($bundle->css);
         $jsCount = count($bundle->js);
@@ -166,7 +161,7 @@ final class AssetPanel extends Panel
 
         $namespace = Fqcn::namespacePart($bundle->name);
 
-        return $view->card(
+        return PanelView::card(
             Fqcn::anchor($bundle->name),
             AssetMessage::ID->value,
             Fqcn::shortName($bundle->name),

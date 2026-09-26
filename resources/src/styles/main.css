@@ -3863,9 +3863,15 @@
     }
   }
 
-  /* Cards carry their own rhythm: no list wrapper supplies the gap. */
-  .yii-debug-entity + .yii-debug-entity {
-    margin-top: var(--yii-debug-space-3);
+  /*
+   * The cards of one set share a grid: the gap supplies their rhythm, and a
+   * card never narrows below the width its two body columns need, so wide
+   * panels place cards side by side and narrow ones stack them.
+   */
+  .yii-debug-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 32rem), 1fr));
+    gap: var(--yii-debug-space-3);
   }
 
   .yii-debug-entity-head {

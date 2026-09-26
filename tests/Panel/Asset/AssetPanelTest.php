@@ -8,6 +8,7 @@ use PHPForge\Debug\{ColumnStyle, PanelView, Tone};
 use PHPForge\Debug\Panel\Asset\{AssetPanel, AssetSnapshot};
 use PHPForge\Debug\Presenter\{
     BadgeInline,
+    CardEntry,
     EmptyStateBlock,
     FactEntry,
     FileEntry,
@@ -31,25 +32,23 @@ final class AssetPanelTest extends TestCase
 
     public function testBundleWithoutFilesWiringOrDependenciesRendersABodylessCard(): void
     {
-        $card = self::card(
-            self::blockAt(
-                self::present(
-                    [
-                        self::bundle(
-                            [
-                                'name' => 'app\\assets\\EmptyAsset',
-                                'sourcePath' => '',
-                                'basePath' => '',
-                                'baseUrl' => '',
-                                'css' => [],
-                                'js' => [],
-                                'depends' => [],
-                            ],
-                        ),
-                    ],
-                ),
-                1,
+        $card = self::bundleCard(
+            self::present(
+                [
+                    self::bundle(
+                        [
+                            'name' => 'app\\assets\\EmptyAsset',
+                            'sourcePath' => '',
+                            'basePath' => '',
+                            'baseUrl' => '',
+                            'css' => [],
+                            'js' => [],
+                            'depends' => [],
+                        ],
+                    ),
+                ],
             ),
+            0,
         );
 
         self::assertSame(
@@ -123,11 +122,9 @@ final class AssetPanelTest extends TestCase
 
     public function testGlobalNamespaceBundleDropsTheSubtitleAndAnchorsOnItsBareClassName(): void
     {
-        $card = self::card(
-            self::blockAt(
-                self::present([self::bundle(['name' => 'GlobalAsset', 'js' => [], 'depends' => []])]),
-                1,
-            ),
+        $card = self::bundleCard(
+            self::present([self::bundle(['name' => 'GlobalAsset', 'js' => [], 'depends' => []])]),
+            0,
         );
 
         self::assertSame(
@@ -214,7 +211,7 @@ final class AssetPanelTest extends TestCase
             'The toolbar must report the bundle count.',
         );
 
-        $card = self::card(self::blockAt($view, 1));
+        $card = self::bundleCard($view, 0);
 
         self::assertSame(
             'app-assets-appasset-3c6a8113',
@@ -292,8 +289,8 @@ final class AssetPanelTest extends TestCase
             'The strip must count what it lists.',
         );
 
-        $yii = self::card(self::blockAt($view, 2));
-        $jquery = self::card(self::blockAt($view, 3));
+        $yii = self::bundleCard($view, 1);
+        $jquery = self::bundleCard($view, 2);
 
         self::assertSame(
             ['yii-web-yiiasset-7afeb318', 'yii-web-jqueryasset-2772d8b9'],
@@ -352,7 +349,7 @@ final class AssetPanelTest extends TestCase
             'A lone bundle and a lone dependency must read in the singular.',
         );
 
-        $card = self::card(self::blockAt($view, 1));
+        $card = self::bundleCard($view, 0);
 
         self::assertEquals(
             [
@@ -526,7 +523,7 @@ final class AssetPanelTest extends TestCase
             ],
         );
 
-        $dependsOnly = self::column(self::card(self::blockAt($view, 1)), 0);
+        $dependsOnly = self::column(self::bundleCard($view, 0), 0);
 
         self::assertSame(
             'Wiring',
@@ -544,7 +541,7 @@ final class AssetPanelTest extends TestCase
             'The strip must count what it lists.',
         );
 
-        $pathsOnly = self::column(self::card(self::blockAt($view, 2)), 0);
+        $pathsOnly = self::column(self::bundleCard($view, 1), 0);
 
         self::assertCount(
             1,
@@ -580,6 +577,19 @@ final class AssetPanelTest extends TestCase
             'depends' => ['yii\\web\\YiiAsset'],
             ...$overrides,
         ];
+    }
+
+    /**
+     * Reads one bundle card from the card set that follows the stat strip.
+     *
+     * @param PanelView $view Description built by the panel, without a Vite section.
+     * @param int $index Position of the bundle in registration order.
+     *
+     * @return CardEntry Card describing the requested bundle.
+     */
+    private static function bundleCard(PanelView $view, int $index): CardEntry
+    {
+        return self::cardAt(self::cards(self::blockAt($view, 1)), $index);
     }
 
     /**
