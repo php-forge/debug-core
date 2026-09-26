@@ -52,7 +52,7 @@ final class PanelRendererTest extends TestCase
 
     public function testCardOmitsEveryOptionalElementItWasNotGiven(): void
     {
-        $html = PanelRenderer::render('Custom', PanelView::create()->card('', '', 'Bare', '', []));
+        $html = PanelRenderer::render('Custom', PanelView::create()->cards(PanelView::card('', '', 'Bare', '', [])));
 
         self::assertStringContainsString(
             '<article class="yii-debug-entity">',
@@ -85,17 +85,19 @@ final class PanelRendererTest extends TestCase
     {
         $html = PanelRenderer::render(
             'Custom',
-            PanelView::create()->card(
-                'app-asset',
-                'asset',
-                'AppAsset',
-                'app\\assets\\',
-                [PanelView::badge('1 css', Tone::INFO)],
-                PanelView::column(
-                    'Files',
-                    PanelView::create()->files(PanelView::file('.css', 'css/site.css', Tone::INFO)),
+            PanelView::create()->cards(
+                PanelView::card(
+                    'app-asset',
+                    'asset',
+                    'AppAsset',
+                    'app\\assets\\',
+                    [PanelView::badge('1 css', Tone::INFO)],
+                    PanelView::column(
+                        'Files',
+                        PanelView::create()->files(PanelView::file('.css', 'css/site.css', Tone::INFO)),
+                    ),
+                    PanelView::column('Wiring', PanelView::create()->facts(PanelView::fact('source', '@app/assets'))),
                 ),
-                PanelView::column('Wiring', PanelView::create()->facts(PanelView::fact('source', '@app/assets'))),
             ),
         );
 
@@ -138,6 +140,43 @@ final class PanelRendererTest extends TestCase
         );
     }
 
+    public function testCardsShareOneGridInDeclarationOrder(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <h1 class="yii-debug-sr-only">
+            Custom
+            </h1><div class="yii-debug-card-grid">
+            <article class="yii-debug-entity" id="app-asset">
+            <header class="yii-debug-entity-head">
+            <div class="yii-debug-entity-title">
+            <h2 class="yii-debug-entity-name">
+            AppAsset
+            </h2>
+            </div>
+            </header>
+            </article><article class="yii-debug-entity" id="yii-asset">
+            <header class="yii-debug-entity-head">
+            <div class="yii-debug-entity-title">
+            <h2 class="yii-debug-entity-name">
+            YiiAsset
+            </h2>
+            </div>
+            </header>
+            </article>
+            </div>
+            HTML,
+            PanelRenderer::render(
+                'Custom',
+                PanelView::create()->cards(
+                    PanelView::card('app-asset', '', 'AppAsset', '', []),
+                    PanelView::card('yii-asset', '', 'YiiAsset', '', []),
+                ),
+            ),
+            'Both cards must sit in one grid, in declaration order.',
+        );
+    }
+
     #[DataProviderExternal(PanelRendererProvider::class, 'nonCollapsingTables')]
     public function testCollapseRequiresOptInAndMoreRowsThanThreshold(int $count, bool $collapsible): void
     {
@@ -164,15 +203,17 @@ final class PanelRendererTest extends TestCase
             PanelView::create()
                 ->stats(PanelView::stat('asset', $hostile, $hostile))
                 ->links($hostile, PanelView::link($hostile, '#' . $hostile))
-                ->card(
-                    $hostile,
-                    'asset',
-                    $hostile,
-                    $hostile,
-                    [$hostile],
-                    PanelView::column(
+                ->cards(
+                    PanelView::card(
                         $hostile,
-                        PanelView::create()->files(PanelView::file($hostile, $hostile, Tone::INFO)),
+                        'asset',
+                        $hostile,
+                        $hostile,
+                        [$hostile],
+                        PanelView::column(
+                            $hostile,
+                            PanelView::create()->files(PanelView::file($hostile, $hostile, Tone::INFO)),
+                        ),
                     ),
                 ),
         );

@@ -11,7 +11,8 @@ use PHPForge\Debug\Panel\Db\SqlHighlighter;
 use PHPForge\Debug\Presenter\{
     BadgeInline,
     Block,
-    CardBlock,
+    CardEntry,
+    CardsBlock,
     DisclosureBlock,
     EmptyStateBlock,
     FactsBlock,
@@ -136,7 +137,7 @@ final class PanelRenderer
     private function block(Block $block): string
     {
         return match (true) {
-            $block instanceof CardBlock => $this->card($block),
+            $block instanceof CardsBlock => $this->cards($block),
             $block instanceof DisclosureBlock => Disclosure::render(
                 $block->title,
                 Pre::tag()->content($block->content)->render(),
@@ -187,11 +188,11 @@ final class PanelRenderer
     /**
      * Renders one entity as a card: an identifying header and, when the entity has content, its titled columns.
      *
-     * @param CardBlock $block Validated card.
+     * @param CardEntry $block Validated card.
      *
      * @return string Rendered card.
      */
-    private function card(CardBlock $block): string
+    private function card(CardEntry $block): string
     {
         $title = [
             H2::tag()
@@ -256,6 +257,21 @@ final class PanelRenderer
             ->html(...$parts);
 
         return ($block->id === '' ? $card : $card->id($block->id))->render();
+    }
+
+    /**
+     * Renders a set of entity cards as one grid, so the frontend places them side by side when the panel is wide.
+     *
+     * @param CardsBlock $block Validated card set.
+     *
+     * @return string Rendered card grid.
+     */
+    private function cards(CardsBlock $block): string
+    {
+        return Div::tag()
+            ->class(Css::CARD_GRID)
+            ->html(...array_map($this->card(...), $block->cards))
+            ->render();
     }
 
     /**

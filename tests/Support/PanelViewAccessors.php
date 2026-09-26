@@ -8,7 +8,8 @@ use PHPForge\Debug\PanelView;
 use PHPForge\Debug\Presenter\{
     BadgeInline,
     Block,
-    CardBlock,
+    CardEntry,
+    CardsBlock,
     ColumnEntry,
     EmptyStateBlock,
     FactsBlock,
@@ -60,13 +61,24 @@ trait PanelViewAccessors
     }
 
     /**
+     * @param CardsBlock $block Card set to read.
+     * @param int $index Position of the card in display order.
+     *
+     * @return CardEntry Card declared at the requested position.
+     */
+    protected static function cardAt(CardsBlock $block, int $index): CardEntry
+    {
+        return $block->cards[$index] ?? self::fail('The card set must be complete.');
+    }
+
+    /**
      * @param Block $block Block to narrow.
      *
-     * @return CardBlock Narrowed card.
+     * @return CardsBlock Narrowed card set.
      */
-    protected static function card(Block $block): CardBlock
+    protected static function cards(Block $block): CardsBlock
     {
-        return $block instanceof CardBlock ? $block : self::fail('The block must be a card.');
+        return $block instanceof CardsBlock ? $block : self::fail('The block must be a card set.');
     }
 
     /**
@@ -81,12 +93,12 @@ trait PanelViewAccessors
     }
 
     /**
-     * @param CardBlock $block Card to read.
+     * @param CardEntry $block Card to read.
      * @param int $index Position of the column in display order.
      *
      * @return ColumnEntry Column declared at the requested position.
      */
-    protected static function column(CardBlock $block, int $index): ColumnEntry
+    protected static function column(CardEntry $block, int $index): ColumnEntry
     {
         return $block->columns[$index] ?? self::fail('The card body must be complete.');
     }

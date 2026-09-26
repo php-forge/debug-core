@@ -254,6 +254,10 @@ final class DumpCardRenderer
      * Decodes HTML entities so the first payload character (`[`, `'`, `"`, digit, identifier) classifies the dumped
      * value. A miss hides the badge without blocking the render.
      *
+     * Besides the Yii2 `Class#id` form, `yiisoft/var-dumper` exports some objects as PHP expressions: a date as
+     * `new \DateTimeImmutable(...)` and a closure as its source (`function`, `fn`, or `static fn`), so the class after
+     * `new` names the object and a closure is labelled `Closure`.
+     *
      * @return array{0: string, 1: string} `[typeKey, typeLabel]`, both `''` when the type cannot be determined.
      */
     private static function sniffType(string $message): array
@@ -275,8 +279,8 @@ final class DumpCardRenderer
             return ['string', 'string'];
         }
 
-        if (preg_match('/^[A-Za-z_][A-Za-z0-9_\\\\]*/', $payload, $m) === 1) {
-            $name = $m[0];
+        if (preg_match('/^(?:new \\\\)?([A-Za-z_][A-Za-z0-9_\\\\]*)/', $payload, $m) === 1) {
+            $name = $m[1];
 
             $lower = strtolower($name);
 
@@ -288,7 +292,7 @@ final class DumpCardRenderer
                 return ['null', 'null'];
             }
 
-            return ['object', $name];
+            return ['object', in_array($lower, ['fn', 'function', 'static'], true) ? 'Closure' : $name];
         }
 
         if (preg_match('/^-?\d/', $payload) === 1) {

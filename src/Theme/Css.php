@@ -25,6 +25,10 @@ final class Css
      */
     public const string CALLOUT = 'yii-debug-callout';
     /**
+     * Grid laying out a set of entity cards.
+     */
+    public const string CARD_GRID = 'yii-debug-card-grid';
+    /**
      * Grid cell rendered in the monospace face.
      */
     public const string CELL_MONO = 'yii-debug-cell-mono';
