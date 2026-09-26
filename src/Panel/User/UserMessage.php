@@ -45,24 +45,19 @@ enum UserMessage: string
     case EMPTY_HEADLINE = 'No authenticated user';
 
     /**
-     * Identity accessor named in the empty state, whose resolution populates the panel.
+     * Call to action of the empty state, worded for any framework.
      */
-    case EMPTY_IDENTITY = 'Yii::$app->user->identity';
-
-    /**
-     * Closing sentence of the empty-state call to action.
-     */
-    case EMPTY_RESOLVES = ' resolves.';
-
-    /**
-     * Call to action of the empty state, preceding the identity accessor.
-     */
-    case EMPTY_SIGN_IN = 'Sign in and reload the page; the identity appears here as soon as ';
+    case EMPTY_SIGN_IN = 'Sign in and reload the page; the identity appears here once the application resolves it.';
 
     /**
      * Stable identifier associating the panel with the captured payload, also used as its icon key.
      */
     case ID = 'user';
+
+    /**
+     * Glyph marking the attribute and RBAC sections.
+     */
+    case MARK = '::';
 
     /**
      * Header of the RBAC item name column.
@@ -88,11 +83,6 @@ enum UserMessage: string
      * `sprintf()` template of the note shown when the auth manager granted no item, naming the lowercased section.
      */
     case RBAC_EMPTY = 'The auth manager granted no %s to this identity.';
-
-    /**
-     * `sprintf()` template of an RBAC section heading, naming the section and its item count.
-     */
-    case RBAC_HEADING = '%s (%d)';
 
     /**
      * Section label of the granted roles.

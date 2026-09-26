@@ -50,6 +50,18 @@ final class CssProvider
     /**
      * @return iterable<string, array{Tone, string}>
      */
+    public static function heroes(): iterable
+    {
+        yield 'danger' => [Tone::DANGER, 'yii-debug-hero yii-debug-hero-danger'];
+        yield 'info' => [Tone::INFO, 'yii-debug-hero yii-debug-hero-info'];
+        yield 'muted' => [Tone::MUTED, 'yii-debug-hero yii-debug-hero-muted'];
+        yield 'success' => [Tone::SUCCESS, 'yii-debug-hero yii-debug-hero-success'];
+        yield 'warning' => [Tone::WARNING, 'yii-debug-hero yii-debug-hero-warning'];
+    }
+
+    /**
+     * @return iterable<string, array{Tone, string}>
+     */
     public static function stats(): iterable
     {
         yield 'danger' => [Tone::DANGER, 'yii-debug-stat yii-debug-stat-danger'];

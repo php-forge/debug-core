@@ -132,7 +132,7 @@ final class UserDataNormalizerTest extends TestCase
             null,
         );
 
-        $other = $view->sections[1] ?? null;
+        $other = $view->sections[0] ?? null;
 
         self::assertNotNull(
             $other,
@@ -333,6 +333,20 @@ final class UserDataNormalizerTest extends TestCase
         );
     }
 
+    public function testFromIdentityMapsATextualStatusByItsLabel(): void
+    {
+        $view = UserDataNormalizer::fromIdentity(
+            ['username' => "'a'", 'status' => "'ACTIVE'"],
+            null,
+        );
+
+        self::assertSame(
+            ['Active', 'success'],
+            [$view->hero->statusLabel, $view->hero->statusVariant],
+            'Label match must ignore case and keep the variant.',
+        );
+    }
+
     public function testFromIdentityMapsBannedStatusToDangerVariant(): void
     {
         $view = UserDataNormalizer::fromIdentity(
@@ -448,10 +462,11 @@ final class UserDataNormalizerTest extends TestCase
             [
                 'id' => "'1'",
                 'username' => "'admin'",
+                'name' => "'Administrator'",
             ],
             [
                 ['attribute' => 'id', 'label' => 'User ID'],
-                ['attribute' => 'username', 'label' => 'Login'],
+                ['attribute' => 'name', 'label' => 'Full name'],
             ],
         );
 
@@ -461,18 +476,10 @@ final class UserDataNormalizerTest extends TestCase
             $identitySection,
             'Identity section must be present.',
         );
-
-        $labels = array_map(static fn(UserAttribute $a): string => $a->label, $identitySection->attributes);
-
-        self::assertContains(
-            'User ID',
-            $labels,
-            "Custom label map must override the default 'Id' title-case label.",
-        );
-        self::assertContains(
-            'Login',
-            $labels,
-            "Custom label map must override the default 'Username' title-case label.",
+        self::assertSame(
+            ['Full name'],
+            array_map(static fn(UserAttribute $a): string => $a->label, $identitySection->attributes),
+            "Only the second name must stay, under its mapped label instead of the default 'Name'.",
         );
     }
 
