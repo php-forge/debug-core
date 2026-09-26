@@ -16,16 +16,12 @@ for (const app of debugApps()) {
   test(`${app.name} Mail chip label opens the capture that sent the mail`, async ({
     page,
   }) => {
-    test.skip(
-      app.id === "yii3",
-      "Yii3 has no Mail panel until the Phase 5 port.",
-    );
-
     const diagnostics = collectRuntimeDiagnostics(page);
 
     // Serve the page toolbar from the seeded GET that follows the mail-sending POST; later AJAX loads are untouched.
+    // Yii2 serves the payload at `toolbar-data`, Yii3 at `toolbar`.
     await page.route(
-      /toolbar-data/,
+      /toolbar(?:-data)?[?&]/,
       (route) => {
         const url = new URL(route.request().url());
 

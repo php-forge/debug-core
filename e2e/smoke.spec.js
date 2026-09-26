@@ -226,7 +226,7 @@ for (const [appIndex, app] of debugApps().entries()) {
           await expectDebuggerLayout(page, entry, "light");
 
           if (entry.kind === "history") {
-            await expect(page.locator("tr[data-key]")).toHaveCount(2);
+            await expect(page.locator("tr[data-yii-debug-tag]")).toHaveCount(2);
           }
 
           await expectNoRuntimeDiagnostics(

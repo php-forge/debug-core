@@ -109,7 +109,8 @@ export function debugPageURL(app, entry, options = {}) {
   let path;
 
   if (entry.kind === "history") {
-    path = "/debug/index";
+    // Yii2 resolves the module default action at `/debug`; Yii3 serves the history only there.
+    path = "/debug";
   } else if (entry.kind === "compare") {
     path = "/debug/compare";
   } else if (entry.kind === "phpinfo") {
