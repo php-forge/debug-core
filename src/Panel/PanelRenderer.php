@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel;
 
 use JsonException;
-use PHPForge\Debug\{ColumnStyle, PanelView};
+use PHPForge\Debug\{ColumnStyle, PanelView, Tone};
 use PHPForge\Debug\Helper\{Badge, CellMore, Disclosure, EmptyState, ExtensionPill, Format, Icon, Table, Trace};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
 use PHPForge\Debug\Presenter\{
@@ -19,6 +19,7 @@ use PHPForge\Debug\Presenter\{
     FilesBlock,
     GroupBlock,
     HeadingBlock,
+    HeroBlock,
     Inline,
     LinkInline,
     LinksBlock,
@@ -161,6 +162,7 @@ final class PanelRenderer
                 : H2::tag()
                     ->content($block->title)
                     ->render(),
+            $block instanceof HeroBlock => self::hero($block),
             $block instanceof LinksBlock => $this->links($block),
             $block instanceof ManifestBlock => self::manifest($block),
             $block instanceof OverviewBlock => $this->overview($block),
@@ -384,6 +386,88 @@ final class PanelRenderer
         return Ul::tag()
             ->class(Css::TRACE)
             ->html(...$items)
+            ->render();
+    }
+
+    /**
+     * Renders the header identifying the subject of the panel, in the look of the Request overview.
+     *
+     * The status tone colors the accent rail, the mark, and the status chip; a header without a status stays neutral.
+     *
+     * @param HeroBlock $block Hero block to render.
+     *
+     * @return string Hero markup.
+     */
+    private static function hero(HeroBlock $block): string
+    {
+        $identity = [];
+
+        if ($block->mark !== '') {
+            $identity[] = Span::tag()
+                ->addAriaAttribute('hidden', 'true')
+                ->class(Css::HERO_MARK)
+                ->content($block->mark);
+        }
+
+        $text = [
+            Span::tag()
+                ->class(Css::HERO_TITLE)
+                ->title($block->title)
+                ->content($block->title),
+        ];
+
+        if ($block->subtitle !== '') {
+            $text[] = Span::tag()
+                ->class(Css::HERO_SUBTITLE)
+                ->title($block->subtitle)
+                ->content($block->subtitle);
+        }
+
+        $identity[] = Div::tag()
+            ->class(Css::HERO_TEXT)
+            ->html(...$text);
+
+        $header = [
+            Div::tag()
+                ->class(Css::HERO_IDENTITY)
+                ->html(...$identity),
+        ];
+
+        if ($block->status !== null) {
+            $header[] = Div::tag()
+                ->class(Css::HERO_STATUS)
+                ->html(Badge::render($block->status->label, $block->status->tone));
+        }
+
+        $parts = [
+            Header::tag()
+                ->class(Css::HERO_HEADER)
+                ->html(...$header),
+        ];
+
+        if ($block->metrics !== []) {
+            $metrics = [];
+
+            foreach ($block->metrics as $metric) {
+                $metrics[] = Div::tag()
+                    ->class(Css::HERO_METRIC)
+                    ->html(
+                        Dt::tag()->content($metric->label),
+                        Dd::tag()
+                            ->title($metric->value)
+                            ->content($metric->value),
+                    );
+            }
+
+            $parts[] = Dl::tag()
+                ->class(Css::HERO_METRICS)
+                ->html(...$metrics);
+        }
+
+        return Section::tag()
+            ->addAriaAttribute('label', $block->title)
+            ->class(Css::hero($block->status->tone ?? Tone::MUTED))
+            ->html(...$parts)
             ->render();
     }
 

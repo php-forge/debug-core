@@ -14,6 +14,7 @@ use function preg_match;
 use function str_ends_with;
 use function str_replace;
 use function str_starts_with;
+use function strcasecmp;
 use function strlen;
 use function substr;
 use function trim;
@@ -193,10 +194,10 @@ final class UserDataNormalizer
     {
         $buckets = ['identity' => [], 'security' => [], 'timestamps' => [], 'other' => []];
 
-        foreach (['id', 'username', 'name', 'email'] as $key) {
-            if (isset($identity[$key])) {
-                $buckets['identity'][$key] = $identity[$key];
-            }
+        // The hero already shows the identifier, the email, and the name it uses as its title, so only a second name
+        // is left for the Identity section.
+        if (isset($identity['username'], $identity['name'])) {
+            $buckets['identity']['name'] = $identity['name'];
         }
 
         foreach ($identity as $key => $value) {
@@ -311,6 +312,9 @@ final class UserDataNormalizer
     /**
      * Resolves the status display label and CSS variant for the raw status value.
      *
+     * The Yii2 status codes resolve first; a textual status such as the name of a Yii3 status enum resolves by its
+     * label, case-insensitively.
+     *
      * @return array{0: string, 1: string} `[label, variant]`.
      */
     private static function resolveStatus(string $value): array
@@ -319,6 +323,12 @@ final class UserDataNormalizer
 
         if (isset(self::STATUS_MAP[$raw])) {
             return [self::STATUS_MAP[$raw]['label'], self::STATUS_MAP[$raw]['variant']];
+        }
+
+        foreach (self::STATUS_MAP as $status) {
+            if (strcasecmp($status['label'], $raw) === 0) {
+                return [$status['label'], $status['variant']];
+            }
         }
 
         return [$raw === '' ? 'Unknown' : $raw, 'muted'];

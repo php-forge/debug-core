@@ -6,17 +6,18 @@ namespace PHPForge\Debug\Tests\Panel\User;
 
 use PHPForge\Debug\{ColumnStyle, PanelView, Tone};
 use PHPForge\Debug\Panel\User\{UserPanel, UserSnapshot};
-use PHPForge\Debug\Presenter\{TextInline, TextStyle, ToolbarMetric};
+use PHPForge\Debug\Presenter\{BadgeInline, Block, FactEntry, OverviewBlock, TextInline, TextStyle, ToolbarMetric};
 use PHPForge\Debug\Tests\Support\PanelViewAccessors;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 use function array_keys;
+use function array_map;
 use function date;
 use function time;
 
 /**
- * Unit tests for {@see UserPanel} covering the identity overview, attribute sections, and the RBAC tables.
+ * Unit tests for {@see UserPanel} covering the identity hero, attribute sections, and the RBAC sections.
  */
 #[Group('panel')]
 #[Group('user')]
@@ -37,6 +38,7 @@ final class UserPanelTest extends TestCase
             'identity' => [
                 'id' => '1',
                 'username' => 'admin',
+                'name' => 'Administrator',
                 'email' => 'admin@example.com',
                 'status' => '10',
                 'auth_key' => 'secret-auth-key',
@@ -44,6 +46,7 @@ final class UserPanelTest extends TestCase
                 'updated_at' => (string) $recent,
                 'timezone' => 'UTC',
                 'blank' => '',
+                'logins' => 3,
             ],
             'attributes' => [
                 'malformed',
@@ -58,9 +61,9 @@ final class UserPanelTest extends TestCase
         $view = self::present($capture);
 
         self::assertSame(
-            ['admin'],
-            self::metricValues($view->summaryMetrics()),
-            'The summary must name the authenticated user.',
+            [],
+            $view->summaryMetrics(),
+            'The hero must replace the summary strip.',
         );
         self::assertEquals(
             [new ToolbarMetric('User', 'admin')],
@@ -68,58 +71,59 @@ final class UserPanelTest extends TestCase
             'The toolbar must name the authenticated user.',
         );
 
-        $hero = self::overview(self::blockAt($view, 0));
-
-        self::assertTrue(
-            $hero->compact,
-            'The identity overview must use the compact presentation.',
-        );
-        self::assertSame(
-            ['User', 'Email', 'User ID', 'Status'],
-            array_keys(self::fields($hero)),
-            'The identity row order must stay stable.',
-        );
-
-        $status = self::badge(self::fields($hero)['Status'] ?? self::fail('The overview must keep the status row.'));
+        $hero = self::hero(self::blockAt($view, 0));
 
         self::assertSame(
-            'Active',
-            $status->label,
-            'A known status must be labeled.',
+            ['A', 'admin', 'admin@example.com'],
+            [$hero->mark, $hero->title, $hero->subtitle],
+            'The hero must carry the monogram, the username, and the email.',
+        );
+        self::assertEquals(
+            new BadgeInline('Active', Tone::SUCCESS),
+            $hero->status,
+            'An active account must carry a success status.',
+        );
+        self::assertEquals(
+            [new FactEntry('User ID', '1'), new FactEntry('Roles', '—'), new FactEntry('Permissions', '—')],
+            $hero->metrics,
+            'Metrics must keep their order and mark an RBAC lookup that was not captured.',
         );
         self::assertSame(
-            Tone::SUCCESS,
-            $status->tone,
-            'An active account must use the success tone.',
-        );
-        self::assertSame(
-            ['Identity', 'Security', 'Timestamps', 'Other attributes'],
             [
-                self::heading(self::blockAt($view, 1))->title,
-                self::heading(self::blockAt($view, 3))->title,
-                self::heading(self::blockAt($view, 5))->title,
-                self::heading(self::blockAt($view, 7))->title,
+                ['::', 'Identity', null],
+                ['::', 'Security', null],
+                ['::', 'Timestamps', null],
+                ['::', 'Other attributes', null],
             ],
-            'Every populated attribute section must keep its heading, in order.',
+            array_map(
+                static fn(int $index): array => [
+                    self::section(self::blockAt($view, $index))->mark,
+                    self::section(self::blockAt($view, $index))->title,
+                    self::section(self::blockAt($view, $index))->count,
+                ],
+                [1, 2, 3, 4],
+            ),
+            'Every populated attribute bucket must open its own section, in order.',
+        );
+        self::assertSame(
+            ['Name' => 'Administrator'],
+            self::textFields(self::sectionOverview($view, 1)),
+            'Identity must keep only what the hero does not show.',
         );
         self::assertTrue(
-            self::heading(self::blockAt($view, 1))->section,
-            'Each attribute section must open a section-level heading.',
-        );
-        self::assertTrue(
-            self::overview(self::blockAt($view, 2))->compact,
+            self::sectionOverview($view, 1)->compact,
             'Each attribute section must use the compact presentation.',
         );
         self::assertEquals(
             new TextInline('secret-auth-key', TextStyle::PREVIEW),
-            self::fields(self::overview(self::blockAt($view, 4)))['Security key']
+            self::fields(self::sectionOverview($view, 2))['Security key']
                 ?? self::fail('The security section must keep the auth key row.'),
             'The redacted key must carry the preview style.',
         );
         self::assertSame(
             date('M j, Y · H:i', self::TIME),
             self::textValue(
-                self::fields(self::overview(self::blockAt($view, 6)))['Created At']
+                self::fields(self::sectionOverview($view, 3))['Created At']
                     ?? self::fail('The timestamp section must keep the creation row.'),
             ),
             'Past the relative scale the absolute form must not be repeated.',
@@ -127,14 +131,19 @@ final class UserPanelTest extends TestCase
         self::assertSame(
             date('M j, Y · H:i', $recent) . ' · just now',
             self::textValue(
-                self::fields(self::overview(self::blockAt(self::present($capture), 6)))['Updated At']
+                self::fields(self::sectionOverview(self::present($capture), 3))['Updated At']
                     ?? self::fail('The timestamp section must keep the update row.'),
             ),
             'Inside the relative scale both forms must be shown.',
         );
 
-        $other = self::fields(self::overview(self::blockAt($view, 8)));
+        $other = self::fields(self::sectionOverview($view, 4));
 
+        self::assertSame(
+            ['Time zone', 'Blank'],
+            array_keys($other),
+            'A value the collector did not render as text must be dropped.',
+        );
         self::assertSame(
             'UTC',
             self::textValue($other['Time zone'] ?? self::fail('The other section must keep the time zone row.')),
@@ -175,9 +184,9 @@ final class UserPanelTest extends TestCase
             'The first paragraph must describe the guest request.',
         );
         self::assertSame(
-            ['Sign in and reload the page; the identity appears here as soon as ', 'Yii::$app->user->identity', ' resolves.'],
-            self::inlineValues($state->paragraphs[1] ?? self::fail('The empty state must name the resolver.')),
-            'The resolver explanation must stay complete and ordered.',
+            ['Sign in and reload the page; the identity appears here once the application resolves it.'],
+            self::inlineValues($state->paragraphs[1] ?? self::fail('The empty state must end with a call to action.')),
+            'The call to action must name no framework API.',
         );
     }
 
@@ -222,19 +231,22 @@ final class UserPanelTest extends TestCase
                 'permissions' => [['name' => 'viewUsers']],
             ],
         );
-        $rolesHeading = self::heading(self::blockAt($view, 3));
+
+        self::assertEquals(
+            [new FactEntry('User ID', '—'), new FactEntry('Roles', 'admin'), new FactEntry('Permissions', '1')],
+            self::hero(self::blockAt($view, 0))->metrics,
+            'Metrics must name the granted roles and count the permissions.',
+        );
+
+        $rolesSection = self::section(self::blockAt($view, 1));
 
         self::assertSame(
-            'Roles (2)',
-            $rolesHeading->title,
-            'The roles heading must report the item count.',
-        );
-        self::assertTrue(
-            $rolesHeading->section,
-            'The roles section must open a section-level heading.',
+            ['::', 'Roles', 2],
+            [$rolesSection->mark, $rolesSection->title, $rolesSection->count],
+            'The roles section must report the item count.',
         );
 
-        $roles = self::table(self::blockAt($view, 4));
+        $roles = self::table(self::sectionBlock($view, 1));
 
         self::assertSame(
             ['#', 'Name', 'Description', 'Rule', 'Data', 'Created', 'Updated'],
@@ -276,14 +288,14 @@ final class UserPanelTest extends TestCase
             'A malformed RBAC row must fall back to placeholders.',
         );
         self::assertSame(
-            'Permissions (1)',
-            self::heading(self::blockAt($view, 5))->title,
-            'The permissions heading must report the item count.',
+            ['Permissions', 1],
+            [self::section(self::blockAt($view, 2))->title, self::section(self::blockAt($view, 2))->count],
+            'The permissions section must report the item count.',
         );
         self::assertSame(
             'viewUsers',
             self::textValue(
-                self::row(self::table(self::blockAt($view, 6)), 0)[1]
+                self::row(self::table(self::sectionBlock($view, 2)), 0)[1]
                     ?? self::fail('Every permission must be listed.'),
             ),
             'Permissions must be listed separately from roles.',
@@ -293,45 +305,38 @@ final class UserPanelTest extends TestCase
     public function testUnknownStatusAndMissingRbacFallBackToNeutralCopy(): void
     {
         $view = self::present(
-            ['identity' => ['username' => 'ghost'], 'attributes' => null, 'roles' => null, 'permissions' => null],
+            ['identity' => ['username' => 'ghost'], 'attributes' => null, 'roles' => [], 'permissions' => null],
         );
-        $status = self::badge(
-            self::fields(self::overview(self::blockAt($view, 0)))['Status']
-                ?? self::fail('The overview must keep the status row.'),
-        );
-        $hero = self::fields(self::overview(self::blockAt($view, 0)));
+        $hero = self::hero(self::blockAt($view, 0));
 
-        self::assertSame(
-            'Unknown',
-            $status->label,
-            'An identity without status must read as unknown.',
+        self::assertEquals(
+            new BadgeInline('Unknown', Tone::MUTED),
+            $hero->status,
+            'An identity without status must read as a de-emphasized unknown.',
         );
         self::assertSame(
-            ['—', '—'],
-            [
-                self::textValue($hero['Email'] ?? self::fail('The overview must keep the email row.')),
-                self::textValue($hero['User ID'] ?? self::fail('The overview must keep the identifier row.')),
-            ],
-            'An identity without email or id must show the placeholder.',
+            '',
+            $hero->subtitle,
+            'An identity without email must omit the subtitle.',
+        );
+        self::assertEquals(
+            [new FactEntry('User ID', '—'), new FactEntry('Roles', '—'), new FactEntry('Permissions', '—')],
+            $hero->metrics,
+            'Missing values must show the placeholder.',
         );
         self::assertSame(
-            Tone::MUTED,
-            $status->tone,
-            'An unknown status must stay de-emphasized.',
-        );
-        self::assertSame(
-            'Roles (0)',
-            self::heading(self::blockAt($view, 3))->title,
-            'The roles heading must report an empty grant.',
+            ['Roles', 0],
+            [self::section(self::blockAt($view, 1))->title, self::section(self::blockAt($view, 1))->count],
+            'The roles section must report an empty grant.',
         );
         self::assertSame(
             ['The auth manager granted no roles to this identity.'],
-            self::inlineValues(self::paragraph(self::blockAt($view, 4))),
+            self::inlineValues(self::paragraph(self::sectionBlock($view, 1))),
             'An empty role grant must be explained.',
         );
         self::assertSame(
             ['The auth manager granted no permissions to this identity.'],
-            self::inlineValues(self::paragraph(self::blockAt($view, 6))),
+            self::inlineValues(self::paragraph(self::sectionBlock($view, 2))),
             'An empty permission grant must be explained.',
         );
     }
@@ -346,5 +351,32 @@ final class UserPanelTest extends TestCase
     private static function present(array $payload): PanelView
     {
         return (new UserPanel())->present(UserSnapshot::capture($payload)->jsonSerialize());
+    }
+
+    /**
+     * Returns the only block a section of the view wraps.
+     *
+     * @param PanelView $view Description built by the panel.
+     * @param int $index Position of the section in the view.
+     *
+     * @return Block Block the section wraps.
+     */
+    private static function sectionBlock(PanelView $view, int $index): Block
+    {
+        return self::section(self::blockAt($view, $index))->content->blocks()[0]
+            ?? self::fail('The section must wrap a block.');
+    }
+
+    /**
+     * Returns the overview an attribute section of the view wraps.
+     *
+     * @param PanelView $view Description built by the panel.
+     * @param int $index Position of the section in the view.
+     *
+     * @return OverviewBlock Overview the section wraps.
+     */
+    private static function sectionOverview(PanelView $view, int $index): OverviewBlock
+    {
+        return self::overview(self::sectionBlock($view, $index));
     }
 }

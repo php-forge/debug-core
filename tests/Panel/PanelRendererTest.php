@@ -413,6 +413,74 @@ final class PanelRendererTest extends TestCase
         );
     }
 
+    public function testHeroRendersTheSubjectStatusAndMetricRow(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <h1 class="yii-debug-sr-only">
+            User
+            </h1><section class="yii-debug-hero yii-debug-hero-success" aria-label="a&lt;b">
+            <header class="yii-debug-hero-header">
+            <div class="yii-debug-hero-identity">
+            <span class="yii-debug-hero-mark" aria-hidden="true">AD</span><div class="yii-debug-hero-text">
+            <span class="yii-debug-hero-title" title="a&lt;b">a&lt;b</span><span class="yii-debug-hero-subtitle" title="x@y">x@y</span>
+            </div>
+            </div><div class="yii-debug-hero-status">
+            <span class="yii-debug-badge yii-debug-badge-success">Active</span>
+            </div>
+            </header><dl class="yii-debug-hero-metrics">
+            <div class="yii-debug-hero-metric">
+            <dt>
+            User ID
+            </dt><dd title="1">
+            1
+            </dd>
+            </div><div class="yii-debug-hero-metric">
+            <dt>
+            Roles
+            </dt><dd title="admin">
+            admin
+            </dd>
+            </div>
+            </dl>
+            </section>
+            HTML,
+            PanelRenderer::render(
+                'User',
+                PanelView::create()->hero(
+                    'AD',
+                    'a<b',
+                    'x@y',
+                    PanelView::badge('Active', Tone::SUCCESS),
+                    PanelView::fact('User ID', '1'),
+                    PanelView::fact('Roles', 'admin'),
+                ),
+            ),
+            'Hero must escape the title and render every part in order.',
+        );
+    }
+
+    public function testHeroWithoutOptionalPartsStaysNeutral(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <h1 class="yii-debug-sr-only">
+            User
+            </h1><section class="yii-debug-hero yii-debug-hero-muted" aria-label="ghost">
+            <header class="yii-debug-hero-header">
+            <div class="yii-debug-hero-identity">
+            <div class="yii-debug-hero-text">
+            <span class="yii-debug-hero-title" title="ghost">ghost</span>
+            </div>
+            </div>
+            </header>
+            </section>
+            HTML,
+            PanelRenderer::render('User', PanelView::create()->hero('', 'ghost', '', null)),
+            'A header without mark, subtitle, status, or metrics must render only its title.',
+        );
+    }
+
     public function testJsonPreviewPreservesUnicodeAndUnescapedSlashes(): void
     {
         $html = PanelRenderer::render(

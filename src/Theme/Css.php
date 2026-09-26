@@ -201,6 +201,42 @@ final class Css
      */
     public const string GRID_SUMMARY_SEP = 'yii-debug-grid-summary-sep';
     /**
+     * Header row of a hero, holding its identity and its status.
+     */
+    public const string HERO_HEADER = 'yii-debug-hero-header';
+    /**
+     * Mark and title group of a hero header.
+     */
+    public const string HERO_IDENTITY = 'yii-debug-hero-identity';
+    /**
+     * Avatar tile carrying the short mark before the hero title.
+     */
+    public const string HERO_MARK = 'yii-debug-hero-mark';
+    /**
+     * One label and value pair of the hero metric row.
+     */
+    public const string HERO_METRIC = 'yii-debug-hero-metric';
+    /**
+     * Metric row under the hero header.
+     */
+    public const string HERO_METRICS = 'yii-debug-hero-metrics';
+    /**
+     * Status slot opposite the hero title.
+     */
+    public const string HERO_STATUS = 'yii-debug-hero-status';
+    /**
+     * Qualifier shown under the hero title.
+     */
+    public const string HERO_SUBTITLE = 'yii-debug-hero-subtitle';
+    /**
+     * Title and subtitle stack of a hero.
+     */
+    public const string HERO_TEXT = 'yii-debug-hero-text';
+    /**
+     * Subject name of a hero.
+     */
+    public const string HERO_TITLE = 'yii-debug-hero-title';
+    /**
      * Pill-shaped cross-reference of a link strip.
      */
     public const string LINK_PILL = 'yii-debug-link-pill';
@@ -415,6 +451,27 @@ final class Css
             Tone::MUTED => 'yii-debug-file-type yii-debug-file-type-muted',
             Tone::SUCCESS => 'yii-debug-file-type yii-debug-file-type-success',
             Tone::WARNING => 'yii-debug-file-type yii-debug-file-type-warning',
+        };
+    }
+
+    /**
+     * Returns the class list of a hero whose accent takes the requested tone.
+     *
+     * The tone sets the hue the accent rail, the mark, and the status chip share, so the muted variant deliberately
+     * carries no rule of its own and reads as the neutral base.
+     *
+     * @param Tone $tone Semantic tone of the hero status.
+     *
+     * @return string Base and variant classes of the hero.
+     */
+    public static function hero(Tone $tone): string
+    {
+        return match ($tone) {
+            Tone::DANGER => 'yii-debug-hero yii-debug-hero-danger',
+            Tone::INFO => 'yii-debug-hero yii-debug-hero-info',
+            Tone::MUTED => 'yii-debug-hero yii-debug-hero-muted',
+            Tone::SUCCESS => 'yii-debug-hero yii-debug-hero-success',
+            Tone::WARNING => 'yii-debug-hero yii-debug-hero-warning',
         };
     }
 

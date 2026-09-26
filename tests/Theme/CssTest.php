@@ -48,6 +48,16 @@ final class CssTest extends TestCase
         );
     }
 
+    #[DataProviderExternal(CssProvider::class, 'heroes')]
+    public function testHeroMapsEveryToneToItsAccentClasses(Tone $tone, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            Css::hero($tone),
+            'Hero must carry the base class before the tone class.',
+        );
+    }
+
     public function testRowPrefixesTheVariant(): void
     {
         self::assertSame(

@@ -16,6 +16,7 @@ use PHPForge\Debug\Presenter\{
     FilesBlock,
     GroupBlock,
     HeadingBlock,
+    HeroBlock,
     Inline,
     LinkInline,
     LinksBlock,
@@ -178,6 +179,16 @@ trait PanelViewAccessors
     protected static function heading(Block $block): HeadingBlock
     {
         return $block instanceof HeadingBlock ? $block : self::fail('The block must be a heading.');
+    }
+
+    /**
+     * @param Block $block Block to narrow.
+     *
+     * @return HeroBlock Narrowed hero.
+     */
+    protected static function hero(Block $block): HeroBlock
+    {
+        return $block instanceof HeroBlock ? $block : self::fail('The block must be a hero.');
     }
 
     /**

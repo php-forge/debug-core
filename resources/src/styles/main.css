@@ -1001,6 +1001,7 @@
    */
   .yii-debug-request-hero-method,
   .yii-debug-snapshot-status,
+  .yii-debug-hero-status > .yii-debug-badge,
   .yii-debug-level-chip,
   .yii-debug-db-type,
   .yii-debug-dump-type,
@@ -3740,6 +3741,162 @@
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /**
+   * ===================================================================
+   * Hero — the header of a panel about one subject.
+   * ===================================================================
+   * The Request overview rail, generalized: an accent rail, a mark tile,
+   * the title and subtitle, a status chip, and one metric row. The status
+   * tone sets `--yii-debug-hue`, so the rail, the mark, and the chip share
+   * one hue; the muted variant keeps the neutral fallback.
+   */
+  .yii-debug-hero {
+    overflow: hidden;
+    margin-bottom: var(--yii-debug-space-5);
+    border: var(--yii-debug-border);
+    border-inline-start: 4px solid
+      color-mix(
+        in srgb,
+        var(--yii-debug-hue, var(--yii-debug-panel-muted)) 76%,
+        var(--yii-debug-panel-text)
+      );
+    border-radius: var(--yii-debug-radius-lg);
+    background: var(--yii-debug-panel-surface);
+    box-shadow: var(--yii-debug-shadow-sm);
+  }
+
+  .yii-debug-hero-danger {
+    --yii-debug-hue: var(--yii-debug-danger);
+  }
+
+  .yii-debug-hero-info {
+    --yii-debug-hue: var(--yii-debug-info);
+  }
+
+  .yii-debug-hero-success {
+    --yii-debug-hue: var(--yii-debug-success);
+  }
+
+  .yii-debug-hero-warning {
+    --yii-debug-hue: var(--yii-debug-warning);
+  }
+
+  .yii-debug-hero-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--yii-debug-space-4);
+    align-items: center;
+    padding: var(--yii-debug-space-4);
+  }
+
+  .yii-debug-hero-identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: var(--yii-debug-space-3);
+  }
+
+  .yii-debug-hero-mark {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--yii-debug-hue, var(--yii-debug-panel-muted)),
+        transparent 65%
+      );
+    border-radius: var(--yii-debug-radius-md);
+    background: color-mix(
+      in srgb,
+      var(--yii-debug-hue, var(--yii-debug-panel-muted)),
+      transparent 88%
+    );
+    color: color-mix(
+      in srgb,
+      var(--yii-debug-hue, var(--yii-debug-panel-muted)) 80%,
+      var(--yii-debug-panel-text)
+    );
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .yii-debug-hero-text {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .yii-debug-hero-title,
+  .yii-debug-hero-subtitle {
+    overflow: hidden;
+    font-family: var(--yii-debug-font-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .yii-debug-hero-title {
+    color: var(--yii-debug-panel-text);
+    font-size: var(--yii-debug-fs-base);
+    font-weight: 600;
+  }
+
+  .yii-debug-hero-subtitle {
+    color: var(--yii-debug-panel-muted);
+    font-size: var(--yii-debug-fs-xs);
+  }
+
+  .yii-debug-hero-status > .yii-debug-badge {
+    padding: 3px 12px;
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .yii-debug-hero-metrics {
+    display: grid;
+    margin: 0;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    border-top: var(--yii-debug-border);
+    background: var(--yii-debug-panel-border);
+    gap: 1px;
+  }
+
+  .yii-debug-hero-metric {
+    min-width: 0;
+    padding: var(--yii-debug-space-3) var(--yii-debug-space-4);
+    background: var(--yii-debug-panel-surface-muted);
+
+    dt {
+      margin-bottom: 2px;
+      color: var(--yii-debug-panel-muted);
+      font-family: var(--yii-debug-font-sans);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    dd {
+      overflow: hidden;
+      margin: 0;
+      color: var(--yii-debug-panel-text);
+      font-family: var(--yii-debug-font-mono);
+      font-size: var(--yii-debug-fs-sm);
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   /**
