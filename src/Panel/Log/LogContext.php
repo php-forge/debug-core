@@ -13,6 +13,7 @@ use Throwable;
 use UnitEnum;
 
 use function array_is_list;
+use function array_key_exists;
 use function count;
 use function get_debug_type;
 use function is_array;
@@ -57,11 +58,22 @@ final class LogContext
      */
     private const int MAX_KEYS = 32;
     /**
+     * Maximum values retained per {@see self::normalize()} call, counting every stored leaf and every stored array.
+     *
+     * Bounds the whole tree regardless of its shape: at most 512 strings of {@see self::MAX_STRING_BYTES} bytes under
+     * keys of {@see self::MAX_KEY_BYTES} bytes, about 1.1 MB, plus one `[+N more]` marker per stored array. Without it
+     * the per-level caps alone allow 32 x 100 x 100 strings of 2 KB at the third level and more below.
+     */
+    private const int MAX_NODES = 512;
+    /**
      * Maximum bytes kept per string value, the `[truncated]` marker included.
      */
     private const int MAX_STRING_BYTES = 2048;
     /**
      * Key of the entry that counts the entries cut from an oversized map.
+     *
+     * The marker is written after the kept entries, so a source key `...` keeps its name and the marker takes the
+     * next free disambiguated key, such as `... #2`.
      */
     private const string MORE_KEY = '...';
     /**
@@ -77,8 +89,10 @@ final class LogContext
      * Normalizes a log context into a bounded JSON-safe tree.
      *
      * Keys become valid UTF-8 strings cut at {@see self::MAX_KEY_BYTES} bytes (PHP still stores numeric keys as
-     * integers); values whose key the policy denies become `[redacted]` at any depth, and string values pass through
-     * {@see CapturePolicy::redactText()}.
+     * integers); a key that collides with an earlier one after the cut or the binary conversion gets a ` #2`, ` #3`
+     * suffix instead of overwriting it. Values whose original key the policy denies become `[redacted]` at any depth,
+     * and string values pass through {@see CapturePolicy::redactText()}. The whole tree retains at most
+     * {@see self::MAX_NODES} values.
      *
      * @param array<array-key, mixed> $context Context passed to the logger call.
      * @param CapturePolicy $policy Host policy that decides which keys and text fragments are redacted.
@@ -97,43 +111,50 @@ final class LogContext
             unset($context[$key]);
         }
 
-        return self::entries($context, $policy, self::MAX_KEYS, 1);
+        $budget = self::MAX_NODES;
+
+        return self::entries($context, $policy, self::MAX_KEYS, 1, $budget);
     }
 
     /**
-     * Normalizes the entries of one array level, collapsing the entries beyond the limit into one count entry.
+     * Normalizes the entries of one array level, collapsing the entries beyond the limit or the budget into one count
+     * entry.
      *
      * @param array<array-key, mixed> $items Entries of the level.
      * @param CapturePolicy $policy Host redaction policy.
      * @param int $limit Maximum entries kept on this level.
      * @param int $level One-based nesting level of `$items`.
+     * @param int $budget Values still retainable in the whole tree, decremented for every stored entry.
      *
      * @return array<array-key, mixed> Normalized entries of the level.
      */
-    private static function entries(array $items, CapturePolicy $policy, int $limit, int $level): array
+    private static function entries(array $items, CapturePolicy $policy, int $limit, int $level, int &$budget): array
     {
         $isList = array_is_list($items);
+        $processed = 0;
 
         $result = [];
 
         foreach ($items as $key => $value) {
-            if (count($result) === $limit) {
-                $more = '[+' . (count($items) - $limit) . ' more]';
+            if ($processed === $limit || $budget === 0) {
+                $more = '[+' . (count($items) - $processed) . ' more]';
 
                 if ($isList) {
                     $result[] = $more;
                 } else {
-                    $result[self::MORE_KEY] = $more;
+                    $result[self::uniqueKey(self::MORE_KEY, $result)] = $more;
                 }
 
                 break;
             }
 
+            $processed++;
+            $budget--;
+
             $name = (string) $key;
 
-            $result[mb_strcut(Json::safeString($name), 0, self::MAX_KEY_BYTES)] = $policy->isSensitiveKey($name)
-                ? self::REDACTED
-                : self::value($value, $policy, $level);
+            $result[self::uniqueKey(mb_strcut(Json::safeString($name), 0, self::MAX_KEY_BYTES), $result)]
+                = $policy->isSensitiveKey($name) ? self::REDACTED : self::value($value, $policy, $level, $budget);
         }
 
         return $result;
@@ -192,23 +213,50 @@ final class LogContext
     }
 
     /**
+     * Returns a key not yet used on the level, keeping earlier entries when a cut or converted key collides.
+     *
+     * @param string $key Bounded key of the entry to store.
+     * @param array<array-key, mixed> $result Entries already stored on the level.
+     *
+     * @return string `$key` when free; otherwise `$key` shortened to fit a ` #2`, ` #3`, ... suffix within
+     * {@see self::MAX_KEY_BYTES} bytes.
+     */
+    private static function uniqueKey(string $key, array $result): string
+    {
+        $candidate = $key;
+
+        for ($suffix = 2; array_key_exists($candidate, $result); $suffix++) {
+            $tag = " #{$suffix}";
+            $candidate = mb_strcut($key, 0, self::MAX_KEY_BYTES - strlen($tag)) . $tag;
+        }
+
+        return $candidate;
+    }
+
+    /**
      * Normalizes one context value.
      *
      * @param mixed $value Raw context value.
      * @param CapturePolicy $policy Host redaction policy.
      * @param int $level One-based nesting level of the array holding `$value`.
+     * @param int $budget Values still retainable in the whole tree.
      *
      * @return mixed JSON-safe value.
      */
-    private static function value(#[SensitiveParameter] mixed $value, CapturePolicy $policy, int $level): mixed
-    {
+    private static function value(
+        #[SensitiveParameter]
+        mixed $value,
+        CapturePolicy $policy,
+        int $level,
+        int &$budget,
+    ): mixed {
         return match (true) {
             $value === null, is_bool($value), is_int($value) => $value,
             is_float($value) => is_finite($value) ? $value : var_export($value, true),
             is_string($value) => self::text($value, $policy),
             is_array($value) => $level === self::MAX_DEPTH
                 ? self::DEPTH_MARKER
-                : self::entries($value, $policy, self::MAX_ITEMS, $level + 1),
+                : self::entries($value, $policy, self::MAX_ITEMS, $level + 1, $budget),
             is_object($value) => self::text(self::objectLabel($value), $policy),
             default => '{' . get_debug_type($value) . '}',
         };

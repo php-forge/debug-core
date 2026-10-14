@@ -13,10 +13,14 @@ use RuntimeException;
 use stdClass;
 use Stringable;
 
+use function array_fill;
 use function array_fill_keys;
 use function fclose;
 use function fopen;
+use function is_array;
+use function is_string;
 use function json_encode;
+use function preg_match;
 use function range;
 use function str_repeat;
 use function strlen;
@@ -42,6 +46,40 @@ final class LogContextTest extends TestCase
             ['l1' => ['l2' => ['l3' => ['l4' => ['l5' => ['l6' => ['l7' => ['l8' => '[...]', 'v' => 1]]]]]]]],
             $normalized,
             'The eighth level must keep its scalars and collapse its arrays.',
+        );
+    }
+
+    public function testNormalizeCountsCutEntriesWhenEveryKeyCollides(): void
+    {
+        $prefix = str_repeat('k', 128);
+        $map = [];
+
+        foreach (range(1, 103) as $index) {
+            $map["{$prefix}{$index}"] = $index;
+        }
+
+        $normalized = LogContext::normalize(['map' => $map], new CapturePolicy());
+
+        $kept = $normalized['map'] ?? [];
+
+        self::assertIsArray(
+            $kept,
+            'Colliding map must stay an array.',
+        );
+        self::assertCount(
+            101,
+            $kept,
+            'One hundred entries plus the marker must be kept.',
+        );
+        self::assertSame(
+            100,
+            $kept[str_repeat('k', 123) . ' #100'] ?? null,
+            'Hundredth key must carry a suffix within 128 bytes.',
+        );
+        self::assertSame(
+            '[+3 more]',
+            $kept['...'] ?? null,
+            'Marker must count the source entries, not the stored keys.',
         );
     }
 
@@ -84,6 +122,38 @@ final class LogContextTest extends TestCase
         );
     }
 
+    public function testNormalizeKeepsCollidingKeysUnderDisambiguatedNames(): void
+    {
+        $prefix = str_repeat('k', 128);
+
+        $normalized = LogContext::normalize(
+            [
+                "{$prefix}a" => 1,
+                "{$prefix}b" => 2,
+                "{$prefix}_password" => 'secret',
+                'kk' . str_repeat('λ', 64) . 'a' => 3,
+                'kk' . str_repeat('λ', 64) . 'b' => 4,
+                "\xFF" => 'binary',
+                '(binary: base64 /w==)' => 'literal',
+            ],
+            new CapturePolicy(),
+        );
+
+        self::assertSame(
+            [
+                $prefix => 1,
+                str_repeat('k', 125) . ' #2' => 2,
+                str_repeat('k', 125) . ' #3' => '[redacted]',
+                'kk' . str_repeat('λ', 63) => 3,
+                'kk' . str_repeat('λ', 61) . ' #2' => 4,
+                '(binary: base64 /w==)' => 'binary',
+                '(binary: base64 /w==) #2' => 'literal',
+            ],
+            $normalized,
+            'Earlier entries must be kept and redaction decided on the original key.',
+        );
+    }
+
     public function testNormalizeKeepsJsonScalarsAndStringifiesNonFiniteFloats(): void
     {
         $normalized = LogContext::normalize(
@@ -113,6 +183,34 @@ final class LogContextTest extends TestCase
             ],
             $normalized,
             'JSON scalars must be kept and non-finite floats stringified.',
+        );
+    }
+
+    public function testNormalizeKeepsSourceEllipsisKeyBesideTheMoreMarker(): void
+    {
+        $map = ['...' => 'source'];
+
+        foreach (range(1, 100) as $index) {
+            $map["key{$index}"] = $index;
+        }
+
+        $normalized = LogContext::normalize(['map' => $map], new CapturePolicy());
+
+        $kept = $normalized['map'] ?? [];
+
+        self::assertIsArray(
+            $kept,
+            'Map must stay an array.',
+        );
+        self::assertSame(
+            'source',
+            $kept['...'] ?? null,
+            'Source entry must keep its key and value.',
+        );
+        self::assertSame(
+            '[+1 more]',
+            $kept['... #2'] ?? null,
+            'Marker must take the next free key.',
         );
     }
 
@@ -274,6 +372,32 @@ final class LogContextTest extends TestCase
         );
     }
 
+    public function testNormalizeStopsRetainingValuesAtTheNodeBudget(): void
+    {
+        $normalized = LogContext::normalize(
+            ['deep' => array_fill(0, 100, range(1, 100)), 'after' => 1, 'later' => ['never' => 1]],
+            new CapturePolicy(),
+        );
+
+        self::assertSame(
+            [
+                'deep' => [
+                    ...array_fill(0, 5, range(1, 100)),
+                    [1, 2, 3, 4, 5, '[+95 more]'],
+                    '[+94 more]',
+                ],
+                '...' => '[+2 more]',
+            ],
+            $normalized,
+            'Every level must fold its unvisited entries into a counted marker.',
+        );
+        self::assertSame(
+            512,
+            self::retainedValues($normalized),
+            'Retained values must stop at the budget.',
+        );
+    }
+
     public function testNormalizeTruncatesStringsLongerThanTwoThousandFortyEightBytes(): void
     {
         $normalized = LogContext::normalize(
@@ -302,5 +426,23 @@ final class LogContextTest extends TestCase
             strlen($long),
             'Truncated value must fit the byte budget.',
         );
+    }
+
+    /**
+     * @param array<array-key, mixed> $tree
+     */
+    private static function retainedValues(array $tree): int
+    {
+        $count = 0;
+
+        foreach ($tree as $value) {
+            if (is_array($value)) {
+                $count += 1 + self::retainedValues($value);
+            } elseif (!is_string($value) || preg_match('/^\[\+\d+ more]$/', $value) !== 1) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }
