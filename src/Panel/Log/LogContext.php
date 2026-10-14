@@ -171,7 +171,7 @@ final class LogContext
             }
         }
 
-        return "{$type}";
+        return "{{$type}}";
     }
 
     /**

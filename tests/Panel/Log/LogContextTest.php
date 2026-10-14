@@ -142,7 +142,10 @@ final class LogContextTest extends TestCase
             'List marker must be appended.',
         );
         self::assertSame(
-            $expectedMap, $normalized['map'] ?? null, 'Map marker must count the cut entries.');
+            $expectedMap,
+            $normalized['map'] ?? null,
+            'Map marker must count the cut entries.'
+        );
         self::assertSame(
             range(1, 100),
             $normalized['full'] ?? null,
