@@ -18,6 +18,24 @@ use PHPUnit\Framework\TestCase;
 #[Group('log')]
 final class LogRowTest extends TestCase
 {
+    public function testFromArrayHydratesListShapedContext(): void
+    {
+        self::assertSame(
+            ['first', 'second'],
+            LogRow::fromArray(self::payload(['context' => ['first', 'second']]), '$.panels.log.entries[0]')->context,
+            'Numeric context keys must survive their JSON list encoding.',
+        );
+    }
+
+    public function testFromArrayHydratesPayloadWithoutContextAsEmptyContext(): void
+    {
+        self::assertSame(
+            [],
+            LogRow::fromArray(self::payload(), '$.panels.log.entries[0]')->context,
+            'Captures written before the context slot must hydrate to `[]`.',
+        );
+    }
+
     public function testFromArrayRoundTripsEveryField(): void
     {
         $row = new LogRow(
@@ -32,12 +50,30 @@ final class LogRowTest extends TestCase
             idOfNext: 8,
             memory: 2_048,
             trace: [['file' => '/app/index.php', 'line' => 12]],
+            context: ['userId' => 42, 'roles' => ['admin']],
         );
 
         self::assertEquals(
             $row,
             LogRow::fromArray($row->jsonSerialize(), '$.panels.log.entries[0]'),
             'Round-trip must preserve every field.',
+        );
+    }
+
+    public function testFromLoggerTupleReadsContextFromIndexSix(): void
+    {
+        $row = LogRow::fromLoggerTuple(
+            ['message', LogLevel::INFO, 'app', 2.5, [], 512, ['userId' => 42]],
+            1,
+            2.5,
+            null,
+            null,
+        );
+
+        self::assertSame(
+            ['userId' => 42],
+            $row->context,
+            'Context must come from the seventh tuple position.',
         );
     }
 
@@ -106,6 +142,24 @@ final class LogRowTest extends TestCase
             [['file' => 'a.php']],
             $row->trace,
             'Trace frames must be preserved.',
+        );
+        self::assertSame(
+            [],
+            $row->context,
+            'Omitted context must default to `[]`.',
+        );
+    }
+
+    public function testThrowHydrationExceptionWhenContextIsNotAnArray(): void
+    {
+        $this->expectException(HydrationException::class);
+        $this->expectExceptionMessage(
+            "Invalid debug snapshot value at '$.panels.log.entries[0].context': expected an object.",
+        );
+
+        LogRow::fromArray(
+            self::payload(['context' => 'userId=42']),
+            '$.panels.log.entries[0]',
         );
     }
 

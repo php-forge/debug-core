@@ -29,6 +29,10 @@ final class LogMessageProvider
             LogMessage::CHIP_TITLE,
             'Show only %s log messages',
         ];
+        yield 'context_summary' => [
+            LogMessage::CONTEXT_SUMMARY,
+            'Context · %d',
+        ];
         yield 'delta' => [
             LogMessage::DELTA,
             'Delta',

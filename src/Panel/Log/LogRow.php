@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Log;
 
-use PHPForge\Debug\Storage\{PanelRow, Payload};
+use PHPForge\Debug\Storage\{HydrationException, PanelRow, Payload};
+
+use function array_key_exists;
+use function is_array;
 
 /**
  * Typed log row narrowed once from the Yii logger tuple and persisted in that form.
@@ -58,6 +61,11 @@ final readonly class LogRow implements PanelRow
          * @var list<array<string, mixed>> Backtrace frames captured at the log call site.
          */
         public array $trace,
+        /**
+         * @var array<array-key, mixed> PSR-3 context normalized by {@see LogContext::normalize()}, or `[]` when the
+         * message carried none.
+         */
+        public array $context = [],
     ) {}
 
     /**
@@ -85,6 +93,7 @@ final readonly class LogRow implements PanelRow
                     'memory',
                     'trace',
                 ],
+                ['context'],
             );
 
         return new self(
@@ -99,13 +108,15 @@ final readonly class LogRow implements PanelRow
             idOfNext: $payload->nullableInt('idOfNext'),
             memory: $payload->int('memory'),
             trace: $payload->rows('trace'),
+            context: self::context($payload, $path),
         );
     }
 
     /**
      * Converts one canonical logger tuple into a typed row.
      *
-     * @param LogTuple $message Logger tuple `[message, level, category, timestamp, traces, memory]`.
+     * @param LogTuple $message Logger tuple `[message, level, category, timestamp, traces, memory, context]`; memory
+     * defaults to `0` and context to `[]`.
      * @param int $id One-based row id assigned in capture order.
      * @param float $timeOfPrevious Timestamp of the previous row in seconds; this row's own timestamp for the first.
      * @param int|null $idOfPrevious Row id preceding this one, or `null` for the first row.
@@ -132,6 +143,7 @@ final readonly class LogRow implements PanelRow
             idOfNext: $idOfNext,
             memory: $message[5] ?? 0,
             trace: $message[4],
+            context: $message[6] ?? [],
         );
     }
 
@@ -154,6 +166,33 @@ final readonly class LogRow implements PanelRow
             'idOfNext' => $this->idOfNext,
             'memory' => $this->memory,
             'trace' => $this->trace,
+            'context' => $this->context,
         ];
+    }
+
+    /**
+     * Reads the optional context of a persisted message, written by captures made after the context slot was added.
+     *
+     * Any JSON array is accepted, because PHP turns numeric context keys into integers and a list-shaped context
+     * encodes as a JSON list.
+     *
+     * @param Payload $payload Shape-validated message reader.
+     * @param string $path JSON path of the message, used to report a malformed context.
+     *
+     * @return array<array-key, mixed> Persisted context, or `[]` when the message predates the slot.
+     */
+    private static function context(Payload $payload, string $path): array
+    {
+        if (!array_key_exists('context', $payload->all())) {
+            return [];
+        }
+
+        $context = $payload->raw('context');
+
+        if (!is_array($context)) {
+            throw HydrationException::at("{$path}.context", 'an object');
+        }
+
+        return $context;
     }
 }

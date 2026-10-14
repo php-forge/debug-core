@@ -19,7 +19,8 @@ use function count;
  *   2: string,
  *   3: float,
  *   4: list<TraceFrame>,
- *   5?: int
+ *   5?: int,
+ *   6?: array<array-key, mixed>
  * }
  */
 final readonly class LogSnapshot implements PanelSnapshot
