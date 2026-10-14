@@ -130,6 +130,11 @@ enum ViewMessage: string
     case QUERY = 'Query';
 
     /**
+     * Header of the HTTP status-code column, also used as its filter label and as a comparison metric label.
+     */
+    case STATUS = 'Status';
+
+    /**
      * Label of the target selector in the comparison form.
      */
     case TARGET = 'Target capture';

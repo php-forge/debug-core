@@ -20,6 +20,7 @@ function columns(query, mail) {
       ? [["Mail", "yii-debug-col-num yii-debug-col-mail", "mailCount"]]
       : []),
     ["Method", "", "method"],
+    ["Status", "yii-debug-col-status", "statusCode"],
     ["AJAX", "", "ajax"],
     ["URL", "", "url"],
   ];
@@ -52,6 +53,7 @@ function rows(definitions, count) {
       Query: "3",
       Mail: "0",
       Method: "COMMAND",
+      Status: '<span class="yii-debug-badge yii-debug-status-2xx">200</span>',
       AJAX: "Yes",
       URL: `<span class="yii-debug-url-cell" title="${url}">${url}</span>`,
     };
@@ -65,6 +67,7 @@ function rows(definitions, count) {
   }).join("");
 }
 
+// IP and Mail hide up to 1600 px; the explicit widths pin both sides of that breakpoint on the desktop project.
 for (const [adapter, query, mail] of [
   ["Yii2", true, true],
   ["Yii2 without Mail", true, false],
@@ -72,12 +75,24 @@ for (const [adapter, query, mail] of [
   ["Yii3", false, false],
 ]) {
   for (const theme of ["light", "dark"]) {
-    test(`${adapter} History keeps column widths stable in ${theme} theme`, async ({
-      page,
-    }) => {
-      const definitions = columns(query, mail);
+    for (const width of [null, 1600, 1680]) {
+      const at = width ? ` at ${width} px` : "";
 
-      await page.setContent(`
+      test(`${adapter} History keeps column widths stable in ${theme} theme${at}`, async ({
+        page,
+      }, testInfo) => {
+        test.skip(
+          width !== null && testInfo.project.name !== "desktop-1440",
+          "Explicit breakpoint widths run on the desktop project only.",
+        );
+
+        if (width) {
+          await page.setViewportSize({ width, height: 900 });
+        }
+
+        const definitions = columns(query, mail);
+
+        await page.setContent(`
         <!doctype html>
         <html lang="en" data-yii-debug-theme="${theme}">
           <body class="yii-debug">
@@ -99,50 +114,61 @@ for (const [adapter, query, mail] of [
           </body>
         </html>
       `);
-      await page.addStyleTag({ path: stylesheet.pathname });
-      await waitForStableUI(page);
+        await page.addStyleTag({ path: stylesheet.pathname });
+        await waitForStableUI(page);
 
-      const headers = page.locator("thead th");
-      const widths = () =>
-        headers.evaluateAll((cells) =>
-          cells.map((cell) => cell.getBoundingClientRect().width),
-        );
-      const baseline = await widths();
-      const viewport = page.viewportSize();
+        const headers = page.locator("thead th");
+        const widths = () =>
+          headers.evaluateAll((cells) =>
+            cells.map((cell) => cell.getBoundingClientRect().width),
+          );
+        const baseline = await widths();
+        const viewport = page.viewportSize();
 
-      expect(baseline.slice(0, 5)).toEqual([36, 276, 80, 100, 100]);
-      expect(baseline[5]).toBe(viewport.width <= 1366 ? 0 : 112);
-      expect(baseline.slice(-3, -1)).toEqual([128, 84]);
+        expect(baseline.slice(0, 5)).toEqual([36, 276, 80, 100, 100]);
+        const hidden = viewport.width <= 1600;
 
-      // Replacing the result rows models server-rendered filtering and paging.
-      for (const count of [50, 1, 0, 10]) {
-        await page.locator("tbody").evaluate(
-          (body, html) => {
-            body.innerHTML = html;
-          },
-          count
-            ? rows(definitions, count)
-            : `<tr><td colspan="${definitions.length}">No results found.</td></tr>`,
-        );
-        expect(
-          await widths(),
-          `${count} results must preserve every column`,
-        ).toEqual(baseline);
+        expect(baseline[5], "IP width").toBe(hidden ? 0 : 112);
+        if (mail) {
+          expect(
+            baseline[definitions.findIndex(([label]) => label === "Mail")],
+            "Mail width",
+          ).toBe(hidden ? 0 : 56);
+        }
+        expect(baseline.slice(-4, -1)).toEqual([128, 72, 84]);
 
-        const overflow = await page.evaluate(() => ({
-          viewport: document.documentElement.clientWidth,
-          document: document.documentElement.scrollWidth,
-          previews: [...document.querySelectorAll(".yii-debug-url-cell")].every(
-            (element) =>
-              element.getBoundingClientRect().right <=
-              element.parentElement.getBoundingClientRect().right,
-          ),
-        }));
+        // Replacing the result rows models server-rendered filtering and paging.
+        for (const count of [50, 1, 0, 10]) {
+          await page.locator("tbody").evaluate(
+            (body, html) => {
+              body.innerHTML = html;
+            },
+            count
+              ? rows(definitions, count)
+              : `<tr><td colspan="${definitions.length}">No results found.</td></tr>`,
+          );
+          expect(
+            await widths(),
+            `${count} results must preserve every column`,
+          ).toEqual(baseline);
 
-        expect(overflow.document).toBeLessThanOrEqual(overflow.viewport);
-        expect(overflow.previews).toBe(true);
-      }
-    });
+          const overflow = await page.evaluate(() => ({
+            viewport: document.documentElement.clientWidth,
+            document: document.documentElement.scrollWidth,
+            previews: [
+              ...document.querySelectorAll(".yii-debug-url-cell"),
+            ].every(
+              (element) =>
+                element.getBoundingClientRect().right <=
+                element.parentElement.getBoundingClientRect().right,
+            ),
+          }));
+
+          expect(overflow.document).toBeLessThanOrEqual(overflow.viewport);
+          expect(overflow.previews).toBe(true);
+        }
+      });
+    }
   }
 }
 

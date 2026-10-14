@@ -3214,13 +3214,14 @@
    * no wrapping keep every capture scannable at a glance. Fixed instrument
    * widths keep filters, pagination, and empty results from moving columns;
    * URL alone takes the remaining space. Both adapters share the first six
-   * and last three columns, with optional counters between IP and Method.
+   * and last four columns (Method, Status, AJAX, URL), with optional
+   * counters between IP and Method.
    */
   .yii-debug-grid-history .yii-debug-table {
     --yii-debug-history-query-width: 0px;
     --yii-debug-history-mail-width: 0px;
     --yii-debug-history-fixed-width: calc(
-      916px + var(--yii-debug-history-query-width) + var(--yii-debug-history-mail-width)
+      988px + var(--yii-debug-history-query-width) + var(--yii-debug-history-mail-width)
     );
 
     min-width: calc(var(--yii-debug-history-fixed-width) + 180px);
@@ -3264,8 +3265,12 @@
         width: 56px;
       }
 
-      > th:nth-last-child(3) {
+      > th:nth-last-child(4) {
         width: 128px;
+      }
+
+      > th.yii-debug-col-status {
+        width: 72px;
       }
 
       > th:nth-last-child(2) {
@@ -3309,14 +3314,15 @@
 
   /**
    * IP and MAIL are low-signal on laptop viewports (IP reads `::1` for
-   * every local capture, MAIL is almost always `0`) — hiding them at mid
-   * widths leaves more room for the URL. Narrow screens retain horizontal
-   * scrolling inside the table wrap. Both columns return on wide desktops.
+   * every local capture, MAIL is almost always `0`) — hiding them up to
+   * 1600 px leaves the URL readable beside the Status column. Narrow
+   * screens retain horizontal scrolling inside the table wrap. Both
+   * columns return above 1600 px.
    */
-  @media (width <= 1366px) {
+  @media (width <= 1600px) {
     .yii-debug-grid-history .yii-debug-table {
       --yii-debug-history-fixed-width: calc(
-        804px + var(--yii-debug-history-query-width)
+        876px + var(--yii-debug-history-query-width)
       );
     }
 

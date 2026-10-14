@@ -161,15 +161,13 @@ final class HistoryCellRenderer
     }
 
     /**
-     * Renders the status-code badge cell; an uncaptured (`0`) code displays as a successful `200`.
+     * Renders the status-code badge cell; an uncaptured (`0`) code renders the muted dash pill, never a `200`.
      */
     public static function renderStatusCell(HistoryRow $row): string
     {
-        $statusCode = $row->statusCode === 0 ? 200 : $row->statusCode;
-
         return Span::tag()
-            ->class(Css::BADGE . ' ' . Css::status(Vocabulary::statusClass($statusCode)))
-            ->content((string) $statusCode)
+            ->class(Css::BADGE . ' ' . Css::status(Vocabulary::statusClass($row->statusCode)))
+            ->content($row->statusCode > 0 ? (string) $row->statusCode : '–')
             ->render();
     }
 
