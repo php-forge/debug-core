@@ -338,15 +338,6 @@ final class HistoryCellRendererTest extends TestCase
         );
     }
 
-    public function testRenderStatusCellMapsCommandWithZeroToSuccess(): void
-    {
-        self::assertSame(
-            '<span class="yii-debug-badge yii-debug-status-2xx">200</span>',
-            HistoryCellRenderer::renderStatusCell(self::row(['method' => 'COMMAND', 'statusCode' => 0])),
-            "COMMAND with status '0' must display as status '200'.",
-        );
-    }
-
     public function testRenderStatusCellMapsRangeToStatusClass(): void
     {
         self::assertSame(
@@ -379,6 +370,17 @@ final class HistoryCellRendererTest extends TestCase
         );
     }
 
+    public function testRenderStatusCellRendersUncapturedPillForZeroCode(): void
+    {
+        self::assertSame(
+            <<<HTML
+            <span class="yii-debug-badge yii-debug-status-none">–</span>
+            HTML,
+            HistoryCellRenderer::renderStatusCell(self::row(['statusCode' => 0])),
+            'Uncaptured code must render a muted dash, not `200`.',
+        );
+    }
+
     public function testRenderSummaryEchoesBucketPills(): void
     {
         $summary = new HistorySummary(
@@ -387,7 +389,6 @@ final class HistoryCellRendererTest extends TestCase
                 new HistoryStatusBucket(label: '2xx', count: 4, sampleCode: 200, variant: '2xx'),
                 new HistoryStatusBucket(label: '4xx', count: 1, sampleCode: 404, variant: '4xx'),
             ],
-            statusCodeFilter: null,
         );
         $html = HistoryCellRenderer::renderSummary(
             $summary,
@@ -411,7 +412,7 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderSummaryReturnsEmptyWhenNoRequestsCaptured(): void
     {
-        $summary = new HistorySummary(totalRequests: 0, statusBuckets: [], statusCodeFilter: null);
+        $summary = new HistorySummary(totalRequests: 0, statusBuckets: []);
 
         self::assertSame(
             '',
@@ -422,7 +423,7 @@ final class HistoryCellRendererTest extends TestCase
 
     public function testRenderSummaryUsesSingularLabelForOneRequest(): void
     {
-        $summary = new HistorySummary(totalRequests: 1, statusBuckets: [], statusCodeFilter: null);
+        $summary = new HistorySummary(totalRequests: 1, statusBuckets: []);
 
         self::assertSame(
             <<<HTML

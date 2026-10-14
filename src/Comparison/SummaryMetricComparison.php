@@ -46,7 +46,7 @@ final readonly class SummaryMetricComparison
     {
         return [
             self::textMetric(
-                'Status',
+                ViewMessage::STATUS->value,
                 self::status($baseline->statusCode),
                 self::status($target->statusCode),
             ),

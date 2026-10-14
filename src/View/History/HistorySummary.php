@@ -7,7 +7,6 @@ namespace PHPForge\Debug\View\History;
 use PHPForge\Debug\Storage\RequestSummary;
 
 use function count;
-use function ksort;
 
 /**
  * Typed aggregate view-model for the History index summary header.
@@ -25,13 +24,6 @@ final readonly class HistorySummary
          * @var list<HistoryStatusBucket>
          */
         public array $statusBuckets,
-        /**
-         * Unique status-code map (`code => code`) consumed by the grid's status filter dropdown; `null` when the
-         * manifest has no captured statuses (the dropdown collapses to a text input).
-         *
-         * @var array<int|string, int|string>|null
-         */
-        public array|null $statusCodeFilter,
     ) {}
 
     /**
@@ -45,14 +37,9 @@ final readonly class HistorySummary
 
         $buckets = ['2xx' => 0, '3xx' => 0, '4xx' => 0, '5xx' => 0];
         $sample = [];
-        $codes = [];
 
         foreach ($manifest as $entry) {
             $statusCode = $entry->statusCode;
-
-            if ($statusCode > 0) {
-                $codes[$statusCode] = $statusCode;
-            }
 
             if ($statusCode < 200 || $statusCode >= 600) {
                 continue;
@@ -84,12 +71,6 @@ final readonly class HistorySummary
             );
         }
 
-        ksort($codes);
-
-        return new self(
-            totalRequests: $totalRequests,
-            statusBuckets: $statusBuckets,
-            statusCodeFilter: $codes === [] ? null : $codes,
-        );
+        return new self(totalRequests: $totalRequests, statusBuckets: $statusBuckets);
     }
 }

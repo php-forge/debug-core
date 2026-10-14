@@ -121,8 +121,15 @@ final class ToolbarPanelTest extends TestCase
         $modified = $original->withItems($items);
         $cleared = $modified->withItems([]);
 
-        $items[] = ToolbarItem::create('later');
+        $later = ToolbarItem::create('later');
 
+        $items[] = $later;
+
+        self::assertSame(
+            [$second, $first, $later],
+            $items,
+            'The input list must carry the local edit.',
+        );
         self::assertNotSame(
             $original,
             $modified,

@@ -119,8 +119,20 @@ final class RequestRoutingViewModelsTest extends TestCase
 
         $rows = $current->getTrace();
 
-        $rows[] = new RouteTraceRow('fallback');
+        $fallback = new RouteTraceRow('fallback');
 
+        $rows[] = $fallback;
+
+        self::assertSame(
+            ['id' => 8],
+            $parameters,
+            'The returned parameter copy must carry the local edit.',
+        );
+        self::assertSame(
+            [$trace, $fallback],
+            $rows,
+            'The returned trace copy must carry the local edit.',
+        );
         self::assertSame(
             'orders',
             $current->getRoute(),
@@ -239,17 +251,45 @@ final class RequestRoutingViewModelsTest extends TestCase
             ->withLive(true)
             ->withError(null);
 
-        $routes[] = RouteDefinition::create('other', '/other');
+        $other = RouteDefinition::create('other', '/other');
 
-        $badges[] = new RouteBadge('Strict parsing enabled');
+        $routes[] = $other;
+
+        $strict = new RouteBadge('Strict parsing enabled');
+
+        $badges[] = $strict;
 
         $returnedRoutes = $inventory->getRoutes();
         $returnedBadges = $inventory->getBadges();
 
-        $returnedRoutes[] = RouteDefinition::create('more', '/more');
+        $more = RouteDefinition::create('more', '/more');
 
-        $returnedBadges[] = new RouteBadge('Another badge');
+        $returnedRoutes[] = $more;
 
+        $another = new RouteBadge('Another badge');
+
+        $returnedBadges[] = $another;
+
+        self::assertSame(
+            [$definition, $other],
+            $routes,
+            'The input route list must carry the local edit.',
+        );
+        self::assertSame(
+            [$badges[0], $strict],
+            $badges,
+            'The input badge list must carry the local edit.',
+        );
+        self::assertSame(
+            [$definition, $more],
+            $returnedRoutes,
+            'The returned route copy must carry the local edit.',
+        );
+        self::assertSame(
+            [$badges[0], $another],
+            $returnedBadges,
+            'The returned badge copy must carry the local edit.',
+        );
         self::assertSame(
             [$definition],
             $inventory->getRoutes(),

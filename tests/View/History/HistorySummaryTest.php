@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see HistorySummary} covering the manifest aggregation that feeds the History index summary header
- * total requests, per-bucket counts/sample codes/variants and the unique status-code filter map.
+ * Unit tests for {@see HistorySummary} covering the manifest aggregation that feeds the History index summary header:
+ * total requests and per-bucket counts, sample codes, and variants.
  */
 #[Group('view')]
 #[Group('history')]
@@ -65,16 +65,6 @@ final class HistorySummaryTest extends TestCase
             2,
             $summary->statusBuckets,
             'Each status family must contribute one bucket.',
-        );
-    }
-
-    public function testFromManifestExposesEmptyFilterWhenNoStatusCaptured(): void
-    {
-        $summary = HistorySummary::fromManifest([]);
-
-        self::assertNull(
-            $summary->statusCodeFilter,
-            'Manifest without captured statuses must yield a null filter dropdown.',
         );
     }
 
@@ -134,22 +124,6 @@ final class HistorySummaryTest extends TestCase
             $counts,
             'Each status family must include its lower boundary and exclude the next family boundary.',
         );
-        self::assertSame(
-            [
-                199 => 199,
-                200 => 200,
-                299 => 299,
-                300 => 300,
-                399 => 399,
-                400 => 400,
-                499 => 499,
-                500 => 500,
-                599 => 599,
-                600 => 600,
-            ],
-            $summary->statusCodeFilter,
-            'Status filter must keep positive codes while excluding an uncaptured zero status.',
-        );
     }
 
     public function testFromManifestMapsBucketsToVocabularyStatusClasses(): void
@@ -195,10 +169,6 @@ final class HistorySummaryTest extends TestCase
             $summary->statusBuckets,
             'Empty manifest must yield no buckets.',
         );
-        self::assertNull(
-            $summary->statusCodeFilter,
-            'Empty manifest must yield a null filter dropdown.',
-        );
     }
 
     public function testFromManifestSkipsRequestsWithStatusBelow200(): void
@@ -220,28 +190,6 @@ final class HistorySummaryTest extends TestCase
             1,
             $first->count,
             "Status '100' must not contribute to any bucket.",
-        );
-    }
-
-    public function testFromManifestSortsUniqueStatusCodes(): void
-    {
-        $summary = HistorySummary::fromManifest(
-            [
-                $this->summary(404),
-                $this->summary(200),
-                $this->summary(200),
-                $this->summary(302),
-            ],
-        );
-
-        self::assertSame(
-            [
-                200 => 200,
-                302 => 302,
-                404 => 404,
-            ],
-            $summary->statusCodeFilter,
-            'Filter map must list unique status codes in ascending order.',
         );
     }
 
