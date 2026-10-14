@@ -3407,6 +3407,70 @@
     white-space: normal;
   }
 
+  /**
+   * Log context: a compact disclosure between the message and the trace
+   * list, revealing the PSR-3 context as a mono key/value grid.
+   */
+  .yii-debug-disclosure:has(
+      > .yii-debug-disclosure-body > .yii-debug-log-context
+    ) {
+    margin: var(--yii-debug-space-2) 0 0;
+    border-radius: var(--yii-debug-radius-md);
+
+    > .yii-debug-disclosure-summary {
+      flex-wrap: wrap;
+      gap: 0 var(--yii-debug-space-3);
+      padding: var(--yii-debug-space-1) var(--yii-debug-space-3);
+    }
+
+    > .yii-debug-disclosure-body {
+      padding: var(--yii-debug-space-2) var(--yii-debug-space-3);
+    }
+  }
+
+  .yii-debug-log-context {
+    display: grid;
+    grid-template-columns: minmax(75px, max-content) minmax(0, 1fr);
+    gap: var(--yii-debug-space-1) var(--yii-debug-space-3);
+    margin: 0;
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+
+    dt {
+      color: var(--yii-debug-panel-muted);
+      overflow-wrap: anywhere;
+    }
+
+    dd {
+      min-width: 0;
+      margin: 0;
+    }
+
+    code,
+    pre {
+      margin: 0;
+      font-size: inherit;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    /* Wrapped lines never overflow, so the block must not become a scroll region. */
+    pre {
+      padding: var(--yii-debug-space-2);
+      overflow: visible;
+    }
+
+    /* Narrow grid cells stack each key above its value instead of widening the column. */
+    @media (width < 768px) {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 0;
+
+      dd + dt {
+        margin-top: var(--yii-debug-space-2);
+      }
+    }
+  }
+
   /* Inline helper utilities. */
   .yii-debug-muted {
     color: var(--yii-debug-panel-muted);

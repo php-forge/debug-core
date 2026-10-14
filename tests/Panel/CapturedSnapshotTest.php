@@ -52,7 +52,7 @@ final class CapturedSnapshotTest extends TestCase
     {
         $captured = LogSnapshot::capture(
             [
-                ['first', LogLevel::INFO, 'application', 100.0, [], 1_024],
+                ['first', LogLevel::INFO, 'application', 100.0, [], 1_024, ['userId' => 7]],
                 ['second', LogLevel::WARNING, 'application', 100.25, [], 2_048],
                 ['third', LogLevel::ERROR, 'application', 101.0, [], 4_096],
             ],
@@ -75,6 +75,7 @@ final class CapturedSnapshotTest extends TestCase
                         'idOfNext' => 2,
                         'memory' => 1_024,
                         'trace' => [],
+                        'context' => ['userId' => 7],
                     ],
                     [
                         'id' => 2,
@@ -88,6 +89,7 @@ final class CapturedSnapshotTest extends TestCase
                         'idOfNext' => 3,
                         'memory' => 2_048,
                         'trace' => [],
+                        'context' => [],
                     ],
                     [
                         'id' => 3,
@@ -101,6 +103,7 @@ final class CapturedSnapshotTest extends TestCase
                         'idOfNext' => null,
                         'memory' => 4_096,
                         'trace' => [],
+                        'context' => [],
                     ],
                 ],
             ],

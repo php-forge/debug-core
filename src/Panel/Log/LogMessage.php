@@ -26,6 +26,12 @@ enum LogMessage: string
     case CHIP_TITLE = 'Show only %s log messages';
 
     /**
+     * `sprintf()` template of the summary of the context disclosure under a message, naming the number of context
+     * entries.
+     */
+    case CONTEXT_SUMMARY = 'Context · %d';
+
+    /**
      * Header of the elapsed-since-previous column.
      */
     case DELTA = 'Delta';

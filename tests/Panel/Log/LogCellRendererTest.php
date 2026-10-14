@@ -12,8 +12,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see LogCellRenderer} covering the typed cell renderers used by the logs grid (time, level, two-tone
- * category label, time-since-previous navigation, message + trace, SQL highlighting for DB command entries, row options
- * ).
+ * category label, time-since-previous navigation, message + context + trace, SQL highlighting for DB command entries,
+ * row options).
  */
 #[Group('panel')]
 #[Group('log')]
@@ -259,6 +259,59 @@ final class LogCellRendererTest extends TestCase
         );
     }
 
+    public function testRenderMessageCellRendersContextDisclosureBetweenMessageAndTrace(): void
+    {
+        $html = LogCellRenderer::renderMessageCell(
+            self::makeRow(
+                message: 'Привет, мир!',
+                trace: [['file' => '/app/User.php', 'line' => 42]],
+                context: ['test' => 1, '<k>' => "a'<b>&", 'none' => null, 'roles' => ['admin', '<editor>']],
+            ),
+            self::traceLine(),
+        );
+
+        self::assertSame(
+            <<<'HTML'
+            Привет, мир!<details class="yii-debug-disclosure">
+            <summary class="yii-debug-disclosure-summary">
+            <span class="yii-debug-disclosure-title">Context · 4</span><span class="yii-debug-disclosure-hint" aria-hidden="true"><span data-yii-debug-hint="collapsed">click to expand</span><span data-yii-debug-hint="expanded">click to collapse</span></span>
+            </summary><div class="yii-debug-disclosure-body">
+            <dl class="yii-debug-log-context">
+            <dt>
+            test
+            </dt><dd>
+            <code>1</code>
+            </dd><dt>
+            &lt;k&gt;
+            </dt><dd>
+            <code>'a\'&lt;b&gt;&amp;'</code>
+            </dd><dt>
+            none
+            </dt><dd>
+            <code>null</code>
+            </dd><dt>
+            roles
+            </dt><dd>
+            <pre>
+            [
+                0 =&gt; 'admin'
+                1 =&gt; '&lt;editor&gt;'
+            ]
+            </pre>
+            </dd>
+            </dl>
+            </div>
+            </details><ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            HTML,
+            $html,
+            'Context must render once-escaped between the message and the trace list.',
+        );
+    }
+
     public function testRenderTimeCellFormatsMillisecondsAtTheUpperBoundary(): void
     {
         self::assertSame(
@@ -392,6 +445,7 @@ final class LogCellRendererTest extends TestCase
 
     /**
      * @param list<array<string, mixed>> $trace
+     * @param array<array-key, mixed> $context
      */
     private static function makeRow(
         int $id = 1,
@@ -403,6 +457,7 @@ final class LogCellRendererTest extends TestCase
         int|null $idOfPrevious = null,
         int|null $idOfNext = null,
         array $trace = [],
+        array $context = [],
     ): LogRow {
         return new LogRow(
             id: $id,
@@ -416,6 +471,7 @@ final class LogCellRendererTest extends TestCase
             idOfNext: $idOfNext,
             memory: 0,
             trace: $trace,
+            context: $context,
         );
     }
 

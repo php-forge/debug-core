@@ -5,18 +5,21 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Log;
 
 use Closure;
-use PHPForge\Debug\Helper\{CellMore, Format, Fqcn, LogLevel, Vocabulary};
+use PHPForge\Debug\Helper\{CellMore, Disclosure, Dump, Format, Fqcn, LogLevel, Vocabulary};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
 use PHPForge\Debug\Theme\Css;
-use UIAwesome\Html\Flow\Div;
+use UIAwesome\Html\Flow\{Div, Pre};
 use UIAwesome\Html\Helper\Encode;
-use UIAwesome\Html\List\{Li, Ul};
+use UIAwesome\Html\List\{Dd, Dl, Dt, Li, Ul};
 use UIAwesome\Html\Palpable\A;
-use UIAwesome\Html\Phrasing\Span;
+use UIAwesome\Html\Phrasing\{Code, Span};
 
 use function array_map;
+use function count;
 use function implode;
 use function intdiv;
+use function is_array;
+use function sprintf;
 use function str_starts_with;
 
 /**
@@ -24,6 +27,10 @@ use function str_starts_with;
  */
 final class LogCellRenderer
 {
+    /**
+     * Class of the key/value list revealed by the context disclosure.
+     */
+    private const string CONTEXT_CLASS = 'yii-debug-log-context';
     /**
      * @var array<int, string> Maps the four severity levels surfaced in the grid to the row variant CSS modifier.
      */
@@ -79,12 +86,13 @@ final class LogCellRenderer
     }
 
     /**
-     * Renders the message cell, followed by the optional trace list.
+     * Renders the message cell, followed by the optional context disclosure and the optional trace list.
      *
      * The row holds the message as a display string (already exported when the source was non-string), so the renderer
      * escapes it once — except for DB command entries and for any message {@see SqlHighlighter::isStatement()} reads
      * as raw SQL, which render through {@see SqlHighlighter::highlight()} with the same token spans as the db panel
-     * queries grid. Long messages collapse behind the {@see CellMore} clamp.
+     * queries grid. Long messages collapse behind the {@see CellMore} clamp. A non-empty context renders as a collapsed
+     * {@see Disclosure} holding a `<dl>`: scalar values inline in `<code>`, arrays as a `<pre>` block.
      *
      * @param LogRow $row Typed log record.
      * @param Closure(array<string, mixed>): string $traceLine Renders one backtrace frame as a link line.
@@ -102,6 +110,10 @@ final class LogCellRenderer
             : Encode::content($row->message);
 
         $body = CellMore::clamp($body, $row->message);
+
+        if ($row->context !== []) {
+            $body .= self::renderContext($row->context);
+        }
 
         if ($row->trace === []) {
             return $body;
@@ -166,6 +178,32 @@ final class LogCellRenderer
                 self::renderNavButton('>', $row->idOfNext),
             )
             ->render();
+    }
+
+    /**
+     * Renders the context disclosure: a summary counting the entries over a `<dl>` of key/value pairs.
+     *
+     * @param non-empty-array<array-key, mixed> $context Normalized context of the row.
+     *
+     * @return string Collapsed disclosure markup.
+     */
+    private static function renderContext(array $context): string
+    {
+        $items = [];
+
+        foreach ($context as $key => $value) {
+            $items[] = Dt::tag()->content((string) $key);
+            $items[] = Dd::tag()->html(
+                is_array($value)
+                    ? Pre::tag()->content(Dump::asString($value))
+                    : Code::tag()->content(Dump::asString($value)),
+            );
+        }
+
+        return Disclosure::render(
+            sprintf(LogMessage::CONTEXT_SUMMARY->value, count($context)),
+            Dl::tag()->class(self::CONTEXT_CLASS)->html(...$items)->render(),
+        );
     }
 
     /**

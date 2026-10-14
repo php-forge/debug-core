@@ -9,7 +9,7 @@ use PHPForge\Debug\Panel\Config\ConfigSnapshot;
 use PHPForge\Debug\Panel\Db\DbSnapshot;
 use PHPForge\Debug\Panel\Dump\DumpSnapshot;
 use PHPForge\Debug\Panel\Event\EventSnapshot;
-use PHPForge\Debug\Panel\Log\LogSnapshot;
+use PHPForge\Debug\Panel\Log\{LogContext, LogSnapshot};
 use PHPForge\Debug\Panel\Mail\MailSnapshot;
 use PHPForge\Debug\Panel\Profile\ProfilingSnapshot;
 use PHPForge\Debug\Panel\Queue\QueueSnapshot;
@@ -149,6 +149,31 @@ function cyclicValue(array $values, int $index): mixed
     }
 
     return $values[$offset];
+}
+
+/**
+ * Returns the PSR-3 context of one dense log row: a flat context on the first row, a nested one with a redacted key on
+ * the second, and none elsewhere.
+ *
+ * @return array<array-key, mixed>
+ */
+function logContext(int $index): array
+{
+    $context = match ($index) {
+        0 => ['userId' => 42, 'route' => 'site/index', 'cached' => true],
+        1 => [
+            'request' => [
+                'method' => 'POST',
+                'path' => '/quality-fixture/dense',
+                'headers' => ['accept' => 'text/html'],
+            ],
+            'password' => 'quality-fixture-context-secret',
+            'attempt' => 2,
+        ],
+        default => [],
+    };
+
+    return LogContext::normalize($context, new CapturePolicy());
 }
 
 /**
@@ -545,6 +570,7 @@ function densePanels(
                         'idOfNext' => $id === $rowCount ? null : $id + 1,
                         'memory' => 2_097_152 + ($index * 4096),
                         'trace' => trace($index),
+                        'context' => logContext($index),
                     ];
                 },
             ),
