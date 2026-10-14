@@ -271,6 +271,11 @@ final class QueryRowTest extends TestCase
         $trace[0]['file'] = '/changed.php';
 
         self::assertSame(
+            [['file' => '/changed.php', 'line' => 12]],
+            $trace,
+            'The returned copy must carry the local edit.',
+        );
+        self::assertSame(
             [['file' => '/original.php', 'line' => 12]],
             $row->getTrace(),
             'Editing returned trace frames must not mutate the captured row.',

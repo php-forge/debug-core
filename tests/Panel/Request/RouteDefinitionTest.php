@@ -282,6 +282,26 @@ final class RouteDefinitionTest extends TestCase
         $middlewares[] = 'Auth';
 
         self::assertSame(
+            ['GET', 'POST'],
+            $values,
+            'The input list must carry the local edit.',
+        );
+        self::assertSame(
+            ['GET', 'HEAD'],
+            $methods,
+            'The returned method copy must carry the local edit.',
+        );
+        self::assertSame(
+            ['GET', 'example.test'],
+            $hosts,
+            'The returned host copy must carry the local edit.',
+        );
+        self::assertSame(
+            ['GET', 'Auth'],
+            $middlewares,
+            'The returned middleware copy must carry the local edit.',
+        );
+        self::assertSame(
             ['GET'],
             $definition->getMethods(),
             'Method lists must remain isolated from external edits.',

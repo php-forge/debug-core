@@ -190,8 +190,6 @@ final class CollectorCoordinatorTest extends TestCase
             ],
         );
 
-        $caught = null;
-
         try {
             $coordinator->run(
                 static fn(): never => throw $primary,
@@ -267,8 +265,6 @@ final class CollectorCoordinatorTest extends TestCase
                 ),
             ],
         );
-
-        $caught = null;
 
         try {
             $coordinator->run(static fn(): never => throw $primary);

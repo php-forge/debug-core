@@ -102,6 +102,16 @@ final class RequestHeroTest extends TestCase
         $returned[] = 'HTTPS';
 
         self::assertSame(
+            ['AJAX', 'PJAX'],
+            $flags,
+            'The input array must carry the local edit.',
+        );
+        self::assertSame(
+            ['AJAX', 'HTTPS'],
+            $returned,
+            'The returned copy must carry the local edit.',
+        );
+        self::assertSame(
             ['AJAX'],
             $hero->getFlags(),
             'Input and returned arrays must not mutate stored flags.',

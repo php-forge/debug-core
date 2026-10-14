@@ -20,9 +20,7 @@ final class CollectorFixture implements CollectorInterface
      * @param array<string, mixed>|null $payload Payload returned from capture.
      * @param bool $failCapture Whether capture should fail.
      * @param bool $failShutdown Whether shutdown should fail.
-     * @param string $shutdownFailureMessage Shutdown failure message.
      * @param int $startupFailuresRemaining Number of startup calls that should fail.
-     * @param string $startupFailureMessage Startup failure message.
      * @param int $shutdownFailuresRemaining Number of shutdown calls that should fail before succeeding.
      */
     public function __construct(
