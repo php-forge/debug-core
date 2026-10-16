@@ -39,8 +39,7 @@
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-strict-rules": "^2.0.3",
         "phpunit/phpunit": "^12.5",
-        "xepozz/internal-mocker": "^1.4",
-        "yii2-extensions/scaffold": "^0.2"
+        "xepozz/internal-mocker": "^1.4"
     },
     "autoload": {
         "psr-4": {
@@ -54,21 +53,14 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.1.x-dev"
-        },
-        "scaffold": {
-            "allowed-packages": [
-                "php-forge/baseline-frontend",
-                "php-forge/coding-standard"
-            ]
+            "dev-main": "0.2.x-dev"
         }
     },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
             "infection/extension-installer": true,
-            "phpstan/extension-installer": true,
-            "yii2-extensions/scaffold": true
+            "phpstan/extension-installer": true
         }
     },
     "scripts": {

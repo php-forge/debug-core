@@ -44,7 +44,7 @@ Install an adapter, not this package. Debug Core is pulled in transitively:
 If you develop an adapter:
 
 ```bash
-composer require php-forge/debug-core
+composer require php-forge/debug-core:^0.1
 ```
 
 PHP 8.3 or later and the `ctype`, `intl`, and `mbstring` extensions are required.
