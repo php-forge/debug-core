@@ -58,7 +58,9 @@ final class EventCapture
         $result = [];
         $skipFiles[] = __FILE__;
 
-        $skipFiles[] = dirname(__DIR__, 2) . '/Instrumentation/InstrumentationGuard.php';
+        $skipFiles[] = dirname(__DIR__, 2)
+            . DIRECTORY_SEPARATOR . 'Instrumentation'
+            . DIRECTORY_SEPARATOR . 'InstrumentationGuard.php';
 
         foreach ($frames as $frame) {
             if (count($result) >= min(16, $limit)) {
