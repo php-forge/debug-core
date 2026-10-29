@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Panel\Event;
 
 use Closure;
+use PHPForge\Debug\Instrumentation\InstrumentationGuard;
 use PHPForge\Debug\Panel\Event\{EventCapture, EventInspection, EventInspectorRenderer, EventRow, EventSequence, EventSnapshot};
 use PHPForge\Debug\Storage\HydrationException;
 use PHPForge\Debug\Tests\Provider\EventInspectionProvider;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 use function array_replace;
 use function strlen;
@@ -611,6 +613,26 @@ final class EventInspectionTest extends TestCase
             16,
             EventCapture::trace(array_fill(0, 30, ['file' => '/app/file.php']), 100),
             'Trace depth must be bounded.',
+        );
+    }
+
+    public function testTraceSkipsInstrumentationGuardFramesWithNativeSeparators(): void
+    {
+        $frames = [
+            [
+                'file' => (string) (new ReflectionClass(InstrumentationGuard::class))->getFileName(),
+                'line' => 36,
+            ],
+            [
+                'file' => '/app/event.php',
+                'line' => 42,
+            ],
+        ];
+
+        self::assertSame(
+            ['/app/event.php:42'],
+            EventCapture::trace($frames, 16),
+            'Instrumentation guard frames must be skipped on every platform.',
         );
     }
 
