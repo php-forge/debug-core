@@ -15,6 +15,7 @@ use function strtolower;
 use function strtr;
 use function substr;
 
+use const PHP_INT_MAX;
 use const T_ARRAY;
 use const T_CONSTANT_ENCAPSED_STRING;
 use const T_DNUMBER;
@@ -241,7 +242,12 @@ final class PhpExportParser
         $text = $negative ? "-{$token->text}" : $token->text;
 
         if ($token->id === T_LNUMBER) {
-            if ($negative && $this->token()->id === PhpExportTokenizer::MINUS && $this->token(1)->text === '1') {
+            if (
+                $negative
+                && $token->text === (string) PHP_INT_MAX
+                && $this->token()->id === PhpExportTokenizer::MINUS
+                && $this->token(1)->text === '1'
+            ) {
                 $this->cursor += 2;
                 $text .= '-1';
             }

@@ -14,8 +14,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for {@see LogCellRenderer} covering the typed cell renderers used by the logs grid (time, level, two-tone
  * category label, time-since-previous navigation, message + context + trace, SQL highlighting for DB command entries,
- * multi-line text, `print_r()` and `var_export()` dump trees, highlighted fallback exports, typed context values, row
- * options).
+ * multi-line text, `print_r()` and `var_export()` dump trees, highlighted fallback exports, typed context values, the
+ * dump fallback for context arrays over the tree bounds, row options).
  *
  * {@see LogCellRendererProvider} for test case data providers.
  */
@@ -316,6 +316,61 @@ final class LogCellRendererTest extends TestCase
             HTML,
             $html,
             'Order: tree, context disclosure, trace list.',
+        );
+    }
+
+    public function testRenderMessageCellRendersContextArrayOverTreeBoundsAsDump(): void
+    {
+        $deep = 1;
+
+        for ($level = 0; $level < 33; $level++) {
+            $deep = [$deep];
+        }
+
+        self::assertSame(
+            <<<'HTML'
+            msg<details class="yii-debug-disclosure">
+            <summary class="yii-debug-disclosure-summary">
+            <span class="yii-debug-disclosure-title">Context · 2</span><span class="yii-debug-disclosure-hint" aria-hidden="true"><span data-yii-debug-hint="collapsed">click to expand</span><span data-yii-debug-hint="expanded">click to collapse</span></span>
+            </summary><div class="yii-debug-disclosure-body">
+            <dl class="yii-debug-log-context">
+            <dt>
+            deep
+            </dt><dd>
+            <pre>
+            [
+                0 =&gt; [
+                    0 =&gt; [
+                        0 =&gt; [
+                            0 =&gt; [
+                                0 =&gt; [
+                                    0 =&gt; [
+                                        0 =&gt; [
+                                            0 =&gt; [
+                                                0 =&gt; [
+                                                    0 =&gt; [...]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+            </pre>
+            </dd><dt>
+            id
+            </dt><dd>
+            <span class="yii-debug-log-dump-value yii-debug-log-dump-value-number">7</span>
+            </dd>
+            </dl>
+            </div>
+            </details>
+            HTML,
+            LogCellRenderer::renderMessageCell(self::makeRow(context: ['deep' => $deep, 'id' => 7]), self::traceLine()),
+            'Context array over the tree bounds must render as the depth-limited dump.',
         );
     }
 

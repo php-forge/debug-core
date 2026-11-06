@@ -14,7 +14,7 @@ use function str_repeat;
  * Data provider for {@see DumpTreeRendererTest} test cases.
  *
  * Provides dump trees with the exact markup they render to: `print_r()` blocks, typed values, enum case references,
- * scalar roots, and the expansion threshold of the root block.
+ * scalar roots, and the line threshold of the root block.
  */
 final class DumpTreeRendererProvider
 {
@@ -77,6 +77,45 @@ final class DumpTreeRendererProvider
             {$rows}
             </div>
             </details>
+            </div>
+            </details>
+            HTML,
+        ];
+
+        $breaks = str_repeat('x&#10;', 197);
+
+        yield 'root open at 200 lines counting line breaks' => [
+            DumpNode::block(
+                DumpKind::ARRAY,
+                '',
+                [new DumpEntry("k\rk", DumpNode::string(str_repeat("x\r\n", 99) . str_repeat("x\n", 98)))],
+            ),
+            <<<HTML
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">k&#10;k</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="493 bytes">"{$breaks}"</span>
+            </div>
+            </div>
+            </details>
+            HTML,
+        ];
+        yield 'root collapsed at 201 lines counting line breaks' => [
+            DumpNode::block(
+                DumpKind::ARRAY,
+                '',
+                [new DumpEntry("k\rk", DumpNode::string(str_repeat("x\r\n", 99) . str_repeat("x\n", 99)))],
+            ),
+            <<<HTML
+            <details class="yii-debug-log-dump">
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">k&#10;k</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="495 bytes">"{$breaks}x&#10;"</span>
+            </div>
             </div>
             </details>
             HTML,
@@ -196,6 +235,20 @@ final class DumpTreeRendererProvider
             </summary><div class="yii-debug-log-dump-entries">
             <div class="yii-debug-log-dump-row">
             <span class="yii-debug-log-dump-key">&lt;k&gt;</span><span class="yii-debug-log-dump-visibility" title="Private property declared in App\&lt;C&gt;">private</span><span class="yii-debug-log-dump-value">&lt;script&gt;&amp;&#10;&#10;  x</span>
+            </div>
+            </div>
+            </details>
+            HTML,
+        ];
+        yield 'key with consecutive line breaks' => [
+            DumpNode::block(DumpKind::ARRAY, '', [new DumpEntry("<a>\n\n\r\nb", DumpNode::integer('1'))]),
+            <<<'HTML'
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">&lt;a&gt;&#10;&#10;&#10;b</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-number">1</span>
             </div>
             </div>
             </details>

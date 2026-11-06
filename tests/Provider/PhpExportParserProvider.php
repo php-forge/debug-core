@@ -13,6 +13,7 @@ use function var_export;
 
 use const INF;
 use const NAN;
+use const PHP_INT_MAX;
 use const PHP_INT_MIN;
 
 /**
@@ -201,6 +202,17 @@ final class PhpExportParserProvider
                 ],
             ),
         ];
+        yield 'integer maximum and its negation' => [
+            var_export([-PHP_INT_MAX, PHP_INT_MAX], true),
+            DumpNode::block(
+                DumpKind::ARRAY,
+                '',
+                [
+                    new DumpEntry('0', DumpNode::integer('-9223372036854775807')),
+                    new DumpEntry('1', DumpNode::integer('9223372036854775807')),
+                ],
+            ),
+        ];
         yield 'special floats' => [
             var_export([NAN, INF, -INF], true),
             DumpNode::block(
@@ -341,6 +353,11 @@ final class PhpExportParserProvider
         yield 'negative array' => ["[\n    -[],\n]"];
         yield 'subtraction' => ["[\n    5-1,\n]"];
         yield 'subtraction after a negative integer' => ["[\n    -5-2,\n]"];
+        yield 'subtraction of one after a negative integer' => ["[\n    -5-1,\n]"];
+        yield 'subtraction of one after the integer maximum' => ["[\n    9223372036854775807-1,\n]"];
+        yield 'subtraction after the negative integer maximum' => ["[\n    -9223372036854775807-2,\n]"];
+        yield 'subtraction in a key' => ["[\n    5-1 => 1,\n]"];
+        yield 'subtraction of one after a negative integer in a key' => ["[\n    -5-1 => 1,\n]"];
         yield 'float key' => ["[\n    1.5 => 1,\n]"];
         yield 'boolean key' => ["[\n    true => 1,\n]"];
         yield 'enum case key' => ["[\n    \\App\\Suit::A => 1,\n]"];

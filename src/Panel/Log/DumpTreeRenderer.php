@@ -13,20 +13,22 @@ use function array_map;
 use function count;
 use function implode;
 use function sprintf;
+use function str_replace;
 use function strlen;
+use function substr_count;
 
 /**
  * Renders a dump tree as collapsible `<details>` markup for the Log debug panel.
  *
- * The root block starts open unless the tree holds more than {@see self::MAX_OPEN_NODES} values; all text is escaped
+ * The root block starts open unless the tree spans more than {@see self::MAX_OPEN_LINES} lines; all text is escaped
  * once.
  */
 final class DumpTreeRenderer
 {
     /**
-     * Maximum number of values of a tree whose root block starts open.
+     * Maximum number of lines of a tree whose root block starts open.
      */
-    private const int MAX_OPEN_NODES = 200;
+    private const int MAX_OPEN_LINES = 200;
 
     /**
      * Renders a dump tree, or only the value markup of a scalar or enum case root.
@@ -46,7 +48,7 @@ final class DumpTreeRenderer
         return Details::tag()
             ->class('yii-debug-log-dump')
             ->html(self::summary($head), self::entries($root))
-            ->open(self::nodes($root) <= self::MAX_OPEN_NODES)
+            ->open(self::lines($root) <= self::MAX_OPEN_LINES)
             ->render();
     }
 
@@ -66,7 +68,7 @@ final class DumpTreeRenderer
     private static function entry(DumpEntry $entry): Details|Div
     {
         $head = [
-            self::span('yii-debug-log-dump-key', $entry->key),
+            self::text('yii-debug-log-dump-key', $entry->key),
             ...self::visibility($entry),
             ...self::head($entry->value),
         ];
@@ -124,17 +126,25 @@ final class DumpTreeRenderer
     }
 
     /**
-     * Counts the values of a tree, the root included.
+     * Counts the line breaks of a text, `\r\n` and a lone `\r` as one each, as {@see Text} writes them.
      */
-    private static function nodes(DumpNode $node): int
+    private static function lineBreaks(string $text): int
     {
-        $count = 1;
+        return substr_count(str_replace(["\r\n", "\r"], "\n", $text), "\n");
+    }
+
+    /**
+     * Counts the lines of a tree: one per value, the root included, plus each line break of its texts and keys.
+     */
+    private static function lines(DumpNode $node): int
+    {
+        $lines = 1 + self::lineBreaks($node->text);
 
         foreach ($node->entries as $entry) {
-            $count += self::nodes($entry->value);
+            $lines += self::lineBreaks($entry->key) + self::lines($entry->value);
         }
 
-        return $count;
+        return $lines;
     }
 
     /**
@@ -157,19 +167,19 @@ final class DumpTreeRenderer
         return match ($node->kind) {
             DumpKind::SCALAR => $node->text === ''
                 ? self::span('yii-debug-log-dump-empty', LogMessage::DUMP_EMPTY->value, LogMessage::DUMP_EMPTY_TITLE->value)
-                : self::value('yii-debug-log-dump-value', $node->text),
-            DumpKind::STRING => self::value('yii-debug-log-dump-value yii-debug-log-dump-value-string', "\"{$node->text}\"")
+                : self::text('yii-debug-log-dump-value', $node->text),
+            DumpKind::STRING => self::text('yii-debug-log-dump-value yii-debug-log-dump-value-string', "\"{$node->text}\"")
                 ->title(
                     strlen($node->text) === 1
                         ? LogMessage::DUMP_STRING_BYTE->value
                         : sprintf(LogMessage::DUMP_STRING_BYTES->value, strlen($node->text)),
                 ),
-            DumpKind::FLOAT, DumpKind::INTEGER => self::value(
+            DumpKind::FLOAT, DumpKind::INTEGER => self::text(
                 'yii-debug-log-dump-value yii-debug-log-dump-value-number',
                 $node->text,
             ),
-            DumpKind::BOOLEAN => self::value('yii-debug-log-dump-value yii-debug-log-dump-value-bool', $node->text),
-            DumpKind::NULL => self::value('yii-debug-log-dump-value yii-debug-log-dump-value-null', $node->text),
+            DumpKind::BOOLEAN => self::text('yii-debug-log-dump-value yii-debug-log-dump-value-bool', $node->text),
+            DumpKind::NULL => self::text('yii-debug-log-dump-value yii-debug-log-dump-value-null', $node->text),
             default => null,
         };
     }
@@ -199,9 +209,9 @@ final class DumpTreeRenderer
     }
 
     /**
-     * Renders a scalar value `<span>` whose line breaks are written as `&#10;`.
+     * Renders a `<span>` with escaped content whose line breaks are written as `&#10;`.
      */
-    private static function value(string $class, string $text): Span
+    private static function text(string $class, string $text): Span
     {
         return Span::tag()
             ->class($class)

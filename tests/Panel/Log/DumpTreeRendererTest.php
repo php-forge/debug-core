@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for {@see DumpTreeRenderer} covering the collapsible dump tree markup: summary parts, visibility chips,
  * empty and recursion markers, nested blocks, typed values, enum case references, scalar roots, the root expansion
- * threshold, and escaping.
+ * line threshold, key line breaks, and escaping.
  *
  * {@see DumpTreeRendererProvider} for test case data providers.
  */
@@ -26,7 +26,7 @@ final class DumpTreeRendererTest extends TestCase
         self::assertSame(
             $expected,
             DumpTreeRenderer::render($root),
-            'Root must start open up to 200 values, collapsed above.',
+            'Root must start open up to 200 lines, collapsed above.',
         );
     }
 

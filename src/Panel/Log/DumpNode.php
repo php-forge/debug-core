@@ -74,27 +74,14 @@ final readonly class DumpNode
      * Creates the tree of a context value normalized by {@see LogContext::normalize()}.
      *
      * A value that is neither an array, a scalar, nor `null` becomes an untyped scalar.
+     *
+     * @return self|null Tree, or `null` over the {@see PrintRParser} depth or value bound.
      */
-    public static function fromValue(mixed $value): self
+    public static function fromValue(mixed $value): self|null
     {
-        if (is_array($value)) {
-            $entries = [];
+        $nodes = 0;
 
-            foreach ($value as $key => $item) {
-                $entries[] = new DumpEntry((string) $key, self::fromValue($item));
-            }
-
-            return self::block(DumpKind::ARRAY, '', $entries);
-        }
-
-        return match (true) {
-            is_string($value) => self::string($value),
-            is_int($value) => self::integer(var_export($value, true)),
-            is_float($value) => self::float(var_export($value, true)),
-            is_bool($value) => self::boolean(var_export($value, true)),
-            $value === null => self::null('NULL'),
-            default => self::scalar(Dump::asString($value)),
-        };
+        return self::fromNormalized($value, 1, $nodes);
     }
 
     /**
@@ -139,5 +126,44 @@ final readonly class DumpNode
     public static function string(string $value): self
     {
         return new self(DumpKind::STRING, '', $value, []);
+    }
+
+    /**
+     * Builds one value of {@see self::fromValue()}, counting it in `$nodes`.
+     */
+    private static function fromNormalized(mixed $value, int $depth, int &$nodes): self|null
+    {
+        if (++$nodes > PrintRParser::MAX_NODES) {
+            return null;
+        }
+
+        if (is_array($value) === false) {
+            return match (true) {
+                is_string($value) => self::string($value),
+                is_int($value) => self::integer(var_export($value, true)),
+                is_float($value) => self::float(var_export($value, true)),
+                is_bool($value) => self::boolean(var_export($value, true)),
+                $value === null => self::null('NULL'),
+                default => self::scalar(Dump::asString($value)),
+            };
+        }
+
+        if ($depth > PrintRParser::MAX_DEPTH) {
+            return null;
+        }
+
+        $entries = [];
+
+        foreach ($value as $key => $item) {
+            $node = self::fromNormalized($item, $depth + 1, $nodes);
+
+            if ($node === null) {
+                return null;
+            }
+
+            $entries[] = new DumpEntry((string) $key, $node);
+        }
+
+        return self::block(DumpKind::ARRAY, '', $entries);
     }
 }

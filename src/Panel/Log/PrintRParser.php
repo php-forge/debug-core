@@ -31,11 +31,11 @@ final class PrintRParser
      */
     public const int MAX_BYTES = 262144;
     /**
-     * Maximum nesting level of blocks, the root block included, shared with the PHP value export classes.
+     * Maximum nesting level of blocks, the root block included, shared with the export classes and {@see DumpNode}.
      */
     public const int MAX_DEPTH = 32;
     /**
-     * Maximum number of values, the root block included, shared with {@see PhpExportParser}.
+     * Maximum number of values, the root block included, shared with {@see PhpExportParser} and {@see DumpNode}.
      */
     public const int MAX_NODES = 5000;
     /**

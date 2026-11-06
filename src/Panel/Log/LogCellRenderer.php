@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Log;
 
 use Closure;
-use PHPForge\Debug\Helper\{CellMore, Disclosure, Format, Fqcn, LogLevel, PhpHighlighter, Text, Vocabulary};
+use PHPForge\Debug\Helper\{CellMore, Disclosure, Dump, Format, Fqcn, LogLevel, PhpHighlighter, Text, Vocabulary};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
 use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\{Div, Pre};
@@ -196,7 +196,8 @@ final class LogCellRenderer
     }
 
     /**
-     * Renders the context disclosure: a `<dl>` of keys and their {@see DumpTreeRenderer} values.
+     * Renders the context disclosure: a `<dl>` of keys and their {@see DumpTreeRenderer} values, or a `<pre>` dump for
+     * an array over the {@see DumpNode::fromValue()} bounds.
      *
      * @param non-empty-array<array-key, mixed> $context Normalized context of the row.
      */
@@ -205,8 +206,12 @@ final class LogCellRenderer
         $items = [];
 
         foreach ($context as $key => $value) {
+            $tree = DumpNode::fromValue($value);
+
             $items[] = Dt::tag()->content((string) $key);
-            $items[] = Dd::tag()->html(DumpTreeRenderer::render(DumpNode::fromValue($value)));
+            $items[] = Dd::tag()->html(
+                $tree === null ? Pre::tag()->content(Dump::asString($value)) : DumpTreeRenderer::render($tree),
+            );
         }
 
         return Disclosure::render(
