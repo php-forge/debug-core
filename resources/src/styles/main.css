@@ -2626,20 +2626,25 @@
     word-break: break-all;
   }
 
-  .yii-debug-queue-tree-value-string {
+  /* Typed values of the queue payload tree and the log dump tree. */
+  .yii-debug-queue-tree-value-string,
+  .yii-debug-log-dump-value-string {
     color: var(--yii-debug-success);
   }
 
-  .yii-debug-queue-tree-value-number {
+  .yii-debug-queue-tree-value-number,
+  .yii-debug-log-dump-value-number {
     color: var(--yii-debug-info);
   }
 
-  .yii-debug-queue-tree-value-bool {
+  .yii-debug-queue-tree-value-bool,
+  .yii-debug-log-dump-value-bool {
     color: var(--yii-debug-warning);
     font-weight: 600;
   }
 
-  .yii-debug-queue-tree-value-null {
+  .yii-debug-queue-tree-value-null,
+  .yii-debug-log-dump-value-null {
     color: var(--yii-debug-panel-muted);
     font-style: italic;
   }

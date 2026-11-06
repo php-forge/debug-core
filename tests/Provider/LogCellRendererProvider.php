@@ -113,44 +113,115 @@ final class LogCellRendererProvider
             var_export(['id' => 7], true),
             'app',
             <<<'HTML'
-            <div class="yii-debug-php-dump yii-debug-log-export">
-            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'id' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">7</span><span style="color: #007700">,&#10;]</span></code></pre>
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">id</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-number">7</span>
             </div>
+            </div>
+            </details>
             HTML,
         ];
         yield 'var_export markup injection' => [
             "array (\n  'x' => '</pre><script>alert(1)</script>',\n)",
             'app',
             <<<'HTML'
-            <div class="yii-debug-php-dump yii-debug-log-export">
-            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'x' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;'</span><span style="color: #007700">,&#10;]</span></code></pre>
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">x</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="31 bytes">"&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;"</span>
             </div>
+            </div>
+            </details>
             HTML,
         ];
         yield 'var_export string with a blank line' => [
             var_export(['t' => "a\n\nb"], true),
             'app',
             <<<'HTML'
-            <div class="yii-debug-php-dump yii-debug-log-export">
-            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'t' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'a&#10;&#10;b'</span><span style="color: #007700">,&#10;]</span></code></pre>
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">t</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="4 bytes">"a&#10;&#10;b"</span>
             </div>
+            </div>
+            </details>
             HTML,
         ];
         yield 'var_export string with Windows line breaks' => [
             var_export(['t' => "a\r\nb"], true),
             'app',
             <<<'HTML'
-            <div class="yii-debug-php-dump yii-debug-log-export">
-            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'t' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'a&#10;b'</span><span style="color: #007700">,&#10;]</span></code></pre>
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">t</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="4 bytes">"a&#10;b"</span>
             </div>
+            </div>
+            </details>
             HTML,
         ];
         yield 'export with carriage return line breaks' => [
             "array (\r  'id' => 7,\r)",
             'app',
             <<<'HTML'
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">id</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-number">7</span>
+            </div>
+            </div>
+            </details>
+            HTML,
+        ];
+        yield 'VarDumper::export() keyless list' => [
+            "[\n    'list' => [\n        1,\n        null,\n    ],\n]",
+            'app',
+            <<<'HTML'
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <details class="yii-debug-log-dump-node">
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-key">list</span><span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">2 entries</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">0</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-number">1</span>
+            </div><div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">1</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-null">null</span>
+            </div>
+            </div>
+            </details>
+            </div>
+            </details>
+            HTML,
+        ];
+        yield 'export with a double-quoted string' => [
+            "[\n    \"a\",\n]",
+            'app',
+            <<<'HTML'
             <div class="yii-debug-php-dump yii-debug-log-export">
-            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'id' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">7</span><span style="color: #007700">,&#10;]</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">"a"</span><span style="color: #007700">,&#10;]</span></code></pre>
+            </div>
+            HTML,
+        ];
+        yield 'VarDumper::export() object' => [
+            "[\n    'o' => unserialize('O:8:\"stdClass\":0:{}'),\n]",
+            'app',
+            <<<'HTML'
+            <div class="yii-debug-php-dump yii-debug-log-export">
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'o' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">unserialize</span><span style="color: #007700">(</span><span style="color: #DD0000">'O:8:"stdClass":0:{}'</span><span style="color: #007700">),&#10;]</span></code></pre>
             </div>
             HTML,
         ];
@@ -167,10 +238,25 @@ final class LogCellRendererProvider
             var_export(['k' => $longValue], true),
             'app',
             <<<HTML
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">k</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="700 bytes">"{$longValue}"</span>
+            </div>
+            </div>
+            </details>
+            HTML,
+        ];
+        yield 'highlighted export over the clamp threshold' => [
+            "[\n    \"{$longValue}\",\n]",
+            'app',
+            <<<HTML
             <div class="yii-debug-cell-more">
             <div class="yii-debug-cell-more-body">
             <div class="yii-debug-php-dump yii-debug-log-export">
-            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'k' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'{$longValue}'</span><span style="color: #007700">,&#10;]</span></code></pre>
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">"{$longValue}"</span><span style="color: #007700">,&#10;]</span></code></pre>
             </div>
             </div><button class="yii-debug-cell-more-toggle" type="button" aria-expanded="false" data-yii-debug-toggle="cell-more">Show more</button>
             </div>

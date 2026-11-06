@@ -14,7 +14,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for {@see LogCellRenderer} covering the typed cell renderers used by the logs grid (time, level, two-tone
  * category label, time-since-previous navigation, message + context + trace, SQL highlighting for DB command entries,
- * multi-line text, `print_r()` dump trees, highlighted `var_export()` values, row options).
+ * multi-line text, `print_r()` and `var_export()` dump trees, highlighted fallback exports, typed context values, row
+ * options).
  *
  * {@see LogCellRendererProvider} for test case data providers.
  */
@@ -303,7 +304,7 @@ final class LogCellRendererTest extends TestCase
             <dt>
             user
             </dt><dd>
-            <code>7</code>
+            <span class="yii-debug-log-dump-value yii-debug-log-dump-value-number">7</span>
             </dd>
             </dl>
             </div>
@@ -339,24 +340,29 @@ final class LogCellRendererTest extends TestCase
             <dt>
             test
             </dt><dd>
-            <code>1</code>
+            <span class="yii-debug-log-dump-value yii-debug-log-dump-value-number">1</span>
             </dd><dt>
             &lt;k&gt;
             </dt><dd>
-            <code>'a\'&lt;b&gt;&amp;'</code>
+            <span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="6 bytes">"a'&lt;b&gt;&amp;"</span>
             </dd><dt>
             none
             </dt><dd>
-            <code>null</code>
+            <span class="yii-debug-log-dump-value yii-debug-log-dump-value-null">NULL</span>
             </dd><dt>
             roles
             </dt><dd>
-            <pre>
-            [
-                0 =&gt; 'admin'
-                1 =&gt; '&lt;editor&gt;'
-            ]
-            </pre>
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">2 entries</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">0</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="5 bytes">"admin"</span>
+            </div><div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">1</span><span class="yii-debug-log-dump-value yii-debug-log-dump-value-string" title="8 bytes">"&lt;editor&gt;"</span>
+            </div>
+            </div>
+            </details>
             </dd>
             </dl>
             </div>
@@ -367,7 +373,7 @@ final class LogCellRendererTest extends TestCase
             </ul>
             HTML,
             $html,
-            'Context must render once-escaped between the message and the trace list.',
+            'Context must render as typed values and trees, once-escaped, between the message and the trace list.',
         );
     }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Panel\Log;
 
-use PHPForge\Debug\Panel\Log\{PrintREntry, PrintRKind, PrintRNode, PrintRParser};
+use PHPForge\Debug\Panel\Log\{DumpEntry, DumpKind, DumpNode, PrintRParser};
 use PHPForge\Debug\Tests\Provider\PrintRParserProvider;
 use PHPForge\Debug\Tests\Support\PrintR\PrintRFixture;
 use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
@@ -33,10 +33,10 @@ final class PrintRParserTest extends TestCase
             'Fixture must be exactly at the byte limit.',
         );
         self::assertEquals(
-            PrintRNode::block(
-                PrintRKind::ARRAY,
+            DumpNode::block(
+                DumpKind::ARRAY,
                 '',
-                [new PrintREntry('k', PrintRNode::scalar(str_repeat('a', 262144 - 22)))],
+                [new DumpEntry('k', DumpNode::scalar(str_repeat('a', 262144 - 22)))],
             ),
             PrintRParser::parse($message),
             'Message at the byte limit must parse.',
@@ -45,10 +45,10 @@ final class PrintRParserTest extends TestCase
 
     public function testParseAcceptsNestingAtDepthLimit(): void
     {
-        $expected = PrintRNode::block(PrintRKind::ARRAY, '', []);
+        $expected = DumpNode::block(DumpKind::ARRAY, '', []);
 
         for ($level = 1; $level < 32; $level++) {
-            $expected = PrintRNode::block(PrintRKind::ARRAY, '', [new PrintREntry('n', $expected)]);
+            $expected = DumpNode::block(DumpKind::ARRAY, '', [new DumpEntry('n', $expected)]);
         }
 
         self::assertEquals(
@@ -68,14 +68,14 @@ final class PrintRParserTest extends TestCase
             'Root block plus 4999 entries must parse.',
         );
         self::assertEquals(
-            new PrintREntry('4998', PrintRNode::scalar('4999')),
+            new DumpEntry('4998', DumpNode::scalar('4999')),
             $entries[4998] ?? null,
             'Last entry must keep its key and value.',
         );
     }
 
     #[DataProviderExternal(PrintRParserProvider::class, 'dumps')]
-    public function testParseBuildsTreeFromDump(string $message, PrintRNode $expected): void
+    public function testParseBuildsTreeFromDump(string $message, DumpNode $expected): void
     {
         self::assertEquals(
             $expected,
