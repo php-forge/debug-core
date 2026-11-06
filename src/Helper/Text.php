@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Helper;
 
+use UIAwesome\Html\Helper\Encode;
+
 use function is_string;
 use function mb_strtolower;
 use function parse_url;
@@ -28,6 +30,29 @@ final class Text
         $replaced = preg_replace('/(?<!\p{Lu})\p{Lu}/u', '-\0', $name) ?? $name;
 
         return mb_strtolower(trim(str_replace('_', '-', $replaced), '-'), 'UTF-8');
+    }
+
+    /**
+     * Escapes text for HTML content and writes each of its line breaks as the `&#10;` character reference.
+     *
+     * The UI Awesome block builders other than `<pre>` collapse consecutive line breaks in their rendered output, which
+     * drops the blank lines of a multi-line value rendered inside them; a character reference survives that
+     * normalization and still renders as a line break under `white-space: pre-wrap`. `\r\n` and a lone `\r` become one
+     * line break, as the HTML parser reads them.
+     *
+     * Usage example:
+     * ```php
+     * $html = Pre::tag()->html(Text::preserveLineBreaks("a\n\n<b>"))->render();
+     * // "<pre>\na&#10;&#10;&lt;b&gt;\n</pre>"
+     * ```
+     *
+     * @param string $text Raw text to render.
+     *
+     * @return string Escaped HTML content without raw line breaks.
+     */
+    public static function preserveLineBreaks(string $text): string
+    {
+        return str_replace(["\r\n", "\r", "\n"], '&#10;', Encode::content($text));
     }
 
     /**

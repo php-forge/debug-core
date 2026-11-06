@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Panel\Log;
 
 use Closure;
-use PHPForge\Debug\Helper\{CellMore, Disclosure, Dump, Format, Fqcn, LogLevel, Vocabulary};
+use PHPForge\Debug\Helper\{CellMore, Disclosure, Dump, Format, Fqcn, LogLevel, PhpHighlighter, Text, Vocabulary};
 use PHPForge\Debug\Panel\Db\SqlHighlighter;
 use PHPForge\Debug\Theme\Css;
 use UIAwesome\Html\Flow\{Div, Pre};
@@ -20,6 +20,8 @@ use function implode;
 use function intdiv;
 use function is_array;
 use function sprintf;
+use function str_contains;
+use function str_replace;
 use function str_starts_with;
 
 /**
@@ -31,6 +33,10 @@ final class LogCellRenderer
      * Class of the key/value list revealed by the context disclosure.
      */
     private const string CONTEXT_CLASS = 'yii-debug-log-context';
+    /**
+     * Classes of the block holding a highlighted PHP value export: the Request panel dump wrapper plus the log variant.
+     */
+    private const string EXPORT_CLASS = 'yii-debug-php-dump yii-debug-log-export';
     /**
      * @var array<int, string> Maps the four severity levels surfaced in the grid to the row variant CSS modifier.
      */
@@ -44,6 +50,10 @@ final class LogCellRenderer
      * (the DB collector category defaults).
      */
     private const string SQL_CATEGORY_PREFIX = 'yii\db\Command::';
+    /**
+     * Class of the block preserving the line breaks and indentation of a multi-line message.
+     */
+    private const string TEXT_CLASS = 'yii-debug-log-text';
 
     /**
      * Builds the GridView `rowOptions` array for the row: anchor id (`log-{N}`) and severity-driven CSS class.
@@ -91,8 +101,13 @@ final class LogCellRenderer
      * The row holds the message as a display string (already exported when the source was non-string), so the renderer
      * escapes it once — except for DB command entries and for any message {@see SqlHighlighter::isStatement()} reads
      * as raw SQL, which render through {@see SqlHighlighter::highlight()} with the same token spans as the db panel
-     * queries grid. Long messages collapse behind the {@see CellMore} clamp. A non-empty context renders as a collapsed
-     * {@see Disclosure} holding a `<dl>`: scalar values inline in `<code>`, arrays as a `<pre>` block.
+     * queries grid. A message {@see PrintRParser::parse()} reads as a `print_r()` dump renders as the collapsible
+     * {@see PrintRTreeRenderer} tree; a multi-line message {@see PhpExportDetector::detect()} reads as a `var_export()`
+     * value renders through {@see PhpHighlighter::highlightCode()} like the Request panel dumps; any other multi-line
+     * message renders in a `<pre class="yii-debug-log-text">` that preserves its line breaks and indentation, and a
+     * single-line message as escaped text. Long SQL, export, and text messages collapse behind the {@see CellMore}
+     * clamp; the tree collapses on its own. A non-empty context renders as a collapsed {@see Disclosure} holding a
+     * `<dl>`: scalar values inline in `<code>`, arrays as a `<pre>` block.
      *
      * @param LogRow $row Typed log record.
      * @param Closure(array<string, mixed>): string $traceLine Renders one backtrace frame as a link line.
@@ -102,14 +117,11 @@ final class LogCellRenderer
         $isSql = str_starts_with($row->category, self::SQL_CATEGORY_PREFIX)
             || SqlHighlighter::isStatement($row->message);
 
-        $body = $isSql
-            ? Div::tag()
-                ->class('yii-debug-db-sql')
-                ->html(SqlHighlighter::highlight($row->message))
-                ->render()
-            : Encode::content($row->message);
+        $tree = $isSql ? null : PrintRParser::parse($row->message);
 
-        $body = CellMore::clamp($body, $row->message);
+        $body = $tree === null
+            ? CellMore::clamp(self::renderMessageText($row->message, $isSql), $row->message)
+            : PrintRTreeRenderer::render($tree);
 
         if ($row->context !== []) {
             $body .= self::renderContext($row->context);
@@ -202,8 +214,52 @@ final class LogCellRenderer
 
         return Disclosure::render(
             sprintf(LogMessage::CONTEXT_SUMMARY->value, count($context)),
-            Dl::tag()->class(self::CONTEXT_CLASS)->html(...$items)->render(),
+            Dl::tag()
+                ->class(self::CONTEXT_CLASS)
+                ->html(...$items)
+                ->render(),
         );
+    }
+
+    /**
+     * Renders the message body: highlighted SQL, a highlighted PHP value export, a `<pre>` block preserving the layout of
+     * a multi-line message through {@see Text::preserveLineBreaks()}, or the escaped single-line text.
+     *
+     * The export renders in the short array syntax {@see PhpExportDetector::detect()} returns, inside the Request panel
+     * dump wrapper. Its line breaks are written as `&#10;` for the same reason as the text block: the enclosing block
+     * builders would otherwise collapse the blank lines of a multi-line string value.
+     *
+     * @param string $message Log message.
+     * @param bool $isSql Whether the message is a SQL statement.
+     *
+     * @return string Unclamped message markup.
+     */
+    private static function renderMessageText(string $message, bool $isSql): string
+    {
+        if ($isSql) {
+            return Div::tag()
+                ->class('yii-debug-db-sql')
+                ->html(SqlHighlighter::highlight($message))
+                ->render();
+        }
+
+        if (str_contains($message, "\n") === false) {
+            return Encode::content($message);
+        }
+
+        $export = PhpExportDetector::detect($message);
+
+        if ($export !== null) {
+            return Div::tag()
+                ->class(self::EXPORT_CLASS)
+                ->html(str_replace("\n", '&#10;', PhpHighlighter::highlightCode($export)))
+                ->render();
+        }
+
+        return Pre::tag()
+            ->class(self::TEXT_CLASS)
+            ->html(Text::preserveLineBreaks($message))
+            ->render();
     }
 
     /**

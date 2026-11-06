@@ -1,0 +1,69 @@
+HttpSoft\Message\ServerRequest Object
+(
+    [attributes:HttpSoft\Message\ServerRequest:private] => Array
+        (
+            [applicationStartTime] => 1793938706.0155
+        )
+
+    [cookieParams:HttpSoft\Message\ServerRequest:private] => Array
+        (
+            [yii-debug-toolbar-theme] => dark
+        )
+
+    [parsedBody:HttpSoft\Message\ServerRequest:private] => 
+    [queryParams:HttpSoft\Message\ServerRequest:private] => Array
+        (
+        )
+
+    [serverParams:HttpSoft\Message\ServerRequest:private] => Array
+        (
+            [USER] => www-data
+            [HTTP_PRIORITY] => u=0, i
+            [HTTP_ACCEPT] => text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+            [HTTP_USER_AGENT] => Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0
+            [REQUEST_METHOD] => GET
+            [CONTENT_LENGTH] => 
+            [REQUEST_TIME_FLOAT] => 1793938706.0138
+        )
+
+    [uploadedFiles:HttpSoft\Message\ServerRequest:private] => Array
+        (
+        )
+
+    [method:HttpSoft\Message\ServerRequest:private] => GET
+    [requestTarget:HttpSoft\Message\ServerRequest:private] => 
+    [uri:HttpSoft\Message\ServerRequest:private] => HttpSoft\Message\Uri Object
+        (
+            [scheme:HttpSoft\Message\Uri:private] => http
+            [userInfo:HttpSoft\Message\Uri:private] => 
+            [host:HttpSoft\Message\Uri:private] => ets-api.test
+            [port:HttpSoft\Message\Uri:private] => 80
+            [path:HttpSoft\Message\Uri:private] => /
+            [query:HttpSoft\Message\Uri:private] => 
+            [fragment:HttpSoft\Message\Uri:private] => 
+            [cache:HttpSoft\Message\Uri:private] => 
+        )
+
+    [headers:HttpSoft\Message\ServerRequest:private] => Array
+        (
+            [Host] => Array
+                (
+                    [0] => ets-api.test
+                )
+
+            [Content-Length] => Array
+                (
+                    [0] => 
+                )
+
+        )
+
+    [protocol:HttpSoft\Message\ServerRequest:private] => 1.1
+    [stream:HttpSoft\Message\ServerRequest:private] => HttpSoft\Message\Stream Object
+        (
+            [resource:HttpSoft\Message\Stream:private] => Resource id #6
+            [size:HttpSoft\Message\Stream:private] => 
+            [seekable:HttpSoft\Message\Stream:private] => 1
+        )
+
+)
