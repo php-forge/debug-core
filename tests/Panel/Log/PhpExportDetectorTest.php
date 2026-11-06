@@ -20,7 +20,7 @@ use function strlen;
 
 /**
  * Unit tests for {@see PhpExportDetector} covering the accepted export forms, the short array rewrite, rejected
- * messages, the byte limit, and the muted parser diagnostics.
+ * messages, the byte, depth, and output limits, and the muted parser diagnostics.
  *
  * {@see PhpExportDetectorProvider} for test case data providers.
  */
@@ -41,6 +41,28 @@ final class PhpExportDetectorTest extends TestCase
             $message,
             PhpExportDetector::detect($message),
             'Message at the byte limit must be detected.',
+        );
+    }
+
+    public function testDetectAcceptsNestingAtDepthLimit(): void
+    {
+        $message = str_repeat('[', 32) . str_repeat(']', 32);
+
+        self::assertSame(
+            $message,
+            PhpExportDetector::detect($message),
+            'Thirty-two nested arrays must be detected.',
+        );
+    }
+
+    public function testDetectAcceptsSourceAtOutputLimit(): void
+    {
+        $message = str_repeat('[', 32) . str_repeat("\n1,", 8000) . "\n'" . str_repeat('a', 380) . "'," . str_repeat(']', 32);
+
+        self::assertSame(
+            1048576,
+            strlen((string) PhpExportDetector::detect($message)),
+            'Re-indented source must be detected exactly at the output limit.',
         );
     }
 
@@ -72,10 +94,9 @@ final class PhpExportDetectorTest extends TestCase
             restore_error_handler();
         }
 
-        self::assertSame(
-            "[\n    (boolean) 1,\n]",
+        self::assertNull(
             $code,
-            'Deprecated cast must still be detected as an export.',
+            'Cast to `bool` must not be detected, as no export prints it.',
         );
         self::assertNull(
             error_get_last(),
@@ -136,6 +157,24 @@ final class PhpExportDetectorTest extends TestCase
         self::assertNull(
             PhpExportDetector::detect($message),
             'Message must not be detected as an export.',
+        );
+    }
+
+    public function testDetectReturnsNullForNestingOverDepthLimit(): void
+    {
+        self::assertNull(
+            PhpExportDetector::detect(str_repeat('[', 33) . str_repeat(']', 33)),
+            'Thirty-three nested arrays must not be detected.',
+        );
+    }
+
+    public function testDetectReturnsNullForSourceOverOutputLimit(): void
+    {
+        $message = str_repeat('[', 32) . str_repeat("\n1,", 8000) . "\n'" . str_repeat('a', 381) . "'," . str_repeat(']', 32);
+
+        self::assertNull(
+            PhpExportDetector::detect($message),
+            'Re-indented source one byte over the output limit must not be detected.',
         );
     }
 

@@ -44,6 +44,16 @@ final class TextTest extends TestCase
         );
     }
 
+    #[DataProviderExternal(LineBreakProvider::class, 'htmlLineBreaks')]
+    public function testPreserveHtmlLineBreaksKeepsMarkupAndEncodesLineBreaks(string $html, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            Text::preserveHtmlLineBreaks($html),
+            'Markup must stay unescaped with every line break as `&#10;`.',
+        );
+    }
+
     #[DataProviderExternal(LineBreakProvider::class, 'lineBreaks')]
     public function testPreserveLineBreaksEscapesTextAndEncodesLineBreaks(string $text, string $expected): void
     {

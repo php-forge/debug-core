@@ -237,6 +237,18 @@ final class LogCellRendererTest extends TestCase
         );
     }
 
+    #[DataProviderExternal(LogCellRendererProvider::class, 'compileWarnings')]
+    public function testRenderMessageCellKeepsCompileWarningOutOfTheOutput(string $message, string $expected): void
+    {
+        $this->expectOutputString('');
+
+        self::assertSame(
+            $expected,
+            LogCellRenderer::renderMessageCell(self::makeRow(message: $message), self::traceLine()),
+            'Export markup must match exactly.',
+        );
+    }
+
     public function testRenderMessageCellKeepsPlainEscapingForNonDbCategory(): void
     {
         $html = LogCellRenderer::renderMessageCell(

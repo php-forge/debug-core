@@ -19,6 +19,11 @@ use function trim;
 final class Text
 {
     /**
+     * Line break sequences, `\r\n` first so that it reads as one line break, as the HTML parser reads it.
+     */
+    private const array LINE_BREAKS = ["\r\n", "\r", "\n"];
+
+    /**
      * Converts a CamelCase name into a lowercase id with `-` word separators, matching the Yii inflector semantics.
      *
      * @param string $name CamelCase name to convert.
@@ -30,6 +35,28 @@ final class Text
         $replaced = preg_replace('/(?<!\p{Lu})\p{Lu}/u', '-\0', $name) ?? $name;
 
         return mb_strtolower(trim(str_replace('_', '-', $replaced), '-'), 'UTF-8');
+    }
+
+    /**
+     * Writes each line break of HTML markup as the `&#10;` character reference, leaving the markup itself unchanged.
+     *
+     * Use it for markup that is already escaped and carries line breaks only in its text, such as
+     * {@see PhpHighlighter::highlightCode()} output; {@see self::preserveLineBreaks()} escapes raw text first. `\r\n`
+     * and a lone `\r` become one line break, as the HTML parser reads them.
+     *
+     * Usage example:
+     * ```php
+     * $html = Text::preserveHtmlLineBreaks("<span>'a\r\nb'</span>");
+     * // "<span>'a&#10;b'</span>"
+     * ```
+     *
+     * @param string $html Escaped HTML markup.
+     *
+     * @return string Markup without raw line breaks.
+     */
+    public static function preserveHtmlLineBreaks(string $html): string
+    {
+        return str_replace(self::LINE_BREAKS, '&#10;', $html);
     }
 
     /**
@@ -52,7 +79,7 @@ final class Text
      */
     public static function preserveLineBreaks(string $text): string
     {
-        return str_replace(["\r\n", "\r", "\n"], '&#10;', Encode::content($text));
+        return self::preserveHtmlLineBreaks(Encode::content($text));
     }
 
     /**

@@ -162,6 +162,32 @@ final class PrintRParserProvider
                 ],
             ),
         ];
+        yield 'stdClass keys shaped like a visibility stay verbatim' => [
+            (static function (): string {
+                $inner = new stdClass();
+                $inner->{'id:App\User:private'} = 7;
+                $object = new stdClass();
+                $object->{'status:protected'} = 'on';
+                $object->inner = $inner;
+
+                return print_r($object, true);
+            })(),
+            PrintRNode::block(
+                PrintRKind::OBJECT,
+                'stdClass',
+                [
+                    new PrintREntry('status:protected', PrintRNode::scalar('on')),
+                    new PrintREntry(
+                        'inner',
+                        PrintRNode::block(
+                            PrintRKind::OBJECT,
+                            'stdClass',
+                            [new PrintREntry('id:App\User:private', PrintRNode::scalar('7'))],
+                        ),
+                    ),
+                ],
+            ),
+        ];
         yield 'object with visibility, inheritance, enum, and recursion' => [
             PrintRFixture::child(),
             PrintRNode::block(

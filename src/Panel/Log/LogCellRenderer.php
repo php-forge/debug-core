@@ -20,9 +20,8 @@ use function implode;
 use function intdiv;
 use function is_array;
 use function sprintf;
-use function str_contains;
-use function str_replace;
 use function str_starts_with;
+use function strpbrk;
 
 /**
  * Renders the typed cells of the logs grid for the Log debug panel.
@@ -225,9 +224,11 @@ final class LogCellRenderer
      * Renders the message body: highlighted SQL, a highlighted PHP value export, a `<pre>` block preserving the layout of
      * a multi-line message through {@see Text::preserveLineBreaks()}, or the escaped single-line text.
      *
-     * The export renders in the short array syntax {@see PhpExportDetector::detect()} returns, inside the Request panel
-     * dump wrapper. Its line breaks are written as `&#10;` for the same reason as the text block: the enclosing block
-     * builders would otherwise collapse the blank lines of a multi-line string value.
+     * A message is multi-line when it holds a line feed or a carriage return. The export renders in the short array
+     * syntax {@see PhpExportDetector::detect()} returns, inside the Request panel dump wrapper. Its line breaks, `\r\n`
+     * and a lone `\r` included, are written as `&#10;` through {@see Text::preserveHtmlLineBreaks()} for the same reason
+     * as the text block: the enclosing block builders would otherwise collapse the blank lines of a multi-line string
+     * value.
      *
      * @param string $message Log message.
      * @param bool $isSql Whether the message is a SQL statement.
@@ -243,7 +244,7 @@ final class LogCellRenderer
                 ->render();
         }
 
-        if (str_contains($message, "\n") === false) {
+        if (strpbrk($message, "\r\n") === false) {
             return Encode::content($message);
         }
 
@@ -252,7 +253,7 @@ final class LogCellRenderer
         if ($export !== null) {
             return Div::tag()
                 ->class(self::EXPORT_CLASS)
-                ->html(str_replace("\n", '&#10;', PhpHighlighter::highlightCode($export)))
+                ->html(Text::preserveHtmlLineBreaks(PhpHighlighter::highlightCode($export)))
                 ->render();
         }
 

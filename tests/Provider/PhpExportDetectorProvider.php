@@ -11,6 +11,7 @@ use function var_export;
 
 use const INF;
 use const NAN;
+use const PHP_INT_MIN;
 
 /**
  * Data provider for {@see PhpExportDetectorTest} test cases.
@@ -137,9 +138,22 @@ final class PhpExportDetectorProvider
             ]
             PHP,
         ];
-        yield 'array type of an arrow function' => [
-            "[\n    fn(array \$a): array => \$a,\n]",
-            "[\n    fn(array \$a): array => \$a,\n]",
+        yield 'brackets inside strings' => [
+            var_export(['a]' => '[', ')' => ['(' => ']]'], '"x]"' => "]\n["], true),
+            <<<'PHP'
+            [
+                'a]' => '[',
+                ')' => [
+                    '(' => ']]',
+                ],
+                '"x]"' => ']
+            [',
+            ]
+            PHP,
+        ];
+        yield 'integer minimum' => [
+            var_export([PHP_INT_MIN], true),
+            "[\n    0 => -9223372036854775807-1,\n]",
         ];
         yield 'array without space before the parenthesis' => [
             "[\n  0 => array(\n    0 => 1,\n  ),\n]",
@@ -153,6 +167,10 @@ final class PhpExportDetectorProvider
             "array (\r\n  0 => \r\n  array (\r\n    0 => 1,\r\n  ),\r\n)",
             "[\n    0 => [\n        0 => 1,\n    ],\n]",
         ];
+        yield 'carriage return line breaks' => [
+            "array (\r  0 => \r  array (\r    0 => 1,\r  ),\r)",
+            "[\n    0 => [\n        0 => 1,\n    ],\n]",
+        ];
     }
 
     /**
@@ -161,6 +179,7 @@ final class PhpExportDetectorProvider
     public static function rejected(): iterable
     {
         yield 'plain text' => ["line one\nline two"];
+        yield 'quoted string' => ["'line one\nline two'"];
         yield 'invalid PHP' => ["array (\n  'a' => ,\n)"];
         yield 'free text before the export' => ["Loaded: array (\n  0 => 1,\n)"];
         yield 'valid PHP before the export' => ["1 + [\n    2,\n]"];
@@ -169,5 +188,19 @@ final class PhpExportDetectorProvider
         yield 'closing tag reopening PHP' => ["[\n    1,\n] ?><?php echo 1"];
         yield 'extra statement' => ["[\n    1,\n]; echo 1"];
         yield 'statement terminator only' => ["[\n    1,\n];"];
+        yield 'comment after the terminator' => ["[\n    1,\n]; // c"];
+        yield 'comment swallowing the terminator' => ["[\n    1,\n] // c"];
+        yield 'hash comment' => ["[\n    1, # c\n]"];
+        yield 'block comment' => ["[\n    /* c */ 1,\n]"];
+        yield 'doc comment' => ["[\n    /** c */ 1,\n]"];
+        yield 'interpolated variable before a bracket' => ["[\n    \"\$x]\",\n]"];
+        yield 'interpolated expression in braces' => ["[\n    \"{\$x}\",\n]"];
+        yield 'interpolated dollar brace' => ["[\n    \"\${x}\",\n]"];
+        yield 'heredoc' => ["[\n    <<<EOT\n    ]\n    EOT,\n]"];
+        yield 'nowdoc' => ["[\n    <<<'EOT'\n    ]\n    EOT,\n]"];
+        yield 'variable' => ["[\n    \$x,\n]"];
+        yield 'arrow function' => ["[\n    fn(array \$a): array => \$a,\n]"];
+        yield 'closure' => ["[\n    function () {\n        return 1;\n    },\n]"];
+        yield 'cast to bool' => ["[\n    (bool) 1,\n]"];
     }
 }

@@ -16,6 +16,21 @@ use function var_export;
 final class LogCellRendererProvider
 {
     /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function compileWarnings(): iterable
+    {
+        yield 'octal escape overflow' => [
+            "[\n    \"\\400\",\n]",
+            <<<'HTML'
+            <div class="yii-debug-php-dump yii-debug-log-export">
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">"\400"</span><span style="color: #007700">,&#10;]</span></code></pre>
+            </div>
+            HTML,
+        ];
+    }
+
+    /**
      * @return iterable<string, array{string, string, string}>
      */
     public static function messageBodies(): iterable
@@ -30,6 +45,15 @@ final class LogCellRendererProvider
             <<<'HTML'
             <pre class="yii-debug-log-text">
             line one&#10;&#10;  indented &lt;b&gt;
+            </pre>
+            HTML,
+        ];
+        yield 'text with a lone carriage return' => [
+            "line one\rline two",
+            'app',
+            <<<'HTML'
+            <pre class="yii-debug-log-text">
+            line one&#10;line two
             </pre>
             HTML,
         ];
@@ -110,6 +134,33 @@ final class LogCellRendererProvider
             <div class="yii-debug-php-dump yii-debug-log-export">
             <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'t' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'a&#10;&#10;b'</span><span style="color: #007700">,&#10;]</span></code></pre>
             </div>
+            HTML,
+        ];
+        yield 'var_export string with Windows line breaks' => [
+            var_export(['t' => "a\r\nb"], true),
+            'app',
+            <<<'HTML'
+            <div class="yii-debug-php-dump yii-debug-log-export">
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'t' </span><span style="color: #007700">=&gt; </span><span style="color: #DD0000">'a&#10;b'</span><span style="color: #007700">,&#10;]</span></code></pre>
+            </div>
+            HTML,
+        ];
+        yield 'export with carriage return line breaks' => [
+            "array (\r  'id' => 7,\r)",
+            'app',
+            <<<'HTML'
+            <div class="yii-debug-php-dump yii-debug-log-export">
+            <pre tabindex="0"><code style="color: #000000"><span style="color: #007700">[&#10;    </span><span style="color: #DD0000">'id' </span><span style="color: #007700">=&gt; </span><span style="color: #0000BB">7</span><span style="color: #007700">,&#10;]</span></code></pre>
+            </div>
+            HTML,
+        ];
+        yield 'interpolated string before a bracket' => [
+            "[\n    \"\$x]\",\n]",
+            'app',
+            <<<'HTML'
+            <pre class="yii-debug-log-text">
+            [&#10;    "$x]",&#10;]
+            </pre>
             HTML,
         ];
         yield 'var_export over the clamp threshold' => [

@@ -3549,6 +3549,7 @@
 
   .yii-debug-log-dump-key {
     font-weight: 700;
+    white-space: pre-wrap;
     overflow-wrap: anywhere;
 
     &::after {

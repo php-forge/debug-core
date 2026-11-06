@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Panel\Log;
 
+use stdClass;
+
 use function count;
 use function explode;
 use function preg_match;
@@ -42,6 +44,11 @@ final class PrintRParser
      */
     public const int MAX_BYTES = 262144;
     /**
+     * Maximum nesting level of blocks, the root block included; {@see PhpExportDetector} applies the same bound to
+     * nested arrays.
+     */
+    public const int MAX_DEPTH = 32;
+    /**
      * Separator between the key and the value of an entry line.
      */
     private const string ARROW = '] => ';
@@ -49,10 +56,6 @@ final class PrintRParser
      * Header of an array or object block, with the optional free text that may precede the root header.
      */
     private const string HEADER = '/^(.*\s)?(?:Array|(\S+) (Object|Enum)(?::int|:string)?)$/';
-    /**
-     * Maximum nesting level of blocks, the root block included.
-     */
-    private const int MAX_DEPTH = 32;
     /**
      * Maximum number of values, the root block included.
      */
@@ -104,7 +107,7 @@ final class PrintRParser
         [$prefix, $kind, $label] = $header;
 
         $parser = new self($lines);
-        $entries = $parser->opens(0) ? $parser->block(0, $kind, 1) : null;
+        $entries = $parser->opens(0) ? $parser->block(0, self::hasVisibility($kind, $label), 1) : null;
 
         return $entries === null || $parser->cursor !== count($lines)
             ? null
@@ -115,12 +118,12 @@ final class PrintRParser
      * Reads the entries of the block whose `(` line is the current line, up to and including its `)` line.
      *
      * @param int $indent Indentation of the `(` and `)` lines.
-     * @param PrintRKind $kind Kind of the block, which decides whether property keys carry a visibility.
+     * @param bool $visibility Whether the keys are property names that may carry a visibility.
      * @param int $depth Nesting level of the block, the root block being `1`.
      *
      * @return list<PrintREntry>|null Entries in dump order, or `null` on a structural mismatch or an exceeded bound.
      */
-    private function block(int $indent, PrintRKind $kind, int $depth): array|null
+    private function block(int $indent, bool $visibility, int $depth): array|null
     {
         if ($depth > self::MAX_DEPTH) {
             return null;
@@ -148,7 +151,7 @@ final class PrintRParser
                 return null;
             }
 
-            $entries[] = self::entry($entry[0], $value, $kind);
+            $entries[] = self::entry($entry[0], $value, $visibility);
         }
 
         $this->cursor++;
@@ -157,17 +160,28 @@ final class PrintRParser
     }
 
     /**
-     * Builds an entry, splitting the visibility out of a property key inside an object or enum block.
+     * Builds an entry, splitting the visibility out of a property key when the block's keys may carry one.
      */
-    private static function entry(string $key, PrintRNode $value, PrintRKind $kind): PrintREntry
+    private static function entry(string $key, PrintRNode $value, bool $visibility): PrintREntry
     {
-        if ($kind !== PrintRKind::ARRAY && preg_match(self::VISIBILITY, $key, $matches, PREG_UNMATCHED_AS_NULL) === 1) {
+        if ($visibility && preg_match(self::VISIBILITY, $key, $matches, PREG_UNMATCHED_AS_NULL) === 1) {
             return $matches[2] === null
                 ? new PrintREntry($matches[1], $value, 'private', (string) $matches[3])
                 : new PrintREntry($matches[1], $value, 'protected');
         }
 
         return new PrintREntry($key, $value);
+    }
+
+    /**
+     * Whether the keys of a block are property names to which `print_r()` appends a visibility.
+     *
+     * Array keys never carry one. A `stdClass` object declares no property, so every key is a dynamic property name
+     * kept verbatim, even one such as `status:protected`.
+     */
+    private static function hasVisibility(PrintRKind $kind, string $label): bool
+    {
+        return $kind !== PrintRKind::ARRAY && $label !== stdClass::class;
     }
 
     /**
@@ -243,7 +257,7 @@ final class PrintRParser
             }
 
             if ($this->opens($indent)) {
-                $entries = $this->block($indent, $header[1], $depth + 1);
+                $entries = $this->block($indent, self::hasVisibility($header[1], $header[2]), $depth + 1);
 
                 if ($entries === null || ($this->lines[$this->cursor] ?? '') !== '') {
                     return null;

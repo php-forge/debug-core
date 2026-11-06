@@ -8,7 +8,7 @@ namespace PHPForge\Debug\Panel\Log;
  * Represents one `[key] => value` line of a parsed `print_r()` block.
  *
  * Inside object and enum blocks the key is split into the property name, its visibility, and the class that declares
- * a private property; array keys stay verbatim.
+ * a private property; array keys and the dynamic property names of a `stdClass` object stay verbatim.
  */
 final readonly class PrintREntry
 {

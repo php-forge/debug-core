@@ -14,6 +14,21 @@ final class LineBreakProvider
     /**
      * @return iterable<string, array{string, string}>
      */
+    public static function htmlLineBreaks(): iterable
+    {
+        yield 'markup without line breaks' => [
+            '<span class="k">&lt;a&gt;</span>',
+            '<span class="k">&lt;a&gt;</span>',
+        ];
+        yield 'line breaks in text' => [
+            "<span>'a\r\nb'</span>\n<span>c\rd\n\ne</span>",
+            "<span>'a&#10;b'</span>&#10;<span>c&#10;d&#10;&#10;e</span>",
+        ];
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
     public static function lineBreaks(): iterable
     {
         yield 'single line' => [
