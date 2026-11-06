@@ -44,12 +44,6 @@ final class Text
      * {@see PhpHighlighter::highlightCode()} output; {@see self::preserveLineBreaks()} escapes raw text first. `\r\n`
      * and a lone `\r` become one line break, as the HTML parser reads them.
      *
-     * Usage example:
-     * ```php
-     * $html = Text::preserveHtmlLineBreaks("<span>'a\r\nb'</span>");
-     * // "<span>'a&#10;b'</span>"
-     * ```
-     *
      * @param string $html Escaped HTML markup.
      *
      * @return string Markup without raw line breaks.
@@ -66,12 +60,6 @@ final class Text
      * drops the blank lines of a multi-line value rendered inside them; a character reference survives that
      * normalization and still renders as a line break under `white-space: pre-wrap`. `\r\n` and a lone `\r` become one
      * line break, as the HTML parser reads them.
-     *
-     * Usage example:
-     * ```php
-     * $html = Pre::tag()->html(Text::preserveLineBreaks("a\n\n<b>"))->render();
-     * // "<pre>\na&#10;&#10;&lt;b&gt;\n</pre>"
-     * ```
      *
      * @param string $text Raw text to render.
      *

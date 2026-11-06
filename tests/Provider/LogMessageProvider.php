@@ -89,6 +89,14 @@ final class LogMessageProvider
             LogMessage::DUMP_RECURSION_TITLE,
             'print_r() stopped here because the value contains itself',
         ];
+        yield 'dump_string_byte' => [
+            LogMessage::DUMP_STRING_BYTE,
+            '1 byte',
+        ];
+        yield 'dump_string_bytes' => [
+            LogMessage::DUMP_STRING_BYTES,
+            '%d bytes',
+        ];
         yield 'empty_explanation' => [
             LogMessage::EMPTY_EXPLANATION,
             'This request did not emit log messages through the debug log target.',

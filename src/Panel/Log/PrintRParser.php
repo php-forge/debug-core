@@ -19,53 +19,39 @@ use function substr;
 use const PREG_UNMATCHED_AS_NULL;
 
 /**
- * Parses the output of `print_r($value, true)` for an array, object, or enum into a {@see PrintRNode} tree.
+ * Parses the output of `print_r($value, true)` for an array, object, or enum into a {@see DumpNode} tree.
  *
- * The parser follows the layout `print_r()` emits: a header line (`Array`, `<class> Object`, `<class> Enum`, or
- * `<class> Enum:<type>`), a `(` line whose indentation plus four spaces is the indentation of the `[key] => value`
- * entries, and a `)` line at the indentation of `(`. Nested blocks are followed by one blank line, recursive values by a
- * ` *RECURSION*` line, and the lines of a multi-line string continue until the next entry or the closing `)` of the
- * block. Only the root header may carry free text before it, such as `Request: Array`; only trailing whitespace may
- * follow the root block.
- *
- * Any other text, a structural mismatch, or a dump beyond {@see self::MAX_BYTES} bytes, {@see self::MAX_DEPTH} nested
- * blocks, or {@see self::MAX_NODES} values yields `null`; the parser never throws.
- *
- * Usage example:
- * ```php
- * $node = PrintRParser::parse("Request: Array\n(\n    [id] => 7\n)\n");
- * // $node->kind === PrintRKind::ARRAY, $node->text === 'Request:', $node->entries[0]->key === 'id'
- * ```
+ * Only the root header may carry free text before it, such as `Request: Array`. Any other deviation from the
+ * `print_r()` layout, or an exceeded bound, yields `null`; the parser never throws.
  */
 final class PrintRParser
 {
     /**
-     * Maximum size of a parsed message, in bytes; {@see PhpExportDetector} applies the same bound.
+     * Maximum size of a parsed message, in bytes, shared with {@see PhpExportTokenizer}.
      */
     public const int MAX_BYTES = 262144;
     /**
-     * Maximum nesting level of blocks, the root block included; {@see PhpExportDetector} applies the same bound to
-     * nested arrays.
+     * Maximum nesting level of blocks, the root block included, shared with the export classes and {@see DumpNode}.
      */
     public const int MAX_DEPTH = 32;
+    /**
+     * Maximum number of values, the root block included, shared with {@see PhpExportParser} and {@see DumpNode}.
+     */
+    public const int MAX_NODES = 5000;
     /**
      * Separator between the key and the value of an entry line.
      */
     private const string ARROW = '] => ';
     /**
-     * Header of an array or object block, with the optional free text that may precede the root header.
+     * Block header, with the free text that may precede the root header.
      */
     private const string HEADER = '/^(.*\s)?(?:Array|(\S+) (Object|Enum)(?::int|:string)?)$/';
-    /**
-     * Maximum number of values, the root block included.
-     */
-    private const int MAX_NODES = 5000;
     /**
      * Line `print_r()` prints after the header of an array or object it is already printing.
      */
     private const string RECURSION = ' *RECURSION*';
     /**
-     * Property key of an object or enum block: name and either `protected` or the declaring class of a private property.
+     * Property key carrying `protected` or the declaring class of a private property.
      */
     private const string VISIBILITY = '/^([^:]*):(?:(protected)|(.+):private)$/';
 
@@ -79,19 +65,17 @@ final class PrintRParser
     private int $nodes = 1;
 
     /**
-     * @param list<string> $lines Lines of the dump, trailing whitespace removed.
+     * @param list<string> $lines Dump lines, trailing whitespace removed.
      */
     private function __construct(private readonly array $lines) {}
 
     /**
      * Parses a `print_r()` dump of an array, object, or enum.
      *
-     * @param string $message Log message to parse.
-     *
-     * @return PrintRNode|null Root block, with the free text preceding its header as {@see PrintRNode::$text}, or
-     * `null` when the message is not a complete dump within the bounds.
+     * @return DumpNode|null Root block, with the free text preceding its header as {@see DumpNode::$text}, or `null`
+     * for an unsupported message.
      */
-    public static function parse(string $message): PrintRNode|null
+    public static function parse(string $message): DumpNode|null
     {
         if (strlen($message) > self::MAX_BYTES) {
             return null;
@@ -111,17 +95,13 @@ final class PrintRParser
 
         return $entries === null || $parser->cursor !== count($lines)
             ? null
-            : PrintRNode::block($kind, $label, $entries, $prefix);
+            : DumpNode::block($kind, $label, $entries, $prefix);
     }
 
     /**
      * Reads the entries of the block whose `(` line is the current line, up to and including its `)` line.
      *
-     * @param int $indent Indentation of the `(` and `)` lines.
-     * @param bool $visibility Whether the keys are property names that may carry a visibility.
-     * @param int $depth Nesting level of the block, the root block being `1`.
-     *
-     * @return list<PrintREntry>|null Entries in dump order, or `null` on a structural mismatch or an exceeded bound.
+     * @return list<DumpEntry>|null Entries in dump order, or `null` on a mismatch or an exceeded bound.
      */
     private function block(int $indent, bool $visibility, int $depth): array|null
     {
@@ -162,33 +142,29 @@ final class PrintRParser
     /**
      * Builds an entry, splitting the visibility out of a property key when the block's keys may carry one.
      */
-    private static function entry(string $key, PrintRNode $value, bool $visibility): PrintREntry
+    private static function entry(string $key, DumpNode $value, bool $visibility): DumpEntry
     {
         if ($visibility && preg_match(self::VISIBILITY, $key, $matches, PREG_UNMATCHED_AS_NULL) === 1) {
             return $matches[2] === null
-                ? new PrintREntry($matches[1], $value, 'private', (string) $matches[3])
-                : new PrintREntry($matches[1], $value, 'protected');
+                ? new DumpEntry($matches[1], $value, 'private', (string) $matches[3])
+                : new DumpEntry($matches[1], $value, 'protected');
         }
 
-        return new PrintREntry($key, $value);
+        return new DumpEntry($key, $value);
     }
 
     /**
-     * Whether the keys of a block are property names to which `print_r()` appends a visibility.
-     *
-     * Array keys never carry one. A `stdClass` object declares no property, so every key is a dynamic property name
-     * kept verbatim, even one such as `status:protected`.
+     * Whether the keys of a block may carry a visibility; array and `stdClass` keys never do.
      */
-    private static function hasVisibility(PrintRKind $kind, string $label): bool
+    private static function hasVisibility(DumpKind $kind, string $label): bool
     {
-        return $kind !== PrintRKind::ARRAY && $label !== stdClass::class;
+        return $kind !== DumpKind::ARRAY && $label !== stdClass::class;
     }
 
     /**
      * Reads a block header.
      *
-     * @return array{string, PrintRKind, string}|null Free text preceding the header (right-trimmed), block kind, and
-     * class name, or `null` when the text is not a header.
+     * @return array{string, DumpKind, string}|null Prefix, kind, and class name, or `null` for a non-header text.
      */
     private static function header(string $text): array|null
     {
@@ -197,9 +173,9 @@ final class PrintRParser
         }
 
         $kind = match ($matches[3]) {
-            null => PrintRKind::ARRAY,
-            'Enum' => PrintRKind::ENUM,
-            default => PrintRKind::OBJECT,
+            null => DumpKind::ARRAY,
+            'Enum' => DumpKind::ENUM,
+            default => DumpKind::OBJECT,
         };
 
         return [rtrim((string) $matches[1]), $kind, (string) $matches[2]];
@@ -214,9 +190,9 @@ final class PrintRParser
     }
 
     /**
-     * Splits an entry line at the given indentation into its key and the first line of its value.
+     * Splits an entry line into its key and the first line of its value.
      *
-     * @return array{string, string}|null Key and value text, or `null` when the line is not an entry line.
+     * @return array{string, string}|null Key and value text, or `null` for a non-entry line.
      */
     private static function split(string $line, string $start): array|null
     {
@@ -232,20 +208,9 @@ final class PrintRParser
     }
 
     /**
-     * Reads the value of an entry whose line has just been consumed.
-     *
-     * A header followed by the recursion marker or by a `(` line at the child indentation opens a nested value; any
-     * other text is a scalar that absorbs the following lines up to the next entry or the closing line of the block.
-     *
-     * @param string $text Value text on the entry line.
-     * @param int $indent Indentation of a nested block's `(` line.
-     * @param string $close Closing line of the enclosing block.
-     * @param string $start Leading text of an entry line of the enclosing block.
-     * @param int $depth Nesting level of the enclosing block.
-     *
-     * @return PrintRNode|null Value node, or `null` when a nested block is malformed or exceeds a bound.
+     * Reads the nested block, recursion marker, or multi-line scalar of the entry whose line was just consumed.
      */
-    private function value(string $text, int $indent, string $close, string $start, int $depth): PrintRNode|null
+    private function value(string $text, int $indent, string $close, string $start, int $depth): DumpNode|null
     {
         $header = self::header($text);
 
@@ -253,7 +218,7 @@ final class PrintRParser
             if (($this->lines[$this->cursor] ?? '') === self::RECURSION) {
                 $this->cursor++;
 
-                return PrintRNode::recursion($header[2]);
+                return DumpNode::recursion($header[2]);
             }
 
             if ($this->opens($indent)) {
@@ -265,7 +230,7 @@ final class PrintRParser
 
                 $this->cursor++;
 
-                return PrintRNode::block($header[1], $header[2], $entries);
+                return DumpNode::block($header[1], $header[2], $entries);
             }
         }
 
@@ -274,6 +239,6 @@ final class PrintRParser
             $this->cursor++;
         }
 
-        return PrintRNode::scalar($text);
+        return DumpNode::scalar($text);
     }
 }

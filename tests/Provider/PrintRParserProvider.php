@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPForge\Debug\Tests\Provider;
 
-use PHPForge\Debug\Panel\Log\{PrintREntry, PrintRKind, PrintRNode};
+use PHPForge\Debug\Panel\Log\{DumpEntry, DumpKind, DumpNode};
 use PHPForge\Debug\Tests\Panel\Log\PrintRParserTest;
 use PHPForge\Debug\Tests\Support\PrintR\{PrintRChild, PrintRFixture, PrintRParent, PrintRPriority, PrintRSuit, PrintRToggle};
 use stdClass;
@@ -17,30 +17,30 @@ use function print_r;
 final class PrintRParserProvider
 {
     /**
-     * @return iterable<string, array{string, PrintRNode}>
+     * @return iterable<string, array{string, DumpNode}>
      */
     public static function dumps(): iterable
     {
-        $suit = PrintRNode::block(
-            PrintRKind::ENUM,
+        $suit = DumpNode::block(
+            DumpKind::ENUM,
             PrintRSuit::class,
             [
-                new PrintREntry('name', PrintRNode::scalar('HEARTS')),
-                new PrintREntry('value', PrintRNode::scalar('H')),
+                new DumpEntry('name', DumpNode::scalar('HEARTS')),
+                new DumpEntry('value', DumpNode::scalar('H')),
             ],
         );
 
         yield 'array keys stay verbatim' => [
             print_r(['a:b' => 'x', 'k:protected' => 'y', 'p:C:private' => 'z', '' => 'blank', 'a]b' => 'bracket'], true),
-            PrintRNode::block(
-                PrintRKind::ARRAY,
+            DumpNode::block(
+                DumpKind::ARRAY,
                 '',
                 [
-                    new PrintREntry('a:b', PrintRNode::scalar('x')),
-                    new PrintREntry('k:protected', PrintRNode::scalar('y')),
-                    new PrintREntry('p:C:private', PrintRNode::scalar('z')),
-                    new PrintREntry('', PrintRNode::scalar('blank')),
-                    new PrintREntry('a]b', PrintRNode::scalar('bracket')),
+                    new DumpEntry('a:b', DumpNode::scalar('x')),
+                    new DumpEntry('k:protected', DumpNode::scalar('y')),
+                    new DumpEntry('p:C:private', DumpNode::scalar('z')),
+                    new DumpEntry('', DumpNode::scalar('blank')),
+                    new DumpEntry('a]b', DumpNode::scalar('bracket')),
                 ],
             ),
         ];
@@ -51,54 +51,54 @@ final class PrintRParserProvider
 
                 return print_r($value, true);
             })(),
-            PrintRNode::block(
-                PrintRKind::ARRAY,
+            DumpNode::block(
+                DumpKind::ARRAY,
                 '',
                 [
-                    new PrintREntry('0', PrintRNode::scalar('1')),
-                    new PrintREntry('1', PrintRNode::recursion('')),
+                    new DumpEntry('0', DumpNode::scalar('1')),
+                    new DumpEntry('1', DumpNode::recursion('')),
                 ],
             ),
         ];
         yield 'empty root array' => [
             print_r([], true),
-            PrintRNode::block(PrintRKind::ARRAY, '', []),
+            DumpNode::block(DumpKind::ARRAY, '', []),
         ];
         yield 'empty values' => [
             print_r(['string' => '', 'null' => null, 'false' => false, 'true' => true, 'zero' => 0], true),
-            PrintRNode::block(
-                PrintRKind::ARRAY,
+            DumpNode::block(
+                DumpKind::ARRAY,
                 '',
                 [
-                    new PrintREntry('string', PrintRNode::scalar('')),
-                    new PrintREntry('null', PrintRNode::scalar('')),
-                    new PrintREntry('false', PrintRNode::scalar('')),
-                    new PrintREntry('true', PrintRNode::scalar('1')),
-                    new PrintREntry('zero', PrintRNode::scalar('0')),
+                    new DumpEntry('string', DumpNode::scalar('')),
+                    new DumpEntry('null', DumpNode::scalar('')),
+                    new DumpEntry('false', DumpNode::scalar('')),
+                    new DumpEntry('true', DumpNode::scalar('1')),
+                    new DumpEntry('zero', DumpNode::scalar('0')),
                 ],
             ),
         ];
         yield 'header text as scalar value' => [
             print_r(['cast' => 'Array', 'object' => 'App\User Object', 'enum' => 'App\Suit Enum:string', 'n' => 1], true),
-            PrintRNode::block(
-                PrintRKind::ARRAY,
+            DumpNode::block(
+                DumpKind::ARRAY,
                 '',
                 [
-                    new PrintREntry('cast', PrintRNode::scalar('Array')),
-                    new PrintREntry('object', PrintRNode::scalar('App\User Object')),
-                    new PrintREntry('enum', PrintRNode::scalar('App\Suit Enum:string')),
-                    new PrintREntry('n', PrintRNode::scalar('1')),
+                    new DumpEntry('cast', DumpNode::scalar('Array')),
+                    new DumpEntry('object', DumpNode::scalar('App\User Object')),
+                    new DumpEntry('enum', DumpNode::scalar('App\Suit Enum:string')),
+                    new DumpEntry('n', DumpNode::scalar('1')),
                 ],
             ),
         ];
         yield 'int-backed enum' => [
             print_r(PrintRPriority::HIGH, true),
-            PrintRNode::block(
-                PrintRKind::ENUM,
+            DumpNode::block(
+                DumpKind::ENUM,
                 PrintRPriority::class,
                 [
-                    new PrintREntry('name', PrintRNode::scalar('HIGH')),
-                    new PrintREntry('value', PrintRNode::scalar('1')),
+                    new DumpEntry('name', DumpNode::scalar('HIGH')),
+                    new DumpEntry('value', DumpNode::scalar('1')),
                 ],
             ),
         ];
@@ -111,33 +111,33 @@ final class PrintRParserProvider
                 ],
                 true,
             ),
-            PrintRNode::block(
-                PrintRKind::ARRAY,
+            DumpNode::block(
+                DumpKind::ARRAY,
                 '',
                 [
-                    new PrintREntry('note', PrintRNode::scalar("line one\n  [nested] => not an entry\n\nline four\n")),
-                    new PrintREntry(
+                    new DumpEntry('note', DumpNode::scalar("line one\n  [nested] => not an entry\n\nline four\n")),
+                    new DumpEntry(
                         'list',
-                        PrintRNode::block(
-                            PrintRKind::ARRAY,
+                        DumpNode::block(
+                            DumpKind::ARRAY,
                             '',
                             [
-                                new PrintREntry('first', PrintRNode::scalar("a\nb")),
-                                new PrintREntry('last', PrintRNode::scalar("c\n)")),
+                                new DumpEntry('first', DumpNode::scalar("a\nb")),
+                                new DumpEntry('last', DumpNode::scalar("c\n)")),
                             ],
                         ),
                     ),
-                    new PrintREntry('next', PrintRNode::scalar('x')),
+                    new DumpEntry('next', DumpNode::scalar('x')),
                 ],
             ),
         ];
         yield 'nested header with free text stays scalar' => [
             "Array\n(\n    [k] => note Array\n        (\n        )\n\n)\n",
-            PrintRNode::block(
-                PrintRKind::ARRAY,
+            DumpNode::block(
+                DumpKind::ARRAY,
                 '',
                 [
-                    new PrintREntry('k', PrintRNode::scalar("note Array\n        (\n        )\n")),
+                    new DumpEntry('k', DumpNode::scalar("note Array\n        (\n        )\n")),
                 ],
             ),
         ];
@@ -151,14 +151,14 @@ final class PrintRParserProvider
 
                 return print_r($object, true);
             })(),
-            PrintRNode::block(
-                PrintRKind::OBJECT,
+            DumpNode::block(
+                DumpKind::OBJECT,
                 'stdClass',
                 [
-                    new PrintREntry('a:b', PrintRNode::scalar('x')),
-                    new PrintREntry('x:private', PrintRNode::scalar('y')),
-                    new PrintREntry('a:b:protected', PrintRNode::scalar('z')),
-                    new PrintREntry('x:protectedish', PrintRNode::scalar('w')),
+                    new DumpEntry('a:b', DumpNode::scalar('x')),
+                    new DumpEntry('x:private', DumpNode::scalar('y')),
+                    new DumpEntry('a:b:protected', DumpNode::scalar('z')),
+                    new DumpEntry('x:protectedish', DumpNode::scalar('w')),
                 ],
             ),
         ];
@@ -172,17 +172,17 @@ final class PrintRParserProvider
 
                 return print_r($object, true);
             })(),
-            PrintRNode::block(
-                PrintRKind::OBJECT,
+            DumpNode::block(
+                DumpKind::OBJECT,
                 'stdClass',
                 [
-                    new PrintREntry('status:protected', PrintRNode::scalar('on')),
-                    new PrintREntry(
+                    new DumpEntry('status:protected', DumpNode::scalar('on')),
+                    new DumpEntry(
                         'inner',
-                        PrintRNode::block(
-                            PrintRKind::OBJECT,
+                        DumpNode::block(
+                            DumpKind::OBJECT,
                             'stdClass',
-                            [new PrintREntry('id:App\User:private', PrintRNode::scalar('7'))],
+                            [new DumpEntry('id:App\User:private', DumpNode::scalar('7'))],
                         ),
                     ),
                 ],
@@ -190,49 +190,49 @@ final class PrintRParserProvider
         ];
         yield 'object with visibility, inheritance, enum, and recursion' => [
             PrintRFixture::child(),
-            PrintRNode::block(
-                PrintRKind::OBJECT,
+            DumpNode::block(
+                DumpKind::OBJECT,
                 PrintRChild::class,
                 [
-                    new PrintREntry('role', PrintRNode::scalar('admin'), 'protected'),
-                    new PrintREntry('secret', PrintRNode::scalar('parent'), 'private', PrintRParent::class),
-                    new PrintREntry('empty', PrintRNode::scalar('')),
-                    new PrintREntry('flag', PrintRNode::scalar('')),
-                    new PrintREntry('name', PrintRNode::scalar('Ada')),
-                    new PrintREntry('self', PrintRNode::recursion(PrintRChild::class)),
-                    new PrintREntry('suit', $suit),
-                    new PrintREntry(
+                    new DumpEntry('role', DumpNode::scalar('admin'), 'protected'),
+                    new DumpEntry('secret', DumpNode::scalar('parent'), 'private', PrintRParent::class),
+                    new DumpEntry('empty', DumpNode::scalar('')),
+                    new DumpEntry('flag', DumpNode::scalar('')),
+                    new DumpEntry('name', DumpNode::scalar('Ada')),
+                    new DumpEntry('self', DumpNode::recursion(PrintRChild::class)),
+                    new DumpEntry('suit', $suit),
+                    new DumpEntry(
                         'tags',
-                        PrintRNode::block(
-                            PrintRKind::ARRAY,
+                        DumpNode::block(
+                            DumpKind::ARRAY,
                             '',
                             [
-                                new PrintREntry('0', PrintRNode::scalar('a')),
-                                new PrintREntry('1', PrintRNode::scalar('b')),
+                                new DumpEntry('0', DumpNode::scalar('a')),
+                                new DumpEntry('1', DumpNode::scalar('b')),
                             ],
                         ),
                     ),
-                    new PrintREntry('parent', PrintRNode::scalar(''), 'protected'),
-                    new PrintREntry('secret', PrintRNode::scalar('child'), 'private', PrintRChild::class),
+                    new DumpEntry('parent', DumpNode::scalar(''), 'protected'),
+                    new DumpEntry('secret', DumpNode::scalar('child'), 'private', PrintRChild::class),
                 ],
             ),
         ];
         yield 'prefix before the root header' => [
             'Request: ' . print_r(['id' => 7], true),
-            PrintRNode::block(PrintRKind::ARRAY, '', [new PrintREntry('id', PrintRNode::scalar('7'))], 'Request:'),
+            DumpNode::block(DumpKind::ARRAY, '', [new DumpEntry('id', DumpNode::scalar('7'))], 'Request:'),
         ];
         yield 'prefix before an object header' => [
             'Loaded user App\User Object' . "\n(\n    [id] => 7\n)\n",
-            PrintRNode::block(
-                PrintRKind::OBJECT,
+            DumpNode::block(
+                DumpKind::OBJECT,
                 'App\User',
-                [new PrintREntry('id', PrintRNode::scalar('7'))],
+                [new DumpEntry('id', DumpNode::scalar('7'))],
                 'Loaded user',
             ),
         ];
         yield 'pure enum' => [
             print_r(PrintRToggle::ON, true),
-            PrintRNode::block(PrintRKind::ENUM, PrintRToggle::class, [new PrintREntry('name', PrintRNode::scalar('ON'))]),
+            DumpNode::block(DumpKind::ENUM, PrintRToggle::class, [new DumpEntry('name', DumpNode::scalar('ON'))]),
         ];
         yield 'server request' => [
             PrintRFixture::serverRequest(),
@@ -244,7 +244,7 @@ final class PrintRParserProvider
         ];
         yield 'trailing whitespace' => [
             print_r(['id' => 7], true) . " \t\n\n",
-            PrintRNode::block(PrintRKind::ARRAY, '', [new PrintREntry('id', PrintRNode::scalar('7'))]),
+            DumpNode::block(DumpKind::ARRAY, '', [new DumpEntry('id', DumpNode::scalar('7'))]),
         ];
     }
 
@@ -278,119 +278,119 @@ final class PrintRParserProvider
     /**
      * Returns the tree of the server request dump fixture.
      */
-    private static function serverRequest(): PrintRNode
+    private static function serverRequest(): DumpNode
     {
         $request = 'HttpSoft\Message\ServerRequest';
         $uri = 'HttpSoft\Message\Uri';
         $stream = 'HttpSoft\Message\Stream';
 
-        return PrintRNode::block(
-            PrintRKind::OBJECT,
+        return DumpNode::block(
+            DumpKind::OBJECT,
             $request,
             [
-                new PrintREntry(
+                new DumpEntry(
                     'attributes',
-                    PrintRNode::block(
-                        PrintRKind::ARRAY,
+                    DumpNode::block(
+                        DumpKind::ARRAY,
                         '',
-                        [new PrintREntry('applicationStartTime', PrintRNode::scalar('1793938706.0155'))],
+                        [new DumpEntry('applicationStartTime', DumpNode::scalar('1793938706.0155'))],
                     ),
                     'private',
                     $request,
                 ),
-                new PrintREntry(
+                new DumpEntry(
                     'cookieParams',
-                    PrintRNode::block(
-                        PrintRKind::ARRAY,
+                    DumpNode::block(
+                        DumpKind::ARRAY,
                         '',
-                        [new PrintREntry('yii-debug-toolbar-theme', PrintRNode::scalar('dark'))],
+                        [new DumpEntry('yii-debug-toolbar-theme', DumpNode::scalar('dark'))],
                     ),
                     'private',
                     $request,
                 ),
-                new PrintREntry('parsedBody', PrintRNode::scalar(''), 'private', $request),
-                new PrintREntry('queryParams', PrintRNode::block(PrintRKind::ARRAY, '', []), 'private', $request),
-                new PrintREntry(
+                new DumpEntry('parsedBody', DumpNode::scalar(''), 'private', $request),
+                new DumpEntry('queryParams', DumpNode::block(DumpKind::ARRAY, '', []), 'private', $request),
+                new DumpEntry(
                     'serverParams',
-                    PrintRNode::block(
-                        PrintRKind::ARRAY,
+                    DumpNode::block(
+                        DumpKind::ARRAY,
                         '',
                         [
-                            new PrintREntry('USER', PrintRNode::scalar('www-data')),
-                            new PrintREntry('HTTP_PRIORITY', PrintRNode::scalar('u=0, i')),
-                            new PrintREntry(
+                            new DumpEntry('USER', DumpNode::scalar('www-data')),
+                            new DumpEntry('HTTP_PRIORITY', DumpNode::scalar('u=0, i')),
+                            new DumpEntry(
                                 'HTTP_ACCEPT',
-                                PrintRNode::scalar('text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
+                                DumpNode::scalar('text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
                             ),
-                            new PrintREntry(
+                            new DumpEntry(
                                 'HTTP_USER_AGENT',
-                                PrintRNode::scalar(
+                                DumpNode::scalar(
                                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0',
                                 ),
                             ),
-                            new PrintREntry('REQUEST_METHOD', PrintRNode::scalar('GET')),
-                            new PrintREntry('CONTENT_LENGTH', PrintRNode::scalar('')),
-                            new PrintREntry('REQUEST_TIME_FLOAT', PrintRNode::scalar('1793938706.0138')),
+                            new DumpEntry('REQUEST_METHOD', DumpNode::scalar('GET')),
+                            new DumpEntry('CONTENT_LENGTH', DumpNode::scalar('')),
+                            new DumpEntry('REQUEST_TIME_FLOAT', DumpNode::scalar('1793938706.0138')),
                         ],
                     ),
                     'private',
                     $request,
                 ),
-                new PrintREntry('uploadedFiles', PrintRNode::block(PrintRKind::ARRAY, '', []), 'private', $request),
-                new PrintREntry('method', PrintRNode::scalar('GET'), 'private', $request),
-                new PrintREntry('requestTarget', PrintRNode::scalar(''), 'private', $request),
-                new PrintREntry(
+                new DumpEntry('uploadedFiles', DumpNode::block(DumpKind::ARRAY, '', []), 'private', $request),
+                new DumpEntry('method', DumpNode::scalar('GET'), 'private', $request),
+                new DumpEntry('requestTarget', DumpNode::scalar(''), 'private', $request),
+                new DumpEntry(
                     'uri',
-                    PrintRNode::block(
-                        PrintRKind::OBJECT,
+                    DumpNode::block(
+                        DumpKind::OBJECT,
                         $uri,
                         [
-                            new PrintREntry('scheme', PrintRNode::scalar('http'), 'private', $uri),
-                            new PrintREntry('userInfo', PrintRNode::scalar(''), 'private', $uri),
-                            new PrintREntry('host', PrintRNode::scalar('ets-api.test'), 'private', $uri),
-                            new PrintREntry('port', PrintRNode::scalar('80'), 'private', $uri),
-                            new PrintREntry('path', PrintRNode::scalar('/'), 'private', $uri),
-                            new PrintREntry('query', PrintRNode::scalar(''), 'private', $uri),
-                            new PrintREntry('fragment', PrintRNode::scalar(''), 'private', $uri),
-                            new PrintREntry('cache', PrintRNode::scalar(''), 'private', $uri),
+                            new DumpEntry('scheme', DumpNode::scalar('http'), 'private', $uri),
+                            new DumpEntry('userInfo', DumpNode::scalar(''), 'private', $uri),
+                            new DumpEntry('host', DumpNode::scalar('ets-api.test'), 'private', $uri),
+                            new DumpEntry('port', DumpNode::scalar('80'), 'private', $uri),
+                            new DumpEntry('path', DumpNode::scalar('/'), 'private', $uri),
+                            new DumpEntry('query', DumpNode::scalar(''), 'private', $uri),
+                            new DumpEntry('fragment', DumpNode::scalar(''), 'private', $uri),
+                            new DumpEntry('cache', DumpNode::scalar(''), 'private', $uri),
                         ],
                     ),
                     'private',
                     $request,
                 ),
-                new PrintREntry(
+                new DumpEntry(
                     'headers',
-                    PrintRNode::block(
-                        PrintRKind::ARRAY,
+                    DumpNode::block(
+                        DumpKind::ARRAY,
                         '',
                         [
-                            new PrintREntry(
+                            new DumpEntry(
                                 'Host',
-                                PrintRNode::block(
-                                    PrintRKind::ARRAY,
+                                DumpNode::block(
+                                    DumpKind::ARRAY,
                                     '',
-                                    [new PrintREntry('0', PrintRNode::scalar('ets-api.test'))],
+                                    [new DumpEntry('0', DumpNode::scalar('ets-api.test'))],
                                 ),
                             ),
-                            new PrintREntry(
+                            new DumpEntry(
                                 'Content-Length',
-                                PrintRNode::block(PrintRKind::ARRAY, '', [new PrintREntry('0', PrintRNode::scalar(''))]),
+                                DumpNode::block(DumpKind::ARRAY, '', [new DumpEntry('0', DumpNode::scalar(''))]),
                             ),
                         ],
                     ),
                     'private',
                     $request,
                 ),
-                new PrintREntry('protocol', PrintRNode::scalar('1.1'), 'private', $request),
-                new PrintREntry(
+                new DumpEntry('protocol', DumpNode::scalar('1.1'), 'private', $request),
+                new DumpEntry(
                     'stream',
-                    PrintRNode::block(
-                        PrintRKind::OBJECT,
+                    DumpNode::block(
+                        DumpKind::OBJECT,
                         $stream,
                         [
-                            new PrintREntry('resource', PrintRNode::scalar('Resource id #6'), 'private', $stream),
-                            new PrintREntry('size', PrintRNode::scalar(''), 'private', $stream),
-                            new PrintREntry('seekable', PrintRNode::scalar('1'), 'private', $stream),
+                            new DumpEntry('resource', DumpNode::scalar('Resource id #6'), 'private', $stream),
+                            new DumpEntry('size', DumpNode::scalar(''), 'private', $stream),
+                            new DumpEntry('seekable', DumpNode::scalar('1'), 'private', $stream),
                         ],
                     ),
                     'private',

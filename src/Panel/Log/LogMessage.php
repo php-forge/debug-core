@@ -102,6 +102,16 @@ enum LogMessage: string
     case DUMP_RECURSION_TITLE = 'print_r() stopped here because the value contains itself';
 
     /**
+     * Tooltip of a one-byte string in a dump tree.
+     */
+    case DUMP_STRING_BYTE = '1 byte';
+
+    /**
+     * `sprintf()` template of the tooltip of a string in a dump tree, naming its length in bytes.
+     */
+    case DUMP_STRING_BYTES = '%d bytes';
+
+    /**
      * Explanation of the empty state, naming the target that feeds the panel.
      */
     case EMPTY_EXPLANATION = 'This request did not emit log messages through the debug log target.';

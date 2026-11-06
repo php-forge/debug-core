@@ -12,13 +12,12 @@ use UIAwesome\Html\Flow\{Div, Pre};
 use UIAwesome\Html\Helper\Encode;
 use UIAwesome\Html\List\{Dd, Dl, Dt, Li, Ul};
 use UIAwesome\Html\Palpable\A;
-use UIAwesome\Html\Phrasing\{Code, Span};
+use UIAwesome\Html\Phrasing\Span;
 
 use function array_map;
 use function count;
 use function implode;
 use function intdiv;
-use function is_array;
 use function sprintf;
 use function str_starts_with;
 use function strpbrk;
@@ -37,7 +36,7 @@ final class LogCellRenderer
      */
     private const string EXPORT_CLASS = 'yii-debug-php-dump yii-debug-log-export';
     /**
-     * @var array<int, string> Maps the four severity levels surfaced in the grid to the row variant CSS modifier.
+     * @var array<int, string> Maps the severity levels highlighted in the grid to the row variant CSS modifier.
      */
     private const array LEVEL_VARIANTS = [
         LogLevel::ERROR => 'danger',
@@ -45,8 +44,7 @@ final class LogCellRenderer
         LogLevel::INFO => 'info',
     ];
     /**
-     * Category prefix of the DB command log entries whose message is a raw SQL statement
-     * (the DB collector category defaults).
+     * Category prefix of the DB command log entries whose message is a raw SQL statement.
      */
     private const string SQL_CATEGORY_PREFIX = 'yii\db\Command::';
     /**
@@ -75,8 +73,7 @@ final class LogCellRenderer
     }
 
     /**
-     * Renders the category as the shared {@see Fqcn::renderLabel()} two-tone label: muted namespace prefix plus a
-     * bold `Class::method` pair, with the full category preserved in the `title` attribute.
+     * Renders the category as the shared {@see Fqcn::renderLabel()} two-tone label.
      */
     public static function renderCategoryCell(LogRow $row): string
     {
@@ -97,18 +94,9 @@ final class LogCellRenderer
     /**
      * Renders the message cell, followed by the optional context disclosure and the optional trace list.
      *
-     * The row holds the message as a display string (already exported when the source was non-string), so the renderer
-     * escapes it once — except for DB command entries and for any message {@see SqlHighlighter::isStatement()} reads
-     * as raw SQL, which render through {@see SqlHighlighter::highlight()} with the same token spans as the db panel
-     * queries grid. A message {@see PrintRParser::parse()} reads as a `print_r()` dump renders as the collapsible
-     * {@see PrintRTreeRenderer} tree; a multi-line message {@see PhpExportDetector::detect()} reads as a `var_export()`
-     * value renders through {@see PhpHighlighter::highlightCode()} like the Request panel dumps; any other multi-line
-     * message renders in a `<pre class="yii-debug-log-text">` that preserves its line breaks and indentation, and a
-     * single-line message as escaped text. Long SQL, export, and text messages collapse behind the {@see CellMore}
-     * clamp; the tree collapses on its own. A non-empty context renders as a collapsed {@see Disclosure} holding a
-     * `<dl>`: scalar values inline in `<code>`, arrays as a `<pre>` block.
+     * SQL renders highlighted, a `print_r()` or `var_export()` dump as a {@see DumpTreeRenderer} tree, and any other
+     * message as escaped text; the message is escaped once.
      *
-     * @param LogRow $row Typed log record.
      * @param Closure(array<string, mixed>): string $traceLine Renders one backtrace frame as a link line.
      */
     public static function renderMessageCell(LogRow $row, Closure $traceLine): string
@@ -116,11 +104,11 @@ final class LogCellRenderer
         $isSql = str_starts_with($row->category, self::SQL_CATEGORY_PREFIX)
             || SqlHighlighter::isStatement($row->message);
 
-        $tree = $isSql ? null : PrintRParser::parse($row->message);
+        $tree = $isSql ? null : self::parseTree($row->message);
 
         $body = $tree === null
             ? CellMore::clamp(self::renderMessageText($row->message, $isSql), $row->message)
-            : PrintRTreeRenderer::render($tree);
+            : DumpTreeRenderer::render($tree);
 
         if ($row->context !== []) {
             $body .= self::renderContext($row->context);
@@ -150,8 +138,6 @@ final class LogCellRenderer
 
     /**
      * Renders the time-since-previous cell with the prev/next anchor navigation buttons.
-     *
-     * Disabled buttons replace the anchors when the row is the first or the last of the request.
      */
     public static function renderTimeSincePreviousCell(LogRow $row): string
     {
@@ -192,22 +178,39 @@ final class LogCellRenderer
     }
 
     /**
-     * Renders the context disclosure: a summary counting the entries over a `<dl>` of key/value pairs.
+     * Parses a multi-line message as a `print_r()` dump, then as a PHP value export, or returns `null`.
+     */
+    private static function parseTree(string $message): DumpNode|null
+    {
+        if (strpbrk($message, "\r\n") === false) {
+            return null;
+        }
+
+        $tree = PrintRParser::parse($message);
+
+        if ($tree !== null) {
+            return $tree;
+        }
+
+        return PhpExportParser::parse($message);
+    }
+
+    /**
+     * Renders the context disclosure: a `<dl>` of keys and their {@see DumpTreeRenderer} values, or a `<pre>` dump for
+     * an array over the {@see DumpNode::fromValue()} bounds.
      *
      * @param non-empty-array<array-key, mixed> $context Normalized context of the row.
-     *
-     * @return string Collapsed disclosure markup.
      */
     private static function renderContext(array $context): string
     {
         $items = [];
 
         foreach ($context as $key => $value) {
+            $tree = DumpNode::fromValue($value);
+
             $items[] = Dt::tag()->content((string) $key);
             $items[] = Dd::tag()->html(
-                is_array($value)
-                    ? Pre::tag()->content(Dump::asString($value))
-                    : Code::tag()->content(Dump::asString($value)),
+                $tree === null ? Pre::tag()->content(Dump::asString($value)) : DumpTreeRenderer::render($tree),
             );
         }
 
@@ -221,19 +224,8 @@ final class LogCellRenderer
     }
 
     /**
-     * Renders the message body: highlighted SQL, a highlighted PHP value export, a `<pre>` block preserving the layout of
-     * a multi-line message through {@see Text::preserveLineBreaks()}, or the escaped single-line text.
-     *
-     * A message is multi-line when it holds a line feed or a carriage return. The export renders in the short array
-     * syntax {@see PhpExportDetector::detect()} returns, inside the Request panel dump wrapper. Its line breaks, `\r\n`
-     * and a lone `\r` included, are written as `&#10;` through {@see Text::preserveHtmlLineBreaks()} for the same reason
-     * as the text block: the enclosing block builders would otherwise collapse the blank lines of a multi-line string
-     * value.
-     *
-     * @param string $message Log message.
-     * @param bool $isSql Whether the message is a SQL statement.
-     *
-     * @return string Unclamped message markup.
+     * Renders the unclamped message body when no dump tree applies: highlighted SQL or PHP export, a `<pre>` block, or
+     * escaped text.
      */
     private static function renderMessageText(string $message, bool $isSql): string
     {
@@ -264,8 +256,7 @@ final class LogCellRenderer
     }
 
     /**
-     * Renders one nav arrow as either a disabled `<span>` when `$targetId` is `null`, or an `<a>` linking to
-     * `#log-{targetId}` otherwise.
+     * Renders one nav arrow as an `<a>` to `#log-{targetId}`, or a disabled `<span>` when `$targetId` is `null`.
      */
     private static function renderNavButton(string $glyph, int|null $targetId): A|Span
     {

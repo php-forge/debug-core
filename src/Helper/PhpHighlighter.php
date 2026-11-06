@@ -36,12 +36,6 @@ final class PhpHighlighter
      *
      * The `<pre>` wrapper scrolls horizontally, so it carries `tabindex="0"` to stay reachable by keyboard.
      *
-     * Usage example:
-     * ```php
-     * $html = PhpHighlighter::highlightCode("array (\n  'id' => 7,\n)");
-     * // '<pre tabindex="0"><code style="color: #000000"><span style="color: #007700">array (' . "\n" . '  </span>...'
-     * ```
-     *
      * @param string $code PHP source of an expression, without the opening tag.
      *
      * @return string Highlighted markup in a focusable `<pre>`, without the opening tag PHP needs to recognize the

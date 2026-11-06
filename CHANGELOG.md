@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.1.2 Under development
 
 - feat(log): render multi-line log messages with preserved whitespace, `print_r()` dumps as a tree, and `var_export()` values highlighted.
+- feat(log): render `var_export()` values and PSR-3 context as typed dump trees; rename the `PrintR*` tree model and renderer to `Dump*`.
 
 ## 0.1.1 October 28, 2026
 
