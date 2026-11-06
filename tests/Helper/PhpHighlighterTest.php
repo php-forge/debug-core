@@ -5,16 +5,30 @@ declare(strict_types=1);
 namespace PHPForge\Debug\Tests\Helper;
 
 use PHPForge\Debug\Helper\PhpHighlighter;
-use PHPUnit\Framework\Attributes\Group;
+use PHPForge\Debug\Tests\Provider\PhpHighlighterProvider;
+use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for {@see PhpHighlighter} covering the opening tag removal and the escaping of captured payloads.
+ * Unit tests for {@see PhpHighlighter} covering the opening tag removal and the escaping of captured payloads and of
+ * PHP source text.
+ *
+ * {@see PhpHighlighterProvider} for test case data providers.
  */
 #[Group('helpers')]
 #[Group('php-highlighter')]
 final class PhpHighlighterTest extends TestCase
 {
+    #[DataProviderExternal(PhpHighlighterProvider::class, 'code')]
+    public function testHighlightCodeRendersSourceWithoutTheOpeningTag(string $code, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            PhpHighlighter::highlightCode($code),
+            'Highlighted source markup must match exactly.',
+        );
+    }
+
     public function testHighlightEscapesMarkupCarriedByTheCapturedValue(): void
     {
         $html = PhpHighlighter::highlight("'quoted' <script>alert(1)</script>");

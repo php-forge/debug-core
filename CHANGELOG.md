@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.1.2 Under development
 
+- feat(log): render multi-line log messages with preserved whitespace, `print_r()` dumps as a tree, and `var_export()` values highlighted.
+
 ## 0.1.1 October 28, 2026
 
 - fix(event): skip `InstrumentationGuard` trace frames on Windows by joining the skip path with `DIRECTORY_SEPARATOR`.

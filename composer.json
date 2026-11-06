@@ -23,6 +23,7 @@
         "ext-ctype": "*",
         "ext-intl": "*",
         "ext-mbstring": "*",
+        "ext-tokenizer": "*",
         "ui-awesome/html": "^0.6",
         "ui-awesome/html-core-component": "^0.4",
         "ui-awesome/html-helper": "^0.7",

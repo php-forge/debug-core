@@ -3471,6 +3471,138 @@
     }
   }
 
+  /**
+   * Multi-line log message: the text keeps its line breaks and indentation
+   * but reads like the single-line messages around it.
+   */
+  .yii-debug-log-text {
+    margin: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    line-height: 1.6;
+    font-variant-ligatures: none;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /**
+   * print_r() dump tree: an open root block over collapsed nested blocks,
+   * sharing the tokens of the queue payload tree. A highlighted
+   * var_export() message shares the box.
+   */
+  .yii-debug-log-dump,
+  .yii-debug-log-export pre {
+    padding: var(--yii-debug-space-2) var(--yii-debug-space-3);
+    border-radius: var(--yii-debug-radius-sm);
+    background: color-mix(
+      in srgb,
+      var(--yii-debug-panel-text),
+      transparent 96%
+    );
+    font-family: var(--yii-debug-font-mono);
+    font-size: var(--yii-debug-fs-xs);
+    line-height: 1.6;
+    font-variant-ligatures: none;
+  }
+
+  .yii-debug-log-dump-summary,
+  .yii-debug-log-dump-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px var(--yii-debug-space-2);
+    padding-left: calc(1ch + var(--yii-debug-space-2));
+  }
+
+  /* The marker sits in the padding so it never wraps apart from the label. */
+  .yii-debug-log-dump-summary {
+    position: relative;
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::before {
+      position: absolute;
+      left: 0;
+      content: "\25B8";
+      color: var(--yii-debug-panel-muted);
+    }
+  }
+
+  :is(.yii-debug-log-dump, .yii-debug-log-dump-node)[open]
+    > .yii-debug-log-dump-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .yii-debug-log-dump-entries {
+    margin-left: 0.5ch;
+    padding-left: calc(0.5ch + var(--yii-debug-space-2));
+    border-left: 1px dashed
+      color-mix(in srgb, var(--yii-debug-panel-text), transparent 80%);
+  }
+
+  .yii-debug-log-dump-key {
+    font-weight: 700;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+
+    &::after {
+      content: ":";
+      color: var(--yii-debug-panel-muted);
+    }
+  }
+
+  .yii-debug-log-dump-value {
+    flex: 1 1 16ch;
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .yii-debug-log-dump-kind,
+  .yii-debug-log-dump-visibility,
+  .yii-debug-log-dump-recursion {
+    padding: 0 6px;
+    border-radius: 3px;
+    background: color-mix(
+      in srgb,
+      var(--yii-debug-panel-text),
+      transparent 92%
+    );
+    letter-spacing: 0.05em;
+  }
+
+  .yii-debug-log-dump-kind,
+  .yii-debug-log-dump-recursion {
+    text-transform: uppercase;
+  }
+
+  .yii-debug-log-dump-kind,
+  .yii-debug-log-dump-visibility,
+  .yii-debug-log-dump-count,
+  .yii-debug-log-dump-prefix,
+  .yii-debug-log-dump-empty {
+    color: var(--yii-debug-panel-muted);
+  }
+
+  .yii-debug-log-dump-visibility,
+  .yii-debug-log-dump-empty {
+    font-style: italic;
+    cursor: help;
+  }
+
+  .yii-debug-log-dump-recursion {
+    background: color-mix(in srgb, var(--yii-debug-warning), transparent 86%);
+    color: var(--yii-debug-warning);
+    cursor: help;
+  }
+
   /* Inline helper utilities. */
   .yii-debug-muted {
     color: var(--yii-debug-panel-muted);

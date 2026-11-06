@@ -37,6 +37,71 @@ enum LogMessage: string
     case DELTA = 'Delta';
 
     /**
+     * Marker of an empty scalar in a `print_r()` dump tree.
+     */
+    case DUMP_EMPTY = 'empty';
+
+    /**
+     * Tooltip of the empty marker, explaining why the dump cannot name the original value.
+     */
+    case DUMP_EMPTY_TITLE = 'print_r() prints an empty string, null, and false the same way';
+
+    /**
+     * `sprintf()` template of the entry count of a dump block holding zero or several entries.
+     */
+    case DUMP_ENTRIES = '%d entries';
+
+    /**
+     * Entry count of a dump block holding one entry.
+     */
+    case DUMP_ENTRY = '1 entry';
+
+    /**
+     * Kind chip of an array in a dump tree.
+     */
+    case DUMP_KIND_ARRAY = 'array';
+
+    /**
+     * Kind chip of an enum case in a dump tree.
+     */
+    case DUMP_KIND_ENUM = 'enum';
+
+    /**
+     * Kind chip of an object in a dump tree.
+     */
+    case DUMP_KIND_OBJECT = 'object';
+
+    /**
+     * Visibility chip of a private property in a dump tree.
+     */
+    case DUMP_PRIVATE = 'private';
+
+    /**
+     * `sprintf()` template of the tooltip of a private property chip, naming the declaring class.
+     */
+    case DUMP_PRIVATE_TITLE = 'Private property declared in %s';
+
+    /**
+     * Visibility chip of a protected property in a dump tree.
+     */
+    case DUMP_PROTECTED = 'protected';
+
+    /**
+     * Tooltip of a protected property chip, explaining why no declaring class is shown.
+     */
+    case DUMP_PROTECTED_TITLE = 'Protected property; print_r() does not name the declaring class';
+
+    /**
+     * Marker of a value that contains itself in a dump tree.
+     */
+    case DUMP_RECURSION = 'recursion';
+
+    /**
+     * Tooltip of the recursion marker.
+     */
+    case DUMP_RECURSION_TITLE = 'print_r() stopped here because the value contains itself';
+
+    /**
      * Explanation of the empty state, naming the target that feeds the panel.
      */
     case EMPTY_EXPLANATION = 'This request did not emit log messages through the debug log target.';

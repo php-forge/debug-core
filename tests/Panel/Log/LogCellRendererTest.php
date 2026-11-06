@@ -7,13 +7,16 @@ namespace PHPForge\Debug\Tests\Panel\Log;
 use PHPForge\Debug\Helper\Coerce;
 use PHPForge\Debug\Helper\LogLevel;
 use PHPForge\Debug\Panel\Log\{LogCellRenderer, LogRow};
-use PHPUnit\Framework\Attributes\Group;
+use PHPForge\Debug\Tests\Provider\LogCellRendererProvider;
+use PHPUnit\Framework\Attributes\{DataProviderExternal, Group};
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for {@see LogCellRenderer} covering the typed cell renderers used by the logs grid (time, level, two-tone
  * category label, time-since-previous navigation, message + context + trace, SQL highlighting for DB command entries,
- * row options).
+ * multi-line text, `print_r()` dump trees, highlighted `var_export()` values, row options).
+ *
+ * {@see LogCellRendererProvider} for test case data providers.
  */
 #[Group('panel')]
 #[Group('log')]
@@ -234,6 +237,18 @@ final class LogCellRendererTest extends TestCase
         );
     }
 
+    #[DataProviderExternal(LogCellRendererProvider::class, 'compileWarnings')]
+    public function testRenderMessageCellKeepsCompileWarningOutOfTheOutput(string $message, string $expected): void
+    {
+        $this->expectOutputString('');
+
+        self::assertSame(
+            $expected,
+            LogCellRenderer::renderMessageCell(self::makeRow(message: $message), self::traceLine()),
+            'Export markup must match exactly.',
+        );
+    }
+
     public function testRenderMessageCellKeepsPlainEscapingForNonDbCategory(): void
     {
         $html = LogCellRenderer::renderMessageCell(
@@ -256,6 +271,50 @@ final class LogCellRendererTest extends TestCase
             HTML,
             LogCellRenderer::renderMessageCell(self::makeRow(message: 'short message'), self::traceLine()),
             'Short message must render exactly without the clamp.',
+        );
+    }
+
+    public function testRenderMessageCellRendersContextAndTraceAfterDumpTree(): void
+    {
+        $html = LogCellRenderer::renderMessageCell(
+            self::makeRow(
+                message: "Request: Array\n(\n    [id] => 7\n)\n",
+                trace: [['file' => '/app/User.php', 'line' => 42]],
+                context: ['user' => 7],
+            ),
+            self::traceLine(),
+        );
+
+        self::assertSame(
+            <<<'HTML'
+            <details class="yii-debug-log-dump" open>
+            <summary class="yii-debug-log-dump-summary">
+            <span class="yii-debug-log-dump-prefix">Request:</span><span class="yii-debug-log-dump-kind">array</span><span class="yii-debug-log-dump-count">1 entry</span>
+            </summary><div class="yii-debug-log-dump-entries">
+            <div class="yii-debug-log-dump-row">
+            <span class="yii-debug-log-dump-key">id</span><span class="yii-debug-log-dump-value">7</span>
+            </div>
+            </div>
+            </details><details class="yii-debug-disclosure">
+            <summary class="yii-debug-disclosure-summary">
+            <span class="yii-debug-disclosure-title">Context · 1</span><span class="yii-debug-disclosure-hint" aria-hidden="true"><span data-yii-debug-hint="collapsed">click to expand</span><span data-yii-debug-hint="expanded">click to collapse</span></span>
+            </summary><div class="yii-debug-disclosure-body">
+            <dl class="yii-debug-log-context">
+            <dt>
+            user
+            </dt><dd>
+            <code>7</code>
+            </dd>
+            </dl>
+            </div>
+            </details><ul class="yii-debug-trace">
+            <li>
+            /app/User.php:
+            </li>
+            </ul>
+            HTML,
+            $html,
+            'Order: tree, context disclosure, trace list.',
         );
     }
 
@@ -309,6 +368,16 @@ final class LogCellRendererTest extends TestCase
             HTML,
             $html,
             'Context must render once-escaped between the message and the trace list.',
+        );
+    }
+
+    #[DataProviderExternal(LogCellRendererProvider::class, 'messageBodies')]
+    public function testRenderMessageCellRendersMessageBody(string $message, string $category, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            LogCellRenderer::renderMessageCell(self::makeRow(message: $message, category: $category), self::traceLine()),
+            'Message body markup must match exactly.',
         );
     }
 
