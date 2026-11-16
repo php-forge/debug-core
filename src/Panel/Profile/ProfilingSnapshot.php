@@ -23,6 +23,8 @@ use function usort;
 final readonly class ProfilingSnapshot implements PanelSnapshot
 {
     /**
+     * Creates a profiling snapshot from request metrics, blocks, and memory samples.
+     *
      * @param list<ProfileRow> $entries
      * @param list<MemorySample> $samples
      */

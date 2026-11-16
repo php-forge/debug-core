@@ -13,6 +13,9 @@ use function date;
  */
 final readonly class HistoryRow
 {
+    /**
+     * Creates a captured-request row for the History grid.
+     */
     public function __construct(
         /**
          * Request tag (hex hash); empty when not captured.

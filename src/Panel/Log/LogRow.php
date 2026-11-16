@@ -16,6 +16,9 @@ use function is_array;
  */
 final readonly class LogRow implements PanelRow
 {
+    /**
+     * Creates a log row from its captured logger data.
+     */
     public function __construct(
         /**
          * One-based row id assigned in capture order.
@@ -26,7 +29,7 @@ final readonly class LogRow implements PanelRow
          */
         public string $message,
         /**
-         * Logger level constant ({@see \\PHPForge\\Debug\\Helper\\LogLevel}).
+         * Logger level constant ({@see \PHPForge\Debug\Helper\LogLevel}).
          */
         public int $level,
         /**

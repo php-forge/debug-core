@@ -9,6 +9,9 @@ namespace PHPForge\Debug\PhpInfo;
  */
 final readonly class PhpInfoCompactModule
 {
+    /**
+     * Creates a compact module for the phpinfo overview.
+     */
     public function __construct(
         /**
          * Module title reported by {@see phpinfo()}.

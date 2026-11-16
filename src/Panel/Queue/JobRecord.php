@@ -44,6 +44,9 @@ final readonly class JobRecord implements PanelRow
      */
     public const string TYPE_PUSH = 'push';
 
+    /**
+     * Creates a queue lifecycle event record.
+     */
     public function __construct(
         /**
          * Lifecycle phase: `'push'` (job enqueued), `'exec'` (job finished successfully) or `'error'` (job threw).

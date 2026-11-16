@@ -37,6 +37,8 @@ final readonly class DbSummary
     public array $types;
 
     /**
+     * Creates request-wide database metrics.
+     *
      * @param list<QueryRow> $rows Captured query rows the metrics are computed from.
      */
     public function __construct(array $rows)

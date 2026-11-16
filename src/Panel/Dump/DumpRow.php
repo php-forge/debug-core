@@ -13,13 +13,16 @@ use PHPForge\Debug\Storage\{PanelRow, Payload};
  */
 final readonly class DumpRow implements PanelRow
 {
+    /**
+     * Creates a dump row from its captured log data.
+     */
     public function __construct(
         /**
          * Highlighted dump payload as produced by the Dump collector `varDump()` pipeline.
          */
         public string $message,
         /**
-         * Logger level constant ({@see \\PHPForge\\Debug\\Helper\\LogLevel}).
+         * Logger level constant ({@see \PHPForge\Debug\Helper\LogLevel}).
          */
         public int $level,
         /**

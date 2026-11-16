@@ -18,6 +18,8 @@ final readonly class InstrumentationGuard
     private Closure|null $failureHandler;
 
     /**
+     * Creates a guard around an optional diagnostic failure observer.
+     *
      * @param (callable(Throwable): void)|null $failureHandler Optional observer for suppressed instrumentation errors.
      */
     public function __construct(callable|null $failureHandler = null)

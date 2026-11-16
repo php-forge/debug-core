@@ -14,6 +14,9 @@ use function trim;
  */
 final readonly class SidebarView
 {
+    /**
+     * Creates the debugger sidebar view.
+     */
     public function __construct(
         /**
          * Snapshot card view-model; `null` when the manifest is empty so the card section is skipped entirely.

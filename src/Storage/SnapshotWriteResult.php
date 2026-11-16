@@ -10,6 +10,8 @@ namespace PHPForge\Debug\Storage;
 final readonly class SnapshotWriteResult
 {
     /**
+     * Creates a snapshot write result with the committed manifest and evictions.
+     *
      * @param array<string, RequestSummary> $entries Committed manifest entries, newest first.
      * @param list<RequestSummary> $removed Entries evicted from the manifest.
      */

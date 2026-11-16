@@ -15,6 +15,8 @@ use function is_array;
 final readonly class MailSnapshot implements PanelSnapshot
 {
     /**
+     * Creates a mail snapshot from captured messages.
+     *
      * @param list<MailEntry> $entries Captured messages in send order.
      */
     public function __construct(private array $entries) {}

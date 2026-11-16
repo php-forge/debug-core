@@ -15,6 +15,8 @@ use function array_map;
 final readonly class DbSnapshot implements PanelSnapshot
 {
     /**
+     * Creates a database snapshot from captured query rows.
+     *
      * @param list<QueryRow> $entries
      */
     public function __construct(private array $entries) {}

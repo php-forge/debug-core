@@ -9,6 +9,9 @@ namespace PHPForge\Debug\Panel\Request;
  */
 final readonly class RequestSection
 {
+    /**
+     * Creates a name/value section for the Request panel.
+     */
     public function __construct(
         /**
          * Section heading shown at the top of the rendered table.

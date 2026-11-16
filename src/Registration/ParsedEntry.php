@@ -14,6 +14,8 @@ namespace PHPForge\Debug\Registration;
 final readonly class ParsedEntry
 {
     /**
+     * Creates a parsed collector or panel configuration entry.
+     *
      * @param string $class Class name or container identifier the host resolves.
      * @param array<array-key, mixed> $options Keys the entry declares beside `class`, in declaration order.
      */

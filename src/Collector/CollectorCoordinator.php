@@ -103,7 +103,9 @@ final class CollectorCoordinator
     }
 
     /**
-     * @return array<string, CollectorInterface> Registered collectors for host-local instrumentation hooks.
+     * Returns the collectors registered for host-local instrumentation hooks.
+     *
+     * @return array<string, CollectorInterface> Registered collectors indexed by ID.
      */
     public function collectors(): array
     {

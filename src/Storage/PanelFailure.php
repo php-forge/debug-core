@@ -22,6 +22,8 @@ final readonly class PanelFailure implements JsonSerializable
     public const string HYDRATE = 'hydrate';
 
     /**
+     * Creates a panel failure record.
+     *
      * @param 'capture'|'hydrate' $stage Lifecycle stage the panel failed in.
      * @param ExceptionSnapshot $exception Captured panel exception.
      */

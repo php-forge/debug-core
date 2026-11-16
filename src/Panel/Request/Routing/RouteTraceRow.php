@@ -10,6 +10,8 @@ namespace PHPForge\Debug\Panel\Request\Routing;
 final readonly class RouteTraceRow
 {
     /**
+     * Creates a row for an inspected routing rule.
+     *
      * @param string $rule Routing rule inspected.
      * @param string $parent Parent rule, if any.
      * @param bool $matched Whether this rule matched the current request.

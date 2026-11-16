@@ -12,7 +12,10 @@ namespace PHPForge\Debug\Panel\Log;
 final readonly class DumpEntry
 {
     /**
+     * Creates a dump-tree entry with its key, value, and visibility.
+     *
      * @param string $key Array key or property name.
+     * @param DumpNode $value Value associated with the key.
      * @param string $visibility `protected`, `private`, or `''` for a public property or an array key.
      * @param string $declaringClass Class declaring a private property; `''` otherwise.
      */

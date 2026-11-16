@@ -16,6 +16,8 @@ final readonly class DebugSnapshot implements JsonSerializable
     public const int VERSION = 4;
 
     /**
+     * Creates a versioned envelope for a captured request.
+     *
      * @param RequestSummary $summary Captured request metadata.
      * @param array<string, array<string, mixed>> $panels Serialized panel payloads indexed by panel ID.
      * @param array<string, PanelFailure> $failures Panel failures indexed by panel ID.

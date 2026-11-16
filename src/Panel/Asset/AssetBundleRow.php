@@ -16,6 +16,9 @@ use function reset;
  */
 final readonly class AssetBundleRow implements PanelRow
 {
+    /**
+     * Creates an asset-bundle row from its captured metadata.
+     */
     public function __construct(
         /**
          * Bundle class name as registered on the asset manager.

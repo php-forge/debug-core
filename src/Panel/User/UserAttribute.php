@@ -26,6 +26,9 @@ final readonly class UserAttribute
      */
     public const string KIND_TIMESTAMP = 'timestamp';
 
+    /**
+     * Creates a user-identity attribute row.
+     */
     public function __construct(
         /**
          * Raw attribute key (for example, `username`, `created_at`, `auth_key`).
@@ -37,7 +40,7 @@ final readonly class UserAttribute
          */
         public string $label,
         /**
-         * Display string with surrounding {@see \\PHPForge\\Debug\\Helper\\Dump} quotes already stripped, or `''` when the raw
+         * Display string with surrounding {@see \PHPForge\Debug\Helper\Dump} quotes already stripped, or `''` when the raw
          * value was `null` or empty.
          */
         public string $displayValue,

@@ -29,6 +29,8 @@ final readonly class PanelOverride
     public const array KEYS = ['enabled', 'icon', 'position', 'title'];
 
     /**
+     * Creates panel metadata overrides from the supplied values.
+     *
      * @param string|null $title Display title replacing the provider default, or `null` to keep it.
      * @param string|null $icon Icon key replacing the provider default, or `null` to keep it.
      * @param bool|null $enabled `false` to remove the panel from the host, or `null` to keep it registered.

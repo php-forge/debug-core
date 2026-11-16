@@ -14,7 +14,9 @@ use function array_map;
 final readonly class ViteManifest
 {
     /**
-     * @param list<ViteChunk> $chunks
+     * Creates a Vite snapshot from bridge settings and build chunks.
+     *
+     * @param list<ViteChunk> $chunks Build chunks in the manifest.
      */
     public function __construct(
         /**

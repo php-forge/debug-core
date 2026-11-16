@@ -15,6 +15,8 @@ use function is_array;
 final readonly class QueueSnapshot implements PanelSnapshot
 {
     /**
+     * Creates a queue snapshot from captured job events.
+     *
      * @param list<JobRecord> $entries
      */
     public function __construct(private array $entries) {}

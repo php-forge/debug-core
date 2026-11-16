@@ -9,6 +9,9 @@ namespace PHPForge\Debug\Panel\Request;
  */
 final readonly class RequestView
 {
+    /**
+     * Creates the composed Request panel view.
+     */
     public function __construct(
         /**
          * Hero header view-model.

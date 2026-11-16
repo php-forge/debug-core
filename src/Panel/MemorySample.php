@@ -9,6 +9,9 @@ namespace PHPForge\Debug\Panel;
  */
 final readonly class MemorySample
 {
+    /**
+     * Creates a timestamped memory sample.
+     */
     public function __construct(
         /**
          * Sample timestamp in milliseconds since the Unix epoch.

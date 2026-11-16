@@ -10,6 +10,8 @@ namespace PHPForge\Debug\Storage;
 final readonly class ManifestReadResult
 {
     /**
+     * Creates a manifest read result with an optional diagnostic.
+     *
      * @param array<string, RequestSummary> $entries Newest entries first, or an empty list after a failed read.
      * @param StorageException|null $error Filesystem, recovery, decoding, or hydration failure.
      */

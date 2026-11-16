@@ -48,3 +48,16 @@ vendor
 
 # windows thumbnail cache (if present)
 Thumbs.db
+
+# Package skill discovery; keep other local client state private.
+!/.agents/
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/php-forge-debug-core
+!/.claude/
+/.claude/*
+!/.claude/skills/
+/.claude/skills/*
+!/.claude/skills/php-forge-debug-core
+/internal/

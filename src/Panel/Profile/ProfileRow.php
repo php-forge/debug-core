@@ -15,6 +15,9 @@ use function max;
  */
 final readonly class ProfileRow implements PanelRow
 {
+    /**
+     * Creates a profile row from captured timing data.
+     */
     public function __construct(
         /**
          * Capture timestamp in milliseconds since the Unix epoch.

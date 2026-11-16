@@ -44,6 +44,8 @@ final class CurrentRouteView
     private array $trace = [];
 
     /**
+     * Creates current-route diagnostics for the supplied route.
+     *
      * @param string $route Route the request resolved to, as the application declares it.
      */
     public function __construct(

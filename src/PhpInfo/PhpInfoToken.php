@@ -10,6 +10,9 @@ namespace PHPForge\Debug\PhpInfo;
  */
 final readonly class PhpInfoToken
 {
+    /**
+     * Creates a token for a phpinfo overview tile.
+     */
     public function __construct(
         /**
          * Display text shown inside the `<code>` token (for path lists this is the basename only).
