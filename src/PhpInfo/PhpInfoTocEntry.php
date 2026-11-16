@@ -9,6 +9,9 @@ namespace PHPForge\Debug\PhpInfo;
  */
 final readonly class PhpInfoTocEntry
 {
+    /**
+     * Creates a phpinfo sidebar table-of-contents entry.
+     */
     public function __construct(
         /**
          * Display title ('Overview', 'apcu', 'Core', ...).

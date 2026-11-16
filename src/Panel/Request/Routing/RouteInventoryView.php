@@ -29,6 +29,8 @@ final class RouteInventoryView
     private string $source = 'Current application configuration';
 
     /**
+     * Creates a route inventory with its provenance.
+     *
      * @param list<RouteDefinition> $routes Route definitions the application declares.
      */
     public function __construct(

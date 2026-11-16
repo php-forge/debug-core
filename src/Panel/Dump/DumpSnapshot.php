@@ -16,6 +16,8 @@ use function array_map;
 final readonly class DumpSnapshot implements PanelSnapshot
 {
     /**
+     * Creates a dump snapshot from captured rows.
+     *
      * @param list<DumpRow> $entries
      */
     public function __construct(private array $entries) {}

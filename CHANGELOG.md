@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.1.3 Under development
 
+- docs(skills): add the package skill and AI guide; add `README.md` Security and Built with AI sections and Scorecard badge.
+
 ## 0.1.2 November 6, 2026
 
 - feat(log): render multi-line log messages with preserved whitespace, `print_r()` dumps as a tree, and `var_export()` values highlighted.

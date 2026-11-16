@@ -11,6 +11,9 @@ use PHPForge\Debug\Helper\Coerce;
  */
 final readonly class ActionRouteRow
 {
+    /**
+     * Creates an Action Routes table row.
+     */
     public function __construct(
         /**
          * Action FQCN used as the table key (for example, `app\controllers\SiteController::actionIndex`).

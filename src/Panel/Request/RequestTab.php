@@ -9,6 +9,9 @@ namespace PHPForge\Debug\Panel\Request;
  */
 final readonly class RequestTab
 {
+    /**
+     * Creates a tab for the Request panel.
+     */
     public function __construct(
         /**
          * Navigation label shown in the tab strip (`'Parameters'`, `'Headers'`, `'Session'`, `'Server'`).

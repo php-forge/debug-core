@@ -9,6 +9,9 @@ namespace PHPForge\Debug\View\History;
  */
 final readonly class HistoryStatusBucket
 {
+    /**
+     * Creates a status-code bucket for the History summary.
+     */
     public function __construct(
         /**
          * Display label ('2xx' / '3xx' / '4xx' / '5xx').

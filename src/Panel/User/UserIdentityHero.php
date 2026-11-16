@@ -9,6 +9,9 @@ namespace PHPForge\Debug\Panel\User;
  */
 final readonly class UserIdentityHero
 {
+    /**
+     * Creates the user-identity hero card data.
+     */
     public function __construct(
         /**
          * Display username; falls back to `Unknown user` when the identity has no `username` or `name`.

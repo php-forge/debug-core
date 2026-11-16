@@ -17,6 +17,9 @@ use function str_replace;
  */
 final readonly class TimelineSpanRow
 {
+    /**
+     * Creates a span row for the Timeline chart.
+     */
     public function __construct(
         /**
          * Span category ({@see \yii\db\Command::query}, {@see \yii\base\Application::handleRequest}, ...), or `''`

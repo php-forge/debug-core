@@ -43,6 +43,8 @@ final readonly class CapturePolicy
     private array $sensitiveKeyPatterns;
 
     /**
+     * Creates a capture policy with redaction and size limits.
+     *
      * @param list<string> $sensitiveKeys Exact, case-insensitive keys to redact recursively.
      * @param int $maxBodyBytes Maximum raw request or response body bytes to retain; must be positive.
      * @param list<string> $sensitiveKeyPrefixes Literal, case-insensitive key prefixes to redact recursively.

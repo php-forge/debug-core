@@ -16,6 +16,9 @@ use function is_string;
  */
 final readonly class CurrentRouteLogRow implements PanelRow
 {
+    /**
+     * Creates a row from the current-route rules-tested log.
+     */
     public function __construct(
         /**
          * Rule name or its class FQCN as captured by the route resolver.

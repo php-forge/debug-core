@@ -13,6 +13,9 @@ use function count;
  */
 final readonly class QueueSummary
 {
+    /**
+     * Creates a Queue panel summary from captured events.
+     */
     public function __construct(
         /**
          * @var list<JobRecord> Captured events in chronological order.

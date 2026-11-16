@@ -11,6 +11,9 @@ use function max;
  */
 final readonly class HistoryScale
 {
+    /**
+     * Creates maxima for the History grid gauges.
+     */
     public function __construct(
         /**
          * Largest captured processing time on the page, in seconds; `0.0` when no row carries one.

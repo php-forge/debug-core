@@ -13,6 +13,9 @@ use function count;
  */
 final readonly class HistorySummary
 {
+    /**
+     * Creates aggregate metrics for the History summary.
+     */
     public function __construct(
         /**
          * Total number of captured requests in the manifest.

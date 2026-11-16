@@ -9,6 +9,9 @@ namespace PHPForge\Debug\View\Sidebar;
  */
 final readonly class SidebarNavItem
 {
+    /**
+     * Creates a debugger sidebar navigation entry.
+     */
     public function __construct(
         /**
          * Visible label shown next to the icon ('History', 'Request', 'Database', ...).

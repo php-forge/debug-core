@@ -21,6 +21,7 @@ use function var_export;
 final readonly class DumpNode
 {
     /**
+     * @param DumpKind $kind Kind of value represented by the node.
      * @param string $label Class name of an object, enum, or recursive object; `''` otherwise.
      * @param string $text Scalar text, enum case name, or free text preceding a root block header.
      * @param list<DumpEntry> $entries Block entries.

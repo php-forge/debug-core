@@ -12,6 +12,8 @@ use PHPForge\Debug\Routing\DebugUrlGeneratorInterface;
 final readonly class PanelRenderContext
 {
     /**
+     * Creates the request, theme, and URL context for a panel renderer.
+     *
      * @param string $tag Captured request tag.
      * @param string $panel Stable identifier of the panel being rendered.
      * @param array<array-key, mixed> $queryParams Parsed query parameters of the current debugger request.

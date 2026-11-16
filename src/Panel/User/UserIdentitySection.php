@@ -9,6 +9,9 @@ namespace PHPForge\Debug\Panel\User;
  */
 final readonly class UserIdentitySection
 {
+    /**
+     * Creates a section of user-identity attributes.
+     */
     public function __construct(
         /**
          * Section label shown in the section header (`Identity`, `Security`, ...).

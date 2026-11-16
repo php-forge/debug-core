@@ -1,0 +1,4 @@
+interface:
+  display_name: "PHP Forge Debug Core"
+  short_description: "Build debugger adapters on the shared debug core"
+  default_prompt: "Use $php-forge-debug-core to build or review a debugger adapter on the shared snapshot, storage and toolbar contracts."

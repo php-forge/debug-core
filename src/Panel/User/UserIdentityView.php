@@ -9,6 +9,9 @@ namespace PHPForge\Debug\Panel\User;
  */
 final readonly class UserIdentityView
 {
+    /**
+     * Creates the user-identity card view.
+     */
     public function __construct(
         /**
          * Hero card view-model.

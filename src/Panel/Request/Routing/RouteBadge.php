@@ -10,6 +10,8 @@ namespace PHPForge\Debug\Panel\Request\Routing;
 final readonly class RouteBadge
 {
     /**
+     * Creates a routing configuration badge.
+     *
      * @param string $label Badge label.
      * @param string $variant Badge variant, defaults to 'muted'.
      */

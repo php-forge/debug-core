@@ -12,6 +12,8 @@ use Stringable;
 final readonly class SortHeader implements Stringable
 {
     /**
+     * Creates a sortable-column header with its announced order.
+     *
      * @param string $link Rendered link requesting the order of the next click.
      * @param array<string, string> $attributes Header cell attributes announcing the active order, empty while the
      * rows are ordered by another attribute.

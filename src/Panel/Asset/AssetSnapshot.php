@@ -14,6 +14,8 @@ use function array_map;
 final readonly class AssetSnapshot implements PanelSnapshot
 {
     /**
+     * Creates an asset snapshot from bundles and an optional Vite manifest.
+     *
      * @param list<AssetBundleRow> $bundles
      */
     public function __construct(

@@ -11,6 +11,9 @@ use PHPForge\Debug\Storage\{PanelRow, Payload};
  */
 final readonly class ViteChunk implements PanelRow
 {
+    /**
+     * Creates a Vite manifest entry with its built file and asset counts.
+     */
     public function __construct(
         /**
          * Chunk name as keyed in the manifest.

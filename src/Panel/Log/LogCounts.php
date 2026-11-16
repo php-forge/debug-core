@@ -13,6 +13,9 @@ use function count;
  */
 final readonly class LogCounts
 {
+    /**
+     * Creates the log-level totals for the detail view.
+     */
     public function __construct(
         /**
          * Total number of log messages captured for the request.

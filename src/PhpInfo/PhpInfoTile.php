@@ -37,6 +37,9 @@ final readonly class PhpInfoTile
      */
     public const string KIND_TOKEN_LIST = 'token-list';
 
+    /**
+     * Creates a typed tile for a phpinfo overview section.
+     */
     public function __construct(
         /**
          * Tile label rendered in the `<dt>` cell ('SAPI', 'Memory limit', ...).

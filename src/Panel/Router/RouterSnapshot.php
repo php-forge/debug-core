@@ -16,6 +16,8 @@ use function is_string;
 final readonly class RouterSnapshot implements PanelSnapshot
 {
     /**
+     * Creates a routing snapshot from the captured rule trace.
+     *
      * @param list<CurrentRouteLogRow> $entries
      */
     public function __construct(

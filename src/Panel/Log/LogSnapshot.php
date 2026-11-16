@@ -26,6 +26,8 @@ use function count;
 final readonly class LogSnapshot implements PanelSnapshot
 {
     /**
+     * Creates a log snapshot from captured rows.
+     *
      * @param list<LogRow> $entries
      */
     public function __construct(private array $entries) {}

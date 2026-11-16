@@ -12,6 +12,8 @@ use PHPForge\Debug\Helper\Coerce;
 final readonly class UserRbacRow
 {
     /**
+     * Creates a User panel role or permission row.
+     *
      * @param string $name Item name, unique within the hierarchy.
      * @param string $description Human-readable description of the item's purpose.
      * @param string $ruleName Name of the rule associated with the item, or an empty string when none.

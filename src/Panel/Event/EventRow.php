@@ -19,6 +19,9 @@ final class EventRow implements PanelRow
      */
     private EventInspection|null $inspection = null;
 
+    /**
+     * Creates an event row from captured listener data.
+     */
     public function __construct(
         /**
          * Capture timestamp in seconds since the Unix epoch.

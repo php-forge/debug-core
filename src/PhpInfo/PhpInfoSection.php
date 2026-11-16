@@ -10,6 +10,9 @@ namespace PHPForge\Debug\PhpInfo;
  */
 final readonly class PhpInfoSection
 {
+    /**
+     * Creates a phpinfo overview section.
+     */
     public function __construct(
         /**
          * Eyebrow shown in the section header ('PHP version', 'Build', ...).

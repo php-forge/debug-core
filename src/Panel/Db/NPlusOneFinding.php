@@ -10,6 +10,8 @@ namespace PHPForge\Debug\Panel\Db;
 final readonly class NPlusOneFinding
 {
     /**
+     * Creates a potential N+1 query finding.
+     *
      * @param non-empty-string $fingerprint Stable backtrace fingerprint.
      * @param positive-int $count Number of observed query occurrences.
      * @param float $totalDuration Total group duration in milliseconds.

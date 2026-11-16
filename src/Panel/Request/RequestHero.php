@@ -37,6 +37,8 @@ final class RequestHero
     private string $time = '';
 
     /**
+     * Creates a request identity ready for response and display metadata.
+     *
      * @param string $method HTTP method of the request.
      * @param string $url Full URL of the request.
      */

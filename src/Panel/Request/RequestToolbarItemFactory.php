@@ -15,6 +15,8 @@ use function trim;
 final class RequestToolbarItemFactory
 {
     /**
+     * Builds request toolbar items for the route and response status.
+     *
      * @return list<ToolbarItem> Request toolbar metrics.
      */
     public static function create(string $route, int $statusCode, string $statusText = ''): array

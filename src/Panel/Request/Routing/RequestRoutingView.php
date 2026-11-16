@@ -10,6 +10,8 @@ namespace PHPForge\Debug\Panel\Request\Routing;
 final readonly class RequestRoutingView
 {
     /**
+     * Creates routing diagnostics for the Request panel.
+     *
      * @param CurrentRouteView $current Current route view.
      * @param RouteInventoryView|null $inventory Route inventory view, or null if not available.
      */

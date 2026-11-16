@@ -63,6 +63,8 @@ final class RouteDefinition
     private string|null $type = null;
 
     /**
+     * Creates persistence-safe route metadata.
+     *
      * @param string $name Route name as the application declares it.
      * @param string $pattern URL pattern the route matches.
      */

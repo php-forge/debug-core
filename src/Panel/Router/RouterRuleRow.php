@@ -15,6 +15,9 @@ use function is_array;
  */
 final readonly class RouterRuleRow
 {
+    /**
+     * Creates a Router Rules table row.
+     */
     public function __construct(
         /**
          * Rule name or its class FQCN.

@@ -9,6 +9,9 @@ namespace PHPForge\Debug\PhpInfo;
  */
 final readonly class PhpInfoView
 {
+    /**
+     * Creates the composed phpinfo page view.
+     */
     public function __construct(
         /**
          * Overview hero sections ('PHP version' first with the 'PHP_VERSION' headline, then Build / Configuration /

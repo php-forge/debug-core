@@ -29,7 +29,9 @@ final readonly class PanelRegistry
     private function __construct(private array $panels, private array $disabled) {}
 
     /**
-     * @return list<string> IDs removed by configuration, sorted alphabetically, including entries with no default.
+     * Returns the disabled panel IDs, including entries with no default.
+     *
+     * @return list<string> IDs removed by configuration, sorted alphabetically.
      */
     public function disabled(): array
     {
@@ -37,6 +39,8 @@ final readonly class PanelRegistry
     }
 
     /**
+     * Returns the effective panel registrations in display order.
+     *
      * @return list<PanelRegistration> Effective registrations in display order.
      */
     public function enabled(): array

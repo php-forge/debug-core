@@ -13,6 +13,9 @@ namespace PHPForge\Debug\View\Sidebar;
  */
 final readonly class SidebarNavigation
 {
+    /**
+     * Creates the sidebar snapshot navigation state.
+     */
     public function __construct(
         /**
          * `true` when the sidebar is rendered for the index page and the navigator buttons act as a grid cursor.
