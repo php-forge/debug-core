@@ -4,16 +4,20 @@
 # ...Unless the name matches the following overriding patterns
 
 # Definitively text files
-*.php  text
-*.css  text
-*.js   text
-*.txt  text
-*.md   text
-*.xml  text
-*.json text
-*.bat  text
-*.sql  text
-*.yml  text
+*.bat   text
+*.css   text
+*.js    text
+*.json  text
+*.json5 text
+*.md    text
+*.neon  text
+*.php   text
+*.sql   text
+*.txt   text
+*.xml   text
+*.yml   text
+*.yaml  text
+*.svg   text
 
 # Ensure those won't be messed up with
 *.png  binary
