@@ -4,34 +4,34 @@
 # ...Unless the name matches the following overriding patterns
 
 # Definitively text files
-*.php  text
+*.bat  text
 *.css  text
 *.js   text
-*.txt  text
-*.md   text
-*.xml  text
 *.json text
 *.json5 text
+*.md   text
 *.neon text
-*.bat  text
+*.php  text
 *.sql  text
-*.yml  text
-*.yaml text
 *.svg text
+*.txt  text
+*.xml  text
+*.yaml text
+*.yml  text
 
 # Ensure those won't be messed up with
-*.png  binary
-*.jpg  binary
 *.gif  binary
+*.jpg  binary
+*.png  binary
 *.ttf  binary
 *.woff2 binary
 
 # Exclude files from the archive
-.env                            export-ignore
-.env.*                          export-ignore
-.env.example                    -export-ignore
 .agents                         export-ignore
 .claude                         export-ignore
+.env                            export-ignore
+.env.*                          export-ignore
+.env.example                    export-ignore
 /.coderabbit.yaml               export-ignore
 /.codex                         export-ignore
 /.config/gh                     export-ignore
