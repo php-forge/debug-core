@@ -5,6 +5,8 @@
 
 # Definitively text files
 *.php  text
+*.css  text
+*.js   text
 *.txt  text
 *.md   text
 *.xml  text
@@ -22,17 +24,22 @@
 *.jpg  binary
 *.gif  binary
 *.ttf  binary
+*.woff2 binary
 
 # Exclude files from the archive
 /.agents                        export-ignore
 /.claude                        export-ignore
 /.coderabbit.yaml               export-ignore
 /.codex                         export-ignore
+/.config/gh                     export-ignore
 /.editorconfig                  export-ignore
 /.gitattributes                 export-ignore
 /.github                        export-ignore
 /.gitignore                     export-ignore
 /.idea                          export-ignore
+/.nvmrc                         export-ignore
+/.prettierignore                export-ignore
+/.prettierrc.json               export-ignore
 /.styleci.yml                   export-ignore
 /.vscode                        export-ignore
 /AGENTS.md                      export-ignore
@@ -44,11 +51,13 @@
 /ecs.php                        export-ignore
 /infection.json*                export-ignore
 /internal                       export-ignore
+/node_modules                   export-ignore
 /phpstan*.neon*                 export-ignore
 /phpunit.xml.dist               export-ignore
 /rector.php                     export-ignore
 /runtime                        export-ignore
 /tests                          export-ignore
+/vendor                         export-ignore
 
 # Avoid merge conflicts in CHANGELOG
 # https://about.gitlab.com/2015/02/10/gitlab-reduced-merge-conflicts-by-90-percent-with-changelog-placeholders/
