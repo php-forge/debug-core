@@ -2,7 +2,12 @@
 
 /** @type {import("@stryker-mutator/api/core").PartialStrykerOptions} */
 const config = {
-    ignorePatterns: ["/runtime", "/artifacts"],
+    ignorePatterns: [
+        "/runtime",
+        "/artifacts",
+        "/.agents/skills",
+        "/.claude/skills",
+    ],
     mutate: [
         "resources/src/core/clipboard.js",
         "resources/src/core/deep-links.js",

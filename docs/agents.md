@@ -29,7 +29,9 @@ npx skills@1.7.2 add /absolute/path/to/debug-core --skill php-forge-debug-core -
 ```
 
 Keep project scope. Inspect a remote source with `--list` before claiming an unpublished skill is available there.
-Copied installations must be refreshed after upgrades. The complete skill directory is the unit of installation.
+After upgrading the package, repeat the `npx skills@1.7.2 add` installation command above to refresh copied and
+symlinked installations. Symlinks point to the installer's canonical copy, which does not update with the package.
+The complete skill directory is the unit of installation.
 
 ## Discover and invoke
 
