@@ -1,9 +1,18 @@
+# agents (if present)
+.agents
+
 # artifacts (if present)
 artifacts
 
 # Local AI agent, editor, and GitHub CLI config (if present)
+.claude
 .codex
 .config/gh
+
+# Local environment files (if present)
+.env
+.env.*
+!.env.example
 
 # codecoverage (if present)
 code_coverage

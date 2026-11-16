@@ -27,8 +27,11 @@
 *.woff2 binary
 
 # Exclude files from the archive
-/.agents                        export-ignore
-/.claude                        export-ignore
+.env                            export-ignore
+.env.*                          export-ignore
+.env.example                    -export-ignore
+.agents                         export-ignore
+.claude                         export-ignore
 /.coderabbit.yaml               export-ignore
 /.codex                         export-ignore
 /.config/gh                     export-ignore
@@ -38,11 +41,14 @@
 /.gitignore                     export-ignore
 /.idea                          export-ignore
 /.nvmrc                         export-ignore
+/.phpunit.cache                 export-ignore
 /.prettierignore                export-ignore
 /.prettierrc.json               export-ignore
+/.stryker-tmp                   export-ignore
 /.styleci.yml                   export-ignore
 /.vscode                        export-ignore
 /AGENTS.md                      export-ignore
+/artifacts                      export-ignore
 /code_coverage                  export-ignore
 /codeception.yml                export-ignore
 /composer-require-checker.json  export-ignore
@@ -55,6 +61,7 @@
 /phpstan*.neon*                 export-ignore
 /phpunit.xml.dist               export-ignore
 /rector.php                     export-ignore
+/reports                        export-ignore
 /runtime                        export-ignore
 /tests                          export-ignore
 /vendor                         export-ignore
