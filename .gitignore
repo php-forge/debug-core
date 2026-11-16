@@ -4,16 +4,6 @@
 # artifacts (if present)
 artifacts
 
-# Local AI agent, editor, and GitHub CLI config (if present)
-.claude
-.codex
-.config/gh
-
-# Local environment files (if present)
-.env
-.env.*
-!.env.example
-
 # codecoverage (if present)
 code_coverage
 
@@ -30,6 +20,16 @@ composer.lock
 .github/instructions/**
 .github/prompts/**
 .github/skills/**
+
+# Local AI agent, editor, and GitHub CLI config (if present)
+.claude
+.codex
+.config/gh
+
+# Local environment files
+.env
+.env.*
+!.env.example
 
 # mac ds_store (if present)
 .DS_Store
@@ -50,13 +50,13 @@ node_modules
 .phpunit.cache
 .phpunit.result.cache
 
-# Private maintainer files (if present)
+# private maintainer files (if present)
 /internal/
 
-# Report (if present)
+# report (if present)
 reports
 
-# Stryker (if present)
+# stryker (if present)
 .stryker-tmp
 
 # vagrant (if present)
