@@ -1,7 +1,15 @@
+# artifacs (if present)
+artifacts
+
 # Local AI agent, editor, and GitHub CLI config (if present)
-.claude
 .codex
 .config/gh
+
+# codecoverage (if present)
+code_coverage
+
+# codeception (if present)
+c3.php
 
 # composer
 composer.lock
@@ -14,11 +22,11 @@ composer.lock
 .github/prompts/**
 .github/skills/**
 
-# Internal docs
-internal
-
 # mac ds_store (if present)
 .DS_Store
+
+# netbeans project (if present)
+nbproject
 
 # node_modules (if present)
 node_modules
@@ -33,12 +41,17 @@ node_modules
 .phpunit.cache
 .phpunit.result.cache
 
-# mutation testing
-.stryker-tmp
-reports/mutation
+# Private maintainer files (if present)
+/internal/
 
-# local browser quality artifacts
-artifacts
+# Report (if present)
+reports
+
+# Stryker (if present)
+.stryker-tmp
+
+# vagrant (if present)
+.vagrant
 
 # vendor
 vendor
@@ -49,15 +62,7 @@ vendor
 # windows thumbnail cache (if present)
 Thumbs.db
 
-# Package skill discovery; keep other local client state private.
-!/.agents/
-/.agents/*
-!/.agents/skills/
-/.agents/skills/*
-!/.agents/skills/php-forge-debug-core
-!/.claude/
-/.claude/*
-!/.claude/skills/
-/.claude/skills/*
-!/.claude/skills/php-forge-debug-core
-/internal/
+# zend studio for eclipse project (if present)
+.buildpath
+.project
+.settings
