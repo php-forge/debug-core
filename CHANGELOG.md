@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs(skills): add the package skill and AI guide; add `README.md` Security and Built with AI sections and Scorecard badge.
 - chore(git): ignore local agent state and environment secrets and exclude them and development artifacts from archives.
 - chore(git): update `.gitattributes` for improved text and binary file handling.
+- chore: standardize comments in configuration files and update dependency ignore rules.
 
 ## 0.1.2 November 6, 2026
 
