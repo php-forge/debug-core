@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - chore(git): ignore local agent state and environment secrets and exclude them and development artifacts from archives.
 - chore(git): update `.gitattributes` for improved text and binary file handling.
 - chore: standardize comments in configuration files and update dependency ignore rules.
+- build(deps): pair Stylelint `18` with its SCSS configuration and rebuild the distributed debug bundle with the updated Vite.
 
 ## 0.1.2 November 6, 2026
 
